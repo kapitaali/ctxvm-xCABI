@@ -45,6 +45,7 @@ see `reports/RR-BOARD-COMPLETE-20261022.md`.
 | `hub/` | **T5 ODPC hub proof**: `catalog.yaml` (ODPC v1.0, SDK-built) + `index.html` — hub.ctxvm.dev as an ODPC repo; regen via `tools/build-hub.sh` |
 | `rust/` | Rust workspace (T1a–T1d complete: codec + engine + replay + conformance vectors; 28+ tests) |
 | `upstream/` | T2 upstream issue drafts (file-ready: ODPS schema/docs + datacontract-cli, evidence from real validator runs) |
+| `projects/` | Standalone project specs to be *implemented with* this stack (not framework features; orchestrator go/no-go) — starts with `01-open-decision-primitive.md` (`umpire`, open JEV-style typed decision primitive) |
 | `design/` | Integration designs: `mcp-shim.md` (T6 — callTool decorator contract) · `adapters.md` (T7 — OpenCode plugin + Vercel AI SDK middleware/tap, pinned anchors) |
 
 ## Task/report flow
