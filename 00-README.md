@@ -13,7 +13,9 @@ Build in progress (see `08-HANDOFF.md` §5 board): Rust M0 complete (codec + eng
 28 tests green), xCABI RFC-0 + strict schema landed (55/55 conformance), metric simulator
 green (T3), ODPC hub artifacts proven (T5), MCP shim + harness adapter designs landed
 (T6/T7, `design/`), upstream issue drafts ready (T2, `upstream/`). Board complete —
-see `reports/RR-BOARD-COMPLETE-20261022.md`.
+see `reports/RR-BOARD-COMPLETE-20261022.md`. **Extension stage 2:** `@ctxvm/node` v0
+mirror tracer DONE (T8 — 12 unit tests; both committed fixtures pass the schema gate
+and are replay-divergence-free); T9 (OpenCode adapter spike) + T10 (corpus M1 + CI) proposed.
 
 ## What is decided
 
@@ -47,6 +49,7 @@ see `reports/RR-BOARD-COMPLETE-20261022.md`.
 | `upstream/` | T2 upstream issue drafts (file-ready: ODPS schema/docs + datacontract-cli, evidence from real validator runs) |
 | `projects/` | Standalone project specs to be *implemented with* this stack (not framework features; orchestrator go/no-go) — starts with `01-open-decision-primitive.md` (`umpire`, open JEV-style typed decision primitive) |
 | `design/` | Integration designs: `mcp-shim.md` (T6 — callTool decorator contract) · `adapters.md` (T7 — OpenCode plugin + Vercel AI SDK middleware/tap, pinned anchors) |
+| `packages/node/` | **T8 tracer**: `@ctxvm/node` v0 — TS RFC-0 JSONL mirror tracer (zero runtime deps, Node ≥22.6; sources run via type stripping). Gates in-dir: `npm test / gen / validate / replay` |
 
 ## Task/report flow
 

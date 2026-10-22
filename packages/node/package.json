@@ -1,0 +1,21 @@
+{
+  "name": "@ctxvm/node",
+  "version": "0.1.0",
+  "description": "Telemetry-first tracer for agent loops — RFC-0 xCABI JSONL in TypeScript, zero runtime dependencies.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "test": "node --test test/",
+    "gen": "node test/generate.ts",
+    "validate": "../../venvs/odps/bin/python ../../spec/rfc-0/validate_schema.py fixtures/tracer-healthy.jsonl fixtures/tracer-recall.jsonl",
+    "replay": "cd ../.. && cargo run --quiet --release -p ctxvm-conformance --bin replay"
+  }
+}

@@ -28,8 +28,11 @@ for any agent loop (OpenTelemetry playbook). Paging control ships later behind a
 **M0 COMPLETE (T1a–T1d done):** codec (strict JSONL, byte-identical vectors) + engine
 (page table, deterministic renderer) + replay w/ divergence detection + `replay` CLI.
 28 tests, 0 warnings.
-**Next frontier:** BOARD COMPLETE (T0–T7 all DONE; see `reports/RR-BOARD-COMPLETE-20261022.md`).
-Stopped per §6 — awaiting orchestrator approval of proposed T8/T9/T10.
+**Next frontier:** BOARD COMPLETE (T0–T7 all DONE; `reports/RR-BOARD-COMPLETE-20261022.md`).
+Stage 2 approved by the orchestrator (2026-10-22): **T8 DONE** (`@ctxvm/node` v0 mirror
+tracer — 12 unit tests; both fixtures schema-PASS and replay-divergence-free). Next: T9
+(OpenCode adapter spike), T10 (corpus M1 + CI). `projects/01-open-decision-primitive.md`
+(`umpire`, landed `f6d1b96`) awaits orchestrator go/no-go — separate repo at M0 if greenlit.
 
 ## §1. Workspace map
 
@@ -116,6 +119,9 @@ orchestrator task only).
 | T5 | ODPD hub pipeline: ODPC catalog via odpc-build | S | T0 | **DONE** (RR-T5-20261022; SDK-built catalog+HTML in hub/, clean twice, byte-identical) |
 | T6 | MCP tool-shim design note | S | — | **DONE** (RR-T6-20261022, commit `a835af3`; design/mcp-shim.md 145/180 lines) |
 | T7 | Harness adapter survey (OpenCode, Vercel AI SDK) | M | — | **DONE** (RR-T7-20261022; design/adapters.md, anchors @ e965774f / 36e4ce7c) |
+| T8 | `@ctxvm/node` v0 TS tracer (stage 2) | M | T4,T6,T7 | **DONE** (RR-T8-20261022; packages/node — 12/12 unit tests, both fixtures schema-PASS + replay-divergence-free) |
+| T9 | OpenCode adapter spike wiring `@ctxvm/node` (stage 2) | M | T8 | **PROPOSED** (RR-BOARD-COMPLETE-20261022; awaiting orchestrator) |
+| T10 | Trace corpus M1 seed + CI gate (stage 2) | M | T4 | **PROPOSED** (RR-BOARD-COMPLETE-20261022; awaiting orchestrator) |
 
 ---
 
@@ -238,6 +244,17 @@ tool-result ingestion paths) and the Vercel AI SDK's streaming/tool-call API; wr
 wraps, what `vm.observe()` needs, test strategy, risk list.
 **DoD:** doc has file/function-level anchors (with absolute repo URLs/commit hashes),
 both adapters plausible ≤50 LoC glue; report.
+
+### T8 — `@ctxvm/node` v0 TS tracer — stage 2 (M)
+**Objective:** TypeScript telemetry-first mirror tracer implementing the T6/T7 contract
+surfaces, emitting RFC-0-valid JSONL. No paging/eviction logic (mirror only).
+**Steps:** scaffold `packages/node/` (zero runtime deps; Node ≥22.6 type-stripping, sources
+run directly); identity minting per T6 §2 (keys-sorted canonical-JSON args, `sha256:<8hex>`,
+>120-char refs truncate + `#hash8`); tracer = page/recall/render/scan/pin/unpin/finish;
+committed fixtures via `test/generate.ts`.
+**DoD:** unit suite green (`npm test` in packages/node); two fixture traces PASS the repo
+schema validator AND are replay-divergence-free (`cargo replay`, exit 0, both); report +
+commit per §4.
 
 ---
 

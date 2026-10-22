@@ -1,0 +1,19 @@
+{"type":"session.open","agentId":"recall-demo","model":"openai/gpt-5","provider":"openai","budgetTokens":80000,"tokenizerId":"apx4-char"}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:read_file({\"path\":\"src/auth/session.ts\"})","contentHash":"sha256:4663eaeb"},"kind":"tool_result","tokens":16}}
+{"type":"page.declare","page":{"id":{"logicalRef":"file:src/db/schema.sql","contentHash":"sha256:a2ebbc0c"},"kind":"file","tokens":12}}
+{"type":"page.render","turn":0,"page":{"logicalRef":"tool:read_file({\"path\":\"src/auth/session.ts\"})","contentHash":"sha256:4663eaeb"},"mode":"full"}
+{"type":"page.render","turn":0,"page":{"logicalRef":"file:src/db/schema.sql","contentHash":"sha256:a2ebbc0c"},"mode":"full"}
+{"type":"page.fault","turn":0,"page":{"logicalRef":"tool:read_file({\"path\":\"src/auth/session.ts\"})","contentHash":"sha256:4663eaeb"},"source":"tool_recall"}
+{"type":"page.fault","turn":1,"page":{"logicalRef":"tool:read_file({\"path\":\"src/auth/session.ts\"})","contentHash":"sha256:4663eaeb"},"source":"identifier_scan","latencyMs":9}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:read_file({\"path\":\"src/auth/session.ts\"})","contentHash":"sha256:4ec99412"},"kind":"tool_result","tokens":19}}
+{"type":"page.render","turn":3,"page":{"logicalRef":"tool:read_file({\"path\":\"src/auth/session.ts\"})","contentHash":"sha256:4ec99412"},"mode":"full"}
+{"type":"page.pin","page":{"logicalRef":"file:src/db/schema.sql","contentHash":"sha256:a2ebbc0c"},"reason":"explicit_api: hot loop"}
+{"type":"page.unpin","page":{"logicalRef":"file:src/db/schema.sql","contentHash":"sha256:a2ebbc0c"},"reason":"explicit_api: cooled"}
+{"type":"turn.render","turn":0,"residentTokens":47,"evictedTokens":0,"headroom":79953}
+{"type":"turn.render","turn":1,"residentTokens":47,"evictedTokens":0,"headroom":79953}
+{"type":"turn.render","turn":2,"residentTokens":47,"evictedTokens":0,"headroom":79953}
+{"type":"turn.render","turn":3,"residentTokens":47,"evictedTokens":0,"headroom":79953}
+{"type":"call.meta","turn":0,"provider":"openai","cacheEstimate":{"estHitTokens":0,"estMissTokens":28,"providerReported":false}}
+{"type":"call.meta","turn":1,"provider":"openai","cacheEstimate":{"estHitTokens":28,"estMissTokens":0,"providerReported":false},"latencyMs":860}
+{"type":"call.meta","turn":2,"provider":"openai","cacheEstimate":{"estHitTokens":28,"estMissTokens":0,"providerReported":false}}
+{"type":"call.meta","turn":3,"provider":"openai","cacheEstimate":{"estHitTokens":12,"estMissTokens":19,"providerReported":false},"latencyMs":990}
