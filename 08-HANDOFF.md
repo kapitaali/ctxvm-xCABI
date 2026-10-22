@@ -28,9 +28,8 @@ for any agent loop (OpenTelemetry playbook). Paging control ships later behind a
 **M0 COMPLETE (T1a–T1d done):** codec (strict JSONL, byte-identical vectors) + engine
 (page table, deterministic renderer) + replay w/ divergence detection + `replay` CLI.
 28 tests, 0 warnings.
-**Next frontier:** T2 (upstream issue drafts) OPEN — last card before §6 board
-completion. Design layer done: RFC-0 (T4) + metric simulator (T3) + hub proof (T5) +
-MCP shim note (T6) + harness adapter survey (T7).
+**Next frontier:** T2 done — the board (T0–T7) is fully complete; proceed directly to
+the §6 terminal state (board-complete report + next-task proposals, no new scope).
 
 ## §1. Workspace map
 
@@ -111,7 +110,7 @@ orchestrator task only).
 | T1b | Event model + JSONL codec + roundtrip vectors | M | T1a | **DONE** (RR-T1b-20261022; 15 tests green, vectors byte-identical) |
 | T1c | Page table + deterministic renderer | L | T1b | **DONE** (RR-T1c-20261022; 10 core tests, determinism property green) |
 | T1d | Replay engine + conformance vectors crate | M | T1c | **DONE** (RR-T1d-20261022; `replay` CLI exit-1-on-divergence, M0 gate met) |
-| T2 | Upstream issue drafts (ODPS + CLI + templates) | S | — | OPEN |
+| T2 | Upstream issue drafts (ODPS + CLI + templates) | S | — | **DONE** (RR-T2-20261022; upstream/issues-drafts.md — 5 drafts, validator lines live-reproduced) |
 | T3 | Metric simulator reference impl (Python) | M | T1b | **DONE** (RR-T3-20261022; 18/18 green, CLI verified, fixtures schema-PASS 108/108) |
 | T4 | xCABI RFC-0: spec md + JSON Schema | M | T1b | **DONE** (RR-T4-20261022; schema PASS 55/55 vs all fixtures) |
 | T5 | ODPD hub pipeline: ODPC catalog via odpc-build | S | T0 | **DONE** (RR-T5-20261022; SDK-built catalog+HTML in hub/, clean twice, byte-identical) |
