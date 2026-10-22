@@ -112,7 +112,7 @@ a repeat evict refreshes it in stream order):
  Re-call read_file(path="src/auth/session.ts") to re-materialize.]
 ```
 
-Three functions (per Pichay): identify what left · how to recover it · cost < page.
+Three functions (per Pichay, arXiv 2603.09023): identify what left · how to recover it · cost < page.
 
 ## 8. Fault taxonomy
 

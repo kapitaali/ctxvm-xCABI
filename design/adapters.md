@@ -5,7 +5,7 @@ OpenCode `anomalyco/opencode` branch `dev` @ [`e965774fa0e2a8ffb27bf02827a2c3c6a
 Vercel AI SDK `vercel/ai` branch `main` @ [`36e4ce7c7f4c2a51676167634adb8c4eb3b18e77`](https://github.com/vercel/ai/commit/36e4ce7c7f4c2a51676167634adb8c4eb3b18e77).
 
 Both adapters implement the **`mcp-shim.md` recording contract verbatim** (§2 identity
-minting, §3 Pichay matching, §4 recording matrix) through read-only hooks — neither
+minting, §3 Pichay matching (arXiv 2603.09023), §4 recording matrix) through read-only hooks — neither
 touches protocol code, messages, or tool arguments. Shared helpers (canonicalArgs,
 sha256, token counting) live in `@ctxvm/node` (library, not counted as glue).
 

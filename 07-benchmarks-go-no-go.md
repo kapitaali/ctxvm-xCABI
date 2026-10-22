@@ -5,10 +5,11 @@
 1. **S-swe** — SWE-bench-lite-style file-cycling;
    measured: net input token cost, fault recall, thrash detection.
 2. **L-longqa** — long-horizon multi-session QA (needle-in-haystack + recall-borrowed from
-   Pichay's fault-rate methodology);
+   Pichay's fault-rate methodology — system "Pichay", arXiv 2603.09023);
 3. **C-coding** — OpenCode-style sessions, real repos — the corpus generation pilot.
 4. **P-pathology** — synthetic paging stress: 5× sustained budget pressure (thrash
-   detection per OS theory — Pichay reports thrashing under extreme pressure).
+   detection per OS theory — Pichay reports the thrashing pathology under extreme
+   sustained pressure, arXiv 2603.09023).
 
 Harnesses: naive context-stuffing baseline vs ctxvm tracer(s) vs (v1) paged.
 Adapters: OpenCode + Vercel AI SDK (both emitting identical xCABI traces — portability is

@@ -31,7 +31,7 @@ hooks.register("tool", "execute.after", (payload) => vm.onToolExecuteAfter(paylo
 | OpenCode hook | xCABI | Rule |
 |---|---|---|
 | `session.context` | `vm.render()` + scan | one fire = one turn; scan runs BEFORE render so faults attribute to the turn whose output produced the texts (RFC-0 §5); the tracer's per-page·source dedupe absorbs the window re-walk |
-| `tool.execute.before` | `vm.recall()` | Pichay key `(tool, canonical(input))`; only pre-existing pages mark |
+| `tool.execute.before` | `vm.recall()` | Pichay key `(tool, canonical(input))` (arXiv 2603.09023); only pre-existing pages mark |
 | `tool.execute.after` (`status:"completed"`) | `vm.page()` | body = `result.content` texts; `status:"error"` → no page (T6 §2); `result.metadata` is call.meta material (parked) |
 
 ## Resolved RR-T7 open questions (source-verified at the pinned SHA)

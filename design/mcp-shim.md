@@ -54,7 +54,7 @@ mechanically derived with the RFC-0 §7 three functions (identify · how-to-reco
 (RFC-0 §7 normative: renderers never invent or rewrite stub text). **No JSON surface
 beyond the verbatim result (v0) or this prose stub (v1) is ever exposed to the model.**
 
-## 3. `tool_recall` matching (Pichay method)
+## 3. `tool_recall` matching (Pichay method — arXiv 2603.09023)
 
 Rule: a model re-call `(name, args)` matches a prior page iff
 `canonical(name, canonicalArgs) == that page's logicalRef`.

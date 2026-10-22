@@ -45,7 +45,7 @@ determinism surface.
 
 | Source | Mechanism | Default |
 |---|---|---|
-| `tool_recall` | model re-calls same tool/args → fault-in (Pichay-proven) | on |
+| `tool_recall` | model re-calls same tool/args → fault-in (Pichay-proven, arXiv 2603.09023) | on |
 | `identifier_scan` | scan model output for paths/keys/URLs/symbols → fault-in | on |
 | `explicit_api` | harness or plugin calls `vm.fault(h)` | on |
 | `semantic_*` | embedding/LLM "it probably wants this" | **v1 plugin only**, marked non-deterministic |

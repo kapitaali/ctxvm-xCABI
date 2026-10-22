@@ -26,7 +26,8 @@ No behavior change. The pager never touches anything — it mirrors. Adoption is
 ## Auto-shim (optional, zero-code)
 
 Wraps MCP tool calls: results are auto-declared as pages (`tool_recall` faults by
-name+args matching, per Pichay). One-line swap from `client.callTool(...)` → `vm.call(...)`.
+name+args matching, per Pichay, arXiv 2603.09023). One-line swap from `client.callTool(...)`
+→ `vm.call(...)`.
 
 ## CLI surface
 

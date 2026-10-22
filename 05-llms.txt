@@ -7,6 +7,8 @@
 Versioned, checksummed corpus of xCABI agent-session traces (pages, renders, evictions,
 faults) plus benchmark suites and golden conformance vectors. Every trace replays
 byte-identically by design — usable for paging policy research and agent-memory evaluation.
+First seed drop (M1, in-repo at `corpus/m1/`): five schema-validated, replay-divergence-free
+traces, provenance-labeled (2 reference vectors · 2 tracer-generated · 1 adapter-spike).
 
 ## Auth
 - Method: none (corpus is open data)

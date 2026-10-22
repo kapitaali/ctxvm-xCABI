@@ -39,10 +39,12 @@ The mechanism is proven; the layer that turns it into an ecosystem does not exis
 2. **Lazy handles at the tool boundary (mmap ABI).**
    All found systems intercept waste *after* tools return bytes. No one returns typed page
    handles instead of payloads. Fixes the measured 84.4× re-mention amplification *before*
-   it enters the stream. (Pichay's data.)
+   it enters the stream. (Pichay's data: stale tool results reprocessed at a median
+   amplification of 84.4× — arXiv 2603.09023.)
 3. **The measure — trace corpus + simulator + conformance + policy leaderboard.**
-   Neural Paging proposes learned page controllers; no public corpus, replay simulator,
-   or benchmark exists to train/eval them. We make the policy space researchable.
+   Neural Paging (arXiv 2603.02228) proposes learned page controllers; no public corpus,
+   replay simulator, or benchmark exists to train/eval them. We make the policy space
+   researchable.
 
 ## 3. Strategy: telemetry-first, control-later
 
