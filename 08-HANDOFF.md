@@ -32,9 +32,13 @@ for any agent loop (OpenTelemetry playbook). Paging control ships later behind a
 (`@ctxvm/opencode` adapter spike), **T10 DONE** (corpus drop M1 in `corpus/m1/` + the repo
 CI gate: `tools/run-ci.sh` mirrors `.github/workflows/ci.yml`; ALL GATES GREEN locally
 2026-10-22; Actions-green begins once the repo has a git remote — orchestrator decision).
+**umpire M0 DONE 2026-10-22** (orchestrator green-lit): separate repo `~/Documents/umpire/`,
+first commit `d7896df` — decision-ledger v0 as an xCABI-0.1 profile; its validator PASSES
+(125 checks, 10/10 negatives) with byte-identical roundtrip ×2, and ctxvm's own
+validator/replay consume its ledgers verbatim (details: umpire `reports/RR-M0-20261022.md`).
 No queue remains. Open items (all need orchestrator input): live dev-build echo + live
-thrashing capture (M2; needs approved provider spend + a ≥pinned-SHA build), `umpire`
-go/no-go (`projects/01-open-decision-primitive.md`, `f6d1b96`), push target for CI.
+thrashing capture (M2; needs approved provider spend + a ≥pinned-SHA build), push target
+for CI, umpire M1 model shortlist (license-clean OSS).
 
 ## §1. Workspace map
 

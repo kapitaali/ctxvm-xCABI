@@ -53,7 +53,7 @@ GREEN locally 2026-10-22; Actions-green starts once a git remote exists) — see
 | `hub/` | **T5 ODPC hub proof**: `catalog.yaml` (ODPC v1.0, SDK-built) + `index.html` — hub.ctxvm.dev as an ODPC repo; regen via `tools/build-hub.sh` |
 | `rust/` | Rust workspace (T1a–T1d complete: codec + engine + replay + conformance vectors; 28+ tests) |
 | `upstream/` | T2 upstream issue drafts (file-ready: ODPS schema/docs + datacontract-cli, evidence from real validator runs) |
-| `projects/` | Standalone project specs to be *implemented with* this stack (not framework features; orchestrator go/no-go) — starts with `01-open-decision-primitive.md` (`umpire`, open JEV-style typed decision primitive) |
+| `projects/` | Standalone project specs to be *implemented with* this stack (not framework features; orchestrator go/no-go) — `01-open-decision-primitive.md` (`umpire`) went **M0 GO 2026-10-22**: repo split to `~/Documents/umpire/`, first commit `d7896df`, gates green; this file remains the proposal-of-record |
 | `design/` | Integration designs: `mcp-shim.md` (T6 — callTool decorator contract) · `adapters.md` (T7 — OpenCode plugin + Vercel AI SDK middleware/tap, pinned anchors) |
 | `packages/node/` | **T8 tracer**: `@ctxvm/node` v0 — TS RFC-0 JSONL mirror tracer (zero runtime deps, Node ≥22.6; sources run via type stripping). Gates in-dir: `npm test / gen / validate / replay` |
 | `packages/opencode/` | **T9 spike**: `@ctxvm/opencode` — OpenCode plugin (T7 Adapter A) wiring `@ctxvm/node` via pinned hook contracts (e965774f); recorded echo-session payloads → validated, replay-clean trace (`npm test / gen` in-dir) |

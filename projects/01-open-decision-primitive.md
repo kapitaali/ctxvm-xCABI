@@ -1,8 +1,10 @@
 # `umpire` — an open, JEV-style decision primitive (project spec)
 
-**Status:** Candidate project (proposed) · 2026-10-22 · **Repo:** separate repo at first
-commit; this spec lives in `ctxvm/projects/` until then (rename `umpire` pending like
-`ctxvm`/`xCABI`).
+**Status:** **M0 GO — repo split realized 2026-10-22.** The normative spec now lives in
+`~/Documents/umpire/` (`00-SPEC.md`, first commit `d7896df`; gate results in its
+`reports/RR-M0-20261022.md`). This file stays in `ctxvm/projects/` as the
+proposal-of-record (bookkeeping only — umpire contributes nothing into ctxvm
+normative files). Rename `umpire` still pending like `ctxvm`/`xCABI`.
 **Reference point:** [JEV by TypeSafe AI](https://jevtypesafeai.com/jev/classifier) — hosted
 decision primitive: ≤255 labels in, one label + calibrated probabilities + confidence out,
 70–500 ms, per-decision pricing, confidence-gated routing, version pinning.
