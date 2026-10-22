@@ -5,9 +5,13 @@
 ## 1. Thesis
 
 The LLM context window is not memory — it is L1 cache. In 2026 the field reached the same
-independent conclusion (demand paging for context) and sprinted on it: a SOSP-style paper
-(Pichay), IBM's OS-style session manager, `l1-pager` (LangGraph), virtual-context, and a
-formalization of the learned-policing problem ("Neural Paging", arXiv 2603.02228,
+independent conclusion (demand paging for context) and sprinted on it: **Pichay** (SOSP-style
+preprint, system "Pichay", T. Mason · arXiv 2603.09023), **IBM's agent session manager**
+(`IBM/chuk-ai-session-manager` — session/context management with summarization, not
+demand paging), **`l1-pager`** (indie LangGraph context GC, sarath-m-s — LRU/IMPORTANCE/
+HYBRID eviction + a sentinel `fetch_evicted_page` tool; small traction: ~5★, ~200
+weekly downloads), the **virtual-context line** (MemGPT/Letta, arXiv 2310.08560), and a
+formalization of the learned-policing problem ("**Neural Paging**", arXiv 2603.02228,
 "Semantic Belady's Optimality").
 
 But everyone is building house-of-cards: **private page formats, private fault protocols,
@@ -15,6 +19,16 @@ private logs, private policies.** Like the pre-MCP tool era or the pre-SQL data 
 The mechanism is proven; the layer that turns it into an ecosystem does not exist.
 
 **The leap:** not another pager — the *gauge, the dyno, and the SQL* for the context layer.
+
+> **Prior-art verification note (2026-10-22, repo-agent):** all five pointers above were
+> web-verified with locators after an audit found the paragraph had been written without
+> captured sources. Anchors: Pichay = system name in arXiv 2603.09023 ("…It is L1 cache…",
+> 857-session measurement, 21.8% structural waste, §3.5 fault-driven pinning incl.
+> unpin-on-content-change — all quoted faithfully downstream in this repo);
+> `github.com/IBM/chuk-ai-session-manager` (IBM org OSS); `pypi.org/project/l1-pager` +
+> `github.com/sarath-m-s/l1-pager`; arXiv 2310.08560 (MemGPT coined "virtual context
+> management"); arXiv 2603.02228 (CPP + Semantic Belady). Repo rule (08-HANDOFF §4):
+> prior-art claims must carry locators at first mention — no unsourced prose.
 
 ## 2. The three pillars (and what's missing in each)
 

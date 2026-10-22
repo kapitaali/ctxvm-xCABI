@@ -95,6 +95,11 @@ When a card's Definition-of-Done is met:
 3. Update the card's **Status** row in §5 below (and shift the "Next frontier" line in §0).
 4. Finally, print a ≤10-line summary of the report to the user.
 
+**Integrity rule (added 2026-10-22, after a prior-art audit in `01-PLAN.md`):** any
+external/prior-art claim written into a repo doc must carry its locator (URL / arXiv id /
+repo path) at first mention. Unverified → mark `UNVERIFIED-<date>`, never cite as fact.
+Web-verify before the white paper or any published prose repeats a claim.
+
 **If blocked or confused:** write the report with status `BLOCKED` + exact error text, then
 still print the summary. A failed task documented well is a completed task's equal.
 
