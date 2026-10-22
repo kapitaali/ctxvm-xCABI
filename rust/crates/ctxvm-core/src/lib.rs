@@ -1,18 +1,23 @@
 //! ctxvm-core — deterministic context VM engine.
 //!
-//! T1a scaffold only. Future contents (per 01-PLAN.md / 02-xcabi-events-v0.md):
-//! - `page_table`: pages keyed by `(logical_ref, content_hash)`; kinds: file/tool_result/summary/image_ref
-//! - `render`: pure `(events, turn) -> messages` (full content vs identity stub; byte-identical re-render)
-//! - `budget`: token budgets, evictions batched at turn boundaries
-//! - `policy`: pluggable eviction traits (FaultPinPolicy in T-series later); LLM/embedding = never here
+//! Layers (M0, pure Rust — no FFI, no LLM, no embedding in here ever):
+//! - [`page_table`] — the stateful page table keyed by `(logical_ref, content_hash)`.
+//!   A streaming `Playback` ingests decision events (`page.declare/evict/fault/pin/unpin`)
+//!   and schedules per-page render-mode changes at turn boundaries. Anomalies are
+//!   telemetry-first: logged as [`page_table::Violation`]s, never thrown.
+//! - [`render`] — the deterministic renderer: pure functions `(fed decisions, turn)
+//!   → slots + token tallies`. Slot structure depends only on the trace; full-content
+//!   bytes are environment-attached and never influence decisions.
 //!
-//! TODO(T1c): page table + deterministic renderer.
+//! Timing table (locked for v0; RFC-0 MUST record it):
+//! `page.evict@t` → stub visible at turn t · `page.fault@t` → full from turn t+1 ·
+//! same-turn conflicts → later stream event wins · pins carry no turn (v0).
+//!
+//! TODO(T1d): replay API + recorded-fact divergence detection (`page.render`,
+//! `turn.render` cross-checks) on top of this module.
 
-#[cfg(test)]
-mod tests {
-    /// Workspace smoke test (T1a): engine crate occupies the graph.
-    #[test]
-    fn core_crate_is_wired() {
-        assert!(true, "placeholder until T1c");
-    }
-}
+pub mod page_table;
+pub mod render;
+
+pub use page_table::{PageKey, PageTrack, Playback, Violation, ViolationKind};
+pub use render::{derive_projection, Slot, TurnProjection, TurnTally};
