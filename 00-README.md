@@ -9,8 +9,9 @@
 
 ## Status
 
-Pre-implementation. Nothing is built yet — this directory contains the consolidated plan,
-spec drafts, API sketches, and standards-integration artifacts produced in planning.
+Build in progress (see `08-HANDOFF.md` §5 board): Rust M0 complete (codec + engine replay,
+28 tests green), xCABI RFC-0 + strict schema landed (55/55 conformance), metric simulator
+green (T3), ODPC hub artifacts proven (T5). Planning artifacts below remain the global index.
 
 ## What is decided
 
@@ -38,6 +39,9 @@ spec drafts, API sketches, and standards-integration artifacts produced in plann
 | `07-benchmarks-go-no-go.md` | Benchmark suites, metric definitions, M0 pass/fail gates |
 | `08-HANDOFF.md` | **Master agent handoff**: rules of engagement, reporting protocol, task board (T0–T7). Hand this file to any agent to continue the work |
 | `spec/rfc-0/` | **xCABI RFC-0** (per `08` card T4): `RFC-0-xCABI.md` (normative semantics, timing + ordering tables, replay contract) · `x-cabi.schema-v0.json` (strict JSON Schema) · `validate_schema.py` (55-check conformance validator over all vector fixtures) |
+| `benchmarks/metrics/` | **T3 metric reference impl**: `metrics.py` (07's four formulas + counterfactual baseline + CLI), fixtures (healthy/thrashing), 18 tests |
+| `hub/` | **T5 ODPC hub proof**: `catalog.yaml` (ODPC v1.0, SDK-built) + `index.html` — hub.ctxvm.dev as an ODPC repo; regen via `tools/build-hub.sh` |
+| `rust/` | Rust workspace (T1a–T1d complete: codec + engine + replay + conformance vectors; 28+ tests) |
 
 ## Task/report flow
 

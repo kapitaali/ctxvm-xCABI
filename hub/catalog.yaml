@@ -1,0 +1,29 @@
+schema: https://opendataproducts.org/odpc-v1.0/schema/odpc.yaml
+version: '1.0'
+kind: Catalog
+catalog:
+  metadata:
+    id: hub.ctxvm.dev
+    name:
+      en: ctxvm hub
+    description:
+      en: 'Open hub catalog for the ctxvm project: xCABI trace corpus, conformance
+        vectors, benchmarks.'
+  productReferences:
+  - id: ctxvm-corpus-0.1
+    productID: ctxvm-corpus-0.1
+    productVersion: 0.1.0
+    name:
+      en: ctxvm Trace Corpus
+    description:
+      en: A curated, checksummed, versioned collection of deterministic agent-session
+        traces (pages, renders, evictions, faults) plus benchmark suites and golden
+        conformance vectors. Replays byte-identically per the xCABI invariants.
+    productModel:
+      standard: ODPS
+      version: '4.1'
+      format: yaml
+      $ref: ../04-odps-dataproduct-corpus.yaml
+    visibility: public
+    status: draft
+    type: dataset
