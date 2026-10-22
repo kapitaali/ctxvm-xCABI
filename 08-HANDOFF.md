@@ -52,7 +52,7 @@ Two validated toolchains, now **persistent as workspace-local venvs** (built by
 |---|---|---|
 | ODPS manifest validation (SDK 0.4.0) | `venvs/odps/bin/open-data-products validate 04-…yaml --json` | any ≥3.9 (venv built on py3.14) |
 | ODCS contract lint + product audit | `venvs/odcs/bin/datacontract lint contracts/…`; `venvs/odcs/bin/open-data-products product audit 04-…yaml --json` | **must be Python ≤3.12** — `datacontract-cli` is gated `python_version < "3.13"` and pip SILENTLY SKIPS it on ≥3.13 |
-| (planned) Rust M0 | stable Rust toolchain required — verify with `cargo --version` first | none known |
+| (planned) Rust M0 | **user provisions Rust globally — agents MUST NOT self-install rustup or any toolchain** (user removed a local install on 2026-10-22). Verify with `cargo --version` first | none known |
 
 Historical (may be dead): ODPS venv `/tmp/opencode/ctxvm-venv` (py3.14, base miniforge);
 contract venv `/tmp/opencode/odcs-venv` (py3.12, from conda env `ctxvm-odcs`).
@@ -102,7 +102,7 @@ orchestrator task only).
 | ID | Title | Size | Depends | Status |
 |---|---|---|---|---|
 | T0 | Repo init + env setup script | S | — | **DONE** (RR-T0-20261022, commit `bba1f8f`) |
-| T1a | Rust workspace scaffold (crates only) | S | T0 | OPEN |
+| T1a | Rust workspace scaffold (crates only) | S | T0 | **BLOCKED** (RR-T1a-20261022: scaffold written; awaiting user-provided global Rust toolchain) |
 | T1b | Event model + JSONL codec + roundtrip vectors | M | T1a | OPEN |
 | T1c | Page table + deterministic renderer | L | T1b | OPEN |
 | T1d | Replay engine + conformance vectors crate | M | T1c | OPEN |

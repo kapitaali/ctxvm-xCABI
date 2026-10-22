@@ -1,0 +1,9 @@
+[package]
+name = "ctxvm-codec"
+description = "xCABI event model + JSONL codec. The trace format is the product (telemetry-first)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+# TODO(T1b): serde, serde_json via workspace deps

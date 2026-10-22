@@ -1,0 +1,9 @@
+[package]
+name = "ctxvm-tokenizer"
+description = "Token counting backends behind feature flags (tiktoken / HF). Deferred in T-series; stub only."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+# TODO(T-series): tiktoken / HF tokenizers behind features; per-model budgets.

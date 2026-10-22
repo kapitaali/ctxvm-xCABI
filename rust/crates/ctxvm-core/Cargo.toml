@@ -1,0 +1,8 @@
+[package]
+name = "ctxvm-core"
+description = "Page table, budgets, policy traits, deterministic renderer/replay engine for agent context. Lock: never consults an LLM; pure functions of (events, indices)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]

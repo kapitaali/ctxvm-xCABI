@@ -1,0 +1,10 @@
+[package]
+name = "ctxvm-conformance"
+description = "Golden vectors + replay conformance checks — the executable truth of the xCABI spec. Every binding (TS/Py) must pass these."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# Binary target lands in T1d (`replay`); lib-first per plan.
+
+[dependencies]

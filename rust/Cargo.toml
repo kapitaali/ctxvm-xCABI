@@ -1,0 +1,23 @@
+# CtxVM Rust workspace — sees T1a (08-HANDOFF.md); architecture mirrors 01-PLAN.md
+# Layout maps 1:1 to the crate architecture:
+#   ctxvm-core       page table, budget, policy traits, deterministic renderer/replay (no heavy deps)
+#   ctxvm-codec      xCABI serde structures + JSONL (serde/serde_json land here in T1b)
+#   ctxvm-tokenizer  token counting backends behind feature flags (deferred; stub only)
+#   ctxvm-conformance  golden vectors + replay conformance checks (executable truth of the spec)
+[workspace]
+resolver = "2"
+members = [
+    "crates/ctxvm-core",
+    "crates/ctxvm-codec",
+    "crates/ctxvm-tokenizer",
+    "crates/ctxvm-conformance",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
