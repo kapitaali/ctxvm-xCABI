@@ -5,6 +5,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 
-# Binary target lands in T1d (`replay`); lib-first per plan.
-
 [dependencies]
+ctxvm-codec = { workspace = true }
+
+# Binary target lands in T1d (`replay`); lib-first per plan.

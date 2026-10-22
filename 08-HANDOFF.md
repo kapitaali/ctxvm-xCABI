@@ -25,8 +25,8 @@ for any agent loop (OpenTelemetry playbook). Paging control ships later behind a
 **empirically validated green**; repo initialized (git main); persistent local venvs under
 `venvs/`; Rust toolchain user-provided (cargo/rustc 1.99.1 — non-login shells need
 `. "$HOME/.cargo/env"` once per invocation); T1a scaffold green.
-**Next frontier:** T1b (event model + JSONL codec + roundtrip vectors) → T1c → T1d,
-plus small validator/standards cards (T2/T5/T6) in parallel.
+**Next frontier:** T1c (page table + deterministic renderer — the heart of M0) → T1d;
+parallel non-Rust cards T2/T3(spec-read only)/T4/T5/T6 remain open.
 
 ## §1. Workspace map
 
@@ -104,7 +104,7 @@ orchestrator task only).
 |---|---|---|---|---|
 | T0 | Repo init + env setup script | S | — | **DONE** (RR-T0-20261022, commit `bba1f8f`) |
 | T1a | Rust workspace scaffold (crates only) | S | T0 | **DONE** (RR-T1a-20261022 + RESOLUTION; cargo 1.99.1, 4/4 tests green) |
-| T1b | Event model + JSONL codec + roundtrip vectors | M | T1a | OPEN |
+| T1b | Event model + JSONL codec + roundtrip vectors | M | T1a | **DONE** (RR-T1b-20261022; 15 tests green, vectors byte-identical) |
 | T1c | Page table + deterministic renderer | L | T1b | OPEN |
 | T1d | Replay engine + conformance vectors crate | M | T1c | OPEN |
 | T2 | Upstream issue drafts (ODPS + CLI + templates) | S | — | OPEN |
