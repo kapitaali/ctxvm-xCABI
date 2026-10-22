@@ -22,7 +22,10 @@ single source of truth for "what's next".*
 for any agent loop (OpenTelemetry playbook). Paging control ships later behind an opt-in policy.
 
 **Current state (2026-10-22):** planning artifacts complete; ODPS manifest + ODCS contract
-**empirically validated green**; NO CODE EXISTS YET. The next frontier is the Rust M0 spike.
+**empirically validated green**; repo initialized (git main, first commit `bba1f8f`);
+persistent local venvs live under `venvs/` (rebuild via `tools/setup-env.sh`).
+**Next frontier:** the Rust M0 chain (T1a → T1d) plus small validator/standards cards
+(T2/T5/T6) — all unblocked now.
 
 ## §1. Workspace map
 
@@ -42,16 +45,16 @@ for any agent loop (OpenTelemetry playbook). Paging control ships later behind a
 
 ## §2. Environment & tooling (READ — venvs are ephemeral, recreate as needed)
 
-Two validated toolchains. **`/tmp` venvs die on reboot — recreate them with the setup script
-(task T0) instead of hand-installing.**
+Two validated toolchains, now **persistent as workspace-local venvs** (built by
+`tools/setup-env.sh`, committed in T0). Prefer these over any `/tmp` venv.
 
-| Purpose | Commands | Interpreter constraint |
+| Purpose | Command | Interpreter constraint |
 |---|---|---|
-| ODPS manifest validation (SDK 0.4.0) | `open-data-products validate _/04-*.yaml --json` | any ≥3.9 (was built on py3.14) |
-| ODCS contract lint + product audit | `datacontract lint _/contracts/*.yaml`; `open-data-products product audit _/04-*.yaml --json` | **must be Python ≤3.12** — `datacontract-cli` is gated `python_version < "3.13"` and pip SILENTLY SKIPS it on ≥3.13 |
+| ODPS manifest validation (SDK 0.4.0) | `venvs/odps/bin/open-data-products validate 04-…yaml --json` | any ≥3.9 (venv built on py3.14) |
+| ODCS contract lint + product audit | `venvs/odcs/bin/datacontract lint contracts/…`; `venvs/odcs/bin/open-data-products product audit 04-…yaml --json` | **must be Python ≤3.12** — `datacontract-cli` is gated `python_version < "3.13"` and pip SILENTLY SKIPS it on ≥3.13 |
 | (planned) Rust M0 | stable Rust toolchain required — verify with `cargo --version` first | none known |
 
-Historical paths (may be dead): ODPS venv `/tmp/opencode/ctxvm-venv` (py3.14, base miniforge);
+Historical (may be dead): ODPS venv `/tmp/opencode/ctxvm-venv` (py3.14, base miniforge);
 contract venv `/tmp/opencode/odcs-venv` (py3.12, from conda env `ctxvm-odcs`).
 
 ## §3. Rules of engagement
@@ -98,7 +101,7 @@ orchestrator task only).
 
 | ID | Title | Size | Depends | Status |
 |---|---|---|---|---|
-| T0 | Repo init + env setup script | S | — | **OPEN** |
+| T0 | Repo init + env setup script | S | — | **DONE** (RR-T0-20261022, commit `bba1f8f`) |
 | T1a | Rust workspace scaffold (crates only) | S | T0 | OPEN |
 | T1b | Event model + JSONL codec + roundtrip vectors | M | T1a | OPEN |
 | T1c | Page table + deterministic renderer | L | T1b | OPEN |
