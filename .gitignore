@@ -1,0 +1,11 @@
+# venvs are workspace-local, rebuilt by tools/setup-env.sh
+venvs/
+
+# SDK/artifact noise
+.open-data-products/
+*.log
+
+# OS / build noise
+.DS_Store
+node_modules/
+target/

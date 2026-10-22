@@ -1,0 +1,176 @@
+# ODCS v3.0.2 data contract for the ctxvm Trace Corpus v0.1
+# Standards stack: ODPS 4.1 (packaging) -> this ODCS contract (contents) -> xCABI 0.1 (format)
+# Production permalink (NOT referenced from the ODPS manifest's contract block because the
+# SDK does not yet load remote contracts): https://hub.ctxvm.dev/contracts/corpus-0.1.odcs.yaml
+# Note: ODCS v3 DQ dimension enum has no 'validity' — replay determinism is expressed as
+# 'conformity' here, while the ODPS DQ block's 'validity' remains its declared proxy.
+
+version: 1.0.0
+kind: DataContract
+id: 0c6f653c-8410-4a45-9612-3e3eeaa76ab6
+status: active
+name: ctxvm_trace_corpus
+apiVersion: v3.0.2
+description:
+  purpose: >-
+    Define the required contents and quality of the ctxvm Trace Corpus 0.1: xCABI event-log
+    sessions (JSONL), benchmark suites, and golden conformance vectors.
+  usage: >-
+    Consumers can rely on every session replaying byte-identically (xCABI log invariant), on
+    the presence of session/page identity fields sufficient to reproduce any turn's render,
+    and on checksummed releases.
+  limitations: >-
+    Nothing in this contract claims model-accuracy outcomes; those live in the ODPS
+    productStrategy KPIs.
+schema:
+  - name: xCABIEventLog
+    logicalType: object
+    physicalType: table
+    description: >-
+      One xCABI event per JSONL line. Full event vocabulary lives at
+      https://hub.ctxvm.dev/docs/x-cabi (draft v0); this contract pins the columns a
+      conforming consumer may depend on and their replay/uniqueness expectations.
+    tags:
+      - agent-memory
+      - demand-paging
+    quality:
+      - name: replay-determinism
+        description: >-
+          Every session replays byte-identically by the xCABI determinism invariant.
+          Executed by the ctxvm replay engine against golden conformance vectors.
+        dimension: conformity        # xCABI invariants; ODCS enum has no 'validity'
+        severity: error
+        businessImpact: operational
+        type: custom
+        engine: ctxvm
+        implementation:
+          command: ctxvm replay corpus/0.1/sessions/*.jsonl
+          passCriterion: exit code 0 (byte-identical re-render)
+        schedule: 0 4 * * *
+        scheduler: cron
+      - name: no-dangling-pins
+        description: Every pin has a matching render or unpin; no unclaimed faults.
+        dimension: completeness
+        severity: error
+        businessImpact: operational
+        type: custom
+        engine: ctxvm
+        implementation:
+          command: ctxvm profile --lint corpus/0.1/sessions/*.jsonl
+          passCriterion: zero dangling pins / unclaimed faults
+      - name: no-unrecoverable-faults
+        description: Every recorded page.fault resolves against a declared page identity in the corpus.
+        dimension: completeness
+        severity: error
+        businessImpact: operational
+        type: custom
+        engine: ctxvm
+        implementation:
+          command: ctxvm profile --lint --faults corpus/0.1/sessions/*.jsonl
+          passCriterion: zero unresolved fault references
+      - name: redaction-scan
+        description: Zero secret/PII pattern matches in any published session.
+        dimension: conformity
+        severity: error
+        businessImpact: regulatory
+        type: custom
+        engine: ctxvm
+        implementation:
+          command: ctxvm export --redact-scan corpus/0.1/sessions/*.jsonl
+          passCriterion: zero secret or PII matches
+    properties:
+      - name: session_id
+        logicalType: string
+        required: true
+        description: Session identifier; one session = one replayable render chain.
+        classification: public
+        quality:
+          - name: session_id-unique
+            description: No duplicate session_id in a corpus drop.
+            dimension: uniqueness
+            severity: error
+            type: library
+            rule: duplicateCount
+            mustBe: 0
+      - name: event_seq
+        logicalType: integer
+        required: true
+        description: Monotonic event sequence within the session. Uniqueness key with session_id.
+        classification: public
+      - name: event_type
+        logicalType: string
+        required: true
+        description: >-
+          One of session.open, page.declare, page.render, page.evict, page.fault, page.pin,
+          page.unpin, turn.render, call.meta — per the xCABI draft v0 vocabulary.
+        classification: public
+      - name: turn
+        logicalType: integer
+        required: false
+        description: Turn index for turn-scoped events; absent for session.open.
+        classification: public
+      - name: page_logical_ref
+        logicalType: string
+        required: false
+        description: Logical reference of the page this event touches (e.g. tool:read_file(path=...)). Null for session/turn-level events.
+        classification: public
+      - name: page_content_hash
+        logicalType: string
+        required: false
+        description: Content hash of the page payload as declared; enables cross-harness identity and fault-recovery checks.
+        classification: public
+      - name: page_kind
+        logicalType: string
+        required: false
+        description: One of file, tool_result, summary, image_ref. Null for session/turn-level events.
+        classification: public
+      - name: tokens
+        logicalType: integer
+        required: false
+        description: Tokenized size of the page, or of the turn's resident set (event-dependent).
+        classification: public
+      - name: render_mode
+        logicalType: string
+        required: false
+        description: For page.render and page.evict — full | stub.
+        classification: public
+      - name: fault_source
+        logicalType: string
+        required: false
+        description: For page.fault — one of tool_recall, identifier_scan, explicit_api, semantic_*.
+        classification: public
+      - name: fault_latency_ms
+        logicalType: number
+        required: false
+        description: >-
+          For page.fault — measured cost of the eviction mistake (recovery latency);
+          downstream fault-recall KPIs derive from this field.
+        classification: public
+      - name: cache_miss_estimate
+        logicalType: number
+        required: false
+        description: >-
+          For call.meta — ESTIMATED prompt-cache misses induced this turn by eviction.
+          Estimates are flagged downstream, never silently merged as ground truth.
+        classification: restricted
+      - name: tokenizer_id
+        logicalType: string
+        required: true
+        description: Tokenizer used for all token counts in the session; session-scoped, constant per session.
+        classification: public
+    authoritativeDefinitions:
+      - url: https://hub.ctxvm.dev/docs/x-cabi
+        type: businessDefinition
+      - url: https://hub.ctxvm.dev/corpus/0.1/conformance.jsonl
+        type: Reference implementation
+slaProperties:
+  - property: availability
+    value: 99
+    unit: percent
+    element: xCABIEventLog
+    driver: operational
+  - property: updateFrequency
+    value: 1
+    unit: weeks
+    element: xCABIEventLog
+    driver: operational

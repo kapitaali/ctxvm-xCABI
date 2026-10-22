@@ -1,0 +1,228 @@
+# ODPS 4.1 manifest — ctxvm Trace Corpus v0.1
+#
+# VALIDATED 2026-10-22 against open-data-products SDK 0.4.0 (bundled odps.json core schema):
+#   valid: true · compliance_level: full · production_ready: true
+# AUDIT 2026-10-22: product audit PASSED (product_valid + contract_valid, ODCS v3.0.2 lint
+# via datacontract-cli 1.2.7). Details: 06-odps-integration.md
+
+schema: https://opendataproducts.org/v4.1/schema/odps.yaml
+version: "4.1"   # MUST be quoted — unquoted 4.1 parses as YAML float and fails schema
+product:
+  # ODCS linkage (Agentic-template mandated; `product audit` requires a contract reference).
+  # contractVersion = the ODCS *standard* version, NOT our contract's version.
+  # $ref used (not contractURL) because the SDK does not yet load remote contract documents.
+  contract:
+    id: 0c6f653c-8410-4a45-9612-3e3eeaa76ab6
+    type: ODCS
+    contractVersion: "3.0.2"
+    $ref: contracts/corpus-0.1.odcs.yaml
+
+  x-cabi:
+    format: xCABI
+    traceFormatVersion: 0.1
+    contentSchema: https://ctxvm.dev/x-cabi/schema/0.1
+    conformanceVectors: https://hub.ctxvm.dev/corpus/0.1/conformance.jsonl
+
+  details:
+    en:
+      name: ctxvm Trace Corpus
+      productID: ctxvm-corpus-0.1
+      valueProposition: >-
+        Stop hunting "did my agent evict the page it needed later". A governed, replayable
+        corpus of xCABI agent-session traces so anyone can measure paging policies.
+      description: >-
+        A curated, checksummed, versioned collection of deterministic agent-session traces
+        (pages, renders, evictions, faults) plus benchmark suites and golden conformance
+        vectors. Replays byte-identically per the xCABI invariants.
+      productVersion: 0.1.0
+      productSeries: ctxvm open corpus
+      visibility: public
+      status: draft
+      type: dataset
+      portfolioPriority: high
+      governanceProfile: automated
+      standards:
+        - xCABI 0.1
+        - ODPS 4.1
+      outputFileFormats:
+        - JSONL
+        - Parquet
+      categories:
+        - agent-traces
+        - llm-context
+        - benchmarks
+      tags:
+        - agent-memory
+        - streams
+        - demand-paging
+        - open-data
+
+  productStrategy:
+    status: Active
+    startDate: 2026-10-22
+    objectives:
+      - en: Make context management policy researchable with reproducible, governed traces.
+    contributesToKPI:
+      id: kpi-agent-token-efficiency
+      name: Agent token efficiency
+      unit: percentage
+      target: 50
+      direction: at_least
+      calculation: 1 - (net_paged_tokens / naive_baseline_tokens)
+    productKPIs:
+      - id: kpi-fault-recall
+        name: Fault recall
+        unit: percentage
+        target: 95
+        direction: at_least
+        calculation: recovered_faults / evictions
+      - id: kpi-net-token
+        name: Net input token reduction
+        unit: percentage
+        target: 40
+        direction: at_least
+        calculation: 1 - (paged_tokens / naive_tokens), cache-normalized
+      - id: kpi-touch-ratio
+        name: Rendered-token touch ratio
+        unit: percentage
+        target: 60
+        direction: at_least
+        calculation: touched_tokens / rendered_tokens
+
+  SLA:
+    declarative:
+      default:
+        name:
+          en: Corpus availability & release SLA
+        description:
+          en: Promises on corpus operations, not benchmark results.
+        dimensions:
+          - dimension: updateFrequency
+            objective: 1
+            unit: weeks
+            weight: 40
+            description: Regular corpus drops.
+          - dimension: timeToDetect
+            objective: 1
+            unit: days          # NOTE: SLA unit enum has NO 'hours' (SDK-validated); 24h = 1 day
+            weight: 35
+            description: Broken pins / divergent replays found by CI on main.
+          - dimension: errorRate
+            objective: 1
+            unit: percent
+            weight: 25
+            description: Conformance-vector failures tolerated per drop.
+    support:
+      email: corpus@ctxvm.dev
+      documentationURL: https://hub.ctxvm.dev/docs
+
+  dataQuality:
+    declarative:
+      default:
+        displayTitle:              # schema: array of language maps (doc shows lowercase string)
+          - en: Determinism-grade corpus quality
+        description: Every session replays byte-identically; no dangling pins or secrets.
+        dimensions:
+          - dimension: validity        # = replay determinism
+            objective: 100
+            unit: percentage
+            weight: 60
+          - dimension: completeness    # = no dangling pins/evict references
+            objective: 99
+            unit: percentage
+            weight: 25
+          - dimension: uniqueness      # = PII/secret-scan clean + session dedup
+            objective: 99
+            unit: percentage
+            weight: 15
+    # schema: executable is a NAMED OBJECT (doc falsely shows a flat array of entries);
+    # each entry is a DQDefinition; spec MUST be a YAML object even for type: Custom.
+    executable:
+      replayDeterminism:
+        type: Custom
+        version: 0.1.0
+        reference: https://ctxvm.dev/x-cabi/conformance
+        spec:
+          tool: ctxvm
+          command: ctxvm replay corpus/0.1/sessions
+          passCriterion: exit code 0 (byte-identical re-render)
+        dimensions:
+          - dimension: validity
+            objective: 100
+            unit: percentage
+            weight: 60
+      pinLint:
+        type: Custom
+        spec:
+          tool: ctxvm
+          command: ctxvm profile --lint corpus/0.1/sessions
+          passCriterion: zero dangling pins / unclaimed faults
+        dimensions:
+          - dimension: completeness
+            objective: 99
+            unit: percentage
+            weight: 25
+      redactionScan:
+        type: Custom
+        spec:
+          tool: ctxvm
+          command: ctxvm export --redact-scan corpus/0.1/sessions
+          passCriterion: zero secret/PII matches
+        dimensions:
+          - dimension: uniqueness
+            objective: 99
+            unit: percentage
+            weight: 15
+
+  dataAccess:
+    default:
+      name:
+        en: Download latest corpus drop
+      description:
+        en: Version-tagged JSONL (zstd), checksummed, plus Parquet mirror.
+      outputPortType: file
+      format: JSON           # NOTE: 'JSONL'/'Parquet' not in format enum — upstream PR pending
+      # x-format: jsonl+zstd
+      accessURL: https://hub.ctxvm.dev/corpus/0.1/corpus.jsonl.zst
+      hashType: SHA-256
+      checksum: TBD-at-release
+      documentationURL: https://hub.ctxvm.dev/docs/format
+    agent:
+      name:
+        en: Agent access to corpus
+      description:
+        en: MCP interface so agents can self-serve evaluation of the corpus.
+      outputPortType: AI
+      authenticationMethod: none
+      specification: MCP
+      format: MCP
+      specsURL: https://hub.ctxvm.dev/llms.txt
+      documentationURL: https://hub.ctxvm.dev/llms-full.txt
+
+  # schema: license is FLAT (no language-binding wrapper, though docs show license.en)
+  license:
+    scope:
+      definition: >-
+        Open-data (Apache-2.0/CC-BY-4.0 family) access with attribution; safe-harbor
+        redaction required before public contributions are accepted.
+      restrictions: >-
+        No redistribution of traces NOT passing the redaction scan; downstream users must
+        preserve checksum lineage of derived corpora.
+      permanent: true
+      exclusive: false
+      rights:
+        - Reproduction
+        - Display
+        - Distribution
+        - Adaptation
+    governance:
+      ownership: ctxvm Project (Linux Foundation umbrella target)
+      applicableLaws: Apache-2.0 for artifacts; CC-BY-4.0 for corpus content
+      audit: Acceptance contribution audits are public (PR-based)
+
+  # schema: dataHolder is FLAT (doc shows dataHolder.en wrapper)
+  dataHolder:
+    legalName: ctxvm Project
+    businessDomain: agent-infra
+    email: corpus@ctxvm.dev
+    URL: https://ctxvm.dev
