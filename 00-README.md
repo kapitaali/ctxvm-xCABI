@@ -11,7 +11,8 @@
 
 Build in progress (see `08-HANDOFF.md` §5 board): Rust M0 complete (codec + engine replay,
 28 tests green), xCABI RFC-0 + strict schema landed (55/55 conformance), metric simulator
-green (T3), ODPC hub artifacts proven (T5). Planning artifacts below remain the global index.
+green (T3), ODPC hub artifacts proven (T5), MCP shim + harness adapter designs landed
+(T6/T7, `design/`). Planning artifacts below remain the global index.
 
 ## What is decided
 
@@ -42,6 +43,7 @@ green (T3), ODPC hub artifacts proven (T5). Planning artifacts below remain the 
 | `benchmarks/metrics/` | **T3 metric reference impl**: `metrics.py` (07's four formulas + counterfactual baseline + CLI), fixtures (healthy/thrashing), 18 tests |
 | `hub/` | **T5 ODPC hub proof**: `catalog.yaml` (ODPC v1.0, SDK-built) + `index.html` — hub.ctxvm.dev as an ODPC repo; regen via `tools/build-hub.sh` |
 | `rust/` | Rust workspace (T1a–T1d complete: codec + engine + replay + conformance vectors; 28+ tests) |
+| `design/` | Integration designs: `mcp-shim.md` (T6 — callTool decorator contract) · `adapters.md` (T7 — OpenCode plugin + Vercel AI SDK middleware/tap, pinned anchors) |
 
 ## Task/report flow
 
