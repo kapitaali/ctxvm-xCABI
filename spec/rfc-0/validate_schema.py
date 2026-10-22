@@ -57,8 +57,13 @@ def main() -> int:
     failures: list[str] = []
     checked = 0
 
-    for name in VALIDATORS:
-        path = DIRS[0] / name
+    # Default corpus: the conformance vectors. Extra CLI args validate additional
+    # xCABI JSONL files (e.g. benchmark fixtures) under the same gate.
+    targets: list[tuple[str, Path]] = [(name, DIRS[0] / name) for name in VALIDATORS]
+    for arg in sys.argv[1:]:
+        targets.append((arg, Path(arg)))
+
+    for name, path in targets:
         for idx, line in enumerate(path.read_text().splitlines(), start=1):
             if not line.strip():
                 continue
@@ -68,7 +73,7 @@ def main() -> int:
             except jsonschema.ValidationError as e:
                 failures.append(f"{name}:{idx}: {e.message}")
 
-    print(f"positive: {checked} event lines validated across {len(VALIDATORS)} fixtures")
+    print(f"positive: {checked} event lines validated across {len(targets)} fixtures")
 
     for label, line in NEGATIVE_CASES:
         try:

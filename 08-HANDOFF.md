@@ -28,9 +28,9 @@ for any agent loop (OpenTelemetry playbook). Paging control ships later behind a
 **M0 COMPLETE (T1a–T1d done):** codec (strict JSONL, byte-identical vectors) + engine
 (page table, deterministic renderer) + replay w/ divergence detection + `replay` CLI.
 28 tests, 0 warnings.
-**Next frontier:** T3 (metric simulator over JSONL traces) + toolchain-free cards
-T2 (upstream issue drafts), T5 (ODPC hub proof), T6 (MCP tool-shim note), T7 (adapter
-survey). Rust M0 + RFC-0 done.
+**Next frontier:** toolchain-free cards only — T2 (upstream issue drafts), T5
+(ODPC hub proof), T6 (MCP tool-shim note), T7 (adapter survey). Then §6 terminal
+state. Rust M0 + RFC-0 + metric simulator (T3) done.
 
 ## §1. Workspace map
 
@@ -112,7 +112,7 @@ orchestrator task only).
 | T1c | Page table + deterministic renderer | L | T1b | **DONE** (RR-T1c-20261022; 10 core tests, determinism property green) |
 | T1d | Replay engine + conformance vectors crate | M | T1c | **DONE** (RR-T1d-20261022; `replay` CLI exit-1-on-divergence, M0 gate met) |
 | T2 | Upstream issue drafts (ODPS + CLI + templates) | S | — | OPEN |
-| T3 | Metric simulator reference impl (Python) | M | T1b | OPEN |
+| T3 | Metric simulator reference impl (Python) | M | T1b | **DONE** (RR-T3-20261022; 18/18 green, CLI verified, fixtures schema-PASS 108/108) |
 | T4 | xCABI RFC-0: spec md + JSON Schema | M | T1b | **DONE** (RR-T4-20261022; schema PASS 55/55 vs all fixtures) |
 | T5 | ODPD hub pipeline: ODPC catalog via odpc-build | S | T0 | OPEN |
 | T6 | MCP tool-shim design note | S | — | OPEN |

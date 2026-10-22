@@ -18,8 +18,14 @@ if [[ -x "$ROOT/venvs/odps/bin/open-data-products" ]]; then
 else
   PYA="$(command -v python3 || command -v python)"
   "$PYA" -m venv "$ROOT/venvs/odps"
-  "$ROOT/venvs/odps/bin/python" -m pip install --quiet --disable-pip-version-check open-data-products
+  "$ROOT/venvs/odps/bin/python" -m pip install --quiet --disable-pip-version-check open-data-products pytest
   log "venvs/odps built with $("$PYA" --version 2>&1)"
+fi
+# pytest joins venv A since T3 (card DoD runs `python -m pytest`); additive to an
+# existing venv, open-data-products untouched.
+if ! "$ROOT/venvs/odps/bin/python" -m pytest --version >/dev/null 2>&1; then
+  "$ROOT/venvs/odps/bin/python" -m pip install --quiet --disable-pip-version-check pytest
+  log "venvs/odps: pytest added"
 fi
 PYA_MAJOR="$("$ROOT/venvs/odps/bin/python" -c 'import platform; print(platform.python_version())')"
 case "$PYA_MAJOR" in
