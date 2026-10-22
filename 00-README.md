@@ -12,7 +12,8 @@
 Build in progress (see `08-HANDOFF.md` §5 board): Rust M0 complete (codec + engine replay,
 28 tests green), xCABI RFC-0 + strict schema landed (55/55 conformance), metric simulator
 green (T3), ODPC hub artifacts proven (T5), MCP shim + harness adapter designs landed
-(T6/T7, `design/`). Planning artifacts below remain the global index.
+(T6/T7, `design/`), upstream issue drafts ready (T2, `upstream/`). Board complete —
+see `reports/RR-BOARD-COMPLETE-20261022.md`.
 
 ## What is decided
 
@@ -59,10 +60,10 @@ status is updated in place. `contracts/` holds the ODCS v3.0.2 data contract (li
 2. ~~Author ODCS contract~~ **DONE** — `contract audit` fully green (`product audit`:
    `passed: true`, `contract_valid: true`, ODCS v3.0.2 lint via datacontract-cli 1.2.7).
    Details and tooling constraints in `06-odps-integration.md`.
-3. **Rust M0 spike: `ctxvm-core`** — page table + event log + deterministic renderer + golden vectors.
-4. File upstream ODPS/CLI issues: `hours` SLA-unit enum gap; JSONL/Parquet `dataAccess.format`
-   additions; doc-vs-schema drift; datacontract-cli python-version marker silently skipping
-   `[contracts]` on ≥3.13.
+3. ~~**Rust M0 spike: `ctxvm-core`**~~ **DONE** — page table + event log + deterministic
+   renderer + replay engine + conformance vectors; 28+ tests green (T1a–T1d).
+4. ~~File upstream ODPS/CLI issues~~ **Drafted & evidence-verified (T2)** — see
+   `upstream/issues-drafts.md`; filing venue + submission is an orchestrator follow-up.
 
 *Tooling: ODPS validation — `/tmp/opencode/ctxvm-venv/bin/open-data-products` (py3.14);
 contract validation/audit — `/tmp/opencode/odcs-venv/bin/` (py3.12, via conda env `ctxvm-odcs`).*

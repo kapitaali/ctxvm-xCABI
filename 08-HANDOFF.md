@@ -28,8 +28,8 @@ for any agent loop (OpenTelemetry playbook). Paging control ships later behind a
 **M0 COMPLETE (T1a–T1d done):** codec (strict JSONL, byte-identical vectors) + engine
 (page table, deterministic renderer) + replay w/ divergence detection + `replay` CLI.
 28 tests, 0 warnings.
-**Next frontier:** T2 done — the board (T0–T7) is fully complete; proceed directly to
-the §6 terminal state (board-complete report + next-task proposals, no new scope).
+**Next frontier:** BOARD COMPLETE (T0–T7 all DONE; see `reports/RR-BOARD-COMPLETE-20261022.md`).
+Stopped per §6 — awaiting orchestrator approval of proposed T8/T9/T10.
 
 ## §1. Workspace map
 
