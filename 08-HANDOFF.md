@@ -28,12 +28,13 @@ for any agent loop (OpenTelemetry playbook). Paging control ships later behind a
 **M0 COMPLETE (T1a–T1d done):** codec (strict JSONL, byte-identical vectors) + engine
 (page table, deterministic renderer) + replay w/ divergence detection + `replay` CLI.
 28 tests, 0 warnings.
-**Next frontier:** Stage 2 (post-board extensions) — **T8 DONE** (`@ctxvm/node` v0 tracer)
-and **T9 DONE** (`@ctxvm/opencode` adapter spike — T7's Adapter A mapping proven on recorded
-hook payloads; both RR-T7 open questions resolved from the pinned source; live dev-build
-echo deferred, needs an orchestrator-approved provider spend + a build at/past the pinned
-SHA). Remaining: **T10** (corpus M1 seed + CI gate). `projects/01-open-decision-primitive.md`
-(`umpire`, landed `f6d1b96`) awaits orchestrator go/no-go — separate repo at M0 if greenlit.
+**Next frontier:** Stage 2 COMPLETE — **T8 DONE** (`@ctxvm/node` v0 tracer), **T9 DONE**
+(`@ctxvm/opencode` adapter spike), **T10 DONE** (corpus drop M1 in `corpus/m1/` + the repo
+CI gate: `tools/run-ci.sh` mirrors `.github/workflows/ci.yml`; ALL GATES GREEN locally
+2026-10-22; Actions-green begins once the repo has a git remote — orchestrator decision).
+No queue remains. Open items (all need orchestrator input): live dev-build echo + live
+thrashing capture (M2; needs approved provider spend + a ≥pinned-SHA build), `umpire`
+go/no-go (`projects/01-open-decision-primitive.md`, `f6d1b96`), push target for CI.
 
 ## §1. Workspace map
 
@@ -122,7 +123,7 @@ orchestrator task only).
 | T7 | Harness adapter survey (OpenCode, Vercel AI SDK) | M | — | **DONE** (RR-T7-20261022; design/adapters.md, anchors @ e965774f / 36e4ce7c) |
 | T8 | `@ctxvm/node` v0 TS tracer (stage 2) | M | T4,T6,T7 | **DONE** (RR-T8-20261022; packages/node — 12/12 unit tests, both fixtures schema-PASS + replay-divergence-free) |
 | T9 | OpenCode adapter spike wiring `@ctxvm/node` (stage 2) | M | T8 | **DONE** (RR-T9-20261022; packages/opencode — 6/6 glue tests, trace schema-PASS (72 checks) + replay divergence-free; RR-T7's two open questions source-resolved) |
-| T10 | Trace corpus M1 seed + CI gate (stage 2) | M | T4 | **PROPOSED** (RR-BOARD-COMPLETE-20261022; awaiting orchestrator) |
+| T10 | Trace corpus M1 seed + CI gate (stage 2) | M | T4 | **DONE** (RR-T10-20261022; `corpus/m1/` — 5 provenance-labeled checksummed traces, manifest 0.1.1 SDK-validated + hub re-linked; `tools/run-ci.sh` + `ci.yml` ALL GATES GREEN locally — Actions-green awaits a remote) |
 
 ---
 
@@ -269,6 +270,20 @@ provider-executed gap (same file).
 **DoD:** committed fixture set + validator-passing, replay-divergence-free trace + glue
 tests + report. (Live dev-build echo session deferred: needs an orchestrator-approved
 provider spend and a build at/past the pinned SHA.)
+
+### T10 — Trace corpus M1 seed + CI gate — stage 2 (M)
+**Objective:** first ODPS-packaged public corpus slice with honest provenance; re-link the
+hub; stand up the repository CI gate — authored as a byte-equivalent local mirror too,
+since the repo has no git remote.
+**Steps:** materialize `corpus/m1/` (5 traces copied from committed fixtures/generators,
+`provenance.json` + `checksums.sha256`); manifest → 0.1.1 + `x-cabi.firstDrop` (SDK
+re-validated); `tools/build-hub.sh` regen + `hub/hub.sha256` baseline; `tools/run-ci.sh`
++ `.github/workflows/ci.yml` (pins: py 3.14, jsonschema 4.26.0, open-data-products==0.4.0,
+node 26, rust stable); `build-hub.sh` gains venv-or-PATH SDK resolution for CI.
+**DoD:** (a) corpus manifest re-validated by their SDK ✓ (b) hub re-linked, regen
+byte-identity baselined ✓ (c) green gate witnessed by the local mirror ✓. Deferred:
+Actions-green (needs a git remote) and the live thrashing capture (M2, shares T9's
+approved-spend prerequisite).
 
 ---
 

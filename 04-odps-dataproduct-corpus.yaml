@@ -4,6 +4,7 @@
 #   valid: true · compliance_level: full · production_ready: true
 # AUDIT 2026-10-22: product audit PASSED (product_valid + contract_valid, ODCS v3.0.2 lint
 # via datacontract-cli 1.2.7). Details: 06-odps-integration.md
+# RE-VALIDATED 2026-10-22 for the M1 seed drop (productVersion 0.1.1, firstDrop corpus/m1).
 
 schema: https://opendataproducts.org/v4.1/schema/odps.yaml
 version: "4.1"   # MUST be quoted — unquoted 4.1 parses as YAML float and fails schema
@@ -22,6 +23,7 @@ product:
     traceFormatVersion: 0.1
     contentSchema: https://ctxvm.dev/x-cabi/schema/0.1
     conformanceVectors: https://hub.ctxvm.dev/corpus/0.1/conformance.jsonl
+    firstDrop: corpus/m1
 
   details:
     en:
@@ -33,8 +35,10 @@ product:
       description: >-
         A curated, checksummed, versioned collection of deterministic agent-session traces
         (pages, renders, evictions, faults) plus benchmark suites and golden conformance
-        vectors. Replays byte-identically per the xCABI invariants.
-      productVersion: 0.1.0
+        vectors. Replays byte-identically per the xCABI invariants. First seed drop (M1):
+        corpus/m1 — three reference/adapter-derived traces plus two tracer-generated
+        sessions, all schema-validated and replay-divergence-free; provenance-labeled.
+      productVersion: 0.1.1
       productSeries: ctxvm open corpus
       visibility: public
       status: draft

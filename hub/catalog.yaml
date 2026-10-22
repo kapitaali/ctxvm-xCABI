@@ -12,13 +12,16 @@ catalog:
   productReferences:
   - id: ctxvm-corpus-0.1
     productID: ctxvm-corpus-0.1
-    productVersion: 0.1.0
+    productVersion: 0.1.1
     name:
       en: ctxvm Trace Corpus
     description:
-      en: A curated, checksummed, versioned collection of deterministic agent-session
-        traces (pages, renders, evictions, faults) plus benchmark suites and golden
-        conformance vectors. Replays byte-identically per the xCABI invariants.
+      en: "A curated, checksummed, versioned collection of deterministic agent-session\
+        \ traces (pages, renders, evictions, faults) plus benchmark suites and golden\
+        \ conformance vectors. Replays byte-identically per the xCABI invariants.\
+        \ First seed drop (M1): corpus/m1 \u2014 three reference/adapter-derived traces\
+        \ plus two tracer-generated sessions, all schema-validated and replay-divergence-free;\
+        \ provenance-labeled."
     productModel:
       standard: ODPS
       version: '4.1'

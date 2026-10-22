@@ -12,8 +12,12 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST="04-odps-dataproduct-corpus.yaml"
-SDK="$ROOT/venvs/odps/bin/open-data-products"
-PY="$ROOT/venvs/odps/bin/python"
+# Local dev: repo venvs. CI (no venvs): fall back to PATH (pip-installed open-data-products).
+SDK="${CTXVM_ODPS_SDK:-$ROOT/venvs/odps/bin/open-data-products}"
+PY="${CTXVM_ODPS_PY:-$ROOT/venvs/odps/bin/python}"
+command -v "$SDK" >/dev/null 2>&1 || SDK="$(command -v open-data-products || true)"
+command -v "$PY" >/dev/null 2>&1 || PY="$(command -v python3 || true)"
+[ -n "$SDK" ] && [ -n "$PY" ] || { echo "[ctxvm-hub] open-data-products SDK not found (venv or PATH)" >&2; exit 1; }
 log() { printf '[ctxvm-hub] %s\n' "$*"; }
 
 # 1) source gate — the manifest must still validate against the ODPS schema

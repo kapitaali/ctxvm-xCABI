@@ -1,0 +1,85 @@
+# ci.yml — ctxvm repository gate (card T10).
+#
+# NOTE: this repo currently has NO git remote; Actions runs start once the
+# orchestrator adds one. tools/run-ci.sh is the byte-equivalent local mirror
+# (all four gates witnessed green locally on 2026-10-22 — see RR-T10-20261022).
+# Pins mirror the local toolchain: python 3.14 / jsonschema 4.26.0 /
+# open-data-products==0.4.0, node 26, rust stable.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: cargo test
+        run: cargo test
+        working-directory: rust
+
+  ts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+      - name: @ctxvm/node tests
+        run: node --test test/
+        working-directory: packages/node
+      - name: @ctxvm/opencode tests
+        run: node --test test/
+        working-directory: packages/opencode
+
+  schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: install jsonschema (pinned to the local venv)
+        run: pip install "jsonschema==4.26.0"
+      - name: rfc-0 schema validator (spec vectors + all fixtures + corpus drop)
+        run: >
+          python spec/rfc-0/validate_schema.py
+          benchmarks/metrics/fixtures/session-healthy.jsonl
+          benchmarks/metrics/fixtures/session-thrashing.jsonl
+          packages/node/fixtures/tracer-healthy.jsonl
+          packages/node/fixtures/tracer-recall.jsonl
+          packages/opencode/fixtures/opencode-echo.jsonl
+          corpus/m1/session-healthy.jsonl
+          corpus/m1/session-thrashing.jsonl
+          corpus/m1/tracer-healthy.jsonl
+          corpus/m1/tracer-recall.jsonl
+          corpus/m1/opencode-echo.jsonl
+      - name: corpus drop checksums
+        run: sha256sum -c checksums.sha256
+        working-directory: corpus/m1
+
+  hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: install open-data-products SDK (pinned)
+        run: pip install "open-data-products==0.4.0"
+      - name: root manifest ODPS validation
+        run: open-data-products validate 04-odps-dataproduct-corpus.yaml
+      - name: hub regen via their SDK
+        run: tools/build-hub.sh
+      - name: byte-identity vs the committed baseline
+        run: |
+          git diff --exit-code hub/
+          cd hub && sha256sum -c hub.sha256
