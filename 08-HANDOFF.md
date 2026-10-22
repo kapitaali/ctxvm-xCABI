@@ -28,10 +28,11 @@ for any agent loop (OpenTelemetry playbook). Paging control ships later behind a
 **M0 COMPLETE (T1a–T1d done):** codec (strict JSONL, byte-identical vectors) + engine
 (page table, deterministic renderer) + replay w/ divergence detection + `replay` CLI.
 28 tests, 0 warnings.
-**Next frontier:** BOARD COMPLETE (T0–T7 all DONE; `reports/RR-BOARD-COMPLETE-20261022.md`).
-Stage 2 approved by the orchestrator (2026-10-22): **T8 DONE** (`@ctxvm/node` v0 mirror
-tracer — 12 unit tests; both fixtures schema-PASS and replay-divergence-free). Next: T9
-(OpenCode adapter spike), T10 (corpus M1 + CI). `projects/01-open-decision-primitive.md`
+**Next frontier:** Stage 2 (post-board extensions) — **T8 DONE** (`@ctxvm/node` v0 tracer)
+and **T9 DONE** (`@ctxvm/opencode` adapter spike — T7's Adapter A mapping proven on recorded
+hook payloads; both RR-T7 open questions resolved from the pinned source; live dev-build
+echo deferred, needs an orchestrator-approved provider spend + a build at/past the pinned
+SHA). Remaining: **T10** (corpus M1 seed + CI gate). `projects/01-open-decision-primitive.md`
 (`umpire`, landed `f6d1b96`) awaits orchestrator go/no-go — separate repo at M0 if greenlit.
 
 ## §1. Workspace map
@@ -120,7 +121,7 @@ orchestrator task only).
 | T6 | MCP tool-shim design note | S | — | **DONE** (RR-T6-20261022, commit `a835af3`; design/mcp-shim.md 145/180 lines) |
 | T7 | Harness adapter survey (OpenCode, Vercel AI SDK) | M | — | **DONE** (RR-T7-20261022; design/adapters.md, anchors @ e965774f / 36e4ce7c) |
 | T8 | `@ctxvm/node` v0 TS tracer (stage 2) | M | T4,T6,T7 | **DONE** (RR-T8-20261022; packages/node — 12/12 unit tests, both fixtures schema-PASS + replay-divergence-free) |
-| T9 | OpenCode adapter spike wiring `@ctxvm/node` (stage 2) | M | T8 | **PROPOSED** (RR-BOARD-COMPLETE-20261022; awaiting orchestrator) |
+| T9 | OpenCode adapter spike wiring `@ctxvm/node` (stage 2) | M | T8 | **DONE** (RR-T9-20261022; packages/opencode — 6/6 glue tests, trace schema-PASS (72 checks) + replay divergence-free; RR-T7's two open questions source-resolved) |
 | T10 | Trace corpus M1 seed + CI gate (stage 2) | M | T4 | **PROPOSED** (RR-BOARD-COMPLETE-20261022; awaiting orchestrator) |
 
 ---
@@ -255,6 +256,19 @@ committed fixtures via `test/generate.ts`.
 **DoD:** unit suite green (`npm test` in packages/node); two fixture traces PASS the repo
 schema validator AND are replay-divergence-free (`cargo replay`, exit 0, both); report +
 commit per §4.
+
+### T9 — OpenCode adapter spike — stage 2 (M)
+**Objective:** realize the T7 "Adapter A" mapping in an OpenCode plugin; resolve RR-T7's
+two open questions by reading the pinned source; produce a validated session trace.
+Mirror-only.
+**Steps:** implement `packages/opencode/` handler-per-hook against the pinned payload
+contracts (`anomalyco/opencode` @ `e965774f`); reconstruct one echo-session hook-payload
+fixture (realistic shapes); generate the xCABI trace; resolve
+`toolOutput.truncate` reach-through (`runner/step.ts` + `core/tool-output.ts`) and the
+provider-executed gap (same file).
+**DoD:** committed fixture set + validator-passing, replay-divergence-free trace + glue
+tests + report. (Live dev-build echo session deferred: needs an orchestrator-approved
+provider spend and a build at/past the pinned SHA.)
 
 ---
 

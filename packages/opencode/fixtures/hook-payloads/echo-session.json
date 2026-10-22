@@ -1,0 +1,354 @@
+[
+  {
+    "hook": "session.context",
+    "payload": {
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "model": { "providerID": "anthropic", "modelID": "claude-sonnet-4-5" },
+      "system": [{ "type": "text", "text": "You are a careful coding agent." }],
+      "messages": [
+        {
+          "role": "user",
+          "content": [{ "type": "text", "text": "Read src/echo/README.md and show me exactly what it says." }]
+        }
+      ],
+      "options": { "temperature": 0.7, "maxOutputTokens": 8192 },
+      "tools": {
+        "echo_read": {
+          "description": "Echo a file's contents verbatim",
+          "input": { "type": "object", "properties": { "path": { "type": "string" } } }
+        }
+      }
+    }
+  },
+  {
+    "hook": "tool.execute.before",
+    "payload": {
+      "tool": "echo_read",
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "messageID": "msg_01",
+      "id": "call_01",
+      "input": { "path": "src/echo/README.md" }
+    }
+  },
+  {
+    "hook": "tool.execute.after",
+    "payload": {
+      "tool": "echo_read",
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "messageID": "msg_01",
+      "id": "call_01",
+      "input": { "path": "src/echo/README.md" },
+      "status": "completed",
+      "result": {
+        "content": [{ "type": "text", "text": "# echo demo\nReads a file and repeats its contents verbatim.\n" }]
+      }
+    }
+  },
+  {
+    "hook": "session.context",
+    "payload": {
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "model": { "providerID": "anthropic", "modelID": "claude-sonnet-4-5" },
+      "system": [{ "type": "text", "text": "You are a careful coding agent." }],
+      "messages": [
+        {
+          "role": "user",
+          "content": [{ "type": "text", "text": "Read src/echo/README.md and show me exactly what it says." }]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "Reading src/echo/README.md now." },
+            { "type": "tool-call", "toolCallId": "call_01", "toolName": "echo_read", "input": { "path": "src/echo/README.md" } }
+          ]
+        }
+      ],
+      "options": { "temperature": 0.7, "maxOutputTokens": 8192 },
+      "tools": {
+        "echo_read": {
+          "description": "Echo a file's contents verbatim",
+          "input": { "type": "object", "properties": { "path": { "type": "string" } } }
+        }
+      }
+    }
+  },
+  {
+    "hook": "tool.execute.before",
+    "payload": {
+      "tool": "echo_read",
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "messageID": "msg_03",
+      "id": "call_02",
+      "input": { "path": "src/echo/README.md" }
+    }
+  },
+  {
+    "hook": "tool.execute.after",
+    "payload": {
+      "tool": "echo_read",
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "messageID": "msg_03",
+      "id": "call_02",
+      "input": { "path": "src/echo/README.md" },
+      "status": "completed",
+      "result": {
+        "content": [{ "type": "text", "text": "# echo demo\nReads a file and repeats its contents verbatim.\n" }]
+      }
+    }
+  },
+  {
+    "hook": "session.context",
+    "payload": {
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "model": { "providerID": "anthropic", "modelID": "claude-sonnet-4-5" },
+      "system": [{ "type": "text", "text": "You are a careful coding agent." }],
+      "messages": [
+        {
+          "role": "user",
+          "content": [{ "type": "text", "text": "Read src/echo/README.md and show me exactly what it says." }]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "Reading src/echo/README.md now." },
+            { "type": "tool-call", "toolCallId": "call_01", "toolName": "echo_read", "input": { "path": "src/echo/README.md" } }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": [
+            {
+              "type": "tool-result",
+              "toolCallId": "call_01",
+              "toolName": "echo_read",
+              "output": [{ "type": "text", "text": "# echo demo\nReads a file and repeats its contents verbatim.\n" }]
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "The file just echoes contents. Re-checking src/echo/README.md to be sure." },
+            { "type": "tool-call", "toolCallId": "call_02", "toolName": "echo_read", "input": { "path": "src/echo/README.md" } }
+          ]
+        }
+      ],
+      "options": { "temperature": 0.7, "maxOutputTokens": 8192 },
+      "tools": {
+        "echo_read": {
+          "description": "Echo a file's contents verbatim",
+          "input": { "type": "object", "properties": { "path": { "type": "string" } } }
+        }
+      }
+    }
+  },
+  {
+    "hook": "tool.execute.before",
+    "payload": {
+      "tool": "echo_read",
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "messageID": "msg_05",
+      "id": "call_03",
+      "input": { "path": "src/echo/README.md" }
+    }
+  },
+  {
+    "hook": "tool.execute.after",
+    "payload": {
+      "tool": "echo_read",
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "messageID": "msg_05",
+      "id": "call_03",
+      "input": { "path": "src/echo/README.md" },
+      "status": "completed",
+      "result": {
+        "content": [
+          { "type": "text", "text": "# echo demo\nReads a file and repeats its contents verbatim.\n\n## Changelog\n- v2: output format updated\n" }
+        ]
+      }
+    }
+  },
+  {
+    "hook": "session.context",
+    "payload": {
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "model": { "providerID": "anthropic", "modelID": "claude-sonnet-4-5" },
+      "system": [{ "type": "text", "text": "You are a careful coding agent." }],
+      "messages": [
+        {
+          "role": "user",
+          "content": [{ "type": "text", "text": "Read src/echo/README.md and show me exactly what it says." }]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "Reading src/echo/README.md now." },
+            { "type": "tool-call", "toolCallId": "call_01", "toolName": "echo_read", "input": { "path": "src/echo/README.md" } }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": [
+            {
+              "type": "tool-result",
+              "toolCallId": "call_01",
+              "toolName": "echo_read",
+              "output": [{ "type": "text", "text": "# echo demo\nReads a file and repeats its contents verbatim.\n" }]
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "The file just echoes contents. Re-checking src/echo/README.md to be sure." },
+            { "type": "tool-call", "toolCallId": "call_02", "toolName": "echo_read", "input": { "path": "src/echo/README.md" } }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": [
+            {
+              "type": "tool-result",
+              "toolCallId": "call_02",
+              "toolName": "echo_read",
+              "output": [{ "type": "text", "text": "# echo demo\nReads a file and repeats its contents verbatim.\n" }]
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "Hmm — the contents differ from what I saw? Refreshing src/echo/README.md once more." },
+            { "type": "tool-call", "toolCallId": "call_03", "toolName": "echo_read", "input": { "path": "src/echo/README.md" } }
+          ]
+        }
+      ],
+      "options": { "temperature": 0.7, "maxOutputTokens": 8192 },
+      "tools": {
+        "echo_read": {
+          "description": "Echo a file's contents verbatim",
+          "input": { "type": "object", "properties": { "path": { "type": "string" } } }
+        }
+      }
+    }
+  },
+  {
+    "hook": "tool.execute.before",
+    "payload": {
+      "tool": "echo_read",
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "messageID": "msg_07",
+      "id": "call_04",
+      "input": { "path": "src/echo/missing.json" }
+    }
+  },
+  {
+    "hook": "tool.execute.after",
+    "payload": {
+      "tool": "echo_read",
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "messageID": "msg_07",
+      "id": "call_04",
+      "input": { "path": "src/echo/missing.json" },
+      "status": "error",
+      "error": { "message": "ENOENT: no such file or directory, open 'src/echo/missing.json'" }
+    }
+  },
+  {
+    "hook": "session.context",
+    "payload": {
+      "sessionID": "ses_9f4e2c8a71bc",
+      "agent": "build",
+      "model": { "providerID": "anthropic", "modelID": "claude-sonnet-4-5" },
+      "system": [{ "type": "text", "text": "You are a careful coding agent." }],
+      "messages": [
+        {
+          "role": "user",
+          "content": [{ "type": "text", "text": "Read src/echo/README.md and show me exactly what it says." }]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "Reading src/echo/README.md now." },
+            { "type": "tool-call", "toolCallId": "call_01", "toolName": "echo_read", "input": { "path": "src/echo/README.md" } }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": [
+            {
+              "type": "tool-result",
+              "toolCallId": "call_01",
+              "toolName": "echo_read",
+              "output": [{ "type": "text", "text": "# echo demo\nReads a file and repeats its contents verbatim.\n" }]
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "The file just echoes contents. Re-checking src/echo/README.md to be sure." },
+            { "type": "tool-call", "toolCallId": "call_02", "toolName": "echo_read", "input": { "path": "src/echo/README.md" } }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": [
+            {
+              "type": "tool-result",
+              "toolCallId": "call_02",
+              "toolName": "echo_read",
+              "output": [{ "type": "text", "text": "# echo demo\nReads a file and repeats its contents verbatim.\n" }]
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "Hmm — the contents differ from what I saw? Refreshing src/echo/README.md once more." },
+            { "type": "tool-call", "toolCallId": "call_03", "toolName": "echo_read", "input": { "path": "src/echo/README.md" } }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": [
+            {
+              "type": "tool-result",
+              "toolCallId": "call_03",
+              "toolName": "echo_read",
+              "output": [
+                { "type": "text", "text": "# echo demo\nReads a file and repeats its contents verbatim.\n\n## Changelog\n- v2: output format updated\n" }
+              ]
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "Attempting to read a cfg file the session does not have." },
+            { "type": "tool-call", "toolCallId": "call_04", "toolName": "echo_read", "input": { "path": "src/echo/missing.json" } }
+          ]
+        }
+      ],
+      "options": { "temperature": 0.7, "maxOutputTokens": 8192 },
+      "tools": {
+        "echo_read": {
+          "description": "Echo a file's contents verbatim",
+          "input": { "type": "object", "properties": { "path": { "type": "string" } } }
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "name": "@ctxvm/opencode",
+  "version": "0.0.1",
+  "private": true,
+  "description": "T9 spike — OpenCode plugin wiring @ctxvm/node into native hook domains (mirror-only, T7 Adapter A).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "scripts": {
+    "test": "node --test test/",
+    "gen": "node test/driver.ts"
+  }
+}

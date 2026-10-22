@@ -15,7 +15,9 @@ green (T3), ODPC hub artifacts proven (T5), MCP shim + harness adapter designs l
 (T6/T7, `design/`), upstream issue drafts ready (T2, `upstream/`). Board complete —
 see `reports/RR-BOARD-COMPLETE-20261022.md`. **Extension stage 2:** `@ctxvm/node` v0
 mirror tracer DONE (T8 — 12 unit tests; both committed fixtures pass the schema gate
-and are replay-divergence-free); T9 (OpenCode adapter spike) + T10 (corpus M1 + CI) proposed.
+and are replay-divergence-free); T9 adapter spike DONE (`@ctxvm/opencode` — recorded-
+payload replay validated; RR-T7's two open questions source-resolved; live dev-build echo
+deferred); **T10 (corpus M1 + CI) remains** — see `reports/RR-T9-20261022.md`.
 
 ## What is decided
 
@@ -50,6 +52,7 @@ and are replay-divergence-free); T9 (OpenCode adapter spike) + T10 (corpus M1 + 
 | `projects/` | Standalone project specs to be *implemented with* this stack (not framework features; orchestrator go/no-go) — starts with `01-open-decision-primitive.md` (`umpire`, open JEV-style typed decision primitive) |
 | `design/` | Integration designs: `mcp-shim.md` (T6 — callTool decorator contract) · `adapters.md` (T7 — OpenCode plugin + Vercel AI SDK middleware/tap, pinned anchors) |
 | `packages/node/` | **T8 tracer**: `@ctxvm/node` v0 — TS RFC-0 JSONL mirror tracer (zero runtime deps, Node ≥22.6; sources run via type stripping). Gates in-dir: `npm test / gen / validate / replay` |
+| `packages/opencode/` | **T9 spike**: `@ctxvm/opencode` — OpenCode plugin (T7 Adapter A) wiring `@ctxvm/node` via pinned hook contracts (e965774f); recorded echo-session payloads → validated, replay-clean trace (`npm test / gen` in-dir) |
 
 ## Task/report flow
 
