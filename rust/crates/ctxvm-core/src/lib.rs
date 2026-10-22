@@ -14,10 +14,12 @@
 //! same-turn conflicts → later stream event wins · pins carry no turn (v0).
 //!
 //! TODO(T1d): replay API + recorded-fact divergence detection (`page.render`,
-//! `turn.render` cross-checks) on top of this module.
+//! `turn.render` cross-checks) on top of this module. → landed: `module replay`.
 
 pub mod page_table;
 pub mod render;
+pub mod replay;
 
 pub use page_table::{PageKey, PageTrack, Playback, Violation, ViolationKind};
+pub use replay::{replay, Divergence, ReplayReport};
 pub use render::{derive_projection, Slot, TurnProjection, TurnTally};

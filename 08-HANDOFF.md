@@ -24,9 +24,12 @@ for any agent loop (OpenTelemetry playbook). Paging control ships later behind a
 **Current state (2026-10-22):** planning artifacts complete; ODPS manifest + ODCS contract
 **empirically validated green**; repo initialized (git main); persistent local venvs under
 `venvs/`; Rust toolchain user-provided (cargo/rustc 1.99.1 — non-login shells need
-`. "$HOME/.cargo/env"` once per invocation); T1a scaffold green.
-**Next frontier:** T1d (replay + divergence detection = the M0 gate) → then spec/
-measurement cards T4/T3; parallel non-Rust cards T2/T5/T6 remain open.
+`. "$HOME/.cargo/env"` once per invocation).
+**M0 COMPLETE (T1a–T1d done):** codec (strict JSONL, byte-identical vectors) + engine
+(page table, deterministic renderer) + replay w/ divergence detection + `replay` CLI.
+28 tests, 0 warnings.
+**Next frontier:** Rust M0 done → T4 (RFC-0 absorbing the locked timing/ordering tables),
+T3 (metric simulator), and toolchain-free cards T2/T5/T6/T7.
 
 ## §1. Workspace map
 
@@ -106,7 +109,7 @@ orchestrator task only).
 | T1a | Rust workspace scaffold (crates only) | S | T0 | **DONE** (RR-T1a-20261022 + RESOLUTION; cargo 1.99.1, 4/4 tests green) |
 | T1b | Event model + JSONL codec + roundtrip vectors | M | T1a | **DONE** (RR-T1b-20261022; 15 tests green, vectors byte-identical) |
 | T1c | Page table + deterministic renderer | L | T1b | **DONE** (RR-T1c-20261022; 10 core tests, determinism property green) |
-| T1d | Replay engine + conformance vectors crate | M | T1c | OPEN |
+| T1d | Replay engine + conformance vectors crate | M | T1c | **DONE** (RR-T1d-20261022; `replay` CLI exit-1-on-divergence, M0 gate met) |
 | T2 | Upstream issue drafts (ODPS + CLI + templates) | S | — | OPEN |
 | T3 | Metric simulator reference impl (Python) | M | T1b | OPEN |
 | T4 | xCABI RFC-0: spec md + JSON Schema | M | T1b | OPEN |

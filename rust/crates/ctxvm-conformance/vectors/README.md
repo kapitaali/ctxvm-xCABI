@@ -32,3 +32,13 @@ reproduce exactly these lines.
 - `cargo test -p ctxvm-conformance` (byte-identity + per-line + 9-type coverage)
 - strictness: unknown types, unknown fields, and float token counts are hard errors
   (enforced in `ctxvm-codec`; the serde-internal-tagged silent drop is neutralized there)
+
+## Replay fixtures (T1d)
+
+- **`session-clean.jsonl`** — a full mini-session (declare ×3, renders turns 0–3 with
+  an evict@1 + fault@2 cycle, `turn.render` tallies, `call.meta`). Replay-proved:
+  every recorded fact is derived from decisions; `replay` CLI exits 0.
+- **`session-divergent.jsonl`** — the same session with two engineered lies:
+  `turn.render@1` claims 1460 resident (derived: 760) and `page.render@3` claims a
+  re-materialized page stayed stubbed. Replay reports exactly those two divergences;
+  `replay` CLI exits 1 with precise numbers on stdout.

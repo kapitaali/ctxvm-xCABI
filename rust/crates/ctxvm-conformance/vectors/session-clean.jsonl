@@ -1,0 +1,22 @@
+{"type":"page.declare","page":{"id":{"logicalRef":"file:src/auth.ts","contentHash":"sha256:a1"},"kind":"file","tokens":700}}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"kind":"tool_result","tokens":8200}}
+{"type":"page.declare","page":{"id":{"logicalRef":"summary:t0","contentHash":"sha256:c3"},"kind":"summary","tokens":60}}
+{"type":"page.render","turn":0,"page":{"logicalRef":"file:src/auth.ts","contentHash":"sha256:a1"},"mode":"full"}
+{"type":"page.render","turn":0,"page":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"mode":"full"}
+{"type":"page.render","turn":0,"page":{"logicalRef":"summary:t0","contentHash":"sha256:c3"},"mode":"full"}
+{"type":"turn.render","turn":0,"residentTokens":8960,"evictedTokens":0,"headroom":111040}
+{"type":"page.evict","turn":1,"page":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"stubText":"[Paged out: read src/auth/session.ts (8.2k tok, 187 lines).\n Re-call read_file(path=\"src/auth/session.ts\") to re-materialize.]"}
+{"type":"page.render","turn":1,"page":{"logicalRef":"file:src/auth.ts","contentHash":"sha256:a1"},"mode":"full"}
+{"type":"page.render","turn":1,"page":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"mode":"stub"}
+{"type":"page.render","turn":1,"page":{"logicalRef":"summary:t0","contentHash":"sha256:c3"},"mode":"full"}
+{"type":"turn.render","turn":1,"residentTokens":760,"evictedTokens":82,"headroom":114240}
+{"type":"page.fault","turn":2,"page":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"source":"tool_recall","latencyMs":180}
+{"type":"page.render","turn":2,"page":{"logicalRef":"file:src/auth.ts","contentHash":"sha256:a1"},"mode":"full"}
+{"type":"page.render","turn":2,"page":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"mode":"stub"}
+{"type":"page.render","turn":2,"page":{"logicalRef":"summary:t0","contentHash":"sha256:c3"},"mode":"full"}
+{"type":"turn.render","turn":2,"residentTokens":760,"evictedTokens":82,"headroom":114240}
+{"type":"page.render","turn":3,"page":{"logicalRef":"file:src/auth.ts","contentHash":"sha256:a1"},"mode":"full"}
+{"type":"page.render","turn":3,"page":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"mode":"full"}
+{"type":"page.render","turn":3,"page":{"logicalRef":"summary:t0","contentHash":"sha256:c3"},"mode":"full"}
+{"type":"turn.render","turn":3,"residentTokens":8960,"evictedTokens":0,"headroom":111040}
+{"type":"call.meta","turn":3,"provider":"openai","cacheEstimate":{"estHitTokens":8000,"estMissTokens":960,"providerReported":false},"latencyMs":1240}

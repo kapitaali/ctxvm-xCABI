@@ -7,3 +7,4 @@
 | RR-T1a-20261022 (RESOLUTION) | T1a | DONE: user installed global cargo/rustc 1.99.1; `cargo test` 4/4 green; note: non-login shells need `. "$HOME/.cargo/env"` |
 | RR-T1b-20261022 | T1b | 9-type event model + strict JSONL codec (allowlist gate; floats/unknown-fields hard errors) + 10-line golden vectors roundtripping byte-identical; 15 tests green, 0 warnings |
 | RR-T1c-20261022 | T1c | Playback page-table state machine + deterministic renderer (slots/tallies, verbatim stubs); locked effect-timing + ordering rules; 4 hand-summed scenarios + byte-level determinism property; core README; 24 tests total, 0 warnings |
+| RR-T1d-20261022 | T1d | M0 GATE MET: `replay()` static fact-checking (3 divergence kinds) + session-clean/divergent fixtures + `replay` CLI (exit 0/1/2); 28 tests, 0 warnings |
