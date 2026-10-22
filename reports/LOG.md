@@ -8,3 +8,4 @@
 | RR-T1b-20261022 | T1b | 9-type event model + strict JSONL codec (allowlist gate; floats/unknown-fields hard errors) + 10-line golden vectors roundtripping byte-identical; 15 tests green, 0 warnings |
 | RR-T1c-20261022 | T1c | Playback page-table state machine + deterministic renderer (slots/tallies, verbatim stubs); locked effect-timing + ordering rules; 4 hand-summed scenarios + byte-level determinism property; core README; 24 tests total, 0 warnings |
 | RR-T1d-20261022 | T1d | M0 GATE MET: `replay()` static fact-checking (3 divergence kinds) + session-clean/divergent fixtures + `replay` CLI (exit 0/1/2); 28 tests, 0 warnings |
+| RR-T4-20261022 | T4 | RFC-0 spec + strict 2020-12 JSON Schema + validator; three-way cross-validation 55/55 PASS (50 vector lines + 5 negative gates); open questions parked for RFC-1 |

@@ -37,6 +37,7 @@ spec drafts, API sketches, and standards-integration artifacts produced in plann
 | `06-odps-integration.md` | ODPS/ODPC/ODPV findings, frictions, upstream engagement list |
 | `07-benchmarks-go-no-go.md` | Benchmark suites, metric definitions, M0 pass/fail gates |
 | `08-HANDOFF.md` | **Master agent handoff**: rules of engagement, reporting protocol, task board (T0–T7). Hand this file to any agent to continue the work |
+| `spec/rfc-0/` | **xCABI RFC-0** (per `08` card T4): `RFC-0-xCABI.md` (normative semantics, timing + ordering tables, replay contract) · `x-cabi.schema-v0.json` (strict JSON Schema) · `validate_schema.py` (55-check conformance validator over all vector fixtures) |
 
 ## Task/report flow
 
