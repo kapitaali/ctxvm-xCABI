@@ -21,7 +21,7 @@ packaged as ODPS/ODPC-native open data products. `ctxvm` / `xCABI` are working n
 | **standard (RFC-0)** | `spec/rfc-0/` — normative semantics + strict JSON Schema; conformance **PASS (320 checks)** over 15 fixtures incl. both corpus drops (re-witnessed 2026-10-23) |
 | **measurement** | `corpus/m1/` — public-trace seed (5 provenance-labeled, checksummed traces) · **`corpus/m2/` — first live harness captures** (echo + sustained-pressure, free-tier model, USD 0) · `benchmarks/metrics/` reference impl (18 tests) · ODPS manifest v0.2.0 (`x-cabi.firstDrop`/`latestDrop`) validated by SDK 0.4.0 · `hub/` ODPC catalog, regen byte-identity baselined |
 | **instrumentation (stage 2)** | `packages/node/` — `@ctxvm/node` mirror tracer (12 tests) · `packages/opencode/` — adapter spike against pinned hook contracts + **live v2 promise-plugin wiring** (`live/ctxvm.ts`, 8 tests) |
-| **CI** | `.github/workflows/ci.yml` (4 jobs: rust / ts / schema+corpus / hub parity) — **Actions green** 2026-10-23 (4/4 jobs) and re-witnessed locally for the M2 drop |
+| **CI** | `.github/workflows/ci.yml` (4 jobs: rust / ts / schema+corpus / hub parity) — **Actions green** 2026-10-23 (run `39945952460`, 4/4 jobs) and re-witnessed locally for the M2 drop |
 | **external consumer** | `umpire` (sibling repo) consumes the validator, vendored schema, and rust replay via **published interfaces only** — RFC-0 stays sealed; consumption gates green |
 
 ## Verify it yourself

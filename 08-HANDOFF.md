@@ -42,7 +42,8 @@ validator/replay consume its ledgers verbatim (details: umpire `reports/RR-M0-20
 (`packages/opencode/live/ctxvm.ts`, `export default { id, setup }`, env-gated) → two real
 sessions in `corpus/m2/` (echo beats + 5×5 sustained re-fetch) on the free-tier
 `opencode/deepseek-v4.1-flash-free` at USD 0; both schema-PASS and replay-divergence-free;
-manifest → 0.2.0 (`x-cabi.latestDrop`) + hub re-linked (RR-T12-20261023).
+manifest → 0.2.0 (`x-cabi.latestDrop`) + hub re-linked (RR-T12-20261023); Actions run
+`39945952460` 4/4 jobs green.
 Board complete (T0–T12). Remaining proposals need orchestrator input: umpire M2 calibration
 corpus (T13) and umpire M3 hosted-vs-local decision (T14); the Vercel AI SDK adapter (T15)
 is a future card, not yet formally proposed. Actions-green remains live
@@ -142,7 +143,7 @@ orchestrator task only).
 | T9 | OpenCode adapter spike wiring `@ctxvm/node` (stage 2) | M | T8 | **DONE** (RR-T9-20261022; packages/opencode — 6/6 glue tests, trace schema-PASS (72 checks) + replay divergence-free; RR-T7's two open questions source-resolved) |
 | T10 | Trace corpus M1 seed + CI gate (stage 2) | M | T4 | **DONE** (RR-T10-20261022; `corpus/m1/` — 5 provenance-labeled checksummed traces, manifest 0.1.1 SDK-validated + hub re-linked; `tools/run-ci.sh` + `ci.yml` ALL GATES GREEN locally — Actions-green awaits a remote) |
 | T11 | Publish prep: Apache-2.0 LICENSE + Actions-green handover (orchestrator-directed 2026-10-23) | S | T10 | **DONE** (RR-T11-20261023; canonical LICENSE added; all gates re-witnessed green; `ci.yml` verified @`335d986`; **pushed 2026-10-23** to `github.com/kapitaali/ctxvm-xCABI` — first Actions run green after fixing a latent YAML bug (`@`-prefixed step names), run `39942443159` 4/4 jobs green — RR-ACTIONS-GREEN-20261023) |
-| T12 | M2 live capture: OpenCode wiring + live corpus drop (orchestrator-approved 2026-10-23) | M | T9, T11 | **DONE** (RR-T12-20261023; v2 promise-plugin adapter `packages/opencode/live/` env-gated + 8 tests; live echo + sustained-pressure sessions on free-tier `opencode/deepseek-v4.1-flash-free` at USD 0, v2.1.2-vs-pinned-2.1.3 diff documented; `corpus/m2/` schema-PASS + replay-divergence-free; manifest 0.2.0 + hub re-linked) |
+| T12 | M2 live capture: OpenCode wiring + live corpus drop (orchestrator-approved 2026-10-23) | M | T9, T11 | **DONE** (RR-T12-20261023; v2 promise-plugin adapter `packages/opencode/live/` env-gated + 8 tests; live echo + sustained-pressure sessions on free-tier `opencode/deepseek-v4.1-flash-free` at USD 0, v2.1.2-vs-pinned-2.1.3 diff documented; `corpus/m2/` schema-PASS + replay-divergence-free; manifest 0.2.0 + hub re-linked; Actions run `39945952460` 4/4 green) |
 
 ---
 
