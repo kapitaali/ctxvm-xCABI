@@ -1,5 +1,7 @@
 # ctxvm
 
+[![ci](https://github.com/kapitaali/ctxvm-xCABI/actions/workflows/ci.yml/badge.svg)](https://github.com/kapitaali/ctxvm-xCABI/actions/workflows/ci.yml)
+
 **The context base layer: a virtual-memory manager for LLM agent context.** One interoperable
 trace standard (**xCABI** — pages, faults, replay), a deterministic engine (Rust core + TS
 bindings), and an open measurement stack (corpus → metric simulator → policy leaderboard)
