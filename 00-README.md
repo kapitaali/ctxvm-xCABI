@@ -21,7 +21,11 @@ deferred). **T10 DONE** — corpus drop M1 (`corpus/m1/`: 5 provenance-labeled c
 traces; manifest 0.1.1 re-validated; hub re-linked + `hub/hub.sha256` baseline) and the
 repo CI gate (`tools/run-ci.sh` byte-equivalent to `.github/workflows/ci.yml` — ALL GATES
 GREEN locally 2026-10-22; Actions-green starts once a git remote exists) — see
-`reports/RR-T10-20261022.md`.
+`reports/RR-T10-20261022.md`. **T12 DONE 2026-10-23** — live M2 capture: the OpenCode v2
+promise-plugin adapter (`packages/opencode/live/`) drove two real sessions into `corpus/m2/`
+(echo beats + 5×5 sustained re-fetch) on a free-tier model at USD 0; schema PASS,
+replay-divergence-free, manifest → 0.2.0 (`x-cabi.latestDrop`) + hub re-linked — see
+`reports/RR-T12-20261023.md`.
 
 ## What is decided
 
@@ -57,7 +61,7 @@ GREEN locally 2026-10-22; Actions-green starts once a git remote exists) — see
 | `design/` | Integration designs: `mcp-shim.md` (T6 — callTool decorator contract) · `adapters.md` (T7 — OpenCode plugin + Vercel AI SDK middleware/tap, pinned anchors) |
 | `packages/node/` | **T8 tracer**: `@ctxvm/node` v0 — TS RFC-0 JSONL mirror tracer (zero runtime deps, Node ≥22.6; sources run via type stripping). Gates in-dir: `npm test / gen / validate / replay` |
 | `packages/opencode/` | **T9 spike**: `@ctxvm/opencode` — OpenCode plugin (T7 Adapter A) wiring `@ctxvm/node` via pinned hook contracts (e965774f); recorded echo-session payloads → validated, replay-clean trace (`npm test / gen` in-dir) |
-| `corpus/` | **T10 drop**: `m1/` seed slice — 5 xCABI traces (2 reference vectors + 2 `@ctxvm/node`-generated + 1 `@ctxvm/opencode`-spike), `provenance.json` + `checksums.sha256`; manifest-linked via `x-cabi.firstDrop` (v0.1.1) |
+| `corpus/` | **T10/T12 drops**: `m1/` seed slice — 5 xCABI traces (2 reference vectors + 2 `@ctxvm/node`-generated + 1 `@ctxvm/opencode`-spike); `m2/` live slice — 2 harness-captured sessions (echo + sustained pressure) with hook-count metas; each drop has `provenance.json` + `checksums.sha256`; manifest-linked via `x-cabi.firstDrop`/`latestDrop` (v0.2.0) |
 | `tools/` | `build-hub.sh` (T5 hub regen chain — venv-or-PATH SDK resolution) · `run-ci.sh` (T10 byte-equivalent local CI mirror) |
 | `.github/` | **T10**: `workflows/ci.yml` — 4 jobs (rust / ts / schema+corpus / hub parity), pins mirroring the local toolchain; runs once the repo has a git remote |
 

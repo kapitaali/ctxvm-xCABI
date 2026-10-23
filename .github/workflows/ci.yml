@@ -62,9 +62,14 @@ jobs:
           corpus/m1/tracer-healthy.jsonl
           corpus/m1/tracer-recall.jsonl
           corpus/m1/opencode-echo.jsonl
-      - name: corpus drop checksums
+          corpus/m2/live-echo.jsonl
+          corpus/m2/live-thrash.jsonl
+      - name: corpus drop checksums (M1 seed)
         run: sha256sum -c checksums.sha256
         working-directory: corpus/m1
+      - name: corpus drop checksums (M2 live)
+        run: sha256sum -c checksums.sha256
+        working-directory: corpus/m2
 
   hub:
     runs-on: ubuntu-latest

@@ -26,6 +26,8 @@ FIXTURES=(
   corpus/m1/tracer-healthy.jsonl
   corpus/m1/tracer-recall.jsonl
   corpus/m1/opencode-echo.jsonl
+  corpus/m2/live-echo.jsonl
+  corpus/m2/live-thrash.jsonl
 )
 
 # 1) rust
@@ -37,12 +39,13 @@ log "rust suite green"
 log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode"
 ( cd packages/node && node --test test/ ) >/dev/null
 ( cd packages/opencode && node --test test/ ) >/dev/null
-log "ts suites green (12 + 6 tests)"
+log "ts suites green (12 + 8 tests)"
 
 # 3) schema + corpus integrity
 log "gate 3/4: schema validator + corpus checksums"
 venvs/odps/bin/python spec/rfc-0/validate_schema.py "${FIXTURES[@]}"
 ( cd corpus/m1 && sha256sum -c checksums.sha256 ) >/dev/null
+( cd corpus/m2 && sha256sum -c checksums.sha256 ) >/dev/null
 log "schema gate green"
 
 # 4) hub parity

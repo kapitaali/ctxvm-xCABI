@@ -1,0 +1,25 @@
+{
+  "sessionID": "ses_e9785a8a1ffeSIpKHuy3wpmtq2",
+  "harness": "opencode-v2-promise-plugin",
+  "opencodeVersion": "2.1.2",
+  "model": "opencode/deepseek-v4.1-flash-free",
+  "provider": "opencode",
+  "budgetTokens": 200000,
+  "capturedAt": "2026-10-23T11:17:03.517Z",
+  "hookStats": {
+    "contexts": 6,
+    "before": 5,
+    "after": 5,
+    "completed": 4,
+    "errored": 1,
+    "sessions": [
+      "ses_e9785a8a1ffeSIpKHuy3wpmtq2"
+    ]
+  },
+  "traceStats": {
+    "turns": 6,
+    "pages": 3,
+    "faults": 3,
+    "residentTokens": 144
+  }
+}

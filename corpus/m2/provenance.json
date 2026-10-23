@@ -1,0 +1,48 @@
+{
+  "drop": "ctxvm-trace-corpus-m2",
+  "product": "ctxvm Trace Corpus (ODPS: 04-odps-dataproduct-corpus.yaml, productVersion 0.2.0)",
+  "createdOn": "2026-10-23",
+  "license": "CC-BY-4.0 for corpus content (per root manifest license.governance block)",
+  "redaction": "Live sessions ran in disposable /tmp workspaces containing fixture files only; no user repositories, credentials, or personal data entered any context. Model output is limited to tool-driven instructions and one-line summaries. Manual review: no secrets, no /home paths, no environment values; traces contain session ids, tool refs, hashes and token estimates only.",
+  "status": "LIVE — first live harness captures (M2). Both traces are schema-validated and replay-divergence-free, captured through the OpenCode v2 promise-plugin adapter on the free-tier model opencode/deepseek-v4.1-flash-free at USD 0 provider spend.",
+  "harness": {
+    "name": "OpenCode",
+    "version": "2.1.2",
+    "versionNote": "T9 payload contracts were pinned at anomalyco/opencode e965774f (v2.1.3); the locally available binary was v2.1.2. Observed tool.execute.before/after payloads match the pinned fields exactly; SessionContext.model is {id, providerID, variant} instead of {providerID, modelID} (metadata only, mapping unaffected).",
+    "plugin": "packages/opencode/live/ctxvm.ts (export default { id, setup }; env-gated by CTXVM_TRACE_DIR)",
+    "wiring": "project-local .opencode/plugins/ctxvm.ts re-export; session workspace recreated per capture",
+    "invocation": "opencode run --standalone --auto -m opencode/deepseek-v4.1-flash-free <scripted prompt>",
+    "flush": "plugin cleanup on location.shutdown → @ctxvm/node finish() → RFC-0 JSONL",
+    "providerSpend": "USD 0 — free-tier OpenCode Console model"
+  },
+  "files": [
+    {
+      "file": "live-echo.jsonl",
+      "meta": "live-echo.meta.json",
+      "kind": "live-harness-captured",
+      "origin": "live OpenCode session (T12), one scripted user message: read → re-read (double fetch) → edit → fresh read (new contentHash) → missing-file error",
+      "events": 22,
+      "turns": 6,
+      "pages": 3,
+      "faults": 3,
+      "toolCalls": { "before": 5, "after": 5, "completed": 4, "errored": 1 }
+    },
+    {
+      "file": "live-thrash.jsonl",
+      "meta": "live-thrash.meta.json",
+      "kind": "live-harness-captured",
+      "origin": "live OpenCode session (T12), one scripted user message: five rounds re-reading all five fixture files (25 reads) — sustained re-fetch pressure, pre-eviction thrash shape",
+      "events": 33,
+      "turns": 6,
+      "pages": 5,
+      "faults": 10,
+      "toolCalls": { "before": 25, "after": 25, "completed": 25, "errored": 0 }
+    }
+  ],
+  "limitations": [
+    "v0 tracer has no eviction path (declared ⇒ resident): the live thrash drop exercises sustained re-fetch pressure (5 files × 5 rounds → 5 tool_recall + 5 identifier_scan faults) but cannot exhibit page.evict or second-slot paging. The synthetic P-pathology vector in corpus/m1 remains the eviction-shape reference.",
+    "Faults are deduped per page·source by the tracer, so repeated re-fetches of the same page yield one tool_recall row each; call.meta carries the per-turn hit/miss pressure.",
+    "Free-tier model behaviour varies; the beats were induced by an explicit step-by-step prompt and captured in one run each (no retries).",
+    "budgetTokens=200000 is the T9 fixture convention; it is declared headroom bookkeeping, not the provider's measured context window."
+  ]
+}

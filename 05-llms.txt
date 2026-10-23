@@ -9,6 +9,9 @@ faults) plus benchmark suites and golden conformance vectors. Every trace replay
 byte-identically by design — usable for paging policy research and agent-memory evaluation.
 First seed drop (M1, in-repo at `corpus/m1/`): five schema-validated, replay-divergence-free
 traces, provenance-labeled (2 reference vectors · 2 tracer-generated · 1 adapter-spike).
+First live drop (M2, in-repo at `corpus/m2/`): two OpenCode sessions captured through the v2
+promise-plugin adapter (echo beats + a 5×5 sustained re-fetch drill) on a free-tier model —
+schema-validated, replay-divergence-free, provenance-labeled with hook counts.
 
 ## Auth
 - Method: none (corpus is open data)
