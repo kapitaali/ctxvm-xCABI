@@ -31,16 +31,18 @@ for any agent loop (OpenTelemetry playbook). Paging control ships later behind a
 **Next frontier:** Stage 2 COMPLETE — **T8 DONE** (`@ctxvm/node` v0 tracer), **T9 DONE**
 (`@ctxvm/opencode` adapter spike), **T10 DONE** (corpus drop M1 in `corpus/m1/` + the repo
 CI gate: `tools/run-ci.sh` mirrors `.github/workflows/ci.yml`; ALL GATES GREEN locally
-2026-10-22, re-witnessed 2026-10-23; GitHub-public remote chosen — owner-side push + first Actions run pending, RR-T11-20261023).
+2026-10-22, re-witnessed 2026-10-23; GitHub-public remote **live** at
+`github.com/kapitaali/ctxvm-xCABI` — first Actions run GREEN 2026-10-23, 4/4 jobs
+(RR-ACTIONS-GREEN-20261023)).
 **umpire M0 DONE 2026-10-22** (orchestrator green-lit): separate repo `~/Documents/umpire/`,
 first commit `d7896df` — decision-ledger v0 as an xCABI-0.1 profile; its validator PASSES
 (125 checks, 10/10 negatives) with byte-identical roundtrip ×2, and ctxvm's own
 validator/replay consume its ledgers verbatim (details: umpire `reports/RR-M0-20261022.md`).
 Board complete (T0–T10 + T11; `RR-BOARD-COMPLETE-20261023` proposes the next three).
-Open items (all need orchestrator input): owner-side push to the chosen GitHub-public
-remote (T11 handover), live dev-build echo + live thrashing capture (M2; needs approved
-provider spend + a ≥pinned-SHA build — proposed T12), umpire M2 calibration corpus
-(proposed T13), umpire M3 hosted-vs-local decision (proposed T14).
+Open items (all need orchestrator input): live dev-build echo + live thrashing capture (M2;
+needs approved provider spend + a ≥pinned-SHA build — proposed T12), umpire M2 calibration
+corpus (proposed T13), umpire M3 hosted-vs-local decision (proposed T14). Actions-green is
+no longer an open item — live since 2026-10-23 (`RR-ACTIONS-GREEN-20261023`).
 
 ## §1. Workspace map
 
@@ -135,7 +137,7 @@ orchestrator task only).
 | T8 | `@ctxvm/node` v0 TS tracer (stage 2) | M | T4,T6,T7 | **DONE** (RR-T8-20261022; packages/node — 12/12 unit tests, both fixtures schema-PASS + replay-divergence-free) |
 | T9 | OpenCode adapter spike wiring `@ctxvm/node` (stage 2) | M | T8 | **DONE** (RR-T9-20261022; packages/opencode — 6/6 glue tests, trace schema-PASS (72 checks) + replay divergence-free; RR-T7's two open questions source-resolved) |
 | T10 | Trace corpus M1 seed + CI gate (stage 2) | M | T4 | **DONE** (RR-T10-20261022; `corpus/m1/` — 5 provenance-labeled checksummed traces, manifest 0.1.1 SDK-validated + hub re-linked; `tools/run-ci.sh` + `ci.yml` ALL GATES GREEN locally — Actions-green awaits a remote) |
-| T11 | Publish prep: Apache-2.0 LICENSE + Actions-green handover (orchestrator-directed 2026-10-23) | S | T10 | **DONE** (RR-T11-20261023; canonical LICENSE added; all gates re-witnessed green; `ci.yml` verified @`335d986`; push block handed to owner — Actions starts at first push) |
+| T11 | Publish prep: Apache-2.0 LICENSE + Actions-green handover (orchestrator-directed 2026-10-23) | S | T10 | **DONE** (RR-T11-20261023; canonical LICENSE added; all gates re-witnessed green; `ci.yml` verified @`335d986`; **pushed 2026-10-23** to `github.com/kapitaali/ctxvm-xCABI` — first Actions run green after fixing a latent YAML bug (`@`-prefixed step names), run `39942443159` 4/4 jobs green — RR-ACTIONS-GREEN-20261023) |
 
 ---
 
