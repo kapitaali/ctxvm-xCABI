@@ -31,14 +31,16 @@ for any agent loop (OpenTelemetry playbook). Paging control ships later behind a
 **Next frontier:** Stage 2 COMPLETE — **T8 DONE** (`@ctxvm/node` v0 tracer), **T9 DONE**
 (`@ctxvm/opencode` adapter spike), **T10 DONE** (corpus drop M1 in `corpus/m1/` + the repo
 CI gate: `tools/run-ci.sh` mirrors `.github/workflows/ci.yml`; ALL GATES GREEN locally
-2026-10-22; Actions-green begins once the repo has a git remote — orchestrator decision).
+2026-10-22, re-witnessed 2026-10-23; GitHub-public remote chosen — owner-side push + first Actions run pending, RR-T11-20261023).
 **umpire M0 DONE 2026-10-22** (orchestrator green-lit): separate repo `~/Documents/umpire/`,
 first commit `d7896df` — decision-ledger v0 as an xCABI-0.1 profile; its validator PASSES
 (125 checks, 10/10 negatives) with byte-identical roundtrip ×2, and ctxvm's own
 validator/replay consume its ledgers verbatim (details: umpire `reports/RR-M0-20261022.md`).
-No queue remains. Open items (all need orchestrator input): live dev-build echo + live
-thrashing capture (M2; needs approved provider spend + a ≥pinned-SHA build), push target
-for CI, umpire M1 model shortlist (license-clean OSS).
+Board complete (T0–T10 + T11; `RR-BOARD-COMPLETE-20261023` proposes the next three).
+Open items (all need orchestrator input): owner-side push to the chosen GitHub-public
+remote (T11 handover), live dev-build echo + live thrashing capture (M2; needs approved
+provider spend + a ≥pinned-SHA build — proposed T12), umpire M2 calibration corpus
+(proposed T13), umpire M3 hosted-vs-local decision (proposed T14).
 
 ## §1. Workspace map
 
@@ -133,6 +135,7 @@ orchestrator task only).
 | T8 | `@ctxvm/node` v0 TS tracer (stage 2) | M | T4,T6,T7 | **DONE** (RR-T8-20261022; packages/node — 12/12 unit tests, both fixtures schema-PASS + replay-divergence-free) |
 | T9 | OpenCode adapter spike wiring `@ctxvm/node` (stage 2) | M | T8 | **DONE** (RR-T9-20261022; packages/opencode — 6/6 glue tests, trace schema-PASS (72 checks) + replay divergence-free; RR-T7's two open questions source-resolved) |
 | T10 | Trace corpus M1 seed + CI gate (stage 2) | M | T4 | **DONE** (RR-T10-20261022; `corpus/m1/` — 5 provenance-labeled checksummed traces, manifest 0.1.1 SDK-validated + hub re-linked; `tools/run-ci.sh` + `ci.yml` ALL GATES GREEN locally — Actions-green awaits a remote) |
+| T11 | Publish prep: Apache-2.0 LICENSE + Actions-green handover (orchestrator-directed 2026-10-23) | S | T10 | **DONE** (RR-T11-20261023; canonical LICENSE added; all gates re-witnessed green; `ci.yml` verified @`335d986`; push block handed to owner — Actions starts at first push) |
 
 ---
 
@@ -293,6 +296,15 @@ node 26, rust stable); `build-hub.sh` gains venv-or-PATH SDK resolution for CI.
 byte-identity baselined ✓ (c) green gate witnessed by the local mirror ✓. Deferred:
 Actions-green (needs a git remote) and the live thrashing capture (M2, shares T9's
 approved-spend prerequisite).
+
+### T11 — Publish prep: Apache-2.0 LICENSE + Actions-green handover (S) — orchestrator-directed 2026-10-23
+**Objective:** make the repo pushable to a public GitHub remote without loose ends.
+**Steps:** add `LICENSE` (canonical Apache-2.0 text, appendix copyright "2026 the ctxvm
+authors"); re-witness `tools/run-ci.sh` ALL GATES GREEN; verify `.github/workflows/ci.yml`
+is committed; prepare the create-repo + push handover block for the owner; keep board/LOG
+current. Do not touch `research/` (in-progress external work, untracked by design).
+**DoD:** gates green; LICENSE present; handover block in RR-T11; report per §4. Owner-only
+residue (needs their credentials): repo creation + push + the first Actions run.
 
 ---
 
