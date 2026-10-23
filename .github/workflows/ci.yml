@@ -33,10 +33,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "26"
-      - name: @ctxvm/node tests
+      - name: "@ctxvm/node tests"
         run: node --test test/
         working-directory: packages/node
-      - name: @ctxvm/opencode tests
+      - name: "@ctxvm/opencode tests"
         run: node --test test/
         working-directory: packages/opencode
 
