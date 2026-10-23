@@ -9,6 +9,8 @@ packaged as ODPS/ODPC-native open data products. `ctxvm` / `xCABI` are working n
 > (the OpenTelemetry playbook flips to pages/faults). Paging control ships later behind an
 > opt-in policy. Semantic/LLM-based faults stay out of the deterministic core.
 
+**Read the white paper:** [`research/white-paper.pdf`](research/white-paper.pdf) — "ctxvm / xCABI", 16 pp, final draft (Phase 5/5).
+
 ## Status (2026-10-23)
 
 | track | state |
@@ -53,6 +55,7 @@ Entry points:
 | path | what |
 |---|---|
 | [`01-PLAN.md`](01-PLAN.md) | full plan — thesis, prior art (locators at first mention), architecture, milestones |
+| [`research/white-paper.pdf`](research/white-paper.pdf) | **white paper** — "ctxvm / xCABI", 16 pp, final draft (compiled PDF; sources remain the authors' working copy) |
 | [`02-xcabi-events-v0.md`](02-xcabi-events-v0.md) | event vocabulary + log invariants (spec source) |
 | [`spec/rfc-0/`](spec/rfc-0/) | **xCABI RFC-0** + `x-cabi.schema-v0.json` + conformance validator |
 | [`rust/`](rust/) | cargo workspace: `ctxvm-core`, `ctxvm-codec`, `ctxvm-tokenizer` (stub), `ctxvm-conformance` (vectors + `replay`) |
