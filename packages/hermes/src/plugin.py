@@ -349,8 +349,14 @@ class CtxvmPlugin:
         vm.recall({"tool": payload.get("tool"), "args": payload.get("args")})
 
     def on_post_tool_call(self, payload: Dict[str, Any]) -> None:
-        """post_tool_call hook: page.declare when status == completed (T6 §2: errors produce no page)."""
-        if payload.get("status") != "completed":
+        """post_tool_call hook: page.declare when status == completed (T6 §2: errors produce no page).
+
+        Real Hermes taxonomy (model_tools.py:_tool_result_observer_fields,
+        line 656-671): status is "ok" on success, "error" on failure.
+        hooks.py demo payloads use "completed"/"error"; accept both.
+        """
+        status = payload.get("status")
+        if status not in ("ok", "completed"):
             return
         session_id = payload.get("session_id", "")
         vm = self._vm_for(session_id)

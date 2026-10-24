@@ -165,7 +165,11 @@ def register(ctx) -> None:
     def on_post_tool_call(**kwargs: Any) -> None:
         stats["post_tool_calls"] += 1
         status = kwargs.get("status")
-        if status == "completed":
+        # Real Hermes taxonomy (model_tools.py:_tool_result_observer_fields,
+        # line 656-671): status is "ok" on success, "error" on failure.
+        # hooks.py demo payloads use "completed"/"error"; accept both for
+        # demo/synthetic compatibility.
+        if status in ("ok", "completed"):
             stats["completed"] += 1
         else:
             stats["errored"] += 1

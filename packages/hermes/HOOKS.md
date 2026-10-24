@@ -10,7 +10,7 @@
 |------|-----------|--------------------------|---------------|
 | `on_session_start` | New session created | `session_id` (str) | `session.open` (model/provider from env vars) |
 | `pre_tool_call` | Before tool execution | `tool_name`, `args`, `session_id`, `task_id`, `tool_call_id` | `recall({tool, args})` — pre-execution re-call mark |
-| `post_tool_call` | After tool completes | `tool_name`, `args`, `session_id`, `task_id`, `tool_call_id`, `status` ("completed"\|"error"), `result`/`error` | `page.declare` only when `status === "completed"` (T6 §2) |
+| `post_tool_call` | After tool completes | `tool_name`, `args`, `session_id`, `task_id`, `tool_call_id`, `status` ("ok"\|"error"), `result`/`error` | `page.declare` only when `status in {"ok", "completed"}` (T6 §2) |
 | `pre_llm_call` | Before model request | `session_id`, `user_message`, `conversation_history`, `is_first_turn`, `model`, `platform` | Turn boundary: `scan(history)` then `render()` |
 | `post_llm_call` | After model response | `session_id`, `model`, `platform` (no output text) | — |
 | `transform_llm_output` | LLM output produced | returns replacement str or None | — (transform, not observe) |
@@ -43,7 +43,9 @@ pre_llm_call(turn=t+1) → vm.scan(conversation_history) → vm.render()   [turn
 
 `conversation_history` at `pre_llm_call` includes all messages up to now, including prior assistant outputs. Scanning it there catches identifiers from previous model output — equivalent to T9's `session.context` scan of `payload.messages`.
 
-`post_tool_call` result content: `result.content` is a list of `{type, text, ...}` items; text items joined by `\n` form the page body (same as T9's `contentToPageBody`). Non-text items become `<type>` markers. Errored calls (`status !== "completed"`) produce no page.
+`post_tool_call` result content: `result.content` is a list of `{type, text, ...}` items; text items joined by `\n` form the page body (same as T9's `contentToPageBody`). Non-text items become `<type>` markers. Errored calls (`status not in {"ok", "completed"}`) produce no page.
+
+**Status taxonomy errata:** `hooks.py` demo payloads use `status="completed"|"error"`, but the real Hermes taxonomy from `model_tools.py:_tool_result_observer_fields` (line 656-671) returns `status="ok"` on success and `status="error"` on failure. The adapter accepts both `{"ok", "completed"}` for demo/synthetic compatibility.
 
 ## 4. Resume-from-files: CAN a v0 plugin seed a new session's context?
 
@@ -54,7 +56,7 @@ pre_llm_call(turn=t+1) → vm.scan(conversation_history) → vm.render()   [turn
 | xCABI event | Hermes hook | Source of truth |
 |-------------|-------------|-----------------|
 | `session.open` | `on_session_start` + env vars | `session_id` from hook; `model`/`provider`/`agentId`/`budgetTokens`/`tokenizerId` from `CTXVM_*` env (T9 convention) |
-| `page.declare` | `post_tool_call` (status=completed) | `tool_name`, `args`, `result.content` text items |
+| `page.declare` | `post_tool_call` (status in {"ok", "completed"}) | `tool_name`, `args`, `result.content` text items |
 | `page.fault(tool_recall)` | `pre_tool_call` | `tool_name`, `args` matched against declared pages |
 | `page.fault(identifier_scan)` | `pre_llm_call` | `conversation_history` text scanned for page identity tokens |
 | `turn.render` + `call.meta` | `pre_llm_call` | Turn boundary; `providerReported=false` (estimated only) |

@@ -213,6 +213,33 @@ class PluginTests(unittest.TestCase):
         declares = [e for e in events if e["type"] == "page.declare"]
         self.assertEqual(len(declares), 0)
 
+    def test_live_shape_status_ok_declares_page(self):
+        """Live Hermes post_tool_call uses status='ok' (model_tools.py:_tool_result_observer_fields)."""
+        plugin = create_ctxvm_plugin(INIT)
+        plugin.on_session_start({"session_id": "ses_ok"})
+        plugin.on_pre_tool_call({
+            "session_id": "ses_ok", "tool": "read", "args": {"path": "notes/alpha.md"},
+        })
+        plugin.on_post_tool_call({
+            "session_id": "ses_ok", "tool": "read", "args": {"path": "notes/alpha.md"},
+            "status": "ok",
+            "result": {"content": [{"type": "text", "text": "hello world"}]},
+        })
+        plugin.on_pre_llm_call({
+            "session_id": "ses_ok",
+            "conversation_history": [
+                {"role": "user", "content": [{"type": "text", "text": "Read notes/alpha.md"}]},
+            ],
+        })
+        record = plugin.finish_all()[0]
+        events = record["trace"].events
+        declares = [e for e in events if e["type"] == "page.declare"]
+        faults = [e for e in events if e["type"] == "page.fault"]
+        self.assertEqual(len(declares), 1, "status='ok' must declare a page")
+        self.assertEqual(len(faults), 1)  # identifier_scan from history text
+        self.assertEqual(record["trace"].stats["pages"], 1)
+        self.assertEqual(record["trace"].stats["turns"], 1)
+
     def test_finish_all_returns_trace_with_jsonl_and_stats(self):
         record = self._run_once()
         self.assertIn("sessionID", record)
