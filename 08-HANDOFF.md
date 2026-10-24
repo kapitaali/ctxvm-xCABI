@@ -44,10 +44,15 @@ sessions in `corpus/m2/` (echo beats + 5×5 sustained re-fetch) on the free-tier
 `opencode/deepseek-v4.1-flash-free` at USD 0; both schema-PASS and replay-divergence-free;
 manifest → 0.2.0 (`x-cabi.latestDrop`) + hub re-linked (RR-T12-20261023); Actions run
 `39945952460` 4/4 jobs green.
-Board complete (T0–T12). Remaining proposals need orchestrator input: umpire M2 calibration
-corpus (T13) and umpire M3 hosted-vs-local decision (T14); the Vercel AI SDK adapter (T15)
-is a future card, not yet formally proposed. Actions-green remains live
-(`RR-ACTIONS-GREEN-20261023`).
+Board T0–T12 complete; **T16 DONE 2026-10-24** (replay CLI forensic flags `--turn/--pin/--output`,
+`reports/RR-UC2REPLAY-20261024.md`). Umpire-side cards executed in the umpire repo and therefore
+closed here by reference: **T13** calibration corpus (v1–v3; of record `cal-v1:057a5a35a9d4ec71`,
+umpire `050bffe`) and **T14** direction decided **local-only now; hybrid later** (umpire
+`RR-T14-20261023`) with M3 capture/refit/packaging landed; the residual is the *future hybrid-switch
+event* gating Phase C's hosted elements (llms.txt/agent port/publication are runnable locally unless
+a hosted surface is chosen). **T15** (Vercel AI SDK adapter) remains an unproposed future card;
+**T17** (UC1 Hermes plugin, UCVERIFY build-first chain) dispatched to the Hermes workstream.
+Actions-green remains live (`RR-ACTIONS-GREEN-20261023`).
 
 ## §1. Workspace map
 
@@ -144,6 +149,8 @@ orchestrator task only).
 | T10 | Trace corpus M1 seed + CI gate (stage 2) | M | T4 | **DONE** (RR-T10-20261022; `corpus/m1/` — 5 provenance-labeled checksummed traces, manifest 0.1.1 SDK-validated + hub re-linked; `tools/run-ci.sh` + `ci.yml` ALL GATES GREEN locally — Actions-green awaits a remote) |
 | T11 | Publish prep: Apache-2.0 LICENSE + Actions-green handover (orchestrator-directed 2026-10-23) | S | T10 | **DONE** (RR-T11-20261023; canonical LICENSE added; all gates re-witnessed green; `ci.yml` verified @`335d986`; **pushed 2026-10-23** to `github.com/kapitaali/ctxvm-xCABI` — first Actions run green after fixing a latent YAML bug (`@`-prefixed step names), run `39942443159` 4/4 jobs green — RR-ACTIONS-GREEN-20261023) |
 | T12 | M2 live capture: OpenCode wiring + live corpus drop (orchestrator-approved 2026-10-23) | M | T9, T11 | **DONE** (RR-T12-20261023; v2 promise-plugin adapter `packages/opencode/live/` env-gated + 8 tests; live echo + sustained-pressure sessions on free-tier `opencode/deepseek-v4.1-flash-free` at USD 0, v2.1.2-vs-pinned-2.1.3 diff documented; `corpus/m2/` schema-PASS + replay-divergence-free; manifest 0.2.0 + hub re-linked; Actions run `39945952460` 4/4 green) |
+| T13 (umpire-side) | umpire M2 calibration corpus | M | T10 | **DONE by umpire execution** (board row closed by reference 2026-10-24: calibration corpus v1–v3 captured/refit/pushed in the umpire repo — of record v3 `cal-v1:057a5a35a9d4ec71`, isotonic/1, umpire commit `050bffe`; umpire reports `RR-M2V2-20261023`/`RR-M3V3-20261024`) |
+| T14 (umpire-side) | umpire M3 hosted-vs-local direction | M | T13 | **DONE** (decision 2026-10-23: **local-only now; hybrid later** — umpire `RR-T14-20261023`; M3 full audit + quiescent v3 recapture + isotonic refit + packaging/hub updated to v3 family, umpire `050bffe`. Residual: the *hybrid-switch event* is a future funding/design decision gating Phase C hosted elements only) |
 | T16 | UC2 build-first: replay forensic flags `--turn/--pin/--output` (user-directed 2026-10-24, follows RR-UCVERIFY delta class F) | S | RR-UCVERIFY | **DONE** (RR-UC2REPLAY-20261024; point-in-time replay `replay_turn` + force-resident overlay `with_forced_resident` in ctxvm-core (4 new tests, core 15), CLI wired: `--turn N` facts+projection, `--pin <ref>` counterfactual (memo `page:<ref>` form), `--output FILE`, `--help`; default no-flag shape/invariants byte-compatible; 11/11 fixture exit codes unchanged; 33/33 workspace green) |
 
 ---
