@@ -11,18 +11,27 @@ Hooks wired (see packages/hermes/HOOKS.md for the full pin):
 
     on_session_start   → session.open   (model/provider/budget from CTXVM_* env)
     pre_tool_call      → recall({tool, args})
-    post_tool_call     → page.declare   (status == "completed" only; T6 §2)
+    post_tool_call     → page.declare   (status in {"ok", "completed"} only; T6 §2)
     pre_llm_call       → scan(history) + render()   [turn boundary]
     on_session_end     → finish_all() flush
 
-Env-gated: traces are only written when ``CTXVM_TRACE_DIR`` is set. Unlike the
-T12 OpenCode adapter (which gates at setup time), Hermes loads plugins in a
-long-running gateway process, so the gate is checked lazily at each hook call.
-Without ``CTXVM_TRACE_DIR``, hooks are registered but no tracing occurs.
+Trace output (flushes on session end and plugin unload):
+    <trace-dir>/<name>.jsonl        — RFC-0 xCABI JSONL trace
+    <trace-dir>/<name>.meta.json    — session id, harness, hook counts, trace stats
 
-Trace output (on plugin unload / session end):
-    $CTXVM_TRACE_DIR/<name>.jsonl        — RFC-0 xCABI JSONL trace
-    $CTXVM_TRACE_DIR/<name>.meta.json    — session id, harness, hook counts, trace stats
+Two ways to enable tracing:
+
+1. Env-gating (plugin loads with tracing already active):
+   CTXVM_TRACE_DIR=<dir> CTXVM_TRACE_NAME=<name> hermes ...  (gateway must be
+   restarted with these in its environment — see HOOKS.md §Live capture)
+
+2. Slash command from inside Hermes (no gateway restart needed):
+   /ctxvm-trace start <dir> [name]   — start tracing, writes to <dir>
+   /ctxvm-trace stop                 — flush traces and stop
+   /ctxvm-trace status               — show whether tracing is active
+
+Without either, hooks are registered but no tracing occurs (mirror-only v0:
+never mutates messages, never evicts, never throws on semantic conditions).
 """
 
 from __future__ import annotations
@@ -66,6 +75,10 @@ ENV_KEYS = [
 def _clear_env_for_tests() -> None:
     for key in ENV_KEYS:
         os.environ.pop(key, None)
+    # Reset module-level trace state set by slash-command tests.
+    global _trace_dir, _trace_name
+    _trace_dir = os.environ.get("CTXVM_TRACE_DIR")  # None after pop above
+    _trace_name = os.environ.get("CTXVM_TRACE_NAME")
 
 
 def _budget_from_env() -> int:
@@ -108,9 +121,18 @@ def _content_to_page_body(content_items: Optional[list[dict[str, Any]]]) -> str:
     return "\n".join(kept)
 
 
+# ---------------------------------------------------------------------------
+# Module-level trace state. Initialized from env at import so the existing
+# CTXVM_TRACE_DIR workflow keeps working; overridable at runtime via the
+# /ctxvm-trace slash command (no gateway restart needed).
+# ---------------------------------------------------------------------------
+_trace_dir: Optional[str] = os.environ.get("CTXVM_TRACE_DIR")
+_trace_name: Optional[str] = os.environ.get("CTXVM_TRACE_NAME")
+
+
 def _traced() -> bool:
-    """True when CTXVM_TRACE_DIR is set (checked lazily per hook call)."""
-    return bool(os.environ.get("CTXVM_TRACE_DIR"))
+    """True when a trace dir is active (env or slash-command set)."""
+    return bool(_trace_dir)
 
 
 def _make_plugin() -> Optional[Any]:
@@ -128,7 +150,7 @@ def _make_plugin() -> Optional[Any]:
 def register(ctx) -> None:
     """Hermes plugin entry point. Hooks always registered; tracing gated lazily."""
     _plugin: Optional[Any] = None
-    trace_name = os.environ.get("CTXVM_TRACE_NAME")
+    trace_name = _trace_name  # initial value, may be overridden by slash command
     sessions: list[str] = []
 
     stats: Dict[str, Any] = {
@@ -147,58 +169,13 @@ def register(ctx) -> None:
             _plugin = _make_plugin()
         return _plugin
 
-    def on_session_start(**kwargs: Any) -> None:
-        stats["session_starts"] += 1
-        session_id = kwargs.get("session_id", "")
-        if session_id and session_id not in sessions:
-            sessions.append(session_id)
-        vm = _ensure_plugin()
-        if vm is not None:
-            vm.on_session_start(kwargs)
-
-    def on_pre_tool_call(**kwargs: Any) -> None:
-        stats["pre_tool_calls"] += 1
-        vm = _ensure_plugin()
-        if vm is not None:
-            vm.on_pre_tool_call(kwargs)
-
-    def on_post_tool_call(**kwargs: Any) -> None:
-        stats["post_tool_calls"] += 1
-        status = kwargs.get("status")
-        # Real Hermes taxonomy (model_tools.py:_tool_result_observer_fields,
-        # line 656-671): status is "ok" on success, "error" on failure.
-        # hooks.py demo payloads use "completed"/"error"; accept both for
-        # demo/synthetic compatibility.
-        if status in ("ok", "completed"):
-            stats["completed"] += 1
-        else:
-            stats["errored"] += 1
-        vm = _ensure_plugin()
-        if vm is not None:
-            vm.on_post_tool_call(kwargs)
-
-    def on_pre_llm_call(**kwargs: Any) -> None:
-        stats["pre_llm_calls"] += 1
-        vm = _ensure_plugin()
-        if vm is not None:
-            vm.on_pre_llm_call(kwargs)
-
-    def on_session_end(**kwargs: Any) -> None:
-        stats["session_ends"] += 1
-        vm = _ensure_plugin()
-        if vm is not None:
-            vm.on_session_end(kwargs)
-            # Flush per-session traces at session end so captures are written
-            # even when the gateway stays up (on_unload only fires at shutdown).
-            _flush_traces()
-
     def _flush_traces() -> None:
-        """Write all finished tracers to $CTXVM_TRACE_DIR."""
+        """Write all finished tracers to the active trace dir."""
         vm = _ensure_plugin()
         if vm is None:
             return
         flushed = vm.finish_all()
-        trace_dir = os.environ.get("CTXVM_TRACE_DIR")
+        trace_dir = _trace_dir
         if not trace_dir:
             return
         Path(trace_dir).mkdir(parents=True, exist_ok=True)
@@ -228,9 +205,103 @@ def register(ctx) -> None:
                 encoding="utf-8",
             )
 
-    def cleanup() -> None:
-        """Flush any remaining tracers on plugin unload / gateway shutdown."""
-        _flush_traces()
+    # --- Hook handlers ------------------------------------------------------
+
+    def on_session_start(**kwargs: Any) -> None:
+        stats["session_starts"] += 1
+        session_id = kwargs.get("session_id", "")
+        if session_id and session_id not in sessions:
+            sessions.append(session_id)
+        vm = _ensure_plugin()
+        if vm is not None:
+            vm.on_session_start(kwargs)
+
+    def on_pre_tool_call(**kwargs: Any) -> None:
+        stats["pre_tool_calls"] += 1
+        vm = _ensure_plugin()
+        if vm is not None:
+            vm.on_pre_tool_call(kwargs)
+
+    def on_post_tool_call(**kwargs: Any) -> None:
+        stats["post_tool_calls"] += 1
+        status = kwargs.get("status")
+        # Real Hermes taxonomy (model_tools.py:_tool_result_observer_fields,
+        # line 656-671): status is "ok" on success, "error" on failure.
+        # hooks.py demo payloads use "completed"/"error"; accept both.
+        if status in ("ok", "completed"):
+            stats["completed"] += 1
+        else:
+            stats["errored"] += 1
+        vm = _ensure_plugin()
+        if vm is not None:
+            vm.on_post_tool_call(kwargs)
+
+    def on_pre_llm_call(**kwargs: Any) -> None:
+        stats["pre_llm_calls"] += 1
+        vm = _ensure_plugin()
+        if vm is not None:
+            vm.on_pre_llm_call(kwargs)
+
+    def on_session_end(**kwargs: Any) -> None:
+        stats["session_ends"] += 1
+        vm = _ensure_plugin()
+        if vm is not None:
+            vm.on_session_end(kwargs)
+            # Flush per-session traces at session end so captures are written
+            # even when the gateway stays up (on_unload only fires at shutdown).
+            _flush_traces()
+
+    # --- Slash command: /ctxvm-trace ---------------------------------------
+
+    def _handle_trace_cmd(raw_args: str) -> str:
+        """Handle /ctxvm-trace start <dir> [name] | stop | status."""
+        nonlocal _plugin, trace_name
+        global _trace_dir
+        argv = raw_args.strip().split()
+        if not argv:
+            return (
+                "Usage: /ctxvm-trace start <dir> [name] | stop | status\n"
+                "  start <dir> [name]  — begin tracing, writes <dir>/<name>.jsonl\n"
+                "  stop                — flush traces and stop tracing\n"
+                "  status              — show whether tracing is active"
+            )
+
+        sub = argv[0].lower()
+
+        if sub == "start":
+            if len(argv) < 2:
+                return "Usage: /ctxvm-trace start <dir> [name]"
+            new_dir = argv[1]
+            new_name = argv[2] if len(argv) > 2 else None
+            _trace_dir = new_dir
+            if new_name:
+                trace_name = new_name
+            # Force plugin (re)creation on next hook so it picks up the new dir.
+            _plugin = None
+            return (
+                f"ctxvm-trace: tracing enabled, dir={_trace_dir}, "
+                f"name={trace_name or '<session-id>'}"
+            )
+
+        if sub == "stop":
+            _flush_traces()
+            _trace_dir = None
+            _plugin = None
+            return "ctxvm-trace: tracing stopped, traces flushed."
+
+        if sub == "status":
+            plugin_active = _plugin is not None
+            return (
+                f"ctxvm-trace: enabled={_traced()}, "
+                f"dir={_trace_dir or '<none>'}, "
+                f"name={trace_name or '<session-id>'}, "
+                f"plugin={plugin_active}"
+            )
+
+        return (
+            f"Unknown subcommand '{sub}'. "
+            "Usage: /ctxvm-trace start <dir> [name] | stop | status"
+        )
 
     # Register hooks (always; tracing gated lazily inside each handler)
     ctx.register_hook("on_session_start", on_session_start)
@@ -239,5 +310,12 @@ def register(ctx) -> None:
     ctx.register_hook("pre_llm_call", on_pre_llm_call)
     ctx.register_hook("on_session_end", on_session_end)
 
+    # Register slash command for runtime start/stop/status
+    ctx.register_command(
+        "ctxvm-trace",
+        _handle_trace_cmd,
+        description="Start/stop/show ctxvm trace capture.",
+    )
+
     # Register cleanup on plugin unload
-    ctx.on_unload(cleanup)
+    ctx.on_unload(lambda: _flush_traces())

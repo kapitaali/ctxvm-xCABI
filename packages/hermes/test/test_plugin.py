@@ -270,18 +270,96 @@ class LiveAdapterTests(unittest.TestCase):
                 calls.append(("unload", cb.__name__))
                 return None
 
+            def register_command(self, name, handler, description=""):
+                calls.append(("command", name))
+                return None
+
         register(FakeCtx())
         # Hooks are always registered (gating is lazy per-call); the key invariant
         # is that no plugin instance is created and no traces are written.
-        self.assertEqual(len(calls), 6)  # 5 hooks + 1 unload
+        self.assertEqual(len(calls), 7)  # 5 hooks + 1 command + 1 unload
         self.assertIn(("hook", "on_session_start"), calls)
-        self.assertIn(("unload", "cleanup"), calls)
+        self.assertIn(("command", "ctxvm-trace"), calls)
+        # cleanup is registered as a lambda inside register(), so __name__ is "<lambda>"
+        self.assertIn(("unload", "<lambda>"), calls)
 
     def test_adapter_does_not_create_plugin_without_trace_dir(self):
         """Verify no tracer plugin is created when CTXVM_TRACE_DIR is unset."""
         _clear_env_for_tests()
         from live import _make_plugin
         self.assertIsNone(_make_plugin())
+
+    def test_slash_command_start_then_stop(self):
+        """Slash command /ctxvm-trace start|stop enables/disables tracing at runtime."""
+        _clear_env_for_tests()
+        tmpdir = tempfile.mkdtemp(prefix="ctxvm-slash-test-")
+
+        captured = []
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                captured.append((name, handler))
+                return None
+
+        register(FakeCtx())
+
+        # Find the registered handler
+        handlers = [h for n, h in captured if n == "ctxvm-trace"]
+        self.assertEqual(len(handlers), 1)
+        handle = handlers[0]
+
+        # Initially no trace dir
+        import live as live_mod
+        self.assertFalse(live_mod._traced())
+        self.assertIsNone(live_mod._trace_dir)
+
+        # Start tracing via slash command
+        out = handle(f"start {tmpdir} slash-session")
+        self.assertIn("tracing enabled", out)
+        self.assertTrue(live_mod._traced())
+        self.assertEqual(live_mod._trace_dir, tmpdir)
+
+        # Status
+        out = handle("status")
+        self.assertIn("enabled=True", out)
+        self.assertIn(tmpdir, out)
+
+        # Stop tracing
+        out = handle("stop")
+        self.assertIn("stopped", out)
+        self.assertFalse(live_mod._traced())
+
+        # Stop without any session activity: finish_all() returns [] so no files.
+        # That's expected — flush only writes when tracers exist.
+
+    def test_slash_command_unknown_subcommand(self):
+        """Unknown /ctxvm-trace subcommand returns usage."""
+        _clear_env_for_tests()
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                self.handler = handler
+                return None
+
+        ctx = FakeCtx()
+        register(ctx)
+        out = ctx.handler("bogus")
+        self.assertIn("Unknown subcommand", out)
+
+        out = ctx.handler("")
+        self.assertIn("Usage:", out)
 
     def test_adapter_maps_hooks_and_flushes_trace_on_cleanup(self):
         _clear_env_for_tests()
@@ -303,6 +381,10 @@ class LiveAdapterTests(unittest.TestCase):
                 captured_cleanup[0] = cb
                 return None
 
+            def register_command(self, name, handler, description=""):
+                captured_hooks.append(("command", name))
+                return None
+
         register(FakeCtx())
 
         self.assertIn("on_session_start", captured_hooks)
@@ -310,6 +392,7 @@ class LiveAdapterTests(unittest.TestCase):
         self.assertIn("post_tool_call", captured_hooks)
         self.assertIn("pre_llm_call", captured_hooks)
         self.assertIn("on_session_end", captured_hooks)
+        self.assertIn(("command", "ctxvm-trace"), captured_hooks)
 
         # Fire hooks through the closures by re-registering with a real plugin
         # Instead, test the adapter end-to-end: create a real plugin and fire hooks

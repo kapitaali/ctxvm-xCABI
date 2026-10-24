@@ -62,4 +62,18 @@ pre_llm_call(turn=t+1) → vm.scan(conversation_history) → vm.render()   [turn
 | `turn.render` + `call.meta` | `pre_llm_call` | Turn boundary; `providerReported=false` (estimated only) |
 | flush | `on_session_end` | `vm.finishAll()` writes traces |
 
-**Env-gating:** Inert unless `CTXVM_TRACE_DIR` is set (same as T12). Without it, `setup()` returns immediately and registers no hooks.
+**Env-gating:** Hooks are always registered; tracing is gated lazily at each hook
+call. Two ways to enable:
+
+1. **Env-gating** (plugin loads with tracing already active):
+   `CTXVM_TRACE_DIR=<dir> CTXVM_TRACE_NAME=<name>` must be set in the gateway
+   process's environment before startup (requires `systemctl --user
+   import-environment ...` + gateway restart from a separate shell).
+
+2. **Slash command** (no gateway restart needed — works from inside Hermes):
+   `/ctxvm-trace start <dir> [name]` — begin tracing, writes `<dir>/<name>.jsonl`
+   `/ctxvm-trace stop` — flush traces and stop
+   `/ctxvm-trace status` — show whether tracing is active
+
+Without either, hooks are registered but no tracing occurs (mirror-only v0:
+never mutates messages, never evicts, never throws on semantic conditions).

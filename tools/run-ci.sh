@@ -44,7 +44,7 @@ log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode; python — @ctxvm/h
 ( cd packages/node && node --test test/ ) >/dev/null
 ( cd packages/opencode && node --test test/ ) >/dev/null
 ( cd packages/hermes && python test/test_plugin.py ) >/dev/null
-log "ts suites green (12 + 8 tests); python suite green (18 tests)"
+log "ts suites green (12 + 8 tests); python suite green (20 tests)"
 
 # 3) schema + corpus integrity + the T21 export round-trip
 log "gate 3/4: schema validator + corpus checksums + export round-trip"
