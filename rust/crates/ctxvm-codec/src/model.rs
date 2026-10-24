@@ -40,7 +40,7 @@ pub enum RenderMode {
 
 /// Fault taxonomy sources per 02 §Fault taxonomy.
 /// `semantic_*` plugin sources are v1; v0 carries the marker value only.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FaultSource {
     /// Model re-calls the same tool/args → fault-in (Pichay-proven).

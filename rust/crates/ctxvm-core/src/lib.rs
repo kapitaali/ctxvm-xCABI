@@ -19,7 +19,9 @@
 pub mod page_table;
 pub mod render;
 pub mod replay;
+pub mod profile;
 
 pub use page_table::{PageKey, PageTrack, Playback, Violation, ViolationKind};
+pub use profile::{profile, turn_windows, EvictRow, FaultRow, PageProfile, ProfileReport, ProfileSummary};
 pub use replay::{replay, replay_turn, Divergence, ReplayReport};
 pub use render::{derive_projection, ForcedResident, Slot, TurnProjection, TurnTally};
