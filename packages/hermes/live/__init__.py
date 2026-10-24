@@ -62,6 +62,10 @@ if _hermes_src and _hermes_src not in sys.path:
 
 from plugin import create_ctxvm_plugin  # noqa: E402
 
+# Bumped whenever the adapter's wire behaviour changes. Written into every
+# .meta.json so a stale in-process copy is identifiable from its output alone.
+PLUGIN_VERSION = "0.2.0"
+
 ENV_KEYS = [
     "CTXVM_TRACE_DIR",
     "CTXVM_TRACE_NAME",
@@ -73,12 +77,11 @@ ENV_KEYS = [
 
 
 def _clear_env_for_tests() -> None:
+    """Drop CTXVM_* env and reset the process-global state (tests only)."""
     for key in ENV_KEYS:
         os.environ.pop(key, None)
-    # Reset module-level trace state set by slash-command tests.
-    global _trace_dir, _trace_name
-    _trace_dir = os.environ.get("CTXVM_TRACE_DIR")  # None after pop above
-    _trace_name = os.environ.get("CTXVM_TRACE_NAME")
+    if hasattr(sys, _STATE_ATTR):
+        delattr(sys, _STATE_ATTR)
 
 
 def _budget_from_env() -> int:
@@ -122,18 +125,56 @@ def _content_to_page_body(content_items: Optional[list[dict[str, Any]]]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Module-level trace state. Initialized from env at import so the existing
-# CTXVM_TRACE_DIR workflow keeps working; overridable at runtime via the
-# /ctxvm-trace slash command (no gateway restart needed).
+# Process-global trace state.
+#
+# WHY sys, not module globals: Hermes re-imports/re-registers plugins between
+# sessions (and a fresh import creates a NEW module object). Module-level
+# variables therefore reset to their import-time values, silently discarding
+# both the trace dir set by /ctxvm-trace and every page declared so far.
+# ``sys`` is imported exactly once per process and is never reloaded, so an
+# attribute hung off it survives any re-import of this plugin.
 # ---------------------------------------------------------------------------
-_trace_dir: Optional[str] = os.environ.get("CTXVM_TRACE_DIR")
-_trace_name: Optional[str] = os.environ.get("CTXVM_TRACE_NAME")
-_plugin: Optional[Any] = None
+_STATE_ATTR = "_ctxvm_tracer_state"
+
+
+def _state() -> Dict[str, Any]:
+    """Return the process-global tracer state, creating it on first use."""
+    state = getattr(sys, _STATE_ATTR, None)
+    if state is None:
+        state = {
+            "trace_dir": os.environ.get("CTXVM_TRACE_DIR"),
+            "trace_name": os.environ.get("CTXVM_TRACE_NAME"),
+            "plugin": None,
+            "stats": {
+                "session_starts": 0,
+                "pre_tool_calls": 0,
+                "post_tool_calls": 0,
+                "completed": 0,
+                "errored": 0,
+                "pre_llm_calls": 0,
+                "session_ends": 0,
+                # Hooks that fired while tracing was disabled. Non-zero here
+                # with pages=0 means tracing was switched on AFTER the calls
+                # happened — nothing was missed by the tracer, it simply was
+                # not created yet. This is the #1 false-alarm signal.
+                "skipped_untraced": 0,
+            },
+            "register_calls": 0,
+        }
+        setattr(sys, _STATE_ATTR, state)
+    return state
 
 
 def _traced() -> bool:
     """True when a trace dir is active (env or slash-command set)."""
-    return bool(_trace_dir)
+    state = _state()
+    return bool(state["trace_dir"] or os.environ.get("CTXVM_TRACE_DIR"))
+
+
+def _active_trace_dir() -> Optional[str]:
+    """Active trace dir: slash-command value wins, env is the fallback."""
+    state = _state()
+    return state["trace_dir"] or os.environ.get("CTXVM_TRACE_DIR")
 
 
 def _make_plugin() -> Optional[Any]:
@@ -150,28 +191,19 @@ def _make_plugin() -> Optional[Any]:
 
 def register(ctx) -> None:
     """Hermes plugin entry point. Hooks always registered; tracing gated lazily."""
-    trace_name = _trace_name  # initial value, may be overridden by slash command
-    sessions: list[str] = []
-
-    stats: Dict[str, Any] = {
-        "session_starts": 0,
-        "pre_tool_calls": 0,
-        "post_tool_calls": 0,
-        "completed": 0,
-        "errored": 0,
-        "pre_llm_calls": 0,
-        "session_ends": 0,
-    }
+    state = _state()
+    state["register_calls"] += 1
+    stats = state["stats"]  # shared across re-registrations, not per-call
 
     def _ensure_plugin() -> Optional[Any]:
-        global _plugin
-        if _plugin is None and _traced():
-            _plugin = _make_plugin()
-        return _plugin
+        """Create the tracer plugin on first traced hook call; reuse thereafter."""
+        if state["plugin"] is None and _traced():
+            state["plugin"] = _make_plugin()
+        return state["plugin"]
 
     def _write_trace(session_id: str, tracer: Any) -> None:
         """Write a single session's tracer to {session_id}.jsonl/.meta.json."""
-        trace_dir = _trace_dir
+        trace_dir = _active_trace_dir()
         if not trace_dir:
             return
         Path(trace_dir).mkdir(parents=True, exist_ok=True)
@@ -184,6 +216,7 @@ def register(ctx) -> None:
                 {
                     "sessionID": session_id,
                     "harness": "hermes-python-plugin",
+                    "pluginVersion": PLUGIN_VERSION,
                     "model": os.environ.get("CTXVM_MODEL"),
                     "provider": os.environ.get("CTXVM_PROVIDER"),
                     "budgetTokens": _budget_from_env(),
@@ -200,24 +233,22 @@ def register(ctx) -> None:
     def _flush_traces() -> None:
         """Write all finished tracers to the active trace dir, one file per session."""
         vm = _ensure_plugin()
-        if vm is None:
-            return
-        flushed = vm.finish_all()
-        trace_dir = _trace_dir
-        if not trace_dir:
+        trace_dir = _active_trace_dir()
+        if vm is None or not trace_dir:
             return
         Path(trace_dir).mkdir(parents=True, exist_ok=True)
-        for record in flushed:
+        for record in vm.finish_all():
             session_id = record["sessionID"]
             trace = record["trace"]
-            jsonl_path = Path(trace_dir) / f"{session_id}.jsonl"
-            meta_path = Path(trace_dir) / f"{session_id}.meta.json"
-            jsonl_path.write_text(trace.jsonl, encoding="utf-8")
-            meta_path.write_text(
+            Path(trace_dir, f"{session_id}.jsonl").write_text(
+                trace.jsonl, encoding="utf-8"
+            )
+            Path(trace_dir, f"{session_id}.meta.json").write_text(
                 json.dumps(
                     {
                         "sessionID": session_id,
                         "harness": "hermes-python-plugin",
+                        "pluginVersion": PLUGIN_VERSION,
                         "model": os.environ.get("CTXVM_MODEL"),
                         "provider": os.environ.get("CTXVM_PROVIDER"),
                         "budgetTokens": _budget_from_env(),
@@ -235,25 +266,23 @@ def register(ctx) -> None:
 
     def on_session_start(**kwargs: Any) -> None:
         stats["session_starts"] += 1
-        session_id = kwargs.get("session_id", "")
-        if session_id and session_id not in sessions:
-            sessions.append(session_id)
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_session_start(kwargs)
+        else:
+            stats["skipped_untraced"] += 1
 
     def on_pre_tool_call(**kwargs: Any) -> None:
         stats["pre_tool_calls"] += 1
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_pre_tool_call(kwargs)
+        else:
+            stats["skipped_untraced"] += 1
 
     def on_post_tool_call(**kwargs: Any) -> None:
         stats["post_tool_calls"] += 1
         status = kwargs.get("status")
-        # Real Hermes taxonomy (model_tools.py:_tool_result_observer_fields,
-        # line 656-671): status is "ok" on success, "error" on failure.
-        # hooks.py demo payloads use "completed"/"error"; accept both.
         if status not in ("ok", "completed"):
             stats["errored"] += 1
         else:
@@ -261,12 +290,16 @@ def register(ctx) -> None:
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_post_tool_call(kwargs)
+        else:
+            stats["skipped_untraced"] += 1
 
     def on_pre_llm_call(**kwargs: Any) -> None:
         stats["pre_llm_calls"] += 1
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_pre_llm_call(kwargs)
+        else:
+            stats["skipped_untraced"] += 1
 
     def on_session_end(**kwargs: Any) -> None:
         stats["session_ends"] += 1
@@ -281,13 +314,11 @@ def register(ctx) -> None:
 
     def _handle_trace_cmd(raw_args: str) -> str:
         """Handle /ctxvm-trace start <dir> [name] | stop | status."""
-        global _plugin, trace_name
-        global _trace_dir
         argv = raw_args.strip().split()
         if not argv:
             return (
                 "Usage: /ctxvm-trace start <dir> [name] | stop | status\n"
-                "  start <dir> [name]  — begin tracing, writes <dir>/<name>.jsonl\n"
+                "  start <dir> [name]  — begin tracing, writes <dir>/<session-id>.jsonl\n"
                 "  stop                — flush traces and stop tracing\n"
                 "  status              — show whether tracing is active"
             )
@@ -297,31 +328,41 @@ def register(ctx) -> None:
         if sub == "start":
             if len(argv) < 2:
                 return "Usage: /ctxvm-trace start <dir> [name]"
-            new_dir = argv[1]
-            new_name = argv[2] if len(argv) > 2 else None
-            _trace_dir = new_dir
-            if new_name:
-                trace_name = new_name
-            # Force plugin (re)creation on next hook so it picks up the new dir.
-            _plugin = None
+            state["trace_dir"] = argv[1]
+            if len(argv) > 2:
+                state["trace_name"] = argv[2]
+            # Fresh plugin so a new dir never inherits another dir's tracers.
+            state["plugin"] = None
             return (
-                f"ctxvm-trace: tracing enabled, dir={_trace_dir}, "
-                f"name={trace_name or '<session-id>'}"
+                f"ctxvm-trace: tracing enabled, dir={state['trace_dir']}, "
+                f"name={state['trace_name'] or '<session-id>'}"
             )
 
         if sub == "stop":
             _flush_traces()
-            _trace_dir = None
-            _plugin = None
+            state["trace_dir"] = None
+            state["plugin"] = None
             return "ctxvm-trace: tracing stopped, traces flushed."
 
         if sub == "status":
-            plugin_active = _plugin is not None
+            plugin = state["plugin"]
+            if plugin is None:
+                detail = "plugin=None (no tracer yet — hooks firing will not record)"
+            else:
+                tracers = getattr(plugin, "_tracers", {})
+                rows = []
+                for sid, tracer in sorted(tracers.items()):
+                    events = getattr(tracer, "_events", [])
+                    declares = sum(1 for e in events if e.get("type") == "page.declare")
+                    rows.append(f"{sid[:16] or '<empty>'}:events={len(events)},pages={declares}")
+                detail = "tracers=[" + "; ".join(rows) + "]" if rows else "tracers=[]"
             return (
                 f"ctxvm-trace: enabled={_traced()}, "
-                f"dir={_trace_dir or '<none>'}, "
-                f"name={trace_name or '<session-id>'}, "
-                f"plugin={plugin_active}"
+                f"dir={_active_trace_dir() or '<none>'}, "
+                f"name={state['trace_name'] or '<session-id>'}, "
+                f"version={PLUGIN_VERSION}, "
+                f"register_calls={state['register_calls']}, "
+                f"{detail}"
             )
 
         return (
@@ -345,3 +386,10 @@ def register(ctx) -> None:
 
     # Register cleanup on plugin unload
     ctx.on_unload(lambda: _flush_traces())
+
+    # Flush on process exit too. Guarded by process-global state so repeated
+    # register() calls cannot stack duplicate atexit handlers.
+    if not state.get("atexit_registered"):
+        state["atexit_registered"] = True
+        import atexit
+        atexit.register(_flush_traces)

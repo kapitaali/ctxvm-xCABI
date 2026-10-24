@@ -276,9 +276,15 @@ class Tracer:
         })
 
     def finish(self) -> FinishedTrace:
-        """Flush: emit turn.render × (turn+1) then call.meta × len(pending_meta). Returns JSONL."""
+        """Flush: turn.render × (turn+1) then call.meta × len(pending_meta).
+
+        Idempotent: the tail is computed per call and never appended to
+        ``_events``, so repeated flushes (session end, unload, atexit) produce
+        the same JSONL instead of duplicating turn/meta records.
+        """
         resident = sum(self._all_declared.values())
         turn = self._turn
+        tail: List[Dict[str, Any]] = []
         for t in range(turn + 1):
             tr: Dict[str, Any] = {
                 "type": "turn.render",
@@ -288,7 +294,7 @@ class Tracer:
             }
             if self._init.budget_tokens > 0:
                 tr["headroom"] = self._init.budget_tokens - resident
-            self._push(tr)
+            tail.append(tr)
 
         for m in self._pending_meta:
             meta: Dict[str, Any] = {
@@ -303,16 +309,17 @@ class Tracer:
             }
             if m.get("latencyMs") is not None:
                 meta["latencyMs"] = m["latencyMs"]
-            self._push(meta)
+            tail.append(meta)
 
-        jsonl = "".join(json.dumps(e) + "\n" for e in self._events)
+        events = list(self._events) + tail
+        jsonl = "".join(json.dumps(e) + "\n" for e in events)
         stats = {
             "turns": turn + 1,
             "pages": len(self._all_declared),
             "faults": self._fault_count,
             "residentTokens": resident,
         }
-        return FinishedTrace(jsonl=jsonl, events=list(self._events), stats=stats)
+        return FinishedTrace(jsonl=jsonl, events=events, stats=stats)
 
 
 def infer_kind(content: Json) -> PageKind:
@@ -346,7 +353,8 @@ class CtxvmPlugin:
         """pre_tool_call hook: recall({tool, args})."""
         session_id = payload.get("session_id", "")
         vm = self._vm_for(session_id)
-        vm.recall({"tool": payload.get("tool"), "args": payload.get("args")})
+        tool = payload.get("tool") or payload.get("tool_name")
+        vm.recall({"tool": tool, "args": payload.get("args")})
 
     def on_post_tool_call(self, payload: Dict[str, Any]) -> None:
         """post_tool_call hook: page.declare when status == completed (T6 §2: errors produce no page).
@@ -365,8 +373,9 @@ class CtxvmPlugin:
         vm = self._vm_for(session_id)
         result = payload.get("result")
         body = extract_page_body(result)
+        tool = payload.get("tool") or payload.get("tool_name")
         vm.page({
-            "tool": payload.get("tool"),
+            "tool": tool,
             "args": payload.get("args"),
             "content": body,
         })

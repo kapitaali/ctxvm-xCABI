@@ -240,6 +240,23 @@ class PluginTests(unittest.TestCase):
         self.assertEqual(record["trace"].stats["pages"], 1)
         self.assertEqual(record["trace"].stats["turns"], 1)
 
+    def test_live_shape_tool_name_declares_page(self):
+        """Live Hermes passes tool_name (not tool) — must still declare a page."""
+        plugin = create_ctxvm_plugin(INIT)
+        plugin.on_session_start({"session_id": "ses_tn"})
+        plugin.on_pre_tool_call({
+            "session_id": "ses_tn", "tool_name": "read", "args": {"path": "notes/alpha.md"},
+        })
+        plugin.on_post_tool_call({
+            "session_id": "ses_tn", "tool_name": "read", "args": {"path": "notes/alpha.md"},
+            "status": "ok",
+            "result": "hello world",
+        })
+        record = plugin.finish_all()[0]
+        declares = [e for e in record["trace"].events if e["type"] == "page.declare"]
+        self.assertEqual(len(declares), 1)
+        self.assertIn("read_file" if False else "read", declares[0]["page"]["id"]["logicalRef"])
+
     def test_finish_all_returns_trace_with_jsonl_and_stats(self):
         record = self._run_once()
         self.assertIn("sessionID", record)
@@ -317,13 +334,13 @@ class LiveAdapterTests(unittest.TestCase):
         # Initially no trace dir
         import live as live_mod
         self.assertFalse(live_mod._traced())
-        self.assertIsNone(live_mod._trace_dir)
+        self.assertIsNone(live_mod._active_trace_dir())
 
         # Start tracing via slash command
         out = handle(f"start {tmpdir} slash-session")
         self.assertIn("tracing enabled", out)
         self.assertTrue(live_mod._traced())
-        self.assertEqual(live_mod._trace_dir, tmpdir)
+        self.assertEqual(live_mod._active_trace_dir(), tmpdir)
 
         # Status
         out = handle("status")
