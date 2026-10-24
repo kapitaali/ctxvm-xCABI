@@ -21,5 +21,5 @@ pub mod render;
 pub mod replay;
 
 pub use page_table::{PageKey, PageTrack, Playback, Violation, ViolationKind};
-pub use replay::{replay, Divergence, ReplayReport};
-pub use render::{derive_projection, Slot, TurnProjection, TurnTally};
+pub use replay::{replay, replay_turn, Divergence, ReplayReport};
+pub use render::{derive_projection, ForcedResident, Slot, TurnProjection, TurnTally};

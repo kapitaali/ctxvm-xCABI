@@ -58,11 +58,37 @@ pub struct ReplayReport {
 pub fn replay(trace: &[Event]) -> ReplayReport {
     let mut pb = Playback::new();
     pb.feed_all(trace);
+    ReplayReport {
+        events: trace.len(),
+        divergences: check_facts(trace, &pb, |_| true),
+        violations: pb.violations().to_vec(),
+    }
+}
 
+/// Point-in-time replay: check only the facts recorded **at `turn`**.
+///
+/// Otherwise identical to [`replay`]: the decision-ledger violations still cover
+/// the whole stream (the table must be advanced to its end state because
+/// `mode_at` reads the final schedule) and the exit gate stays
+/// `divergences.is_empty()`. This is the `--turn N` CLI mode: probe one turn
+/// without taking a position on any other turn's facts.
+pub fn replay_turn(trace: &[Event], turn: u64) -> ReplayReport {
+    let mut pb = Playback::new();
+    pb.feed_all(trace);
+    ReplayReport {
+        events: trace.len(),
+        divergences: check_facts(trace, &pb, |t| t == turn),
+        violations: pb.violations().to_vec(),
+    }
+}
+
+/// Fact-check core shared by [`replay`] / [`replay_turn`]. `at` filters which
+/// recorded turns are checked (`|_| true` = the whole trace).
+fn check_facts(trace: &[Event], pb: &Playback, at: impl Fn(u64) -> bool) -> Vec<Divergence> {
     let mut divergences = Vec::new();
     for event in trace {
         match event {
-            Event::PageRender { turn, page, mode } => match pb.page(page) {
+            Event::PageRender { turn, page, mode } if at(*turn) => match pb.page(page) {
                 None => divergences.push(Divergence::RenderOfUnknownPage {
                     turn: *turn,
                     page: page.clone(),
@@ -79,7 +105,7 @@ pub fn replay(trace: &[Event]) -> ReplayReport {
                     }
                 }
             },
-            Event::TurnRender { turn, resident_tokens, .. } => {
+            Event::TurnRender { turn, resident_tokens, .. } if at(*turn) => {
                 let inferred = pb.tally_at(*turn).resident_tokens;
                 if inferred != *resident_tokens {
                     divergences.push(Divergence::ResidentTokensMismatch {
@@ -92,12 +118,7 @@ pub fn replay(trace: &[Event]) -> ReplayReport {
             _ => {}
         }
     }
-
-    ReplayReport {
-        events: trace.len(),
-        divergences,
-        violations: pb.violations().to_vec(),
-    }
+    divergences
 }
 
 #[cfg(test)]
@@ -154,5 +175,54 @@ mod tests {
             r1.divergences[0],
             Divergence::ResidentTokensMismatch { turn: 1, inferred: 100, recorded: 200 }
         ));
+    }
+
+    fn turn_probe_trace() -> Vec<Event> {
+        vec![
+            declare(
+                PageId { logical_ref: "a".into(), content_hash: "h-a".into() },
+                100,
+            ),
+            Event::TurnRender { turn: 0, resident_tokens: 100, evicted_tokens: 0, headroom: None },
+            Event::TurnRender { turn: 1, resident_tokens: 200, evicted_tokens: 0, headroom: None },
+        ]
+    }
+
+    #[test]
+    fn replay_turn_checks_only_that_turn() {
+        // Whole trace: 1 divergence (turn 1). Point-in-time at turn 0: clean.
+        let trace = turn_probe_trace();
+        assert_eq!(replay(&trace).divergences.len(), 1);
+        assert!(replay_turn(&trace, 0).divergences.is_empty());
+        let at_fault_turn = replay_turn(&trace, 1);
+        assert_eq!(at_fault_turn.divergences.len(), 1);
+        assert!(matches!(
+            at_fault_turn.divergences[0],
+            Divergence::ResidentTokensMismatch { turn: 1, inferred: 100, recorded: 200 }
+        ));
+        // A turn with no recorded facts is trivially clean (projection still derived).
+        assert!(replay_turn(&trace, 42).divergences.is_empty());
+    }
+
+    #[test]
+    fn replay_turn_keeps_violations_whole_stream() {
+        // Fault of a resident page at turn 0 is a violation (not a divergence);
+        // it must appear even when probing turn 1 only.
+        let trace = vec![
+            declare(
+                PageId { logical_ref: "a".into(), content_hash: "h-a".into() },
+                100,
+            ),
+            Event::PageFault {
+                turn: 0,
+                page: PageId { logical_ref: "a".into(), content_hash: "h-a".into() },
+                source: ctxvm_codec::FaultSource::ToolRecall,
+                latency_ms: None,
+            },
+            Event::TurnRender { turn: 1, resident_tokens: 100, evicted_tokens: 0, headroom: None },
+        ];
+        let report = replay_turn(&trace, 1);
+        assert!(report.divergences.is_empty());
+        assert_eq!(report.violations.len(), 1);
     }
 }

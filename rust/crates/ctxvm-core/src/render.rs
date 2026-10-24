@@ -10,7 +10,9 @@
 //! - The v0 projection covers PAGES only; provider message mirroring is a v1
 //!   tracer concern.
 
-use ctxvm_codec::{Event, PageRef, RenderMode};
+use std::collections::BTreeSet;
+
+use ctxvm_codec::{Event, PageId, PageRef, RenderMode};
 
 use crate::page_table::{PageTrack, Playback, Violation};
 
@@ -117,6 +119,63 @@ pub fn derive_projection(events: &[Event], turn: u64) -> TurnProjection {
     let mut pb = Playback::new();
     pb.feed_all(events);
     pb.projection_at(turn)
+}
+
+/// One force-resident flip applied by the counterfactual overlay.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ForcedResident {
+    /// The page whose stub slot was flipped to Full.
+    pub page: PageId,
+    /// Declared token size of the page (+= to ctxvm tally contributions).
+    pub tokens: u64,
+}
+
+impl TurnProjection {
+    /// Counterfactual force-resident overlay (UC2 visibility probe): in this
+    /// projection — only — flip every Stub slot whose `logical_ref` is listed to
+    /// Full (stub text dropped) and re-tally.
+    ///
+    /// Facts and violations are **untouched**: the overlay answers "could the
+    /// model have *seen* this page at this turn?" — a visibility probe verified
+    /// against the real decision schedule, not a rewrite of it. Visibility is
+    /// not correctness: whether the model would have *used* the content is
+    /// outside the decision layer.
+    ///
+    /// Returns the projected-with-overlay state plus the list of flips applied
+    /// (matching slots that were already Full are not flips — they don't appear
+    /// in the list). Matching is by exact `logical_ref`; one ref may match
+    /// several content-hash variants and every variant is flipped.
+    pub fn with_forced_resident(mut self, refs: &BTreeSet<String>) -> (Self, Vec<ForcedResident>) {
+        let mut forced = Vec::new();
+        for slot in &mut self.slots {
+            if slot.mode == RenderMode::Stub
+                && refs.contains(slot.reference.id.logical_ref.as_str())
+            {
+                slot.mode = RenderMode::Full;
+                slot.stub_text = None;
+                forced.push(ForcedResident {
+                    page: slot.reference.id.clone(),
+                    tokens: slot.reference.tokens,
+                });
+            }
+        }
+        self.tally = TurnTally {
+            resident_tokens: self
+                .slots
+                .iter()
+                .filter(|s| s.mode == RenderMode::Full)
+                .fold(0u64, |acc, s| acc.saturating_add(s.reference.tokens)),
+            stubbed_tokens: self
+                .slots
+                .iter()
+                .filter(|s| s.mode == RenderMode::Stub)
+                .fold(0u64, |acc, s| acc.saturating_add(s.reference.tokens)),
+            stubbed_slots: self.slots.iter().filter(|s| s.mode == RenderMode::Stub).count(),
+            resident_slots: self.slots.iter().filter(|s| s.mode == RenderMode::Full).count(),
+        };
+        (self, forced)
+    }
 }
 
 impl PageTrack {
@@ -383,5 +442,58 @@ mod tests {
             serde_json::to_string(&run2).unwrap(),
             "byte-level determinism"
         );
+    }
+
+    /// ── Force-resident overlay (UC2 visibility probe). ────────────────────────
+    /// A stubbed page forced Full in the projection: stub text dropped, tally
+    /// re-derived, facts/violations untouched, multi-variant refs all flipped.
+    #[test]
+    fn overlay_flips_stub_to_full_and_re_tallies() {
+        let events = vec![
+            declare_file("tool:read_file(src/a)", "h-a1", 120),
+            declare_file("tool:read_file(src/b)", "h-b", 400),
+            evict_stubs(1, "tool:read_file(src/a)", "h-a1"),
+        ];
+        let proj = derive_projection(&events, 1);
+        // Turn 1: a evicted -> Stub (evict@t is visible at turn t), b resident.
+        assert_eq!((proj.tally.resident_tokens, proj.tally.stubbed_tokens), (400, 120));
+
+        let mut refs = BTreeSet::new();
+        refs.insert("tool:read_file(src/a)".to_string());
+        let (pinned, forced) = proj.clone().with_forced_resident(&refs);
+        assert_eq!(forced.len(), 1);
+        assert_eq!(forced[0].page.content_hash, "h-a1");
+        assert_eq!(forced[0].tokens, 120);
+        let a_slot = pinned.slots.iter().find(|s| s.reference.id.content_hash == "h-a1").unwrap();
+        assert_eq!(a_slot.mode, RenderMode::Full);
+        assert!(a_slot.stub_text.is_none(), "stub text dropped on override");
+        assert_eq!(pinned.tally.resident_tokens, 520);
+        assert_eq!(pinned.tally.stubbed_slots, 0);
+        // Facts/violations untouched by the overlay.
+        assert_eq!(pinned.violations, proj.violations);
+
+        // Unknown ref: no flip, nothing forced, projection identical.
+        let mut ghost = BTreeSet::new();
+        ghost.insert("ghost".to_string());
+        let (same, forced_none) = proj.clone().with_forced_resident(&ghost);
+        assert!(forced_none.is_empty());
+        assert_eq!(same, proj);
+    }
+
+    #[test]
+    fn overlay_flips_every_content_hash_variant_of_one_ref() {
+        let events = vec![
+            declare_file("tool:read_file(src/a)", "h-a1", 120),
+            declare_file("tool:read_file(src/a)", "h-a2", 120),
+            evict_stubs(1, "tool:read_file(src/a)", "h-a1"),
+            evict_stubs(1, "tool:read_file(src/a)", "h-a2"),
+        ];
+        let proj = derive_projection(&events, 1);
+        let mut refs = BTreeSet::new();
+        refs.insert("tool:read_file(src/a)".to_string());
+        let (pinned, forced) = proj.with_forced_resident(&refs);
+        assert_eq!(forced.len(), 2, "both variants flipped");
+        assert_eq!(pinned.tally.resident_tokens, 240);
+        assert_eq!(pinned.tally.stubbed_tokens, 0);
     }
 }
