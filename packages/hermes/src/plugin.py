@@ -354,15 +354,17 @@ class CtxvmPlugin:
         Real Hermes taxonomy (model_tools.py:_tool_result_observer_fields,
         line 656-671): status is "ok" on success, "error" on failure.
         hooks.py demo payloads use "completed"/"error"; accept both.
+
+        Hermes tool results can be a plain string, a dict with a 'content'
+        list, or other shapes — handle all gracefully.
         """
         status = payload.get("status")
         if status not in ("ok", "completed"):
             return
         session_id = payload.get("session_id", "")
         vm = self._vm_for(session_id)
-        result = payload.get("result") or {}
-        content_items = result.get("content") or []
-        body = self._content_to_page_body(content_items)
+        result = payload.get("result")
+        body = extract_page_body(result)
         vm.page({
             "tool": payload.get("tool"),
             "args": payload.get("args"),
@@ -424,6 +426,49 @@ class CtxvmPlugin:
             elif message.get("text"):
                 parts.append(message["text"])
         return "\n".join(parts)
+
+
+def extract_page_body(result: Any) -> str:
+    """Extract page body from any tool result type.
+
+    Hermes tool results can be:
+    - str: plain text output → used verbatim
+    - dict with 'content' list: structured result (OpenCode-style)
+    - dict with 'text' key: direct text
+    - list: array of content items
+    - other: stringified
+    """
+    if result is None:
+        return ""
+    if isinstance(result, str):
+        return result
+    if isinstance(result, dict):
+        content = result.get("content")
+        if content is None:
+            text = result.get("text")
+            return text if isinstance(text, str) else ""
+        if isinstance(content, list):
+            return items_to_body(content)
+        return ""
+    if isinstance(result, list):
+        return items_to_body(result)
+    return str(result)
+
+
+def items_to_body(items: list) -> str:
+    """Convert content items to page body: text items verbatim, non-text as markers."""
+    kept = []
+    for item in items:
+        if isinstance(item, str):
+            kept.append(item)
+        elif isinstance(item, dict):
+            item_type = item.get("type") or "text"
+            if item_type == "text":
+                kept.append(item.get("text", ""))
+            else:
+                name = item.get("name")
+                kept.append(f"<{item_type}{f':{name}' if isinstance(name, str) else ''}>")
+    return "\n".join(kept)
 
 
 def create_ctxvm_plugin(init: Dict[str, Any]) -> CtxvmPlugin:
