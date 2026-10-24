@@ -1,0 +1,24 @@
+{
+  "sessionID": "ses_hermes_thrash_synth",
+  "harness": "hermes-python-plugin-synthetic",
+  "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+  "provider": "nvidia",
+  "budgetTokens": 120000,
+  "capturedAt": "2026-10-24T00:00:00+00:00",
+  "hookStats": {
+    "session_starts": 1,
+    "pre_tool_calls": 25,
+    "post_tool_calls": 25,
+    "completed": 25,
+    "errored": 0,
+    "pre_llm_calls": 5,
+    "session_ends": 1,
+    "sessions": ["ses_hermes_thrash_synth"]
+  },
+  "traceStats": {
+    "turns": 5,
+    "pages": 5,
+    "faults": 5,
+    "residentTokens": 24
+  }
+}

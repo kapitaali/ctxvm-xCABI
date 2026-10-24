@@ -10,8 +10,6 @@
 //! - The v0 projection covers PAGES only; provider message mirroring is a v1
 //!   tracer concern.
 
-use std::collections::BTreeSet;
-
 use ctxvm_codec::{Event, PageId, PageRef, RenderMode};
 
 use crate::page_table::{PageTrack, Playback, Violation};
@@ -131,10 +129,40 @@ pub struct ForcedResident {
     pub tokens: u64,
 }
 
+/// A `--pin` argument in its matching form (UC2 visibility probe).
+///
+/// - `Ref` — the T16 broad form: flip **every** Stub slot whose `logical_ref`
+///   matches (all content-hash variants of the ref).
+/// - `Identity` — the T20 precision form `--pin (ref, hash)`: flip only the
+///   Stub slot with that exact page identity (one variant of the ref).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Pin {
+    /// Broad match on the logical ref.
+    Ref(String),
+    /// Exact match on the full page identity.
+    Identity {
+        logical_ref: String,
+        content_hash: String,
+    },
+}
+
+impl Pin {
+    pub fn ref_pin(reference: impl Into<String>) -> Self {
+        Pin::Ref(reference.into())
+    }
+
+    pub fn identity(logical_ref: impl Into<String>, content_hash: impl Into<String>) -> Self {
+        Pin::Identity {
+            logical_ref: logical_ref.into(),
+            content_hash: content_hash.into(),
+        }
+    }
+}
+
 impl TurnProjection {
     /// Counterfactual force-resident overlay (UC2 visibility probe): in this
-    /// projection — only — flip every Stub slot whose `logical_ref` is listed to
-    /// Full (stub text dropped) and re-tally.
+    /// projection — only — flip Stub slots to Full (stub text dropped) and
+    /// re-tally.
     ///
     /// Facts and violations are **untouched**: the overlay answers "could the
     /// model have *seen* this page at this turn?" — a visibility probe verified
@@ -144,14 +172,26 @@ impl TurnProjection {
     ///
     /// Returns the projected-with-overlay state plus the list of flips applied
     /// (matching slots that were already Full are not flips — they don't appear
-    /// in the list). Matching is by exact `logical_ref`; one ref may match
-    /// several content-hash variants and every variant is flipped.
-    pub fn with_forced_resident(mut self, refs: &BTreeSet<String>) -> (Self, Vec<ForcedResident>) {
+    /// in the list). Matching per [`Pin`]: [`Pin::Ref`] flips every
+    /// content-hash variant of the ref; [`Pin::Identity`] flips exactly the one
+    /// (logical_ref, content_hash) page.
+    pub fn with_forced_resident(mut self, pins: &[Pin]) -> (Self, Vec<ForcedResident>) {
         let mut forced = Vec::new();
         for slot in &mut self.slots {
-            if slot.mode == RenderMode::Stub
-                && refs.contains(slot.reference.id.logical_ref.as_str())
-            {
+            if slot.mode != RenderMode::Stub {
+                continue;
+            }
+            let matched = pins.iter().any(|pin| match pin {
+                Pin::Ref(reference) => *reference == slot.reference.id.logical_ref,
+                Pin::Identity {
+                    logical_ref,
+                    content_hash,
+                } => {
+                    *logical_ref == slot.reference.id.logical_ref
+                        && *content_hash == slot.reference.id.content_hash
+                }
+            });
+            if matched {
                 slot.mode = RenderMode::Full;
                 slot.stub_text = None;
                 forced.push(ForcedResident {
@@ -189,6 +229,8 @@ impl PageTrack {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
+
     use super::*;
     use crate::page_table::ViolationKind;
     use ctxvm_codec::{CacheEstimate, FaultSource, PageId, PageKind};
@@ -458,8 +500,7 @@ mod tests {
         // Turn 1: a evicted -> Stub (evict@t is visible at turn t), b resident.
         assert_eq!((proj.tally.resident_tokens, proj.tally.stubbed_tokens), (400, 120));
 
-        let mut refs = BTreeSet::new();
-        refs.insert("tool:read_file(src/a)".to_string());
+        let refs = vec![Pin::ref_pin("tool:read_file(src/a)")];
         let (pinned, forced) = proj.clone().with_forced_resident(&refs);
         assert_eq!(forced.len(), 1);
         assert_eq!(forced[0].page.content_hash, "h-a1");
@@ -473,8 +514,7 @@ mod tests {
         assert_eq!(pinned.violations, proj.violations);
 
         // Unknown ref: no flip, nothing forced, projection identical.
-        let mut ghost = BTreeSet::new();
-        ghost.insert("ghost".to_string());
+        let ghost = vec![Pin::ref_pin("ghost")];
         let (same, forced_none) = proj.clone().with_forced_resident(&ghost);
         assert!(forced_none.is_empty());
         assert_eq!(same, proj);
@@ -489,11 +529,69 @@ mod tests {
             evict_stubs(1, "tool:read_file(src/a)", "h-a2"),
         ];
         let proj = derive_projection(&events, 1);
-        let mut refs = BTreeSet::new();
-        refs.insert("tool:read_file(src/a)".to_string());
+        let refs = vec![Pin::ref_pin("tool:read_file(src/a)")];
         let (pinned, forced) = proj.with_forced_resident(&refs);
         assert_eq!(forced.len(), 2, "both variants flipped");
         assert_eq!(pinned.tally.resident_tokens, 240);
         assert_eq!(pinned.tally.stubbed_tokens, 0);
+    }
+
+    #[test]
+    fn precision_pin_flips_only_the_exact_identity() {
+        // Two content-hash variants of one ref, both stubbed at turn 1.
+        let events = vec![
+            declare_file("tool:read_file(src/a)", "h-a1", 120),
+            declare_file("tool:read_file(src/a)", "h-a2", 120),
+            evict_stubs(1, "tool:read_file(src/a)", "h-a1"),
+            evict_stubs(1, "tool:read_file(src/a)", "h-a2"),
+        ];
+        let proj = derive_projection(&events, 1);
+        let (pinned, forced) =
+            proj.clone().with_forced_resident(&[Pin::identity("tool:read_file(src/a)", "h-a1")]);
+        assert_eq!(forced.len(), 1, "only the exact identity flips");
+        assert_eq!(forced[0].page.content_hash, "h-a1");
+        let one = pinned
+            .slots
+            .iter()
+            .find(|s| s.reference.id.content_hash == "h-a2")
+            .unwrap();
+        assert_eq!(one.mode, RenderMode::Stub, "sibling variant untouched");
+        assert_eq!(
+            (pinned.tally.resident_tokens, pinned.tally.stubbed_tokens),
+            (120, 120)
+        );
+
+        // Contrast: the broad T16 form flips both variants of the ref.
+        let (broad, forced_broad) =
+            proj.with_forced_resident(&[Pin::ref_pin("tool:read_file(src/a)")]);
+        assert_eq!(forced_broad.len(), 2);
+        assert_eq!(broad.tally.resident_tokens, 240);
+    }
+
+    #[test]
+    fn mixed_pin_list_applies_both_kinds() {
+        // a and b stubbed at turn 1; c never evicted (Full — pinning it is a
+        // no-op flip). One broad pin + one precision pin + one identity on a
+        // Full page.
+        let events = vec![
+            declare_file("file:a", "h-a", 100),
+            declare_file("file:b", "h-b", 200),
+            declare_file("file:c", "h-c", 400),
+            evict_stubs(1, "file:a", "h-a"),
+            evict_stubs(1, "file:b", "h-b"),
+        ];
+        let proj = derive_projection(&events, 1);
+        let pins = vec![
+            Pin::ref_pin("file:b"),
+            Pin::identity("file:a", "h-a"),
+            Pin::identity("file:c", "h-c"),
+        ];
+        let (pinned, forced) = proj.with_forced_resident(&pins);
+        // Flips count Stub→Full only: the Full c identity is not a flip.
+        let flipped: BTreeSet<&str> =
+            forced.iter().map(|f| f.page.content_hash.as_str()).collect();
+        assert_eq!(flipped, BTreeSet::from(["h-a", "h-b"]));
+        assert_eq!(pinned.tally.stubbed_slots, 0);
+        assert_eq!(pinned.tally.resident_tokens, 700);
     }
 }

@@ -1,0 +1,26 @@
+{"type": "session.open", "agentId": "hermes", "model": "nvidia/nemotron-3.5-super-vl-120b-a12b", "provider": "nvidia", "budgetTokens": 120000, "tokenizerId": "apx4-char"}
+{"type": "page.declare", "page": {"id": {"logicalRef": "tool:read_file({\"path\":\"data/f1.txt\"})", "contentHash": "sha256:cb2beccb"}, "kind": "tool_result", "tokens": 5}}
+{"type": "page.declare", "page": {"id": {"logicalRef": "tool:read_file({\"path\":\"data/f2.txt\"})", "contentHash": "sha256:77d1b4e4"}, "kind": "tool_result", "tokens": 4}}
+{"type": "page.declare", "page": {"id": {"logicalRef": "tool:read_file({\"path\":\"data/f3.txt\"})", "contentHash": "sha256:d90b71e4"}, "kind": "tool_result", "tokens": 5}}
+{"type": "page.declare", "page": {"id": {"logicalRef": "tool:read_file({\"path\":\"data/f4.txt\"})", "contentHash": "sha256:2ec0fa29"}, "kind": "tool_result", "tokens": 5}}
+{"type": "page.declare", "page": {"id": {"logicalRef": "tool:read_file({\"path\":\"data/f5.txt\"})", "contentHash": "sha256:09e28aae"}, "kind": "tool_result", "tokens": 5}}
+{"type": "page.render", "turn": 0, "page": {"logicalRef": "tool:read_file({\"path\":\"data/f1.txt\"})", "contentHash": "sha256:cb2beccb"}, "mode": "full"}
+{"type": "page.render", "turn": 0, "page": {"logicalRef": "tool:read_file({\"path\":\"data/f2.txt\"})", "contentHash": "sha256:77d1b4e4"}, "mode": "full"}
+{"type": "page.render", "turn": 0, "page": {"logicalRef": "tool:read_file({\"path\":\"data/f3.txt\"})", "contentHash": "sha256:d90b71e4"}, "mode": "full"}
+{"type": "page.render", "turn": 0, "page": {"logicalRef": "tool:read_file({\"path\":\"data/f4.txt\"})", "contentHash": "sha256:2ec0fa29"}, "mode": "full"}
+{"type": "page.render", "turn": 0, "page": {"logicalRef": "tool:read_file({\"path\":\"data/f5.txt\"})", "contentHash": "sha256:09e28aae"}, "mode": "full"}
+{"type": "page.fault", "turn": 0, "page": {"logicalRef": "tool:read_file({\"path\":\"data/f1.txt\"})", "contentHash": "sha256:cb2beccb"}, "source": "tool_recall"}
+{"type": "page.fault", "turn": 0, "page": {"logicalRef": "tool:read_file({\"path\":\"data/f2.txt\"})", "contentHash": "sha256:77d1b4e4"}, "source": "tool_recall"}
+{"type": "page.fault", "turn": 0, "page": {"logicalRef": "tool:read_file({\"path\":\"data/f3.txt\"})", "contentHash": "sha256:d90b71e4"}, "source": "tool_recall"}
+{"type": "page.fault", "turn": 0, "page": {"logicalRef": "tool:read_file({\"path\":\"data/f4.txt\"})", "contentHash": "sha256:2ec0fa29"}, "source": "tool_recall"}
+{"type": "page.fault", "turn": 0, "page": {"logicalRef": "tool:read_file({\"path\":\"data/f5.txt\"})", "contentHash": "sha256:09e28aae"}, "source": "tool_recall"}
+{"type": "turn.render", "turn": 0, "residentTokens": 24, "evictedTokens": 0, "headroom": 119976}
+{"type": "turn.render", "turn": 1, "residentTokens": 24, "evictedTokens": 0, "headroom": 119976}
+{"type": "turn.render", "turn": 2, "residentTokens": 24, "evictedTokens": 0, "headroom": 119976}
+{"type": "turn.render", "turn": 3, "residentTokens": 24, "evictedTokens": 0, "headroom": 119976}
+{"type": "turn.render", "turn": 4, "residentTokens": 24, "evictedTokens": 0, "headroom": 119976}
+{"type": "call.meta", "turn": 0, "provider": "nvidia", "cacheEstimate": {"estHitTokens": 0, "estMissTokens": 24, "providerReported": false}}
+{"type": "call.meta", "turn": 1, "provider": "nvidia", "cacheEstimate": {"estHitTokens": 24, "estMissTokens": 0, "providerReported": false}}
+{"type": "call.meta", "turn": 2, "provider": "nvidia", "cacheEstimate": {"estHitTokens": 24, "estMissTokens": 0, "providerReported": false}}
+{"type": "call.meta", "turn": 3, "provider": "nvidia", "cacheEstimate": {"estHitTokens": 24, "estMissTokens": 0, "providerReported": false}}
+{"type": "call.meta", "turn": 4, "provider": "nvidia", "cacheEstimate": {"estHitTokens": 24, "estMissTokens": 0, "providerReported": false}}

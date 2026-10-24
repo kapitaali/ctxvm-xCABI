@@ -26,4 +26,4 @@ pub use page_table::{PageKey, PageTrack, Playback, Violation, ViolationKind};
 pub use profile::{profile, turn_windows, EvictRow, FaultRow, PageProfile, ProfileReport, ProfileSummary};
 pub use diff::{diff_traces, event_turn, DivergentHash, PageOnly, TallyMismatch, TraceDiff, TraceRelation};
 pub use replay::{replay, replay_turn, Divergence, ReplayReport};
-pub use render::{derive_projection, ForcedResident, Slot, TurnProjection, TurnTally};
+pub use render::{derive_projection, ForcedResident, Pin, Slot, TurnProjection, TurnTally};

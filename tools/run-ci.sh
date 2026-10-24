@@ -21,6 +21,8 @@ FIXTURES=(
   packages/node/fixtures/tracer-healthy.jsonl
   packages/node/fixtures/tracer-recall.jsonl
   packages/opencode/fixtures/opencode-echo.jsonl
+  packages/hermes/fixtures/hermes-echo-synthetic.jsonl
+  packages/hermes/fixtures/hermes-thrash-synthetic.jsonl
   corpus/m1/session-healthy.jsonl
   corpus/m1/session-thrashing.jsonl
   corpus/m1/tracer-healthy.jsonl
@@ -28,6 +30,8 @@ FIXTURES=(
   corpus/m1/opencode-echo.jsonl
   corpus/m2/live-echo.jsonl
   corpus/m2/live-thrash.jsonl
+  corpus/m3/hermes-echo-synthetic.jsonl
+  corpus/m3/hermes-thrash-synthetic.jsonl
 )
 
 # 1) rust
@@ -35,17 +39,19 @@ log "gate 1/4: rust — cargo test"
 ( cd rust && . "$HOME/.cargo/env" 2>/dev/null || true; cargo test ) >/dev/null
 log "rust suite green"
 
-# 2) typescript
-log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode"
+# 2) typescript + python
+log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode; python — @ctxvm/hermes"
 ( cd packages/node && node --test test/ ) >/dev/null
 ( cd packages/opencode && node --test test/ ) >/dev/null
-log "ts suites green (12 + 8 tests)"
+( cd packages/hermes && python test/test_plugin.py ) >/dev/null
+log "ts suites green (12 + 8 tests); python suite green (17 tests)"
 
 # 3) schema + corpus integrity
 log "gate 3/4: schema validator + corpus checksums"
 venvs/odps/bin/python spec/rfc-0/validate_schema.py "${FIXTURES[@]}"
 ( cd corpus/m1 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd corpus/m2 && sha256sum -c checksums.sha256 ) >/dev/null
+( cd corpus/m3 && sha256sum -c checksums.sha256 ) >/dev/null
 log "schema gate green"
 
 # 4) hub parity

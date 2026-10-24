@@ -11,9 +11,12 @@
 //!
 //! `--pin <ref>` matches pages by exact logical_ref (the `page:<ref>` memo form is
 //! accepted; one ref flips every declared content-hash variant that is stubbed at
-//! that turn). The overlay answers the UC2 visibility question — "could the model
-//! have SEEN this page at turn N?" — and never rewrites facts, violations, or the
-//! divergence gate; visibility is not correctness.
+//! that turn). The precision form `--pin (ref, hash)` matches one exact page
+//! identity — one variant of a ref — for traces that declare several content
+//! hashes under a single logical ref. The overlay answers the UC2 visibility
+//! question — "could the model have SEEN this page at turn N?" — and never
+//! rewrites facts, violations, or the divergence gate; visibility is not
+//! correctness.
 //!
 //! Exit:   0 = divergences-free within the checked scope ·
 //!         1 = divergences · 2 = usage/IO/parse error
@@ -25,10 +28,10 @@
 use std::{collections::BTreeSet, env, fs, process::ExitCode};
 
 use ctxvm_codec::{read_jsonl, Event};
-use ctxvm_core::{derive_projection, replay, replay_turn, ReplayReport, TurnProjection};
+use ctxvm_core::{derive_projection, replay, replay_turn, Pin, ReplayReport, TurnProjection};
 
 const USAGE: &str =
-    "usage: replay <session.jsonl> [--turn N] [--pin <logical-ref>]... [--output FILE]";
+    "usage: replay <session.jsonl> [--turn N] [--pin <logical-ref>|(ref, hash)]... [--output FILE]";
 
 fn fail(code: u8, message: &str) -> ExitCode {
     eprintln!("ctxvm replay: {message}");
@@ -41,7 +44,9 @@ fn help() -> ExitCode {
          turn N, plus the derived turn-N render projection in the report\n\
          --pin <ref>        counterfactual force-resident overlay (requires --turn):\n\
          flip the stub slots of matching pages to Full in the projection;\n\
-         repeatable; `page:<ref>` memo form accepted\n\
+         repeatable; `page:<ref>` memo form accepted; the T20 precision\n\
+         form `(ref, hash)` pins one exact content-hash variant instead\n\
+         of every variant of the ref\n\
          --output FILE      write the report JSON to FILE (stdout stays silent)\n\
          --help | -h        this usage\n\n\
          Exit: 0 divergences-free within the checked scope · 1 divergences ·\n\
@@ -111,11 +116,6 @@ fn parse_args() -> Result<Args, String> {
     Ok(Args { trace: trace.ok_or("missing trace argument")?, turn, pins, output })
 }
 
-/// Memo-style `page:<ref>` form → bare logical_ref.
-fn normalize_ref(pin: &str) -> &str {
-    pin.strip_prefix("page:").unwrap_or(pin)
-}
-
 /// Declared logical_refs, deterministic (sorted, unique) order for error text.
 fn declared_refs(trace: &[Event]) -> Vec<String> {
     trace
@@ -127,6 +127,111 @@ fn declared_refs(trace: &[Event]) -> Vec<String> {
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect()
+}
+
+/// Declared full identities (sorted, unique) for precision-pin resolution.
+fn declared_identities(trace: &[Event]) -> BTreeSet<(String, String)> {
+    trace
+        .iter()
+        .filter_map(|e| match e {
+            Event::PageDeclare { page } => {
+                Some((page.id.logical_ref.clone(), page.id.content_hash.clone()))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// One `--pin` value → its matching form ([`Pin`]).
+///
+/// - `ref` / `page:ref` → broad form: every stubbed content-hash variant of the
+///   ref flips.
+/// - `(ref, hash)` / `(page:ref, hash)` → T20 precision form: only the stubbed
+///   slot with that exact identity flips. Split at the **last** comma — refs
+///   may contain commas (tool-call shapes) while the hash is always the final
+///   component.
+fn parse_pin(raw: &str) -> Result<Pin, String> {
+    const MALFORMED: &str = "malformed precision pin — the form is `(ref, hash)`";
+    let trimmed = raw.trim();
+    // The memo `page:` prefix composes with both forms: strip it up front.
+    let without_memo = trimmed.strip_prefix("page:").unwrap_or(trimmed);
+    if let Some(inner) = without_memo.strip_prefix('(') {
+        let inner = inner
+            .strip_suffix(')')
+            .ok_or_else(|| format!("{MALFORMED}: `{raw}`"))?;
+        let (reference, hash) = inner
+            .rsplit_once(',')
+            .ok_or_else(|| format!("{MALFORMED}: `{raw}`"))?;
+        let reference = reference.trim();
+        if reference.is_empty() || hash.trim().is_empty() {
+            return Err(format!("{MALFORMED}: `{raw}`"));
+        }
+        return Ok(Pin::identity(reference, hash.trim()));
+    }
+    Ok(Pin::ref_pin(without_memo))
+}
+
+/// All `--pin` values → pin forms (broad + precision mixed allowed).
+fn build_pins(raw: &[String]) -> Result<Vec<Pin>, String> {
+    raw.iter().map(|s| parse_pin(s)).collect()
+}
+
+/// The report label for a pin: the normalized broad ref, or the normalized
+/// `(ref, hash)` textual form for precision pins.
+fn pin_label(pin: &Pin) -> String {
+    match pin {
+        Pin::Ref(reference) => reference.clone(),
+        Pin::Identity {
+            logical_ref,
+            content_hash,
+        } => format!("({logical_ref}, {content_hash})"),
+    }
+}
+
+/// Resolve every pin against the trace's declared pages: Err = the exact
+/// problem for the first (in argument order) unresolvable pin (exit 2).
+fn resolve_pins(pins: &[Pin], trace: &[Event]) -> Result<(), String> {
+    let refs = declared_refs(trace);
+    let ref_set: BTreeSet<String> = refs.iter().cloned().collect();
+    let identities = declared_identities(trace);
+    for pin in pins {
+        match pin {
+            Pin::Ref(r) if !ref_set.contains(r) => {
+                return Err(format!(
+                    "--pin: no declared page matches `{r}` · declared refs: {}",
+                    refs.join(", ")
+                ));
+            }
+            Pin::Identity {
+                logical_ref,
+                content_hash,
+            } if !ref_set.contains(logical_ref) => {
+                return Err(format!(
+                    "--pin: no declared page matches `({logical_ref}, {content_hash})` · declared refs: {}",
+                    refs.join(", ")
+                ));
+            }
+            Pin::Identity {
+                logical_ref,
+                content_hash,
+            } => {
+                let key = (logical_ref.clone(), content_hash.clone());
+                if !identities.contains(&key) {
+                    let hashes: Vec<String> = identities
+                        .iter()
+                        .filter(|(r, _)| r == logical_ref)
+                        .map(|(_, h)| h.clone())
+                        .collect();
+                    return Err(format!(
+                        "--pin: `{logical_ref}` is declared but not under hash `{content_hash}` · declared hashes for it: {}",
+                        hashes.join(", ")
+                    ));
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(())
 }
 
 fn run() -> ExitCode {
@@ -164,25 +269,12 @@ fn run() -> ExitCode {
     let body = match args.turn {
         None => serde_json::to_string_pretty(&report).expect("report is serializable"),
         Some(n) => {
-            let unknown: Vec<&str> = args
-                .pins
-                .iter()
-                .map(|p| normalize_ref(p))
-                .filter(|r| !declared_refs(&trace).contains(&(*r).to_owned()))
-                .collect();
-            if !unknown.is_empty() {
-                return fail(
-                    2,
-                    &format!(
-                        "--pin: no declared page matches {} · declared refs: {}",
-                        unknown
-                            .iter()
-                            .map(|u| format!("`{u}` "))
-                            .collect::<String>()
-                            .trim_end(),
-                        declared_refs(&trace).join(", ")
-                    ),
-                );
+            let pin_specs = match build_pins(&args.pins) {
+                Err(e) => return fail(2, &e),
+                Ok(p) => p,
+            };
+            if let Err(e) = resolve_pins(&pin_specs, &trace) {
+                return fail(2, &e);
             }
             let mut value = serde_json::json!({
                 "turn": n,
@@ -192,15 +284,12 @@ fn run() -> ExitCode {
             });
             if !args.pins.is_empty() {
                 let projection: TurnProjection = derive_projection(&trace, n);
-                let (projection, forced) = projection
-                    .with_forced_resident(
-                        &args.pins.iter().map(|p| normalize_ref(p).to_owned()).collect(),
-                    );
-                let pins: Vec<&str> = args.pins.iter().map(|p| normalize_ref(p)).collect();
+                let (projection, forced) = projection.with_forced_resident(&pin_specs);
+                let labels: Vec<String> = pin_specs.iter().map(pin_label).collect();
                 let obj = value
                     .as_object_mut()
                     .expect("json! builds an object");
-                obj.insert("pins".into(), serde_json::to_value(&pins).expect("refs serialize"));
+                obj.insert("pins".into(), serde_json::to_value(&labels).expect("labels serialize"));
                 obj.insert(
                     "forcedResident".into(),
                     serde_json::to_value(&forced).expect("forced residents serialize"),

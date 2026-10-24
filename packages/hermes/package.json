@@ -1,0 +1,14 @@
+{
+  "name": "@ctxvm/hermes",
+  "version": "0.0.1",
+  "private": true,
+  "description": "T17 — Hermes plugin wiring @ctxvm/node-equivalent tracer into Hermes hook domains (mirror-only, Python).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "scripts": {
+    "test": "python test/test_plugin.py"
+  }
+}
