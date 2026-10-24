@@ -270,15 +270,12 @@ def register(ctx) -> None:
 
     def on_session_end(**kwargs: Any) -> None:
         stats["session_ends"] += 1
-        session_id = kwargs.get("session_id", "")
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_session_end(kwargs)
-            # Flush this session's tracer to its own file, so multiple sessions
-            # don't overwrite each other.
-            tracer = vm._tracers.get(session_id) if session_id else None
-            if tracer is not None:
-                _write_trace(session_id, tracer)
+            # Flush all tracers on session end so captures are written even
+            # when the gateway stays up (on_unload only fires at shutdown).
+            _flush_traces()
 
     # --- Slash command: /ctxvm-trace ---------------------------------------
 
