@@ -53,7 +53,7 @@ git status clean → byte-identical rebuild
 | 1 | `ctxvm replay` re-applies renderer; exit 0 = divergence-free; exit 1 on divergences (§2, §6) | exit 0 on all 9 session fixtures, exit 1 on the divergent vector | **VERIFIED** |
 | 2 | `ctxvm replay trace.jsonl --turn 142` (§3 step 4, §6) | binary takes exactly one positional — no `--turn` | **DESIGN-CONCEPT** (flag not built) |
 | 3 | `ctxvm export --odps --session … --turn 142 --output handoff/` (§3 step 2, §6) | no `export` binary; ODPS packaging exists as committed manifest+hub, not as CLI | **DESIGN-CONCEPT** |
-| 4 | `hermes/opencode ctxvm trace … --resume-from handoff/turn-142/` (§3 step 3) | no `trace` subcommand; `@ctxvm/node` is source-only (T8 pending binary) | **DESIGN-CONCEPT** |
+| 4 | `hermes/opencode ctxvm trace … --resume-from handoff/turn-142/` (§3 step 3) | no `trace` subcommand; `@ctxvm/node` exists **source-only** — T8 itself is DONE (RR-T8-20261022); the unbuilt piece is the `ctxvm trace` / `--resume-from` CLI **binary**, not the tracer | **DESIGN-CONCEPT** |
 | 5 | `ctxvm diff session-a.jsonl trace-142.jsonl` (§3 step 4, §6) | no `diff` binary | **DESIGN-CONCEPT** |
 | 6 | `cargo test --package ctxvm-conformance` → "28+ tests green" (§6) | 8 tests in that package; **29** at workspace scope, 0 warnings | **ERRATUM** (scope) |
 | 7 | validator "SCHEMA CONFORMANCE: PASS (108 checks)" (§6) | PASS yes — but 108 requires the two-fixture argv form; `python spec/rfc-0/validate_schema.py trace.jsonl` prints the 55-check form | **VERIFIED** with argv caveat |
@@ -99,7 +99,7 @@ git status clean → byte-identical rebuild
 - **B. Test-count scope (UC1/UC2):** "28+ tests" is true only workspace-wide (29); `--package ctxvm-conformance` yields 8.
 - **C. Validator figures (UC1/UC2/UC3):** "108 checks" is the two-benchmark-fixture argv form; per-trace or default invocation prints 55 (50 vectors + 5 negatives).
 - **D. ODPS CLI shape:** correctly stated by all three memos (`compliance_level`/`production_ready` absent from SDK 4.1 CLI) — confirmed, no erratum.
-- **E. Citations (UC2 §7):** phantom reports `RR-M1-20261022.md`, `RR-M1AB-20261022.md`; "P4/P5" nowhere in repo.
+- **E. Citations (UC2 §7):** phantom reports `RR-M1-20261022.md`, `RR-M1AB-20261022.md`; "P4/P5" nowhere in repo. Also **UC1 stale status lines**: §7 "T8 (`@ctxvm/node` tracer) is the next frontier" and the next-step "The tracer implementation is the missing piece" reflect the pre-T8-landing board; T8 landed 2026-10-22 (12/12 tests, both fixtures schema-PASS + replay-clean) and is load-bearing for T9/T12.
 - **F. Replay flags (UC1/UC2):** `--turn`/`--output`/`--pin` cited but unbuilt — this is the delivered build-first verdict, not a correctness erratum.
 
 **Framing errata: none.** All three memos disclaim their future-facing CLI sections and scope their honesty notes correctly; no overclaimed *numbers* were found.
