@@ -128,6 +128,7 @@ def _content_to_page_body(content_items: Optional[list[dict[str, Any]]]) -> str:
 # ---------------------------------------------------------------------------
 _trace_dir: Optional[str] = os.environ.get("CTXVM_TRACE_DIR")
 _trace_name: Optional[str] = os.environ.get("CTXVM_TRACE_NAME")
+_plugin: Optional[Any] = None
 
 
 def _traced() -> bool:
@@ -149,7 +150,6 @@ def _make_plugin() -> Optional[Any]:
 
 def register(ctx) -> None:
     """Hermes plugin entry point. Hooks always registered; tracing gated lazily."""
-    _plugin: Optional[Any] = None
     trace_name = _trace_name  # initial value, may be overridden by slash command
     sessions: list[str] = []
 
@@ -164,7 +164,7 @@ def register(ctx) -> None:
     }
 
     def _ensure_plugin() -> Optional[Any]:
-        nonlocal _plugin
+        global _plugin
         if _plugin is None and _traced():
             _plugin = _make_plugin()
         return _plugin
@@ -255,7 +255,7 @@ def register(ctx) -> None:
 
     def _handle_trace_cmd(raw_args: str) -> str:
         """Handle /ctxvm-trace start <dir> [name] | stop | status."""
-        nonlocal _plugin, trace_name
+        global _plugin, trace_name
         global _trace_dir
         argv = raw_args.strip().split()
         if not argv:
