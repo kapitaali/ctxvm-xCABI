@@ -39,6 +39,12 @@ jobs:
       - name: "@ctxvm/opencode tests"
         run: node --test test/
         working-directory: packages/opencode
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: "@ctxvm/hermes tests"
+        run: python test/test_plugin.py
+        working-directory: packages/hermes
 
   schema:
     runs-on: ubuntu-latest
@@ -57,6 +63,8 @@ jobs:
           packages/node/fixtures/tracer-healthy.jsonl
           packages/node/fixtures/tracer-recall.jsonl
           packages/opencode/fixtures/opencode-echo.jsonl
+          packages/hermes/fixtures/hermes-echo-synthetic.jsonl
+          packages/hermes/fixtures/hermes-thrash-synthetic.jsonl
           corpus/m1/session-healthy.jsonl
           corpus/m1/session-thrashing.jsonl
           corpus/m1/tracer-healthy.jsonl
@@ -64,12 +72,21 @@ jobs:
           corpus/m1/opencode-echo.jsonl
           corpus/m2/live-echo.jsonl
           corpus/m2/live-thrash.jsonl
+          corpus/m3/hermes-echo-synthetic.jsonl
+          corpus/m3/hermes-thrash-synthetic.jsonl
+          corpus/m4/hermes-live-session-01.jsonl
       - name: corpus drop checksums (M1 seed)
         run: sha256sum -c checksums.sha256
         working-directory: corpus/m1
       - name: corpus drop checksums (M2 live)
         run: sha256sum -c checksums.sha256
         working-directory: corpus/m2
+      - name: corpus drop checksums (M3 Hermes synthetic)
+        run: sha256sum -c checksums.sha256
+        working-directory: corpus/m3
+      - name: corpus drop checksums (M4 Hermes live)
+        run: sha256sum -c checksums.sha256
+        working-directory: corpus/m4
 
   hub:
     runs-on: ubuntu-latest

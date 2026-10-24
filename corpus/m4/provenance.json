@@ -1,0 +1,49 @@
+{
+  "drop": "ctxvm-trace-corpus-m4",
+  "product": "ctxvm Trace Corpus (ODPS: 04-odps-dataproduct-corpus.yaml, productVersion 0.4.0)",
+  "createdOn": "2026-10-24",
+  "license": "CC-BY-4.0 for corpus content (per root manifest license.governance block)",
+  "redaction": "Live Hermes session, then path redaction: /home/theb/Documents/ctxvm -> $REPO, /home/theb/.hermes -> $HERMES_HOME, /home/theb -> $HOME, /tmp/ctxvm-capture -> $CAPTURE. Redaction applied to the serialized JSONL and re-verified: line count unchanged, every line parses, structure identical after substituting the same strings, and the schema validator plus replay engine pass on the redacted file. No credentials, tokens, API keys, environment values, or third-party personal data were present. One tool:memory ref embeds the first 120 characters of a stored preference about bug-report layout (a project convention, not personal data). Tool refs truncate their argument JSON at 120 characters by design (RFC-0 §6).",
+  "status": "LIVE — first genuine Hermes harness capture for the corpus. Recorded by the installed plugin (version 0.2.0) inside a running Hermes gateway process, not synthesised. Supersedes the synthetic-only limitation recorded in corpus/m3: the env-gating and trace-dir problems described there were diagnosed and fixed in T17.7 (see packages/hermes/BUG_REPORT.md).",
+  "harness": {
+    "name": "Hermes Agent",
+    "version": "0.22.5",
+    "plugin": "packages/hermes/live/__init__.py (v0.2.0; export register(ctx); runtime-gated by /ctxvm-trace start|stop|status)",
+    "tracer": "packages/hermes/src/plugin.py (Python port of @ctxvm/node, RFC-0 xCABI JSONL)",
+    "wiring": "plugin installed at $HERMES_HOME/plugins/ctxvm-tracer/ and enabled; register(ctx) registers on_session_start, pre_tool_call, post_tool_call, pre_llm_call and on_session_end hooks",
+    "invocation": "interactive Hermes session (gateway-backed CLI); /ctxvm-trace start before the recorded tool calls, /ctxvm-trace stop to flush",
+    "flush": "on_session_end -> _flush_traces() -> finish_all() -> one file per session id",
+    "model": "nvidia/nemotron-3.5-super-vl-120b-a12b via provider nvidia",
+    "providerSpend": "USD 0 (free-tier provider; the recorded work was repository inspection and validation, not paid inference)",
+    "liveCaptureWorking": "Confirmed: /ctxvm-trace status reported version=0.2.0, register_calls=1 and a live tracer, and the flushed file carries page.declare/page.fault events."
+  },
+  "files": [
+    {
+      "file": "hermes-live-session-01.jsonl",
+      "meta": "hermes-live-session-01.meta.json",
+      "kind": "live-harness-captured",
+      "origin": "Live Hermes session (T17.7/T17.8): corpus inspection, schema and replay validation, plus a deliberate echo beat (identical command issued twice) and one failing tool call",
+      "events": 23,
+      "turns": 2,
+      "pages": 13,
+      "faults": 1,
+      "toolCalls": { "before": 27, "after": 26, "completed": 25, "errored": 1 },
+      "skippedUntraced": 0,
+      "residentTokens": 7540
+    }
+  ],
+  "beats": {
+    "declare": "13 pages declared from real tool results across four tool families (read_file, terminal, skill_view, memory)",
+    "fault": "1 tool_recall fault: the same sha256sum command was issued twice with identical output, so the second completion landed on an already-resident page with an unchanged contentHash",
+    "error": "1 errored tool call (read_file on a non-existent path) correctly produced no page (T6 §2); hookStats records completed=25, errored=1",
+    "turns": "2 turn boundaries; residentTokens 7540, headroom 112460 against the declared 120000 budget"
+  },
+  "limitations": [
+    "v0 tracer is observe-only and has no eviction path (declared => resident). This drop therefore cannot exhibit page.evict, stub rendering, or second-slot paging; the eviction-shape reference remains the synthetic P-pathology vector in corpus/m1.",
+    "Faults are deduped per page and source, so repeated re-fetches of one page yield a single tool_recall row; per-turn pressure appears in call.meta rather than as repeated rows.",
+    "The recorded window starts when /ctxvm-trace start ran, not when the Hermes session began. Calls made before that point are not in the trace; skipped_untraced counts any hook that fired while tracing was off, and it is 0 here, so the window is complete for its duration.",
+    "budgetTokens=120000 is declared headroom bookkeeping (T9 convention), not the provider's measured context window.",
+    "tokenizerId is apx4-char (ceil(characters/4)), an approximation; absolute token counts are not provider usage figures.",
+    "call.meta reports providerReported=false throughout: the harness did not surface provider cache counters, so estHitTokens/estMissTokens are estimates derived from page residency."
+  ]
+}

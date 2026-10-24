@@ -32,6 +32,7 @@ FIXTURES=(
   corpus/m2/live-thrash.jsonl
   corpus/m3/hermes-echo-synthetic.jsonl
   corpus/m3/hermes-thrash-synthetic.jsonl
+  corpus/m4/hermes-live-session-01.jsonl
 )
 
 # 1) rust
@@ -44,7 +45,7 @@ log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode; python — @ctxvm/h
 ( cd packages/node && node --test test/ ) >/dev/null
 ( cd packages/opencode && node --test test/ ) >/dev/null
 ( cd packages/hermes && python test/test_plugin.py ) >/dev/null
-log "ts suites green (12 + 8 tests); python suite green (20 tests)"
+log "ts suites green (12 + 8 tests); python suite green (21 tests)"
 
 # 3) schema + corpus integrity + the T21 export round-trip
 log "gate 3/4: schema validator + corpus checksums + export round-trip"
@@ -52,6 +53,7 @@ venvs/odps/bin/python spec/rfc-0/validate_schema.py "${FIXTURES[@]}"
 ( cd corpus/m1 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd corpus/m2 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd corpus/m3 && sha256sum -c checksums.sha256 ) >/dev/null
+( cd corpus/m4 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd rust && . "$HOME/.cargo/env" 2>/dev/null || true; cargo build --release ) >/dev/null
 EXPORT_TMP="$(mktemp -d)"
 rust/target/release/export corpus/m3/hermes-echo-synthetic.jsonl --turn 2 \
@@ -59,6 +61,7 @@ rust/target/release/export corpus/m3/hermes-echo-synthetic.jsonl --turn 2 \
 zstd -q -d -f "$EXPORT_TMP/handoff/trace-2.jsonl.zst" -o "$EXPORT_TMP/handoff/trace-2.jsonl"
 rust/target/release/replay "$EXPORT_TMP/handoff/trace-2.jsonl" --turn 2 >/dev/null
 rust/target/release/diff corpus/m3/hermes-echo-synthetic.jsonl "$EXPORT_TMP/handoff/trace-2.jsonl" >/dev/null
+rust/target/release/replay corpus/m4/hermes-live-session-01.jsonl >/dev/null
 ( cd "$EXPORT_TMP/handoff" && sha256sum -c checksums.sha256 ) >/dev/null
 rm -rf "$EXPORT_TMP"
 log "schema + export round-trip gate green"

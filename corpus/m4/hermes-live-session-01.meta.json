@@ -1,0 +1,29 @@
+{
+  "sessionID": "local-7ebc5306509a9b55b8d542019a4029a8674555a0cbf870173594ef24010e0427",
+  "harness": "hermes-python-plugin",
+  "pluginVersion": "0.2.0",
+  "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+  "provider": "nvidia",
+  "budgetTokens": 120000,
+  "capturedAt": "2026-10-24T19:34:31.566481+00:00",
+  "hookStats": {
+    "session_starts": 0,
+    "pre_tool_calls": 27,
+    "post_tool_calls": 26,
+    "completed": 25,
+    "errored": 1,
+    "pre_llm_calls": 3,
+    "session_ends": 3,
+    "skipped_untraced": 0,
+    "sessions": [
+      "local-7ebc5306509a9b55b8d542019a4029a8674555a0cbf870173594ef24010e0427"
+    ]
+  },
+  "traceStats": {
+    "turns": 2,
+    "pages": 13,
+    "faults": 1,
+    "residentTokens": 7540
+  },
+  "redaction": "Paths rewritten to $REPO/$HERMES_HOME/$HOME/$CAPTURE. Tool refs truncate args at 120 chars."
+}
