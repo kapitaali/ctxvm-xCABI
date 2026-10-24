@@ -16,8 +16,8 @@ Hooks wired (see packages/hermes/HOOKS.md for the full pin):
     on_session_end     → finish_all() flush
 
 Trace output (flushes on session end and plugin unload):
-    <trace-dir>/<name>.jsonl        — RFC-0 xCABI JSONL trace
-    <trace-dir>/<name>.meta.json    — session id, harness, hook counts, trace stats
+    <trace-dir>/<session-id>.jsonl        — RFC-0 xCABI JSONL trace
+    <trace-dir>/<session-id>.meta.json    — session id, harness, hook counts, trace stats
 
 Two ways to enable tracing:
 
@@ -169,8 +169,36 @@ def register(ctx) -> None:
             _plugin = _make_plugin()
         return _plugin
 
+    def _write_trace(session_id: str, tracer: Any) -> None:
+        """Write a single session's tracer to {session_id}.jsonl/.meta.json."""
+        trace_dir = _trace_dir
+        if not trace_dir:
+            return
+        Path(trace_dir).mkdir(parents=True, exist_ok=True)
+        trace = tracer.finish()
+        jsonl_path = Path(trace_dir) / f"{session_id}.jsonl"
+        meta_path = Path(trace_dir) / f"{session_id}.meta.json"
+        jsonl_path.write_text(trace.jsonl, encoding="utf-8")
+        meta_path.write_text(
+            json.dumps(
+                {
+                    "sessionID": session_id,
+                    "harness": "hermes-python-plugin",
+                    "model": os.environ.get("CTXVM_MODEL"),
+                    "provider": os.environ.get("CTXVM_PROVIDER"),
+                    "budgetTokens": _budget_from_env(),
+                    "capturedAt": datetime.now(timezone.utc).isoformat(),
+                    "hookStats": {**stats, "sessions": [session_id]},
+                    "traceStats": trace.stats,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
     def _flush_traces() -> None:
-        """Write all finished tracers to the active trace dir."""
+        """Write all finished tracers to the active trace dir, one file per session."""
         vm = _ensure_plugin()
         if vm is None:
             return
@@ -179,13 +207,11 @@ def register(ctx) -> None:
         if not trace_dir:
             return
         Path(trace_dir).mkdir(parents=True, exist_ok=True)
-        base = trace_name
         for record in flushed:
             session_id = record["sessionID"]
             trace = record["trace"]
-            file = base or session_id
-            jsonl_path = Path(trace_dir) / f"{file}.jsonl"
-            meta_path = Path(trace_dir) / f"{file}.meta.json"
+            jsonl_path = Path(trace_dir) / f"{session_id}.jsonl"
+            meta_path = Path(trace_dir) / f"{session_id}.meta.json"
             jsonl_path.write_text(trace.jsonl, encoding="utf-8")
             meta_path.write_text(
                 json.dumps(
@@ -228,10 +254,10 @@ def register(ctx) -> None:
         # Real Hermes taxonomy (model_tools.py:_tool_result_observer_fields,
         # line 656-671): status is "ok" on success, "error" on failure.
         # hooks.py demo payloads use "completed"/"error"; accept both.
-        if status in ("ok", "completed"):
-            stats["completed"] += 1
-        else:
+        if status not in ("ok", "completed"):
             stats["errored"] += 1
+        else:
+            stats["completed"] += 1
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_post_tool_call(kwargs)
@@ -244,12 +270,15 @@ def register(ctx) -> None:
 
     def on_session_end(**kwargs: Any) -> None:
         stats["session_ends"] += 1
+        session_id = kwargs.get("session_id", "")
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_session_end(kwargs)
-            # Flush per-session traces at session end so captures are written
-            # even when the gateway stays up (on_unload only fires at shutdown).
-            _flush_traces()
+            # Flush this session's tracer to its own file, so multiple sessions
+            # don't overwrite each other.
+            tracer = vm._tracers.get(session_id) if session_id else None
+            if tracer is not None:
+                _write_trace(session_id, tracer)
 
     # --- Slash command: /ctxvm-trace ---------------------------------------
 
