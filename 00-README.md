@@ -50,6 +50,7 @@ manifest → 0.5.0 (`x-cabi.latestDrop corpus/m5`) + hub re-linked — see
 | Prompt hygiene | No instructional prompt pollution in v0; identity stubs carry recovery instructions |
 | Cache economics | Evictions batched at turn boundaries; `call.meta` records estimated cache cost |
 | Standards packaging | ODPS 4.1 manifests at the edge (never in the Rust core); hub = ODPC Git repo |
+| Plugin organization | **One deployable plugin per harness** (no per-UC top-level plugins); use cases are `CTXVM_FEATURES`-gated submodules inside each plugin (thin `live/` entry dispatches `src/uc1-handoff`, `src/uc2-forensics`, `src/uc3-planner`); UC engine logic converges on shared bindings (ctxvm-py via PyO3), interim per-port only for thin wrappers; offline halves stay in `rust/` + `benchmarks/` (2026-10-25) |
 | License target | Apache-2.0 (library + spec), corpus under ODPS `license` block |
 
 ## File index
