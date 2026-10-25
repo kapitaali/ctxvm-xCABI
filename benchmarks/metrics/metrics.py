@@ -35,6 +35,13 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+# policy simulator lives beside this module; import works both as an
+# installed package (pytest) and as a standalone script (documented CLI)
+try:
+    from benchmarks.metrics.policies import POLICIES, simulate
+except ImportError:  # script invocation: repo root not on sys.path[0]
+    from policies import POLICIES, simulate
+
 # ── parsing ──────────────────────────────────────────────────────────────────
 
 
@@ -204,18 +211,37 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("trace")
     p.add_argument("--baseline", help="recorded naive-context-stuffing trace (default: counterfactual)")
     p.add_argument("--windows", help="P-pathology windows for thrash_index, e.g. 4-7,9-9")
+    p.add_argument("--policy", help="UC3 §3 alternative eviction policy to simulate "
+                                    f"(one of {', '.join(POLICIES)}; requires --budget)")
+    p.add_argument("--budget", type=int, help="simulated capacity in tokens (requires --policy)")
     args = p.parse_args(argv)
+
+    if (args.policy is None) != (args.budget is None):
+        p.error("--policy and --budget must be used together")
 
     events = read_events(args.trace)
     windows = parse_windows(args.windows)
-    out = {"trace": args.trace, **summarize(events, windows)}
-    if args.baseline:
-        naive = read_events(args.baseline)
-        label = f"recorded:{args.baseline}"
+    if args.policy:
+        sim = simulate(events, args.policy, args.budget)
+        sim_events = sim["sim_events"]
+        out = {"trace": args.trace, **summarize(sim_events, windows)}
+        out["netTokenReduction"] = {
+            "baseline": "counterfactual-no-paging",
+            "value": net_token_reduction(sim_events),
+        }
+        rec = {"evictions": sum(1 for e in events if e["type"] == "page.evict"),
+               "faults": sum(1 for e in events if e["type"] == "page.fault")}
+        out["policySim"] = {**sim["meta"], "simEvents": len(sim_events),
+                            "recordedRealization": rec}
     else:
-        naive = None
-        label = "counterfactual-no-paging"
-    out["netTokenReduction"] = {"baseline": label, "value": net_token_reduction(events, naive)}
+        out = {"trace": args.trace, **summarize(events, windows)}
+        if args.baseline:
+            naive = read_events(args.baseline)
+            label = f"recorded:{args.baseline}"
+        else:
+            naive = None
+            label = "counterfactual-no-paging"
+        out["netTokenReduction"] = {"baseline": label, "value": net_token_reduction(events, naive)}
     print(json.dumps(out, indent=2))
     return 0
 
