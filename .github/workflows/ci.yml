@@ -51,6 +51,9 @@ jobs:
       - name: "@ctxvm/hermes tests (full suite: plugin + uc_registry + uc2_forensics)"
         run: python -m pytest test/ -q
         working-directory: packages/hermes
+      - name: "@ctxvm/py binding tests (byte-compare vs rust CLI on m1/m2 anchors)"
+        run: python -m pytest test/ -q
+        working-directory: packages/py
       - name: "benchmarks/metrics suite (07 formulas + UC3 policy sim)"
         run: python -m pytest benchmarks/metrics -q
 

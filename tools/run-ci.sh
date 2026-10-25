@@ -47,13 +47,14 @@ log "rust suite green"
 log "release binaries green (UC2 golden parity)"
 
 # 2) typescript + python
-log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode; python — @ctxvm/hermes"
+log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode; python — @ctxvm/hermes + @ctxvm/py binding"
 ( cd packages/node && node --test test/ ) >/dev/null
 ( cd packages/opencode && node --test test/ ) >/dev/null
 ( cd packages/hermes && python -m pytest test/ -q ) >/dev/null
+( cd packages/py && python -m pytest test/ -q ) >/dev/null
 log "gate 2b: benchmarks/metrics — 07 reference suite + policy simulator"
 ( venvs/odps/bin/python -m pytest benchmarks/metrics -q ) >/dev/null
-log "ts suites green (12 + 21 tests); python suites green (51 + 27 tests)"
+log "ts suites green (12 + 21 tests); python suites green (51 + 27 + 8 tests)"
 
 # 3) schema + corpus integrity + the T21 export round-trip
 log "gate 3/4: schema validator + corpus checksums + export round-trip"
