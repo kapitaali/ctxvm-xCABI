@@ -9,3 +9,9 @@ venvs/
 .DS_Store
 node_modules/
 target/
+
+# Python bytecode and test caches (tracked-.pyc de-tracking, 2026-10-25;
+# the 4 files were committed at T3 by accident and drifted dirty ever since)
+__pycache__/
+*.pyc
+.pytest_cache/
