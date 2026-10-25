@@ -68,7 +68,7 @@ if [ -f "$META" ]; then
   python3 - "$META" <<'PY'
 import json, sys
 CANON = ["budgetTokens", "capturedAt", "harness", "harnessVersion", "hookStats",
-         "model", "pluginVersion", "provider", "sessionID", "traceStats"]
+         "model", "pluginVersion", "provider", "resumeFrom", "sessionID", "traceStats"]
 meta = json.load(open(sys.argv[1]))
 missing = [k for k in CANON if k not in meta]
 extra = [k for k in meta if k not in CANON]

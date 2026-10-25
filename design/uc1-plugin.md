@@ -155,6 +155,18 @@ opt-in beat pending an orchestrator sign-off — rationale in §3.
   `resumeFrom` sidecar extension via the 09 contract DoD (both parity tests in the
   same commit); fixture witness: paused snapshot from m2-echo → resumed session-b
   shares the prefix (`diff` relations) and session-b's trace schema-PASSes.
+  **LANDED 2026-10-25 (hermes card `8871dda` + opencode UC1-RESUME-MIRROR):**
+  hermes `UC1Handoff.resume()` = decompress + replay counterproof (exit 0) +
+  checksums-provenance digest — never blocks (loud witness, `verified=False`);
+  boot check in hermes `register()` and in the opencode mirror module
+  (`packages/opencode/src/uc1-resume.ts` wired in `live/ctxvm.ts`; capture-gated
+  there, disclosed); `resumeFrom` sidecar key on BOTH emitters (stamped LAST;
+  `{}` on early failure, `null` default). Scope note: the reference implements
+  §3 checks (2) + partial (1) — diff relation (3) and projection surface (4)
+  are proven at the test level instead (`UC1ResumeWitnessTests` in hermes:
+  m2-echo @2 → diff `a_extends_b` → replay `--turn 2` exit 0 → page-table
+  turn-stamped) and stay in-module v-next work. Golden parity fixture pins
+  digest/reason/artifact set on both sides (09 §4).
 - **B4 (corpus offer, orchestrator-gated):** propose the m6 drop shape = a real
   pause/resume pair (operator runs the beat; packaging rules per corpus/README).
 

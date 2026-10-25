@@ -1,12 +1,15 @@
 /** T12 live-adapter tests — env gate, hook registration/mapping, cleanup flush. */
 
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
 import live from "../live/ctxvm.ts";
+import { rustBinDir } from "../src/uc1-resume.ts";
 
 const ENV_KEYS = [
   "CTXVM_TRACE_DIR",
@@ -16,6 +19,7 @@ const ENV_KEYS = [
   "CTXVM_AGENT_ID",
   "CTXVM_BUDGET_TOKENS",
   "CTXVM_OPENCODE_VERSION",
+  "CTXVM_RESUME_FROM",
 ] as const;
 
 function clearEnv(): void {
@@ -121,8 +125,9 @@ test("live adapter maps the three hooks and flushes a trace on cleanup", async (
   // hermes `_canon_meta` shape asserted in packages/hermes/test/test_plugin.py.
   assert.deepEqual(Object.keys(meta).sort(), [
     "budgetTokens", "capturedAt", "harness", "harnessVersion", "hookStats",
-    "model", "pluginVersion", "provider", "sessionID", "traceStats",
+    "model", "pluginVersion", "provider", "resumeFrom", "sessionID", "traceStats",
   ]);
+  assert.equal(meta.resumeFrom, null); // not resuming in this run
   assert.equal(meta.harness, "opencode-v2-promise-plugin");
   assert.equal(meta.harnessVersion, null); // CTXVM_OPENCODE_VERSION not exported in this test
   assert.equal(typeof meta.pluginVersion, "string"); // resolved from the adapter package
@@ -131,6 +136,73 @@ test("live adapter maps the three hooks and flushes a trace on cleanup", async (
     "after", "before", "completed", "contexts", "errored", "extraHookStats", "sessions",
   ]);
   assert.deepEqual(meta.hookStats.extraHookStats, {});
+
+  clearEnv();
+});
+
+test("B3 boot check: CTXVM_RESUME_FROM stamps resumeFrom evidence + verified=True witness", async () => {
+  clearEnv();
+  const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
+  const dir = mkdtempSync(join(tmpdir(), "ctxvm-live-resume-"));
+  const snap = join(dir, "handoff");
+  // Same fixture discipline as uc1-resume.test.ts: relative argv + cwd=repo
+  // root (artifact bytes stay host-independent).
+  const bin = rustBinDir();
+  assert.ok(bin, "release binaries not built — run the cargo build gate");
+  const proc = spawnSync(
+    join(bin, "export"),
+    ["corpus/m1/session-healthy.jsonl", "--turn", "0", "--output", snap, "--odps"],
+    { cwd: repoRoot, encoding: "utf8" },
+  );
+  assert.equal(proc.status, 0, proc.stderr);
+
+  process.env.CTXVM_TRACE_DIR = dir;
+  process.env.CTXVM_TRACE_NAME = "boot-test";
+  process.env.CTXVM_RESUME_FROM = snap;
+
+  let sessionCb: (input: unknown) => void = () => {};
+  const ctx = {
+    session: {
+      hook: async (_name: string, cb: (input: unknown) => void) => {
+        sessionCb = cb;
+        return { dispose() {} };
+      },
+    },
+    tool: {
+      hook: async () => ({ dispose() {} }),
+    },
+  };
+
+  const cleanup = await live.setup(ctx as never);
+  sessionCb({
+    sessionID: "ses_boot",
+    messages: [{ role: "user", content: [{ type: "text", text: "after resume" }] }],
+  });
+  await (cleanup as () => Promise<void>)();
+
+  const meta = JSON.parse(readFileSync(join(dir, "boot-test.meta.json"), "utf8")) as {
+    resumeFrom?: Record<string, unknown>;
+  };
+  const rf = meta.resumeFrom;
+  assert.ok(rf, "boot check must stamp resumeFrom");
+  assert.equal(rf.turn, 0);
+  assert.equal(rf.snapTurn, 0);
+  assert.equal(rf.snapshot, snap);
+  assert.ok(String(rf.snapshotDigest).startsWith("sha256:"));
+  // Artifact set deep-equal to the shared golden fixture (§4 cross-file pin).
+  const golden = JSON.parse(
+    readFileSync(join(repoRoot, "packages/opencode/test/fixtures/uc1-resume-golden.json"), "utf8"),
+  ) as { artifactNames: string[] };
+  assert.deepEqual(
+    ((rf.artifacts as string[]) ?? []).map((p) => p.split("/").pop()).sort(),
+    golden.artifactNames,
+  );
+
+  const witness = readFileSync(join(dir, "hooks-witness.log"), "utf8");
+  assert.match(
+    witness,
+    /resume_from=\S+ verified=True reason=snapshot verified: replay exit 0 at turn 0/,
+  );
 
   clearEnv();
 });

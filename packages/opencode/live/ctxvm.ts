@@ -27,6 +27,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createCtxvmPlugin, type CtxvmPlugin } from "../src/plugin.ts";
+import { resumeVerify } from "../src/uc1-resume.ts";
 
 interface HookRegistration {
   dispose?: () => Promise<void> | void;
@@ -99,6 +100,31 @@ export default {
     };
     wit(`init name=${process.env.CTXVM_TRACE_NAME ?? "<sessionID>"}`);
 
+    // --- B3 resume: CTXVM_RESUME_FROM boot check (UC1-RESUME-MIRROR) --------
+    // Mirror of the hermes register() block (live/__init__.py): verify the
+    // paused snapshot BEFORE the first hook work; failures are loud witness
+    // lines and the tracer continues UNVERIFIED (never blocks the agent
+    // loop). `verified` renders Python-style True/False so the witness logs
+    // byte-match across harnesses. Runs only while capture is active — the
+    // adapter is inert without CTXVM_TRACE_DIR by contract (§1 09-plugin-
+    // parity.md); hermes has no capture-independent boot witness either.
+    let resumeFrom: Record<string, unknown> | null = null;
+    const resumeFromEnv = process.env.CTXVM_RESUME_FROM;
+    if (resumeFromEnv) {
+      const resumeResult = resumeVerify(resumeFromEnv);
+      // Hermes law mirrored: the evidence dict ALWAYS replaces the slot ({}
+      // on early failures) — null stays reserved for "not resuming".
+      resumeFrom = resumeResult.evidence;
+      wit(
+        `resume_from=${resumeFromEnv} verified=${resumeResult.verified ? "True" : "False"} reason=${resumeResult.reason}`,
+      );
+      if (!resumeResult.verified) {
+        wit(
+          `resume_from=${resumeFromEnv} UNVERIFIED — tracer continues, snapshot not trusted`,
+        );
+      }
+    }
+
 
     const model = process.env.CTXVM_MODEL ?? "unknown/unknown";
     const provider = process.env.CTXVM_PROVIDER ?? "unknown";
@@ -159,6 +185,10 @@ export default {
               capturedAt: new Date().toISOString(),
               hookStats: { ...stats, extraHookStats: {}, sessions: [sessionID] },
               traceStats: trace.stats,
+              // B3 (§3 contract): resumeFrom stamped LAST — null when the
+              // session is not resuming, the evidence dict (incl. {} on
+              // failed boot checks) otherwise.
+              resumeFrom,
             },
             null,
             2,
