@@ -40,7 +40,7 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Set
 
 import sys
 
@@ -61,6 +61,18 @@ if _hermes_src and _hermes_src not in sys.path:
     sys.path.insert(0, _hermes_src)
 
 from plugin import create_ctxvm_plugin  # noqa: E402
+from uc_registry import (
+    TRACE_FEATURE,
+    UC1_FEATURE,
+    UC2_FEATURE,
+    UC3_FEATURE,
+    UCModule,
+    is_enabled,
+    parse_features,
+)
+from uc1_handoff import UC1Handoff
+from uc2_forensics import UC2Forensics
+from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
@@ -142,6 +154,7 @@ def _clear_env_for_tests() -> None:
     """Drop CTXVM_* env and reset the process-global state (tests only)."""
     for key in ENV_KEYS:
         os.environ.pop(key, None)
+    os.environ.pop("CTXVM_FEATURES", None)
     if hasattr(sys, _STATE_ATTR):
         delattr(sys, _STATE_ATTR)
 
@@ -206,6 +219,7 @@ def _state() -> Dict[str, Any]:
         state = {
             "trace_dir": os.environ.get("CTXVM_TRACE_DIR"),
             "trace_name": os.environ.get("CTXVM_TRACE_NAME"),
+            "features": parse_features(os.environ.get("CTXVM_FEATURES")),
             "plugin": None,
             "stats": {
                 "session_starts": 0,
@@ -239,6 +253,21 @@ def _active_trace_dir() -> Optional[str]:
     return state["trace_dir"] or os.environ.get("CTXVM_TRACE_DIR")
 
 
+def _features() -> Set[str]:
+    """Active CTXVM_FEATURES set (default {trace})."""
+    return _state()["features"]
+
+
+def _enabled_stubs(features: Set[str]) -> list[UCModule]:
+    """UC stub modules whose feature is enabled, in declaration order."""
+    stubs: list[UCModule] = []
+    for cls in (UC1Handoff, UC2Forensics, UC3Planner):
+        uc = cls()
+        if uc.enabled(features):
+            stubs.append(uc)
+    return stubs
+
+
 def _make_plugin() -> Optional[Any]:
     """Create a tracer plugin if tracing is enabled; None otherwise."""
     if not _traced():
@@ -259,7 +288,14 @@ def register(ctx) -> None:
     stats = state["stats"]  # shared across re-registrations, not per-call
 
     def _ensure_plugin() -> Optional[Any]:
-        """Create the tracer plugin on first traced hook call; reuse thereafter."""
+        """Create the tracer plugin on first traced hook call; reuse thereafter.
+
+        The tracer is only created when the ``trace`` feature is active
+        (default) AND a trace dir is set. Other features drive their own UC
+        modules, which are stubs until their logic lands.
+        """
+        if TRACE_FEATURE not in _features():
+            return None
         if state["plugin"] is None and _traced():
             state["plugin"] = _make_plugin()
         return state["plugin"]
@@ -284,45 +320,54 @@ def register(ctx) -> None:
 
     def _flush_traces() -> None:
         """Write all finished tracers to the active trace dir, one file per session."""
+        features = _features()
         vm = _ensure_plugin()
         trace_dir = _active_trace_dir()
-        if vm is None or not trace_dir:
-            return
-        Path(trace_dir).mkdir(parents=True, exist_ok=True)
-        base = _flush_base()
-        for record in vm.finish_all():
-            session_id = record["sessionID"]
-            trace = record["trace"]
-            file = base or session_id
-            Path(trace_dir, f"{file}.jsonl").write_text(
-                trace.jsonl, encoding="utf-8"
-            )
-            _witness(f"flush {file}.jsonl bytes={len(trace.jsonl)} session={session_id}")
-            Path(trace_dir, f"{file}.meta.json").write_text(
-                json.dumps(_canon_meta(session_id, stats, trace.stats), indent=2)
-                + "\n",
-                encoding="utf-8",
-            )
+        if vm is not None and trace_dir:
+            Path(trace_dir).mkdir(parents=True, exist_ok=True)
+            base = _flush_base()
+            for record in vm.finish_all():
+                session_id = record["sessionID"]
+                trace = record["trace"]
+                file = base or session_id
+                Path(trace_dir, f"{file}.jsonl").write_text(
+                    trace.jsonl, encoding="utf-8"
+                )
+                _witness(f"flush {file}.jsonl bytes={len(trace.jsonl)} session={session_id}")
+                Path(trace_dir, f"{file}.meta.json").write_text(
+                    json.dumps(_canon_meta(session_id, stats, trace.stats), indent=2)
+                    + "\n",
+                    encoding="utf-8",
+                )
+        # UC stubs flush (no-op for current stubs; real UCs write artefacts)
+        for uc in _enabled_stubs(features):
+            uc.flush()
 
     # --- Hook handlers ------------------------------------------------------
 
     def on_session_start(**kwargs: Any) -> None:
         stats["session_starts"] += 1
         _witness("session_start")
+        features = _features()
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_session_start(kwargs)
-        else:
+        elif TRACE_FEATURE in features:
             stats["skipped_untraced"] += 1
+        for uc in _enabled_stubs(features):
+            uc.on_session_start(kwargs)
 
     def on_pre_tool_call(**kwargs: Any) -> None:
         stats["pre_tool_calls"] += 1
         _witness(f"before tool={kwargs.get('tool')}")
+        features = _features()
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_pre_tool_call(kwargs)
-        else:
+        elif TRACE_FEATURE in features:
             stats["skipped_untraced"] += 1
+        for uc in _enabled_stubs(features):
+            uc.on_pre_tool_call(kwargs)
 
     def on_post_tool_call(**kwargs: Any) -> None:
         stats["post_tool_calls"] += 1
@@ -332,30 +377,39 @@ def register(ctx) -> None:
             stats["errored"] += 1
         else:
             stats["completed"] += 1
+        features = _features()
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_post_tool_call(kwargs)
-        else:
+        elif TRACE_FEATURE in features:
             stats["skipped_untraced"] += 1
+        for uc in _enabled_stubs(features):
+            uc.on_post_tool_call(kwargs)
 
     def on_pre_llm_call(**kwargs: Any) -> None:
         stats["pre_llm_calls"] += 1
         _witness("pre_llm (context)")
+        features = _features()
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_pre_llm_call(kwargs)
-        else:
+        elif TRACE_FEATURE in features:
             stats["skipped_untraced"] += 1
+        for uc in _enabled_stubs(features):
+            uc.on_pre_llm_call(kwargs)
 
     def on_session_end(**kwargs: Any) -> None:
         stats["session_ends"] += 1
         _witness("session_end -> flush all tracers")
+        features = _features()
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_session_end(kwargs)
-            # Flush all tracers on session end so captures are written even
-            # when the gateway stays up (on_unload only fires at shutdown).
-            _flush_traces()
+        elif TRACE_FEATURE in features:
+            stats["skipped_untraced"] += 1
+        _flush_traces()
+        for uc in _enabled_stubs(features):
+            uc.on_session_end(kwargs)
 
     # --- Slash command: /ctxvm-trace ---------------------------------------
 

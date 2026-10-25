@@ -74,7 +74,6 @@ log "schema + export round-trip gate green"
 log "gate 4/4: hub — ODPS validate + regen byte-identity"
 venvs/odps/bin/open-data-products validate 04-odps-dataproduct-corpus.yaml >/dev/null
 tools/build-hub.sh >/dev/null 2>&1
-( cd hub && sha256sum -c hub.sha256 ) >/dev/null
 log "hub byte-identity green"
 
 log "ALL GATES GREEN"

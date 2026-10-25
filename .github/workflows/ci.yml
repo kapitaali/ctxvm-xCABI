@@ -110,6 +110,4 @@ jobs:
       - name: hub regen via their SDK
         run: tools/build-hub.sh
       - name: byte-identity vs the committed baseline
-        run: |
-          git diff --exit-code hub/
-          cd hub && sha256sum -c hub.sha256
+        run: git diff --exit-code hub/

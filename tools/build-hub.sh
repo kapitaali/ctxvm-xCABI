@@ -60,3 +60,8 @@ print("catalog validates: spec %s kind %s v%s" % (d["spec"], d["kind"], d["versi
 PYEOF
 "$SDK" odpc-summary "$ROOT/hub/catalog.yaml" | head -4
 log "OK: hub/catalog.yaml + hub/index.html regenerated from $MANIFEST"
+
+# 5) self-baseline: verify committed hub.sha256 matches the regenerated
+#    artifacts, so drop cards don't have to run sha256sum -c by hand.
+( cd "$ROOT/hub" && sha256sum -c hub.sha256 )
+log "hub.sha256 self-baseline verified"
