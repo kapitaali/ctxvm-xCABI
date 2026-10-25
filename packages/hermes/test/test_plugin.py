@@ -294,7 +294,7 @@ class LiveAdapterTests(unittest.TestCase):
         register(FakeCtx())
         # Hooks are always registered (gating is lazy per-call); the key invariant
         # is that no plugin instance is created and no traces are written.
-        self.assertEqual(len(calls), 7)  # 5 hooks + 1 command + 1 unload
+        self.assertEqual(len(calls), 7)  # 5 hooks + 1 command (ctxvm-trace) + 1 unload
         self.assertIn(("hook", "on_session_start"), calls)
         self.assertIn(("command", "ctxvm-trace"), calls)
         # cleanup is registered as a lambda inside register(), so __name__ is "<lambda>"
@@ -373,7 +373,7 @@ class LiveAdapterTests(unittest.TestCase):
         ctx = FakeCtx()
         register(ctx)
         out = ctx.handler("bogus")
-        self.assertIn("Unknown subcommand", out)
+        self.assertIn("unknown subcommand", out.lower())
 
         out = ctx.handler("")
         self.assertIn("Usage:", out)

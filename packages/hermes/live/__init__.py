@@ -40,7 +40,7 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 
 import sys
 
@@ -259,11 +259,16 @@ def _features() -> Set[str]:
 
 
 def _enabled_stubs(features: Set[str]) -> list[UCModule]:
-    """UC stub modules whose feature is enabled, in declaration order."""
+    """UC modules whose feature is enabled, in declaration order.
+
+    Reuses the instances stored in state["ucs"] (created once at register()
+    time) so hook dispatch never allocates new UC objects.
+    """
     stubs: list[UCModule] = []
-    for cls in (UC1Handoff, UC2Forensics, UC3Planner):
-        uc = cls()
-        if uc.enabled(features):
+    ucs = _state().get("ucs", {})
+    for name in ("uc1-handoff", "uc2-forensics", "uc3-planner"):
+        uc = ucs.get(name)
+        if uc is not None and uc.enabled(features):
             stubs.append(uc)
     return stubs
 
@@ -285,8 +290,14 @@ def register(ctx) -> None:
     state = _state()
     state["register_calls"] += 1
     _witness(f"init name={state.get('trace_name') or os.environ.get('CTXVM_TRACE_NAME') or '<session-id>'}")
-    stats = state["stats"]  # shared across re-registrations, not per-call
-
+    stats = state["stats"]
+    features = _features()  # parsed once; UC modules read it via _enabled_stubs()
+    state["ucs"] = {
+        "uc1-handoff": UC1Handoff(),
+        "uc2-forensics": UC2Forensics(),
+        "uc3-planner": UC3Planner(),
+    }
+    
     def _ensure_plugin() -> Optional[Any]:
         """Create the tracer plugin on first traced hook call; reuse thereafter.
 
@@ -472,6 +483,168 @@ def register(ctx) -> None:
             "Usage: /ctxvm-trace start <dir> [name] | stop | status"
         )
 
+
+    def _handle_forensics_cmd(raw_args: str) -> str:
+        """Handle /ctxvm-forensics <subcommand> [args...].
+
+        Subcommands (thin wrappers around the committed Rust CLI binaries):
+
+          replay <trace> [--turn N] [--pin ref|(ref,hash)]... [--output FILE]
+            Point-in-time replay + counterfactual force-resident overlay.
+
+          profile <trace> [--event <type>]... [--turns spec] [--source <src>] [--output FILE]
+            Forensic aggregation: fault/eviction rows, turn tallies.
+
+          diff <a.jsonl> <b.jsonl> [--output FILE]
+            Positional two-trace comparison.
+
+          export <trace> [--turn N] [--output DIR] [--odps]
+            Handoff snapshot builder (turn-N slice + page table).
+
+          diagnose <trace> <turn>
+            Verdict decomposition: context-management fault vs model reasoning
+            fault for a page.fault at *turn*.
+
+        Thin wrapper — the engine (Rust core) is untouched. This command only
+        shells out to the already-built binaries and formats their JSON output.
+        """
+        argv = raw_args.strip().split()
+        if not argv:
+            return (
+                "Usage: /ctxvm-forensics <replay|profile|diff|export|diagnose> [args...]\n"
+                "  replay <trace> [--turn N] [--pin ref|(ref,hash)]... [--output FILE]\n"
+                "  profile <trace> [--event <type>]... [--turns spec] [--source <src>] [--output FILE]\n"
+                "  diff <a.jsonl> <b.jsonl> [--output FILE]\n"
+                "  export <trace> [--turn N] [--output DIR] [--odps]\n"
+                "  diagnose <trace> <turn>   — context-management vs model reasoning verdict\n"
+            )
+
+        ucs = _state().get("ucs", {})
+        uc2 = ucs.get("uc2-forensics")
+        if uc2 is None:
+            return "ctxvm-forensics: UC2 module not available (is CTXVM_FEATURES=uc2-forensics set?)"
+
+        sub = argv[0].lower()
+        rest = argv[1:]
+
+        if sub == "replay":
+            trace = rest[0] if rest else None
+            if not trace:
+                return "Usage: /ctxvm-forensics replay <trace> [--turn N] [--pin ...] [--output FILE]"
+            # Parse --turn, --pin, --output from the rest
+            turn: Optional[int] = None
+            pins: List[str] = []
+            output: Optional[str] = None
+            i = 1
+            while i < len(rest):
+                if rest[i] == "--turn" and i + 1 < len(rest):
+                    try:
+                        turn = int(rest[i + 1])
+                    except ValueError:
+                        return f"ctxvm-forensics: --turn requires a number, got '{rest[i+1]}'"
+                    i += 2
+                elif rest[i] == "--pin" and i + 1 < len(rest):
+                    pins.append(rest[i + 1])
+                    i += 2
+                elif rest[i] == "--output" and i + 1 < len(rest):
+                    output = rest[i + 1]
+                    i += 2
+                else:
+                    return f"ctxvm-forensics: unknown replay arg '{rest[i]}'"
+            result = uc2.replay(trace, turn=turn, pins=pins if pins else None, output=output)
+            report = result["report"]
+            if isinstance(report, dict):
+                return json.dumps(report, indent=2)
+            return str(report)
+
+        if sub == "profile":
+            trace = rest[0] if rest else None
+            if not trace:
+                return "Usage: /ctxvm-forensics profile <trace> [--event <type>]... [--turns spec] [--source <src>] [--output FILE]"
+            events: List[str] = []
+            turns: Optional[str] = None
+            source: Optional[str] = None
+            output: Optional[str] = None
+            i = 1
+            while i < len(rest):
+                if rest[i] == "--event" and i + 1 < len(rest):
+                    events.append(rest[i + 1])
+                    i += 2
+                elif rest[i] == "--turns" and i + 1 < len(rest):
+                    turns = rest[i + 1]
+                    i += 2
+                elif rest[i] == "--source" and i + 1 < len(rest):
+                    source = rest[i + 1]
+                    i += 2
+                elif rest[i] == "--output" and i + 1 < len(rest):
+                    output = rest[i + 1]
+                    i += 2
+                else:
+                    return f"ctxvm-forensics: unknown profile arg '{rest[i]}'"
+            result = uc2.profile(trace, events=events if events else None, turns=turns, source=source, output=output)
+            report = result["report"]
+            if isinstance(report, dict):
+                return json.dumps(report, indent=2)
+            return str(report)
+
+        if sub == "diff":
+            if len(rest) < 2:
+                return "Usage: /ctxvm-forensics diff <a.jsonl> <b.jsonl> [--output FILE]"
+            output: Optional[str] = None
+            i = 2
+            while i < len(rest):
+                if rest[i] == "--output" and i + 1 < len(rest):
+                    output = rest[i + 1]
+                    i += 2
+                else:
+                    return f"ctxvm-forensics: unknown diff arg '{rest[i]}'"
+            result = uc2.diff(rest[0], rest[1], output=output)
+            report = result["report"]
+            if isinstance(report, dict):
+                return json.dumps(report, indent=2)
+            return str(report)
+
+        if sub == "export":
+            trace = rest[0] if rest else None
+            if not trace:
+                return "Usage: /ctxvm-forensics export <trace> [--turn N] [--output DIR] [--odps]"
+            turn: Optional[int] = None
+            output: Optional[str] = None
+            odps = False
+            i = 1
+            while i < len(rest):
+                if rest[i] == "--turn" and i + 1 < len(rest):
+                    try:
+                        turn = int(rest[i + 1])
+                    except ValueError:
+                        return f"ctxvm-forensics: --turn requires a number, got '{rest[i+1]}'"
+                    i += 2
+                elif rest[i] == "--output" and i + 1 < len(rest):
+                    output = rest[i + 1]
+                    i += 2
+                elif rest[i] == "--odps":
+                    odps = True
+                    i += 1
+                else:
+                    return f"ctxvm-forensics: unknown export arg '{rest[i]}'"
+            result = uc2.export(trace, turn=turn, output=output, odps=odps)
+            report = result["report"]
+            if isinstance(report, dict):
+                return json.dumps(report, indent=2)
+            return str(report)
+
+        if sub == "diagnose":
+            if len(rest) < 2:
+                return "Usage: /ctxvm-forensics diagnose <trace> <turn>"
+            try:
+                fault_turn = int(rest[1])
+            except ValueError:
+                return f"ctxvm-forensics: --turn requires a number, got '{rest[1]}'"
+            result = uc2.diagnose(rest[0], fault_turn)
+            return json.dumps(result, indent=2)
+
+        return f"ctxvm-forensics: unknown subcommand '{sub}'. Usage: /ctxvm-forensics <replay|profile|diff|export|diagnose> [args...]"
+
     # Register hooks (always; tracing gated lazily inside each handler)
     ctx.register_hook("on_session_start", on_session_start)
     ctx.register_hook("pre_tool_call", on_pre_tool_call)
@@ -485,6 +658,14 @@ def register(ctx) -> None:
         _handle_trace_cmd,
         description="Start/stop/show ctxvm trace capture.",
     )
+
+    # Register slash command for UC2 forensics: replay/profile/diff/export/diagnose
+    if UC2_FEATURE in _features():
+        ctx.register_command(
+            "ctxvm-forensics",
+            _handle_forensics_cmd,
+            description="UC2 forensics: replay/profile/diff/export/diagnose traces.",
+        )
 
     # Register cleanup on plugin unload
     ctx.on_unload(lambda: _flush_traces())
