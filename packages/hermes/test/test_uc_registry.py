@@ -30,6 +30,7 @@ from uc_registry import (  # noqa: E402
     UC1_FEATURE,
     UC2_FEATURE,
     UC3_FEATURE,
+    HANDOFF_FEATURE,
     parse_features,
 )
 from uc1_handoff import UC1Handoff  # noqa: E402
@@ -91,7 +92,7 @@ class UCModuleStubTests(unittest.TestCase):
     def test_uc1_handoff_noop(self):
         uc = UC1Handoff()
         self.assertEqual(uc.name, UC1_FEATURE)
-        self.assertEqual(uc.feature, UC1_FEATURE)
+        self.assertEqual(uc.feature, HANDOFF_FEATURE)
         # All handlers are no-ops (return None)
         self.assertIsNone(uc.on_session_start({"session_id": "s"}))
         self.assertIsNone(uc.on_pre_tool_call({"tool": "t"}))
@@ -116,7 +117,7 @@ class UCModuleStubTests(unittest.TestCase):
 
     def test_enabled_respects_features(self):
         uc1 = UC1Handoff()
-        self.assertTrue(uc1.enabled({UC1_FEATURE}))
+        self.assertTrue(uc1.enabled({HANDOFF_FEATURE}))
         self.assertFalse(uc1.enabled({TRACE_FEATURE}))
         self.assertFalse(uc1.enabled(set()))
 

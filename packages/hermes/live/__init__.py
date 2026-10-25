@@ -66,6 +66,7 @@ from uc_registry import (
     UC1_FEATURE,
     UC2_FEATURE,
     UC3_FEATURE,
+    HANDOFF_FEATURE,
     UCModule,
     is_enabled,
     parse_features,
@@ -645,6 +646,57 @@ def register(ctx) -> None:
 
         return f"ctxvm-forensics: unknown subcommand '{sub}'. Usage: /ctxvm-forensics <replay|profile|diff|export|diagnose> [args...]"
 
+    def _handle_handoff_cmd(raw_args: str) -> str:
+        """Handle /ctxvm-handoff <dir> [turn] [--stop].
+
+        Pause: flush live tracers → era snapshot → package through export
+        (--turn N --output <dir>/handoff/ --odps) → print artifacts + DQ/KPI.
+
+        Thin wrapper around the committed Rust export/replay binaries.
+        """
+        ucs = _state().get("ucs", {})
+        uc1 = ucs.get("uc1-handoff")
+        if uc1 is None:
+            return "ctxvm-handoff: UC1 module not available (is CTXVM_FEATURES=handoff set?)"
+
+        argv = raw_args.strip().split()
+        if not argv:
+            return (
+                "Usage: /ctxvm-handoff <dir> [turn] [--stop]\n"
+                "  <dir>    — flush/pause target directory (or CTXVM_HANDOFF_DIR)\n"
+                "  [turn]   — handoff turn (default: flush at current turn)\n"
+                "  [--stop] — after packaging, stop tracing (same as /ctxvm-trace stop)\n"
+            )
+
+        trace_dir = argv[0]
+        turn: Optional[int] = None
+        stop_after = False
+        i = 1
+        while i < len(argv):
+            if argv[i] == "--stop":
+                stop_after = True
+                i += 1
+            else:
+                try:
+                    turn = int(argv[i])
+                except ValueError:
+                    return f"ctxvm-handoff: turn requires a number, got '{argv[i]}'"
+                i += 1
+
+        result = uc1.pause(trace_dir, turn=turn)
+        report = result.get("report", {})
+        if isinstance(report, dict):
+            out = json.dumps(report, indent=2)
+        else:
+            out = str(report)
+        out += f"\nctxvm-handoff: exit_code={result['exit_code']} verified={result.get('verified')} divergences={result.get('divergences')}"
+        if result.get("stderr"):
+            out += f"\nctxvm-handoff stderr: {result['stderr']}"
+        if stop_after:
+            stop_out = _handle_trace_cmd("stop")
+            out += f"\n{stop_out}"
+        return out
+
     # Register hooks (always; tracing gated lazily inside each handler)
     ctx.register_hook("on_session_start", on_session_start)
     ctx.register_hook("pre_tool_call", on_pre_tool_call)
@@ -665,6 +717,14 @@ def register(ctx) -> None:
             "ctxvm-forensics",
             _handle_forensics_cmd,
             description="UC2 forensics: replay/profile/diff/export/diagnose traces.",
+        )
+
+    # Register slash command for UC1 handoff pause: flush → era snapshot → export package
+    if HANDOFF_FEATURE in _features():
+        ctx.register_command(
+            "ctxvm-handoff",
+            _handle_handoff_cmd,
+            description="UC1 pause: flush → era snapshot → export package (handoff snapshot).",
         )
 
     # Register cleanup on plugin unload
