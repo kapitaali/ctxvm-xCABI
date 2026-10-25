@@ -19,38 +19,17 @@
 //!
 //! Exit:   0 = success · 2 = usage/IO/parse error
 //! Output: canonical JSON report on stdout, or the `--output` file.
+//!
+//! Since UC1-B1 the run core lives in [`ctxvm_conformance::cli::profile_core`]
+//! (the single serialization / exit-code site): this main is a thin shell and
+//! ctxvm-py drives the same core (byte-identity contract — see cli.rs). The
+//! raw `--turns` spec is passed through and parsed by the core (`turn_windows`)
+//! so both drivers produce the identical spec error.
 
-use std::{collections::BTreeSet, env, fs, process::ExitCode};
+use std::{env, process::ExitCode};
 
-use ctxvm_codec::{read_jsonl, Event, FaultSource};
-use ctxvm_core::{profile, turn_windows, EvictRow, FaultRow};
-
-const EVENT_TYPES: [&str; 9] = [
-    "session.open",
-    "page.declare",
-    "page.render",
-    "page.evict",
-    "page.fault",
-    "page.pin",
-    "page.unpin",
-    "turn.render",
-    "call.meta",
-];
-
-const SOURCES: [FaultSource; 4] = [
-    FaultSource::ToolRecall,
-    FaultSource::IdentifierScan,
-    FaultSource::ExplicitApi,
-    FaultSource::Semantic,
-];
-
-const SOURCES_STR: [&str; 4] = ["tool_recall", "identifier_scan", "explicit_api", "semantic"];
-
-fn parse_source(s: &str) -> Option<FaultSource> {
-    Some(SOURCES[SOURCES_STR.iter().position(|c| {
-        c.eq_ignore_ascii_case(s) || c.replace('_', "").eq_ignore_ascii_case(&s.replace('_', ""))
-    })?])
-}
+use ctxvm_conformance::cli::{self, EVENT_TYPES, SOURCES_STR, parse_source};
+use ctxvm_core::turn_windows;
 
 const USAGE: &str =
     "usage: profile <session.jsonl> [--event <type>]... [--turns a-b,c-d] [--source <fault-source>] [--output FILE]";
@@ -81,7 +60,7 @@ fn help() -> ExitCode {
 struct Args {
     trace: String,
     events: Vec<String>,
-    turns: Option<Vec<u64>>,
+    turns: Option<String>,
     source: Option<String>,
     output: Option<String>,
 }
@@ -114,8 +93,12 @@ fn parse_args() -> Result<Args, String> {
             }
             "--turns" => {
                 let spec = value_of!("--turns");
-                let expanded = turn_windows(&spec)?;
-                turns = Some(expanded.into_iter().collect::<BTreeSet<_>>().into_iter().collect());
+                // Parse-order parity (UC1-B1): like the pre-extraction bin,
+                // `--turns` errors surface at parse in argv order. The shared
+                // core re-validates with the same function for the typed
+                // binding path — one truth (`turn_windows`), twice called.
+                turn_windows(&spec)?;
+                turns = Some(spec);
             }
             "--source" => {
                 let v = value_of!("--source");
@@ -135,8 +118,9 @@ fn parse_args() -> Result<Args, String> {
             _ if arg.starts_with("--") => match arg.split_once('=') {
                 Some(("--event", v)) if !v.is_empty() => events.push(v.to_owned()),
                 Some(("--turns", v)) if !v.is_empty() => {
-                    let expanded = turn_windows(v)?;
-                    turns = Some(expanded.into_iter().collect::<BTreeSet<_>>().into_iter().collect());
+                    // Mirror the old argv contract (see the flag-form branch).
+                    turn_windows(v)?;
+                    turns = Some(v.to_owned());
                 }
                 Some(("--source", v)) => source = Some(v.to_owned()),
                 Some(("--output", v)) if !v.is_empty() => output = Some(v.to_owned()),
@@ -164,132 +148,23 @@ fn parse_args() -> Result<Args, String> {
     })
 }
 
-/// Turns filter for row families: None = every turn; Some(set) = membership.
-fn turn_passes(turns: &Option<Vec<u64>>, turn: u64) -> bool {
-    turns.as_ref().map_or(true, |set| set.contains(&turn))
-}
-
-/// Events without a turn field (`session.open`, `page.declare`, `page.pin`,
-/// `page.unpin`) cannot be windowed — they pass a `--turns` filter unchanged.
-fn turn_of(event: &Event) -> Option<u64> {
-    match event {
-        Event::PageEvict { turn, .. }
-        | Event::PageFault { turn, .. }
-        | Event::TurnRender { turn, .. }
-        | Event::CallMeta { turn, .. } => Some(*turn),
-        _ => None,
-    }
-}
-
-fn run() -> ExitCode {
+fn main() -> ExitCode {
     let args = match parse_args() {
         Err(e) if e == "HELP" => return help(),
         Err(e) => return fail(2, &e),
         Ok(a) => a,
     };
-
-    if args.source.is_some() {
-        if !args.events.iter().any(|e| e == "page.fault") {
-            return fail(2, "--source requires --event page.fault");
-        }
-        if args.events.iter().any(|e| e.as_str() != "page.fault") {
-            return fail(
-                2,
-                "--source applies only to fault rows (drop other --event selections)",
-            );
-        }
+    let outcome = cli::profile_core(
+        &args.trace,
+        &args.events,
+        args.turns.as_deref(),
+        args.source.as_deref(),
+        args.output.as_deref(),
+    );
+    print!("{}", outcome.stdout);
+    let stderr = outcome.stderr_text("profile");
+    if !stderr.is_empty() {
+        eprint!("{stderr}");
     }
-
-    let src = match fs::read_to_string(&args.trace) {
-        Err(e) => return fail(2, &format!("cannot read `{}`: {e}", args.trace)),
-        Ok(s) => s,
-    };
-    let trace = match read_jsonl(&src) {
-        Err(e) => return fail(2, &format!("parse error: {e}")),
-        Ok(t) => t,
-    };
-
-    let report = profile(&trace);
-
-    let mut value = serde_json::json!({
-        "events": report.summary.events,
-        "summary": report.summary,
-        "pages": report.pages,
-        "turnTallies": report.turn_tallies,
-        "violations": report.violations,
-    });
-    let obj = value.as_object_mut().expect("json! builds an object");
-
-    let wants_faults = args.events.iter().any(|e| e == "page.fault");
-    let wants_evictions = args.events.iter().any(|e| e == "page.evict");
-    let wants_raw: Vec<&str> = args
-        .events
-        .iter()
-        .filter(|e| e.as_str() != "page.fault" && e.as_str() != "page.evict")
-        .map(String::as_str)
-        .collect();
-
-    if wants_faults {
-        let wanted = args.source.as_ref().map(|s| parse_source(s).expect("validated at parse"));
-        let rows: Vec<FaultRow> = report
-            .faults
-            .iter()
-            .filter(|row| turn_passes(&args.turns, row.turn))
-            .filter(|row| wanted.map_or(true, |w| row.source == w))
-            .cloned()
-            .collect();
-        obj.insert("faults".into(), serde_json::to_value(&rows).expect("fault rows serialize"));
-    }
-    if wants_evictions {
-        let rows: Vec<EvictRow> = report
-            .evictions
-            .iter()
-            .filter(|row| turn_passes(&args.turns, row.turn))
-            .cloned()
-            .collect();
-        obj.insert(
-            "evictions".into(),
-            serde_json::to_value(&rows).expect("evict rows serialize"),
-        );
-    }
-    if !wants_raw.is_empty() {
-        let rows: Vec<serde_json::Value> = trace
-            .iter()
-            .filter(|event| wants_raw.contains(&event_event_type(event)))
-            .filter(|event| turn_of(event).map_or(true, |t| turn_passes(&args.turns, t)))
-            .map(|event| serde_json::to_value(event).expect("event serializes"))
-            .collect();
-        obj.insert("filteredEvents".into(), serde_json::Value::Array(rows));
-    }
-
-    let body = format!("{}\n", serde_json::to_string_pretty(&value).expect("Value serializable"));
-    match args.output.as_deref() {
-        Some(path) => match fs::write(path, body) {
-            Ok(()) => ExitCode::SUCCESS,
-            Err(e) => fail(2, &format!("cannot write `{path}`: {e}")),
-        },
-        None => {
-            print!("{body}");
-            ExitCode::SUCCESS
-        }
-    }
-}
-
-/// The dotted event type of an event (mirrors the JSON type tag).
-fn event_event_type(event: &Event) -> &'static str {
-    match event {
-        Event::SessionOpen { .. } => "session.open",
-        Event::PageDeclare { .. } => "page.declare",
-        Event::PageRender { .. } => "page.render",
-        Event::PageEvict { .. } => "page.evict",
-        Event::PageFault { .. } => "page.fault",
-        Event::PagePin { .. } => "page.pin",
-        Event::PageUnpin { .. } => "page.unpin",
-        Event::TurnRender { .. } => "turn.render",
-        Event::CallMeta { .. } => "call.meta",
-    }
-}
-
-fn main() -> ExitCode {
-    run()
+    ExitCode::from(outcome.exit)
 }

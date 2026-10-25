@@ -14,11 +14,14 @@
 //! Exit:   0 = shared region matches (identical or extension) ·
 //!         1 = divergent inside the shared length · 2 = usage/IO/parse
 //! Output: canonical JSON report on stdout, or the `--output` file.
+//!
+//! Since UC1-B1 the run core lives in [`ctxvm_conformance::cli::diff_core`]
+//! (the single serialization / exit-code site): this main is a thin shell and
+//! ctxvm-py drives the same core (byte-identity contract — see cli.rs).
 
-use std::{env, fs, process::ExitCode};
+use std::{env, process::ExitCode};
 
-use ctxvm_codec::read_jsonl;
-use ctxvm_core::diff_traces;
+use ctxvm_conformance::cli;
 
 const USAGE: &str = "usage: diff <a.jsonl> <b.jsonl> [--output FILE]";
 
@@ -82,49 +85,17 @@ fn parse_args() -> Result<Args, String> {
     Ok(Args { a, b, output })
 }
 
-fn run() -> ExitCode {
+fn main() -> ExitCode {
     let args = match parse_args() {
         Err(e) if e == "HELP" => return help(),
         Err(e) => return fail(2, &e),
         Ok(a) => a,
     };
-
-    let read = |path: &String| {
-        fs::read_to_string(path)
-            .map_err(|e| fail(2, &format!("cannot read `{path}`: {e}")))
-            .and_then(|s| {
-                read_jsonl(&s)
-                    .map_err(|e| fail(2, &format!("parse error in `{path}`: {e}")))
-            })
-    };
-    let trace_a = match read(&args.a) {
-        Ok(t) => t,
-        Err(code) => return code,
-    };
-    let trace_b = match read(&args.b) {
-        Ok(t) => t,
-        Err(code) => return code,
-    };
-
-    let report = diff_traces(&trace_a, &trace_b);
-    let body = format!(
-        "{}\n",
-        serde_json::to_string_pretty(&report).expect("report is serializable")
-    );
-    match args.output.as_deref() {
-        Some(path) => {
-            if let Err(e) = fs::write(path, body) {
-                return fail(2, &format!("cannot write `{path}`: {e}"));
-            }
-        }
-        None => print!("{body}"),
+    let outcome = cli::diff_core(&args.a, &args.b, args.output.as_deref());
+    print!("{}", outcome.stdout);
+    let stderr = outcome.stderr_text("diff");
+    if !stderr.is_empty() {
+        eprint!("{stderr}");
     }
-    match report.relation {
-        ctxvm_core::TraceRelation::Divergent => fail(1, "traces diverge inside the shared length (see JSON above)"),
-        _ => ExitCode::SUCCESS,
-    }
-}
-
-fn main() -> ExitCode {
-    run()
+    ExitCode::from(outcome.exit)
 }

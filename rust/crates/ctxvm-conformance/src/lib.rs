@@ -18,6 +18,11 @@ pub const EXPECTED_TAGS: [&str; 9] = [
     "call.meta",
 ];
 
+/// Shared run cores for the four CLI bins — the single serialization /
+/// exit-code sites (byte-identity contract for the ctxvm-py binding, see the
+/// module docs). Since UC1-B1 the bins are thin mains that drive these.
+pub mod cli;
+
 #[cfg(test)]
 mod tests {
     use super::*;

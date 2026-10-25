@@ -130,6 +130,21 @@ opt-in beat pending an orchestrator sign-off — rationale in §3.
 - **B1 (binding):** `packages/py/` ctxvm-py exposing the §5 slice; tests
   byte-compare binding vs rust CLI on m1/m2 anchors; gate 2 gains the binding test
   (count line updated same-card).
+  **LANDED 2026-10-25 as the §5 fallback** (RR-UC1-BINDING-20261025 by the hermes
+  lane): pure-Python subprocess wrapper over the committed binaries — parsed-JSON
+  dict API, exceptions on non-zero exit, no `--output` report-file mode. Orchestrator
+  ruled (RR-COREXTRACT-20261025): the wrapper IS the python port (one port per
+  harness); PyO3/maturin stays an optional future upgrade behind that stable API
+  — `§7.2` answered, no new CI surface.
+- **B1-CORE (2026-10-25, landed standalone per orchestrator ruling):**
+  `rust/crates/ctxvm-conformance/src/cli.rs` — the four CLI run cores moved out of
+  the thin binaries (single serialization/exit-code sites; bins are thin mains now);
+  byte-neutral proof = old-vs-new binary compare on 61 cases + the full 16-case
+  baseline + both export artifact trees (one latent bug fixed, disclosed: the
+  `--event=<type>` eq-form never validated before — flag-form behavior preserved
+  verbatim). This is the parity law's engine-side restatement: every port (CLI,
+  ctxvm-py wrapper, future PyO3, @ctxvm/node golden tests) byte-matches because all
+  drive the same cores, not because tests happened to agree.
 - **B2 (pause modules, both packages, ONE beat each):** `uc1-handoff` module +
   `handoff` feature in `uc_registry` (hermes: NEEDS-REVERIFY against ORG-1's
   landed registry; opencode: `CTXVM_FEATURES` parse lands with this beat — TS has
@@ -147,8 +162,11 @@ opt-in beat pending an orchestrator sign-off — rationale in §3.
 
 1. §1.3: confirm `handoff-inject` stays OUT of the first implementation beats
    (verify-only resume ships first).
-2. §5: binding build toolchain — maturin/venvs wiring into gate 2 is new CI surface;
-   greenlight a S-sized CI addition or keep the binding off-gate until it exists?
+2. ~~§5: binding build toolchain — maturin/venvs wiring into gate 2 is new CI surface;
+   greenlight a S-sized CI addition or keep the binding off-gate until it exists?~~
+   **ANSWERED 2026-10-25:** binding landed as the subprocess wrapper (RR-UC1-BINDING-
+   20261025) with zero new CI surface; PyO3/maturin remains an optional, API-stable
+   future upgrade — no gate addition until that upgrade is actually chosen.
 3. §2: opencode lacks any slash/command surface in the live adapter — witness-only
    pauses acceptable there for v0 (hermes keeps induction slash), or should the
    opencode module flip `CTXVM_HANDOFF_STOP` semantics (pause = stop) instead?
