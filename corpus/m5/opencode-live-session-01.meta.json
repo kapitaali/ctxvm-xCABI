@@ -1,0 +1,25 @@
+{
+  "sessionID": "ses_e9c7bead6ffebe7y8SWvU194Nb",
+  "harness": "opencode-v2-promise-plugin",
+  "opencodeVersion": null,
+  "model": "opencode/glm-5.3-flash-free",
+  "provider": "opencode",
+  "budgetTokens": 200000,
+  "capturedAt": "2026-10-25T11:29:47.186Z",
+  "hookStats": {
+    "contexts": 14,
+    "before": 17,
+    "after": 17,
+    "completed": 17,
+    "errored": 0,
+    "sessions": [
+      "ses_e9c7bead6ffebe7y8SWvU194Nb"
+    ]
+  },
+  "traceStats": {
+    "turns": 14,
+    "pages": 17,
+    "faults": 17,
+    "residentTokens": 2055
+  }
+}

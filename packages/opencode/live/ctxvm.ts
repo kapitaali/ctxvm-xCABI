@@ -22,7 +22,7 @@
  * metadata is affected; the mapping reads `sessionID` + `messages`, whose shapes match.
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { createCtxvmPlugin, type CtxvmPlugin } from "../src/plugin.ts";
@@ -64,6 +64,22 @@ export default {
     const traceDir = process.env.CTXVM_TRACE_DIR;
     if (!traceDir) return;
 
+    // 2026-10-25 diagnostic witness: hooks are silent by design, so a missing
+    // flush was previously undiagnosable (TUI-quit loss incident of 2026-10-25).
+    // Every hook fire and every flush attempt is now appended to
+    // hooks-witness.log. The witness must NEVER break capture — best effort.
+    mkdirSync(traceDir, { recursive: true });
+    const witnessLog = join(traceDir, "hooks-witness.log");
+    const wit = (msg: string) => {
+      try {
+        appendFileSync(witnessLog, `${new Date().toISOString()} ${msg}\n`);
+      } catch {
+        /* witness failures are swallowed by design */
+      }
+    };
+    wit(`init name=${process.env.CTXVM_TRACE_NAME ?? "<sessionID>"}`);
+
+
     const model = process.env.CTXVM_MODEL ?? "unknown/unknown";
     const provider = process.env.CTXVM_PROVIDER ?? "unknown";
     const vm: CtxvmPlugin = createCtxvmPlugin({
@@ -78,12 +94,14 @@ export default {
     regs.push(
       await ctx.session.hook("context", (input) => {
         stats.contexts += 1;
+        wit(`context session=${input?.sessionID ?? "?"}`);
         vm.onSessionContext(input);
       }),
     );
     regs.push(
       await ctx.tool.hook("execute.before", (input) => {
         stats.before += 1;
+        wit(`before session=${input?.sessionID ?? "?"} tool=${input?.tool ?? "?"}`);
         vm.onToolExecuteBefore(input);
       }),
     );
@@ -92,17 +110,21 @@ export default {
         stats.after += 1;
         if (input?.status === "completed") stats.completed += 1;
         else stats.errored += 1;
+        wit(`after session=${input?.sessionID ?? "?"} tool=${input?.tool ?? "?"} status=${input?.status ?? "?"}`);
         vm.onToolExecuteAfter(input);
       }),
     );
 
     return async () => {
+      wit("cleanup entered (plugin unload)");
       const flushed = vm.finishAll();
+      wit(`cleanup finishAll -> ${flushed.length} tracer(s)`);
       mkdirSync(traceDir, { recursive: true });
       const base = process.env.CTXVM_TRACE_NAME;
       for (const { sessionID, trace } of flushed) {
         const file = base || sessionID;
         writeFileSync(join(traceDir, `${file}.jsonl`), trace.jsonl);
+        wit(`flush ${file}.jsonl bytes=${trace.jsonl.length} session=${sessionID}`);
         writeFileSync(
           join(traceDir, `${file}.meta.json`),
           `${JSON.stringify(
@@ -124,6 +146,7 @@ export default {
         stats.sessions.push(sessionID);
       }
       for (const reg of regs) await reg.dispose?.();
+      wit("cleanup exit");
     };
   },
 };

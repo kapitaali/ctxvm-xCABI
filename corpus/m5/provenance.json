@@ -1,0 +1,52 @@
+{
+  "drop": "ctxvm-trace-corpus-m5",
+  "product": "ctxvm Trace Corpus (ODPS: 04-odps-dataproduct-corpus.yaml, productVersion 0.5.0)",
+  "createdOn": "2026-10-25",
+  "license": "CC-BY-4.0 for corpus content (per root manifest license.governance block)",
+  "redaction": "No redaction applied. Precedent: corpus/m2 (same harness family) ships unredacted tool refs, and the capture is free of secrets per pattern scan (0 hits for PAT/API-key/token/credential patterns). Tool refs truncate their argument JSON at 120 characters by design (RFC-0 §6): shell refs are command prefixes, edit/write refs are file paths. Absolute paths (/home/theb/…, /tmp/opencode/…) remain in the clear as in corpus/m1–m3. One ref embeds a /proc-environ read command; the ref carries the command text only (variable NAMES at most, never environ VALUES). No credentials, tokens, or third-party personal data were present.",
+  "status": "LIVE — first interactive self-capture for the corpus: a long-running OpenCode TUI agent recorded its own working turns (repository-hygiene card execution plus adapter verification) through the v2 promise-plugin adapter inside its own session. Unlike m2 (scripted one-shot CLI invocations) or m4 (Hermes start/stop governor), the trace was flushed at the TUI's graceful exit via plugin unload, witnessed end-to-end by the instrumented adapter (hooks-witness.log).",
+  "harness": {
+    "name": "OpenCode",
+    "version": "2.1.4",
+    "plugin": "packages/opencode/live/ctxvm.ts (instrumented 2026-10-25 with the per-hook + flush witness; v2 promise-plugin, export default createPlugin(ctx))",
+    "tracer": "@ctxvm/node tracer chain under ctxvm-core (RFC-0 xCABI JSONL)",
+    "wiring": "plugin loaded by the CLI/TUI process (TUI processes carry the CTXVM_* capture env; opencode serve --service does not); ctx.session.hook(\"context\") + ctx.tool.hook(\"execute.before\").hook(\"execute.after\") + cleanup callback",
+    "invocation": "interactive TUI session (opencode --continue, resumed) env-gated by CTXVM_TRACE_DIR, CTXVM_TRACE_NAME=m5-self, CTXVM_MODEL=opencode/glm-5.3-flash-free, CTXVM_PROVIDER=opencode, CTXVM_AGENT_ID=ctxvm-self, CTXVM_BUDGET_TOKENS=200000; the recorded window contains no scripted prompt — the session commands itself",
+    "flush": "graceful TUI exit (SIGTERM) -> plugin cleanup -> vm.finishAll() -> writeFileSync <name>.jsonl + .meta.json; witnessed 2026-10-25: cleanup entered -> finishAll -> 1 tracer(s) -> flush m5-self.jsonl bytes=16280 -> cleanup exit (hooks-witness.log). A hard kill discards the in-memory slice silently (pre-instrumentation quit lost one partial window the same day; diagnosed, see packages/opencode/live/README.md erratum).",
+    "model": "opencode/glm-5.3-flash-free via provider opencode",
+    "providerSpend": "USD 0 (free-tier provider; the recorded work was repository hygiene and verification, not paid inference)",
+    "liveCaptureWorking": "Confirmed: the full flush chain is witnessed (see flush); hookStats contexts=14/before=17/after=17/completed=17/errored=0 and the file carries session.open/page.declare/page.fault/page.render/turn.render/call.meta."
+  },
+  "files": [
+    {
+      "file": "opencode-live-session-01.jsonl",
+      "meta": "opencode-live-session-01.meta.json",
+      "kind": "live-harness-captured-interactive",
+      "origin": "The recording session's own working turns on a resumed session: the HYG-1 hygiene card (de-tracking committed .pyc files, gating the metrics suite in run-ci.sh + ci.yml) and the instrumented-adapter verification that validated the flush itself; 14 hook contexts over the window, no scripted beats",
+      "events": 80,
+      "turns": 14,
+      "pages": 17,
+      "faults": 17,
+      "toolCalls": { "before": 17, "after": 17, "completed": 17, "errored": 0 },
+      "contexts": 14,
+      "residentTokens": 2055
+    }
+  ],
+  "beats": {
+    "declare": "17 pages declared from real tool results across three tool families: shell (12 pages), edit (4), write (1). Tool refs are tool:<name>(<canonical-args>) with args truncated at 120 characters",
+    "fault": "17 identifier_scan faults — exactly one per novel page, all following the cold-entry double-row shape: the page is declared in the completing call's turn, faults there, and renders in full on the next model request (declare -> fault@t -> render@t+1)",
+    "render": "17 full renders, one per page; zero stub renders",
+    "error": "no errored calls (17 completed / 0 errored); every completed call declared exactly one page and produced no waste rows beyond the expected cold-entry faults",
+    "turns": "14 turn boundaries; residentTokens constant at 2055 across all turns (no evictions), headroom 197945 against the declared 200000 budget; netTokenReduction 0.0 vs the counterfactual-no-paging baseline by construction"
+  },
+  "limitations": [
+    "v0 tracer is observe-only and has no eviction path (declared => resident). At 2055 declared tokens against a 200000 budget there is no paging pressure, so this drop cannot exhibit page.evict, stub rendering, or second-slot paging; the eviction-shape reference remains the synthetic P-pathology vector in corpus/m1, and pressure data comes from the UC3 policy sweeps.",
+    "Faults are deduped per page and source, so repeated re-fetches of one page yield a single identifier_scan row; per-turn pressure appears in call.meta rather than as repeated rows.",
+    "The recorded window is the final instrumented boot's lifetime (session.open at boot). Earlier turns of the same resumed session were lost when a pre-instrumentation TUI process died unflushed (diagnosed 2026-10-25; the plugin writes only at graceful unload). Filenames under CTXVM_TRACE_NAME are overwritten by later flushes, so era snapshots must be taken immediately.",
+    "opencodeVersion is null in the sidecar: the boot recipe of this session omitted CTXVM_OPENCODE_VERSION. The erratum (packages/opencode/live/README.md) adds that export to the recipe; the value is recorded as null rather than backfilled.",
+    "budgetTokens=200000 is declared headroom bookkeeping (T9 convention), not the provider's measured context window.",
+    "tokenizerId is apx4-char (ceil(characters/4)), an approximation; absolute token counts are not provider usage figures.",
+    "call.meta reports providerReported=false throughout: the harness did not surface provider cache counters, so estHitTokens/estMissTokens are estimates derived from page residency.",
+    "The capture is self-referential (the session verifies its own instrumentation) and v0 records page references, not side-conversation content: user/assistant prose is not in the trace."
+  ]
+}

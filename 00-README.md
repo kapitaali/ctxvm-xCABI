@@ -30,6 +30,14 @@ replay-divergence-free, manifest → 0.2.0 (`x-cabi.latestDrop`) + hub re-linked
 1 errored call, 2 turns) recorded by plugin v0.2.0 inside a running session; schema PASS,
 replay-divergence-free, manifest → 0.4.0 (`x-cabi.latestDrop corpus/m4`) + hub re-linked —
 see `reports/RR-T17.8-20261024.md` and `packages/hermes/BUG_REPORT.md` for the fixed defect.
+**M5 DONE 2026-10-25** — first **interactive self-capture**: `corpus/m5/opencode-live-session-01.jsonl`
+(80 events, 17 pages, 17 one-turn-late `identifier_scan` faults, 14 turns, zero evictions)
+recorded by a resumed TUI agent inside its own session through the instrumented adapter
+(`packages/opencode/live/ctxvm.ts`); the flush chain is **witnessed at graceful TUI exit**
+(TUI-resident plugin → cleanup → `finishAll()` → file). Schema PASS, replay-divergence-free,
+manifest → 0.5.0 (`x-cabi.latestDrop corpus/m5`) + hub re-linked — see
+`reports/RR-M5-OPENSELF-20261025.md` and the flush-semantics erratum in
+`packages/opencode/live/README.md`.
 
 ## What is decided
 
@@ -65,7 +73,7 @@ see `reports/RR-T17.8-20261024.md` and `packages/hermes/BUG_REPORT.md` for the f
 | `design/` | Integration designs: `mcp-shim.md` (T6 — callTool decorator contract) · `adapters.md` (T7 — OpenCode plugin + Vercel AI SDK middleware/tap, pinned anchors) |
 | `packages/hermes/` | **T17 Hermes plugin**: Python port of `@ctxvm/node` tracer wired into Hermes hook domains (`packages/hermes/live/__init__.py` + `src/plugin.py`); env-gated `register(ctx)` emitting RFC-0 xCABI JSONL (`npm test` / `python test/test_plugin.py` in-dir) |
 | `packages/opencode/` | **T9 spike**: `@ctxvm/opencode` — OpenCode plugin (T7 Adapter A) wiring `@ctxvm/node` via pinned hook contracts (e965774f); recorded echo-session payloads → validated, replay-clean trace (`npm test / gen` in-dir) |
-| `corpus/` | **T10/T12/T17.8 drops**: `m1/` seed slice — 5 xCABI traces; `m2/` live slice — 2 OpenCode harness captures; `m3/` Hermes plugin traces — 2 synthetic sessions (echo + sustained pressure); `m4/` first **live** Hermes capture — 1 redacted session (23 events, 13 pages, 1 fault); each drop has `provenance.json` + `checksums.sha256`; manifest-linked via `x-cabi.firstDrop`/`latestDrop` (v0.4.0) |
+| `corpus/` | **T10/T12/T17.8/M5 drops**: `m1/` seed slice — 5 xCABI traces; `m2/` live slice — 2 OpenCode harness captures; `m3/` Hermes plugin traces — 2 synthetic sessions (echo + sustained pressure); `m4/` first **live** Hermes capture — 1 redacted session (23 events, 13 pages, 1 fault); `m5/` first **interactive self-capture** — 1 OpenCode TUI session (80 events, 17 pages, 17 faults, 14 turns, zero evictions, flush witnessed); each drop has `provenance.json` + `checksums.sha256`; manifest-linked via `x-cabi.firstDrop`/`latestDrop` (v0.5.0) |
 | `tools/` | `build-hub.sh` (T5 hub regen chain — venv-or-PATH SDK resolution) · `run-ci.sh` (T10 byte-equivalent local CI mirror) |
 | `.github/` | **T10**: `workflows/ci.yml` — 4 jobs (rust / ts / schema+corpus / hub parity), pins mirroring the local toolchain; runs once the repo has a git remote |
 
