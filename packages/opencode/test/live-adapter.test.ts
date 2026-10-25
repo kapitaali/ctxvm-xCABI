@@ -2,14 +2,14 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
 import live from "../live/ctxvm.ts";
-import { rustBinDir } from "../src/uc1-resume.ts";
+import { rustBinDir } from "../src/uc1-handoff.ts";
 
 const ENV_KEYS = [
   "CTXVM_TRACE_DIR",
@@ -20,6 +20,8 @@ const ENV_KEYS = [
   "CTXVM_BUDGET_TOKENS",
   "CTXVM_OPENCODE_VERSION",
   "CTXVM_RESUME_FROM",
+  "CTXVM_HANDOFF_DIR",
+  "CTXVM_HANDOFF_TURN",
 ] as const;
 
 function clearEnv(): void {
@@ -203,6 +205,73 @@ test("B3 boot check: CTXVM_RESUME_FROM stamps resumeFrom evidence + verified=Tru
     witness,
     /resume_from=\S+ verified=True reason=snapshot verified: replay exit 0 at turn 0/,
   );
+
+  clearEnv();
+});
+
+test("B2 flush-time handoff: CTXVM_HANDOFF_DIR packages the flushed capture", async () => {
+  clearEnv();
+  const dir = mkdtempSync(join(tmpdir(), "ctxvm-live-handoff-"));
+  process.env.CTXVM_TRACE_DIR = dir;
+  process.env.CTXVM_TRACE_NAME = "hand-test";
+  // Env recipe: CTXVM_HANDOFF_DIR equals the trace dir (reference law: the
+  // handoff dir resolves env-first; design §2's flush target). CTXVM_HANDOFF_
+  // TURN unset → the "package at flush" path: no --turn.
+  process.env.CTXVM_HANDOFF_DIR = dir;
+
+  let sessionCb: (input: unknown) => void = () => {};
+  let beforeCb: (input: unknown) => void = () => {};
+  let afterCb: (input: unknown) => void = () => {};
+  const ctx = {
+    session: {
+      hook: async (_name: string, cb: (input: unknown) => void) => {
+        sessionCb = cb;
+        return { dispose() {} };
+      },
+    },
+    tool: {
+      hook: async (name: string, cb: (input: unknown) => void) => {
+        if (name === "execute.before") beforeCb = cb;
+        else afterCb = cb;
+        return { dispose() {} };
+      },
+    },
+  };
+  const cleanup = await live.setup(ctx as never);
+  const base = { sessionID: "ses_hand", agent: "build", id: "call_1" };
+  sessionCb({
+    sessionID: base.sessionID,
+    model: { id: "deepseek-v4.1-flash-free", providerID: "opencode", variant: "default" },
+    messages: [{ role: "user", content: [{ type: "text", text: "Read notes.txt" }] }],
+  });
+  beforeCb({ ...base, tool: "read", input: { path: "notes.txt" } });
+  afterCb({
+    ...base,
+    tool: "read",
+    input: { path: "notes.txt" },
+    status: "completed",
+    result: { content: [{ type: "text", text: "hello" }] },
+  });
+  await (cleanup as () => Promise<void>)();
+
+  // Era copies exist next to the flushed files (cp -n law).
+  assert.ok(existsSync(join(dir, "hand-test-flush.jsonl")));
+  assert.ok(existsSync(join(dir, "hand-test-flush.meta.json")));
+
+  // The package directory carries the full artifact set.
+  const snapshotDir = join(dir, "handoff");
+  assert.ok(existsSync(snapshotDir));
+  const packaged = readdirSync(snapshotDir).sort();
+  assert.ok(packaged.includes("manifest.yaml"));
+  assert.ok(packaged.includes("checksums.sha256"));
+  assert.ok(packaged.includes("llms.txt"));
+  assert.ok(packaged.some((name) => /^trace-\d+\.jsonl\.zst$/.test(name)));
+  assert.ok(packaged.some((name) => /^page-table-\d+\.json$/.test(name)));
+
+  // Witness line mirrors their /ctxvm-handoff rendering (dead-path law keeps
+  // verified True; empty divergences list renders as []).
+  const witnessFile = readFileSync(join(dir, "hooks-witness.log"), "utf8");
+  assert.match(witnessFile, /ctxvm-handoff: exit_code=0 verified=True divergences=\[\]/);
 
   clearEnv();
 });

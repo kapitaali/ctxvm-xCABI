@@ -151,6 +151,21 @@ opt-in beat pending an orchestrator sign-off — rationale in §3.
   no registry yet) + trigger/flush/package/witness flow of §2; tests replay the
   echo fixture through the module and byte-compare the packaged dir against a
   direct CLI run.
+  **LANDED 2026-10-25 (hermes B2 card, RR-UC1-PAUSE + opencode UC1-PAUSE-MIRROR):**
+  hermes `UC1Handoff.pause()` + `/ctxvm-handoff` slash command + `CTXVM_FEATURES=handoff`;
+  opencode mirror module `packages/opencode/src/uc1-handoff.ts` (consolidated with the
+  resume mirror under the §1.2 file law) + the flush-time "package at flush" env path in
+  `live/ctxvm.ts` (`CTXVM_HANDOFF_DIR[_TURN]`). The byte-compare test this beat's TODO
+  asked for lands NOW (pause output ≡ direct export CLI run, both languages — zstd
+  frame-stable). Disclosed in the mirror card: the hermes argv assembly shipped a bare
+  positional turn (`[trace, str(turn), --output DIR, --odps]`) that the real binary
+  rejects — every `pause(turn=N)` exited 2 — FIXED BOTH SIDES in the same card; the
+  pause replay counterproof is reference-dead (checks a literal `trace-N.jsonl.zst`)
+  — mirrored verbatim, retarget pending; `/ctxvm-handoff` never flushes live tracers
+  before packaging (its docstring promises both) — opencode's flush-time path has the
+  ordering right by construction. Mid-session turn-shaped triggers + the TS `finish()`
+  idempotency (T17.7 parity on `@ctxvm/node`: hermes finish is idempotent, TS re-pushes
+  turn facts) = explicit follow-up card.
 - **B3 (resume modules, both packages):** `CTXVM_RESUME_FROM` boot checks +
   `resumeFrom` sidecar extension via the 09 contract DoD (both parity tests in the
   same commit); fixture witness: paused snapshot from m2-echo → resumed session-b

@@ -153,8 +153,13 @@ class UC1Handoff(UCModule):
         # Step 3: package through the committed export binary.
         snapshot_dir = Path(handoff_dir) / "handoff"
         export_args: List[str] = ["--output", str(snapshot_dir)]
+        # argv law (fixed in UC1-PAUSE-MIRROR, 2026-10-25; probed): the bare
+        # positional turn form actually assembled below was rejected by the
+        # real binary ("unexpected second positional `2`", exit 2) — the
+        # documented CLI form is `export <trace> --turn N --output DIR --odps`.
         if turn is not None:
-            export_args.insert(0, str(turn))
+            export_args.insert(0, "--turn")
+            export_args.insert(1, str(turn))
         export_args.append("--odps")
         # export takes the trace as its first positional arg:
         #   export <trace.jsonl> --turn N --output DIR --odps

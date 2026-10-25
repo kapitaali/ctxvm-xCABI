@@ -86,6 +86,68 @@ class UC1HandoffTests(unittest.TestCase):
             f"unexpected stderr: {result['stderr']}",
         )
 
+    def test_pause_at_turn_exports_snapshot(self):
+        """pause(td, turn=N) with a real flushed base packages successfully.
+
+        Probes the argv law (UC1-PAUSE-MIRROR card): the pre-fix bare
+        positional form made every pause(..., turn=N) exit 2 — the real binary
+        rejects `unexpected second positional \`2\`` — this pins the working
+        path the shape-only test above missed.
+        """
+        import shutil
+
+        export_bin = _REPO_ROOT / "rust/target/release/export"
+        if not export_bin.is_file():
+            self.skipTest("release binaries not built")
+        src = _REPO_ROOT / "corpus/m1/session-healthy.jsonl"
+        if not src.is_file():
+            self.skipTest("corpus anchor missing")
+        uc1 = UC1Handoff()
+        with tempfile.TemporaryDirectory() as td:
+            shutil.copyfile(src, Path(td) / "handoff.jsonl")
+            result = uc1.pause(td, turn=2)
+            self.assertEqual(result["exit_code"], 0, f"pause failed: {result['stderr']}")
+            # Reference dead-path law (probed): the counterproof checks a
+            # literal "trace-N.jsonl.zst" that never exists → verified stays
+            # True.
+            self.assertTrue(result["verified"])
+            self.assertEqual(result["snapshot"]["label"], "turn-2")
+            self.assertEqual(result["snapshot"]["turn"], 2)
+            snap_dir = Path(result["snapshot"]["handoff_dir"])
+            # Artifact naming is slice-turn based (engine law, T21): --turn N
+            # beyond the last window slices identity and names by the slice's
+            # last turn — so glob rather than pin "trace-2".
+            zsts = list(snap_dir.glob("trace-*.jsonl.zst"))
+            self.assertEqual(
+                len(zsts), 1, f"packaged: {sorted(p.name for p in snap_dir.iterdir())}"
+            )
+            self.assertEqual(len(result["report"]["artifacts"]), 5)
+            self.assertTrue((snap_dir / "checksums.sha256").is_file())
+
+    def test_pause_era_copy_never_clobbers(self):
+        """Era copies follow cp -n semantics: existing era files survive."""
+        import shutil
+
+        export_bin = _REPO_ROOT / "rust/target/release/export"
+        if not export_bin.is_file():
+            self.skipTest("release binaries not built")
+        src = _REPO_ROOT / "corpus/m1/session-healthy.jsonl"
+        if not src.is_file():
+            self.skipTest("corpus anchor missing")
+        uc1 = UC1Handoff()
+        with tempfile.TemporaryDirectory() as td:
+            shutil.copyfile(src, Path(td) / "base.jsonl")
+            (Path(td) / "base.meta.json").write_text('{"sidecar": true}\n', encoding="utf-8")
+            (Path(td) / "base-flush.jsonl").write_text("JUNK-ERA", encoding="utf-8")
+            (Path(td) / "base-flush.meta.json").write_text("JUNK-META", encoding="utf-8")
+            result = uc1.pause(td, turn=None, handoff_name="base")
+            self.assertEqual(result["exit_code"], 0, result["stderr"])
+            self.assertEqual(
+                (Path(td) / "base-flush.jsonl").read_text(encoding="utf-8"),
+                "JUNK-ERA",
+            )
+            self.assertEqual(result["snapshot"]["jsonl"], str(Path(td) / "base-flush.jsonl"))
+
     def test_parse_features_includes_handoff(self):
         """parse_features recognizes handoff as a known feature."""
         self.assertEqual(

@@ -27,7 +27,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createCtxvmPlugin, type CtxvmPlugin } from "../src/plugin.ts";
-import { resumeVerify } from "../src/uc1-resume.ts";
+import { resumeVerify, uc1Pause } from "../src/uc1-handoff.ts";
 
 interface HookRegistration {
   dispose?: () => Promise<void> | void;
@@ -196,6 +196,38 @@ export default {
         );
         stats.sessions.push(sessionID);
       }
+
+      // UC1-PAUSE-MIRROR: design §2 "package at flush" — with the handoff
+      // envelope set (CTXVM_HANDOFF_DIR and/or CTXVM_HANDOFF_TURN), package
+      // the just-flushed capture (era copy + export --odps). The flush above
+      // already wrote the files; pause() itself maps hermes UC1Handoff.pause()
+      // (the flush is deferred to the caller by reference design). handoff
+      // dir resolves env-first (reference law) — the env recipe keeps
+      // CTXVM_HANDOFF_DIR equal to CTXVM_TRACE_DIR so the flushed files are
+      // found. Witness line mirrors their /ctxvm-handoff output rendering
+      // (Python-style True/False/None). Mid-session CTXVM_HANDOFF_TURN
+      // triggers need TS finish() idempotency — follow-up card.
+      if (process.env.CTXVM_HANDOFF_DIR || process.env.CTXVM_HANDOFF_TURN) {
+        const pauseResult = uc1Pause({
+          traceDir,
+          handoffName: process.env.CTXVM_TRACE_NAME ?? undefined,
+        });
+        const verified =
+          pauseResult.verified === undefined
+            ? "None"
+            : pauseResult.verified
+              ? "True"
+              : "False";
+        const divergences =
+          pauseResult.divergences === undefined
+            ? "None"
+            : JSON.stringify(pauseResult.divergences);
+        wit(
+          `ctxvm-handoff: exit_code=${pauseResult.exit_code} verified=${verified} divergences=${divergences}`,
+        );
+        if (pauseResult.stderr) wit(`ctxvm-handoff stderr: ${pauseResult.stderr}`);
+      }
+
       for (const reg of regs) await reg.dispose?.();
       wit("cleanup exit");
     };
