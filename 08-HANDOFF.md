@@ -58,6 +58,37 @@ plugin defect (not the gateway) and fixed it, and T17.8 landed the first live dr
 `corpus/m4` — see `packages/hermes/BUG_REPORT.md` and `reports/RR-T17.8-20261024.md`.
 Actions-green remains live (`RR-ACTIONS-GREEN-20261023`).
 
+**2026-10-25 era committed (analysis chains + plugin decisions — §5 rows carry the detail).**
+UCVERIFY build-first chain DONE: T18 `ctxvm profile`, T19 `ctxvm diff`, T20 replay
+`--pin (ref, hash)` precision, T21 `ctxvm export` handoff snapshot builder — this closed
+UC1 §2–§4 and the UC2 CLI surface. UC3 analysis chain DONE: capacity baseline over the
+corpus (RR-UC3-BASELINE), eviction-policy simulator with `--policy/--budget`
+(RR-UC3-POLICYSIM), 150-cell budget grid with the three-regime law + reactive-wall
+equivalence (RR-UC3-BUDGETSWEEP) — standing law: **NTR is reward-inverted under famine;
+quote it only beside service metrics**. HYG-1 closed the tracked-`.pyc` and ungated-metrics
+hygiene gaps. **M5 DONE:** first interactive self-capture from the instrumented OpenCode
+TUI → `corpus/m5`, manifest 0.5.0; flush semantics = graceful TUI exit (SIGTERM) with the
+TUI holding the plugin — era snapshots are mandatory (`tools/snapshot-capture.sh`).
+**Plugin organization decided** (00-README "What is decided"): one deployable plugin per
+harness; use cases are `CTXVM_FEATURES`-gated modules behind a thin `live/` dispatcher;
+engine logic converges on shared bindings (opencode keeps `@ctxvm/node`; the ctxvm-py
+(PyO3) binding is the engine home for the hermes port's shared logic).
+**ORG-1 DONE:** `uc_registry` skeleton + build-hub sha256 self-baseliner (11 uc tests —
+currently LOCAL-only; gate 2 still counts 23 hermes + 27 benchmark tests, wiring the uc
+tests into gate 2 belongs to the next hermes-lane card). **KIT-1 DONE:** harness-parity
+contract `09-plugin-parity.md` — the xCABI event layer is proven identical across both
+plugins, `.meta.json` sidecars canonicalized in both emitters, and the SAME verification
+kit serves both harnesses (`tools/verify-capture.sh` smoke-proven on hermes m4 AND
+opencode m2/m5). **UC3-WINDOWSHEET DONE:** canonical P-pathology window families committed
+as a fixture (`benchmarks/metrics/fixtures/window-families.json`; whole + non-overlapping
+2-turn windows; anchors include the 3× m2 lesson; claims rule: any thrash quote carries
+its window spec or the word whole). Witness: ALL GATES GREEN at `4813773`.
+**Next frontier (supersedes the Stage 2 line above):** two OPEN rows — UC2-PLUGIN runs
+first on the hermes side (delegated agent; the opencode mirror card follows it), and
+UC1-PLUGIN starts with a design pass (pause = T21 `export --turn N` snapshot written
+in-harness; resume = same-harness boot-time injection per the memo's turn-boundary
+determinism law), then the ctxvm-py binding. T15 (Vercel adapter) remains unproposed.
+
 ## §1. Workspace map
 
 ```
