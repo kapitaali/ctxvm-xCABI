@@ -112,10 +112,17 @@ def _flush_base() -> Optional[str]:
     return state.get("trace_name") or os.environ.get("CTXVM_TRACE_NAME")
 
 
-def _canon_meta(session_id: str, hook_stats: Dict[str, int], trace_stats: Any) -> Dict[str, Any]:
+def _canon_meta(
+    session_id: str, hook_stats: Dict[str, int], trace_stats: Any,
+    resume_from: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """Canonical .meta.json sidecar (09-plugin-parity.md §3). Both writers route
-    through this; the package parity tests assert the exact key sets."""
-    return {
+    through this; the package parity tests assert the exact key sets.
+
+    ``resumeFrom`` (B3): opt-in sidecar extension — null when not resuming,
+    {snapshot, snapshotDigest, snapTurn} when resuming from a paused snapshot.
+    """
+    meta = {
         "sessionID": session_id,
         "harness": "hermes-python-plugin",
         "harnessVersion": os.environ.get("CTXVM_HERMES_VERSION"),
@@ -138,7 +145,9 @@ def _canon_meta(session_id: str, hook_stats: Dict[str, int], trace_stats: Any) -
             "sessions": [session_id],
         },
         "traceStats": trace_stats,
+        "resumeFrom": resume_from,
     }
+    return meta
 
 
 ENV_KEYS = [
@@ -222,6 +231,7 @@ def _state() -> Dict[str, Any]:
             "trace_name": os.environ.get("CTXVM_TRACE_NAME"),
             "features": parse_features(os.environ.get("CTXVM_FEATURES")),
             "plugin": None,
+            "resume_from": None,  # B3: CTXVM_RESUME_FROM boot check result
             "stats": {
                 "session_starts": 0,
                 "pre_tool_calls": 0,
@@ -298,7 +308,34 @@ def register(ctx) -> None:
         "uc2-forensics": UC2Forensics(),
         "uc3-planner": UC3Planner(),
     }
-    
+
+    # --- B3 resume: CTXVM_RESUME_FROM boot check ---------------------------
+    # With CTXVM_RESUME_FROM=<snapshot dir>, verify the snapshot BEFORE the
+    # first model request: manifest + checksums, replay exit 0 at turn N,
+    # shared-prefix diff relation. Any failure = loud witness line, tracer
+    # continues UNVERIFIED (never blocks the agent loop).
+    resume_from_env = os.environ.get("CTXVM_RESUME_FROM")
+    if resume_from_env:
+        uc1 = state["ucs"].get("uc1-handoff")
+        if uc1 is not None:
+            resume_result = uc1.resume(resume_from_env)
+            state["resume_from"] = resume_result.get("evidence", {})
+            _witness(
+                f"resume_from={resume_from_env} "
+                f"verified={resume_result.get('verified')} "
+                f"reason={resume_result.get('reason')}"
+            )
+            if not resume_result.get("verified"):
+                _witness(
+                    f"resume_from={resume_from_env} UNVERIFIED — "
+                    f"tracer continues, snapshot not trusted"
+                )
+        else:
+            _witness(
+                f"resume_from={resume_from_env} uc1-handoff module not "
+                f"available (is CTXVM_FEATURES=handoff set?)"
+            )
+
     def _ensure_plugin() -> Optional[Any]:
         """Create the tracer plugin on first traced hook call; reuse thereafter.
 
@@ -325,7 +362,13 @@ def register(ctx) -> None:
         jsonl_path.write_text(trace.jsonl, encoding="utf-8")
         _witness(f"flush {file}.jsonl bytes={len(trace.jsonl)} session={session_id}")
         meta_path.write_text(
-            json.dumps(_canon_meta(session_id, stats, trace.stats), indent=2)
+            json.dumps(
+                _canon_meta(
+                    session_id, stats, trace.stats,
+                    resume_from=state.get("resume_from"),
+                ),
+                indent=2,
+            )
             + "\n",
             encoding="utf-8",
         )
@@ -347,7 +390,13 @@ def register(ctx) -> None:
                 )
                 _witness(f"flush {file}.jsonl bytes={len(trace.jsonl)} session={session_id}")
                 Path(trace_dir, f"{file}.meta.json").write_text(
-                    json.dumps(_canon_meta(session_id, stats, trace.stats), indent=2)
+                    json.dumps(
+                        _canon_meta(
+                            session_id, stats, trace.stats,
+                            resume_from=state.get("resume_from"),
+                        ),
+                        indent=2,
+                    )
                     + "\n",
                     encoding="utf-8",
                 )

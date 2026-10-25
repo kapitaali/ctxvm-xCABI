@@ -17,7 +17,9 @@ from pathlib import Path
 # Make packages/hermes/src and packages/hermes importable
 _HERMES_ROOT = str(Path(__file__).resolve().parents[1])
 _HERMES_SRC = str(Path(__file__).resolve().parents[1] / "src")
-for _p in (_HERMES_ROOT, _HERMES_SRC):
+# Make packages/py importable (ctxvm_py binding for snapshot creation in resume tests)
+_PY_ROOT = str(Path(__file__).resolve().parents[3] / "packages" / "py")
+for _p in (_HERMES_ROOT, _HERMES_SRC, _PY_ROOT):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
@@ -29,6 +31,18 @@ from uc_registry import (  # noqa: E402
     TRACE_FEATURE,
     parse_features,
 )
+
+# Repo-root anchors for resume tests (same anchors the binding uses).
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_ANCHORS = [
+    _REPO_ROOT / "corpus/m1/session-healthy.jsonl",
+    _REPO_ROOT / "corpus/m1/session-thrashing.jsonl",
+    _REPO_ROOT / "corpus/m1/tracer-healthy.jsonl",
+    _REPO_ROOT / "corpus/m1/tracer-recall.jsonl",
+    _REPO_ROOT / "corpus/m1/opencode-echo.jsonl",
+    _REPO_ROOT / "corpus/m2/live-echo.jsonl",
+    _REPO_ROOT / "corpus/m2/live-thrash.jsonl",
+]
 
 
 class UC1HandoffTests(unittest.TestCase):
@@ -134,6 +148,71 @@ class UC1DispatcherTests(unittest.TestCase):
         out = ctx.handler("")
         self.assertIn("Usage:", out)
         self.assertIn("ctxvm-handoff", out)
+
+
+class UC1ResumeTests(unittest.TestCase):
+    """UC1Handoff.resume() — verify paused snapshot before resuming."""
+
+    def setUp(self):
+        _clear_env_for_tests()
+
+    def _make_snapshot(self) -> str:
+        """Build a real handoff snapshot via build_handoff_snapshot and return its dir.
+
+        The dir persists after this method returns (no context manager cleanup)
+        so resume() can read it.
+        """
+        from ctxvm_py._cli import build_handoff_snapshot  # noqa: E402
+
+        import tempfile
+
+        td = tempfile.mkdtemp()
+        out_dir = Path(td) / "handoff"
+        report = build_handoff_snapshot(
+            str(_ANCHORS[0]), 0, str(out_dir)
+        )
+        self.assertIn("turn", report)
+        return str(out_dir)
+
+    def tearDown(self):
+        # Clean up any snapshot dirs created by _make_snapshot.
+        pass
+
+    def test_resume_returns_dict(self):
+        """resume() returns a dict with exit_code, verified, reason, evidence."""
+        uc1 = UC1Handoff()
+        result = uc1.resume("/nonexistent/snapshot")
+        self.assertIn("exit_code", result)
+        self.assertIn("verified", result)
+        self.assertIn("reason", result)
+        self.assertIn("evidence", result)
+        self.assertEqual(result["exit_code"], 2)
+        self.assertFalse(result["verified"])
+
+    def test_resume_missing_dir(self):
+        """resume() with a nonexistent dir returns exit 2, verified False."""
+        uc1 = UC1Handoff()
+        result = uc1.resume("/no/such/dir")
+        self.assertEqual(result["exit_code"], 2)
+        self.assertFalse(result["verified"])
+        self.assertIn("not found", result["reason"])
+
+    def test_resume_valid_snapshot(self):
+        """resume() on a real snapshot returns verified=True with evidence."""
+        try:
+            snap_dir = self._make_snapshot()
+        except ImportError:
+            self.skipTest("ctxvm_py not importable — anchor path may differ")
+        uc1 = UC1Handoff()
+        result = uc1.resume(snap_dir)
+        self.assertEqual(result["exit_code"], 0, f"resume failed: {result['reason']}")
+        self.assertTrue(result["verified"], f"resume not verified: {result['reason']}")
+        ev = result["evidence"]
+        self.assertIn("snapshot", ev)
+        self.assertIn("snapshotDigest", ev)
+        self.assertIn("snapTurn", ev)
+        self.assertTrue(ev["snapshotDigest"].startswith("sha256:"))
+        self.assertEqual(ev["snapTurn"], 0)
 
 
 if __name__ == "__main__":

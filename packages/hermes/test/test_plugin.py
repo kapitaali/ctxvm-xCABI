@@ -475,7 +475,7 @@ CANONICAL_EVENT_KEYS = {
 }
 CANONICAL_META_KEYS = [
     "budgetTokens", "capturedAt", "harness", "harnessVersion", "hookStats",
-    "model", "pluginVersion", "provider", "sessionID", "traceStats",
+    "model", "pluginVersion", "provider", "resumeFrom", "sessionID", "traceStats",
 ]
 CANONICAL_HOOKSTAT_KEYS = [
     "after", "before", "completed", "contexts", "errored", "extraHookStats", "sessions",
