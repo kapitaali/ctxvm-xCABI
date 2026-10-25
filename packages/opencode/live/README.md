@@ -73,8 +73,28 @@ sidecar — `harnessVersion` (this env) replaces the temporary `opencodeVersion`
 `09-plugin-parity.md` §3 (asserted by `packages/opencode/test/meta-parity.test.ts` and
 the hermes mirror test). Shipped drops (`corpus/m1`–`m5`) keep their era's shape; the
 message above ("its `.meta.json` honestly carries `opencodeVersion: null`") describes the
-m5-era sidecar as shipped. Verify any capture with the shared
-`tools/verify-capture.sh <trace.jsonl>`.
+m5-era sidecar as shipped. Verify any capture with the shared `tools/verify-capture.sh <trace.jsonl>`.
+
+## UC2 forensics (mirror, UC2-MIRROR 2026-10-25)
+
+The opencode lane has no in-harness forensics command: the pinned v2.1.2 plugin surface
+exposes NO command-registration hook (`packages/opencode/src/opencode-contract.ts` —
+`session.context` + `tool.execute.before/after` only). The same verdicts the hermes lane
+ships behind its `/ctxvm-forensics` slash command exist here as:
+
+- `packages/opencode/src/uc2-forensics.ts` — the `UC2Forensics` module (TS mirror of
+  `packages/hermes/src/uc2_forensics.py`: replay/profile/diff/export wrappers + diagnose
+  verdict decomposition, identical binary resolution and result shapes), and
+- `tools/uc2-forensics.sh diagnose <trace.jsonl> <fault-turn>` — the kit entry that drives
+  it (no opencode session involved).
+
+Both implementations are pinned to the shared golden fixture
+`packages/opencode/test/fixtures/uc2-diagnose-golden.json` (hermes-generated over real
+corpus anchors) by tests on both sides in the same card (09-plugin-parity.md §4/§5) — the
+tests need the release binaries (`cargo build --release`; both gates build them). Feature
+gating: the module mirrors the hermes registry constant (`UC2_FEATURE = "uc2-forensics"`)
+but registers nowhere yet — the TS feature dispatcher lands with the UC1 beats
+(`design/uc1-plugin.md` B2).
 
 ## Contract notes (v2.1.2, observed)
 

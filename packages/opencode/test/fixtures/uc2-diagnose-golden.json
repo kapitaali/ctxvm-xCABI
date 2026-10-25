@@ -1,0 +1,262 @@
+{
+  "meta": {
+    "generatedBy": "packages/hermes/src/uc2_forensics.py UC2Forensics.diagnose (rust release binaries)",
+    "atCommit": "3058625",
+    "date": "2026-10-25",
+    "purpose": "UC2-PLUGIN opencode mirror golden parity — both sides' tests deep-compare against this file (09-plugin-parity.md §4)",
+    "anchorNote": "covers all three verdict classes on real corpus data: model-reasoning (m2 t0), context-management (m1 t2/6/9), inconclusive with and without evictions (m1 t5, m2 t2)"
+  },
+  "anchors": [
+    {
+      "trace": "corpus/m2/live-thrash.jsonl",
+      "faultTurn": 0,
+      "expectedVerdict": "model-reasoning",
+      "diagnose": {
+        "fault_turn": 0,
+        "verdict": "model-reasoning",
+        "reason": "page resident at fault turn — pager not at fault",
+        "evidence": {
+          "faults_at_turn": [
+            {
+              "page": {
+                "contentHash": "sha256:d9ad8704",
+                "logicalRef": "tool:read({\"path\":\"data/f1.txt\"})"
+              },
+              "source": "identifier_scan",
+              "turn": 0
+            },
+            {
+              "page": {
+                "contentHash": "sha256:a797994d",
+                "logicalRef": "tool:read({\"path\":\"data/f2.txt\"})"
+              },
+              "source": "identifier_scan",
+              "turn": 0
+            },
+            {
+              "page": {
+                "contentHash": "sha256:1aa399b9",
+                "logicalRef": "tool:read({\"path\":\"data/f3.txt\"})"
+              },
+              "source": "identifier_scan",
+              "turn": 0
+            },
+            {
+              "page": {
+                "contentHash": "sha256:6fa6e65d",
+                "logicalRef": "tool:read({\"path\":\"data/f5.txt\"})"
+              },
+              "source": "identifier_scan",
+              "turn": 0
+            },
+            {
+              "page": {
+                "contentHash": "sha256:56b3d1eb",
+                "logicalRef": "tool:read({\"path\":\"data/f4.txt\"})"
+              },
+              "source": "identifier_scan",
+              "turn": 0
+            }
+          ],
+          "evictions_before": [],
+          "replay_exit_code": 0,
+          "replay_divergences": []
+        }
+      }
+    },
+    {
+      "trace": "corpus/m2/live-thrash.jsonl",
+      "faultTurn": 2,
+      "expectedVerdict": "inconclusive",
+      "diagnose": {
+        "fault_turn": 2,
+        "verdict": "inconclusive",
+        "reason": "no page.fault at turn 2",
+        "evidence": {
+          "faults_at_turn": [],
+          "evictions_before": [],
+          "replay_exit_code": 0,
+          "replay_divergences": []
+        }
+      }
+    },
+    {
+      "trace": "corpus/m1/session-thrashing.jsonl",
+      "faultTurn": 2,
+      "expectedVerdict": "context-management",
+      "diagnose": {
+        "fault_turn": 2,
+        "verdict": "context-management",
+        "reason": "page evicted before fault turn — pager dropped needed content",
+        "evidence": {
+          "faults_at_turn": [
+            {
+              "latencyMs": 150,
+              "page": {
+                "contentHash": "sha256:9f2ac17d",
+                "logicalRef": "tool:read_file(path=\"src/auth/session.ts\")"
+              },
+              "source": "tool_recall",
+              "turn": 2
+            }
+          ],
+          "evictions_before": [
+            {
+              "page": {
+                "contentHash": "sha256:9f2ac17d",
+                "logicalRef": "tool:read_file(path=\"src/auth/session.ts\")"
+              },
+              "stubText": "[Paged out: read src/auth/session.ts (8.2k tok, 187 lines).\n Re-call read_file(path=\"src/auth/session.ts\") to re-materialize.]",
+              "turn": 1
+            }
+          ],
+          "replay_exit_code": 0,
+          "replay_divergences": []
+        }
+      }
+    },
+    {
+      "trace": "corpus/m1/session-thrashing.jsonl",
+      "faultTurn": 5,
+      "expectedVerdict": "inconclusive",
+      "diagnose": {
+        "fault_turn": 5,
+        "verdict": "inconclusive",
+        "reason": "no page.fault at turn 5",
+        "evidence": {
+          "faults_at_turn": [],
+          "evictions_before": [
+            {
+              "page": {
+                "contentHash": "sha256:9f2ac17d",
+                "logicalRef": "tool:read_file(path=\"src/auth/session.ts\")"
+              },
+              "stubText": "[Paged out: read src/auth/session.ts (8.2k tok, 187 lines).\n Re-call read_file(path=\"src/auth/session.ts\") to re-materialize.]",
+              "turn": 1
+            },
+            {
+              "page": {
+                "contentHash": "sha256:9f2ac17d",
+                "logicalRef": "tool:read_file(path=\"src/auth/session.ts\")"
+              },
+              "stubText": "[Paged out: read src/auth/session.ts (8.2k tok, 187 lines).\n Re-call read_file(path=\"src/auth/session.ts\") to re-materialize.]",
+              "turn": 4
+            }
+          ],
+          "replay_exit_code": 0,
+          "replay_divergences": []
+        }
+      }
+    },
+    {
+      "trace": "corpus/m1/session-thrashing.jsonl",
+      "faultTurn": 6,
+      "expectedVerdict": "context-management",
+      "diagnose": {
+        "fault_turn": 6,
+        "verdict": "context-management",
+        "reason": "page evicted before fault turn — pager dropped needed content",
+        "evidence": {
+          "faults_at_turn": [
+            {
+              "latencyMs": 210,
+              "page": {
+                "contentHash": "sha256:9f2ac17d",
+                "logicalRef": "tool:read_file(path=\"src/auth/session.ts\")"
+              },
+              "source": "tool_recall",
+              "turn": 6
+            }
+          ],
+          "evictions_before": [
+            {
+              "page": {
+                "contentHash": "sha256:9f2ac17d",
+                "logicalRef": "tool:read_file(path=\"src/auth/session.ts\")"
+              },
+              "stubText": "[Paged out: read src/auth/session.ts (8.2k tok, 187 lines).\n Re-call read_file(path=\"src/auth/session.ts\") to re-materialize.]",
+              "turn": 1
+            },
+            {
+              "page": {
+                "contentHash": "sha256:9f2ac17d",
+                "logicalRef": "tool:read_file(path=\"src/auth/session.ts\")"
+              },
+              "stubText": "[Paged out: read src/auth/session.ts (8.2k tok, 187 lines).\n Re-call read_file(path=\"src/auth/session.ts\") to re-materialize.]",
+              "turn": 4
+            },
+            {
+              "page": {
+                "contentHash": "sha256:s1",
+                "logicalRef": "file:src/db/schema.sql"
+              },
+              "stubText": "[Paged out: read src/db/schema.sql (4.1k tok, 220 lines).\n Re-call read_file(path=\"src/db/schema.sql\") to re-materialize.]",
+              "turn": 5
+            }
+          ],
+          "replay_exit_code": 0,
+          "replay_divergences": []
+        }
+      }
+    },
+    {
+      "trace": "corpus/m1/session-thrashing.jsonl",
+      "faultTurn": 9,
+      "expectedVerdict": "context-management",
+      "diagnose": {
+        "fault_turn": 9,
+        "verdict": "context-management",
+        "reason": "page evicted before fault turn — pager dropped needed content",
+        "evidence": {
+          "faults_at_turn": [
+            {
+              "latencyMs": 190,
+              "page": {
+                "contentHash": "sha256:s1",
+                "logicalRef": "file:src/db/schema.sql"
+              },
+              "source": "identifier_scan",
+              "turn": 9
+            }
+          ],
+          "evictions_before": [
+            {
+              "page": {
+                "contentHash": "sha256:9f2ac17d",
+                "logicalRef": "tool:read_file(path=\"src/auth/session.ts\")"
+              },
+              "stubText": "[Paged out: read src/auth/session.ts (8.2k tok, 187 lines).\n Re-call read_file(path=\"src/auth/session.ts\") to re-materialize.]",
+              "turn": 1
+            },
+            {
+              "page": {
+                "contentHash": "sha256:9f2ac17d",
+                "logicalRef": "tool:read_file(path=\"src/auth/session.ts\")"
+              },
+              "stubText": "[Paged out: read src/auth/session.ts (8.2k tok, 187 lines).\n Re-call read_file(path=\"src/auth/session.ts\") to re-materialize.]",
+              "turn": 4
+            },
+            {
+              "page": {
+                "contentHash": "sha256:s1",
+                "logicalRef": "file:src/db/schema.sql"
+              },
+              "stubText": "[Paged out: read src/db/schema.sql (4.1k tok, 220 lines).\n Re-call read_file(path=\"src/db/schema.sql\") to re-materialize.]",
+              "turn": 5
+            },
+            {
+              "page": {
+                "contentHash": "sha256:9f2ac17d",
+                "logicalRef": "tool:read_file(path=\"src/auth/session.ts\")"
+              },
+              "stubText": "[Paged out: read src/auth/session.ts (8.2k tok, 187 lines).\n Re-call read_file(path=\"src/auth/session.ts\") to re-materialize.]",
+              "turn": 8
+            }
+          ],
+          "replay_exit_code": 0,
+          "replay_divergences": []
+        }
+      }
+    }
+  ]
+}

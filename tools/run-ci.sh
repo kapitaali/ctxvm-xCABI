@@ -41,6 +41,11 @@ log "gate 1/4: rust — cargo test"
 ( cd rust && . "$HOME/.cargo/env" 2>/dev/null || true; cargo test ) >/dev/null
 log "rust suite green"
 
+# 1b) release binaries for the UC2 forensics golden parity suites (hermes
+# python + opencode TS both deep-equal the shared fixture through the real CLI).
+( cd rust && cargo build --release ) >/dev/null
+log "release binaries green (UC2 golden parity)"
+
 # 2) typescript + python
 log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode; python — @ctxvm/hermes"
 ( cd packages/node && node --test test/ ) >/dev/null
@@ -48,7 +53,7 @@ log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode; python — @ctxvm/h
 ( cd packages/hermes && python -m pytest test/ -q ) >/dev/null
 log "gate 2b: benchmarks/metrics — 07 reference suite + policy simulator"
 ( venvs/odps/bin/python -m pytest benchmarks/metrics -q ) >/dev/null
-log "ts suites green (12 + 9 tests); python suites green (52 + 27 tests)"
+log "ts suites green (12 + 21 tests); python suites green (51 + 27 tests)"
 
 # 3) schema + corpus integrity + the T21 export round-trip
 log "gate 3/4: schema validator + corpus checksums + export round-trip"
