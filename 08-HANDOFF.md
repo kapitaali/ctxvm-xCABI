@@ -91,11 +91,18 @@ opencode m2/m5). **UC3-WINDOWSHEET DONE:** canonical P-pathology window families
 as a fixture (`benchmarks/metrics/fixtures/window-families.json`; whole + non-overlapping
 2-turn windows; anchors include the 3× m2 lesson; claims rule: any thrash quote carries
 its window spec or the word whole). Witness: ALL GATES GREEN at `4813773`.
-**Next frontier (supersedes the Stage 2 line above):** two OPEN rows — UC2-PLUGIN runs
-first on the hermes side (delegated agent; the opencode mirror card follows it), and
-UC1-PLUGIN starts with a design pass (pause = T21 `export --turn N` snapshot written
-in-harness; resume = same-harness boot-time injection per the memo's turn-boundary
-determinism law), then the ctxvm-py binding. T15 (Vercel adapter) remains unproposed.
+**Next frontier (supersedes the Stage 2 line above; status 2026-10-25):** UC2-PLUGIN DONE
+both sides (hermes `/ctxvm-forensics` + opencode TS mirror with the golden parity fixture
+pinned by tests on both sides). UC1-PLUGIN DONE through the design pass, B2 pause (hermes
+suite truth is 51, RR-UC1-PAUSE) and B1 binding — ctxvm-py landed as the §5 fallback
+subprocess wrapper (RR-UC1-BINDING; orchestrator ruling: one python port, PyO3 = API-stable
+future upgrade) — and COREXTRACT (RR-COREXTRACT: the four rust run cores are now the single
+serialization/exit sites, 61-case byte-neutral proof). **Still OPEN:** UC1-PLUGIN B3 —
+resume modules on both packages (`CTXVM_RESUME_FROM` boot checks + `resumeFrom` sidecar
+extension per 09 contract DoD; fixture = paused snapshot → resumed session shares the
+prefix) — and B4 m6 pause/resume corpus offer (orchestrator-gated). Count true-up flagged
+to the hermes lane, not patched: run-ci line "51 + 27 + 8" — metrics actually passes 30,
+their board row claims hermes 52 but the suite measures 51.
 
 ## §1. Workspace map
 
@@ -395,6 +402,7 @@ Actions green after push.
 | UC1-PLUGIN | within-harness pause/resume (memo-UC1) + ctxvm-py PyO3 binding card | M | UC1 memo §3, T21 export snapshot builder, T17 capture substrate, ORG-1, bindings decision | **DONE (B2 pause, B1 binding)** (RR-UC1-PAUSE-20261025 + RR-UC1-BINDING-20261025; `packages/hermes/src/uc1_handoff.py` — UC1Handoff.pause() flushes live tracer → era snapshot → packages via export --turn N --output handoff/ --odps → replay counterproof; `live/__init__.py` — `/ctxvm-handoff` slash command gated by CTXVM_FEATURES=handoff; `test/test_uc1_handoff.py` — 9 tests; `uc_registry.py` — HANDOFF_FEATURE added; hermes suite 43→52 tests; `packages/py/ctxvm_py/` — ctxvm-py binding wrapping Rust replay/profile/diff/export binaries; `packages/py/test/test_ctxvm_py.py` — 9 tests byte-compare vs rust CLI on m1/m2 anchors (42 subtests); `tools/run-ci.sh` + `ci.yml` — binding test added to gate 2, python count 52→60; ALL GATES GREEN (schema 515, hub byte-identity); B3 resume (CTXVM_RESUME_FROM boot checks + resumeFrom sidecar) and B4 corpus m6 orchestrator-gated) |
 | KIT-1 | shared capture kit + harness-parity contract (sidecars canonicalized, event layer locked by tests, one verification tool for both harnesses) | M | user parity mandate 2026-10-25 + ORG-1 org-decision context | **DONE** (contract = 09-plugin-parity.md; LOG row KIT-1 has the full detail; core: canonical .meta.json both emitters (hermes _canon_meta + _witness + _flush_base rename parity; opencode harnessVersion+pluginVersion+extraHookStats), parity tests 9/9 TS + 23/23 hermes, tools/verify-capture.sh smoke-proven on m4 hermes AND m2/m5 opencode, tools/snapshot-capture.sh era snapshots; ALL GATES GREEN 12+9/23+27 tests, 515 schema checks) |
 | UC3-WINDOWSHEET | canonical windowed P-pathology sheet: whole + 2-turn-window family committed as a reproducible fixture | M | POLICYSIM next-1 + RR-UC3-BASELINE finding 3 | **DONE** (RR-UC3-WINDOWSHEET-20261025.md; tools/window-sheet.py re-derives benchmarks/metrics/fixtures/window-families.json byte-identically; gate 2b test_window_sheet.py enforces rebuild identity and the 4 pinned anchors incl. the 3x m2 lesson; claims rule: thrash quotes carry window spec or whole; ALL GATES GREEN) |
+| COREXTRACT | UC1-PLUGIN B1-CORE (post-binding org ruling): rust CLI run cores extracted into ctxvm-conformance::cli — the single serialization/exit-code sites; bins become thin mains | S | T18/T19/T21 CLI chain + RR-UC1-BINDING (their fallback binding landed first without touching rust/) + 2026-10-25 orchestrator ruling | **DONE** (RR-COREXTRACT-20261025; `ctxvm-conformance/src/cli.rs` 1030 lines = replay/profile/diff/export cores + all previously bin-local helpers + `CliOutcome{exit,stdout,fatal,warnings}` with exact-CLI stderr reproduction; bins 329/295/130/629 → 136/170/101/137 thin mains, parse_args/help verbatim, classic replay report keeps its direct struct serialization (key order preserved); byte-neutral proof: scratch HEAD reference build vs working tree — 61 cases byte-identical (16 pre-refactor baselines + 4 help + 41 argv/error edges incl. read→parse→pin-guard ordering, eq/empty/unknown flags, malformed pins, parse-error files) + both export trees hash-identical old-vs-new and vs baseline (7 odps files incl. zstd frame); cargo test 52/52 across 12 suites, 0 warnings, unchanged — no new tests by design; two disclosed behavior notes: `--event=<bad>` eq-form never validated before → now exit 2 like the flag form (the only matrix divergence; latent bug fix) and `--turns` parse-time `turn_windows` re-wired in the bin for argv-order parity (same function twice = one truth); PyO3 de-scoped by orchestrator ruling (hermes B1 subprocess binding stands as THE python port; design/uc1-plugin.md §6/§7.2 updated); run-ci ALL GATES GREEN fresh witness) |
 
 ---
 
