@@ -45,7 +45,7 @@ log "rust suite green"
 log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode; python — @ctxvm/hermes"
 ( cd packages/node && node --test test/ ) >/dev/null
 ( cd packages/opencode && node --test test/ ) >/dev/null
-( cd packages/hermes && python test/test_plugin.py ) >/dev/null
+( cd packages/hermes && python -m pytest test/ -q ) >/dev/null
 log "gate 2b: benchmarks/metrics — 07 reference suite + policy simulator"
 ( venvs/odps/bin/python -m pytest benchmarks/metrics -q ) >/dev/null
 log "ts suites green (12 + 9 tests); python suites green (43 + 27 tests)"

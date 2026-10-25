@@ -73,9 +73,12 @@ TUI holding the plugin — era snapshots are mandatory (`tools/snapshot-capture.
 harness; use cases are `CTXVM_FEATURES`-gated modules behind a thin `live/` dispatcher;
 engine logic converges on shared bindings (opencode keeps `@ctxvm/node`; the ctxvm-py
 (PyO3) binding is the engine home for the hermes port's shared logic).
-**ORG-1 DONE:** `uc_registry` skeleton + build-hub sha256 self-baseliner (11 uc tests —
-currently LOCAL-only; gate 2 still counts 23 hermes + 27 benchmark tests, wiring the uc
-tests into gate 2 belongs to the next hermes-lane card). **KIT-1 DONE:** harness-parity
+**ORG-1 DONE:** `uc_registry` skeleton + build-hub sha256 self-baseliner. **UC2-PLUGIN
+(hermes lane) DONE:** in-harness forensics surface; **post-cards note 2026-10-25:** the
+uc suites were briefly local-only (flagged during the §0 refresh), and UC2-PLUGIN's
+arrival closed the gap — gate 2 now runs `python -m pytest test/` for all 43 hermes
+tests (23 plugin + 11 uc_registry + 9 uc2_forensics; count line 43 + 27 benchmark
+tests is gated truth, one-line gate fix as bookkeeping). **KIT-1 DONE:** harness-parity
 contract `09-plugin-parity.md` — the xCABI event layer is proven identical across both
 plugins, `.meta.json` sidecars canonicalized in both emitters, and the SAME verification
 kit serves both harnesses (`tools/verify-capture.sh` smoke-proven on hermes m4 AND

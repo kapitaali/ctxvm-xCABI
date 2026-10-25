@@ -42,11 +42,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
-      - name: "@ctxvm/hermes tests"
-        run: python test/test_plugin.py
-        working-directory: packages/hermes
-      - name: install pytest (metrics reference-impl suite)
+      - name: install pytest (hermes + benchmarks/metrics suites)
         run: pip install pytest
+      - name: "@ctxvm/hermes tests (full suite: plugin + uc_registry + uc2_forensics)"
+        run: python -m pytest test/ -q
+        working-directory: packages/hermes
       - name: "benchmarks/metrics suite (07 formulas + UC3 policy sim)"
         run: python -m pytest benchmarks/metrics -q
 
