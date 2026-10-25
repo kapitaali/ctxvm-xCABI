@@ -53,7 +53,7 @@ anchor.
 ### 2.3 CI integration
 
 **`tools/run-ci.sh`** — added `( cd packages/py && python -m pytest test/ -q )`
-to gate 2; updated gate log line to "python suites green (51 + 27 + 8 tests)".
+to gate 2; updated gate log line to "python suites green (51 + 30 + 8 tests)".
 
 **`.github/workflows/ci.yml`** — added `@ctxvm/py binding tests` step to gate 2.
 
@@ -64,7 +64,7 @@ $ cd packages/py && python -m pytest test/ -q
 8 passed, 42 subtests passed in 0.26s
 
 $ cd /home/theb/Documents/ctxvm && bash tools/run-ci.sh
-[ctxvm-ci] gate 2/4: typescript ... python suites green (51 + 27 + 8 tests)
+[ctxvm-ci] gate 2/4: typescript ... python suites green (51 + 30 + 8 tests)
 [ctxvm-ci] gate 2b: benchmarks/metrics — 07 reference suite + policy simulator
 SCHEMA CONFORMANCE: PASS (515 checks)
 [ctxvm-ci] schema + export round-trip gate green

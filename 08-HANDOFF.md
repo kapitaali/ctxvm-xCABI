@@ -101,8 +101,7 @@ serialization/exit sites, 61-case byte-neutral proof). **Still OPEN:** UC1-PLUGI
 resume modules on both packages (`CTXVM_RESUME_FROM` boot checks + `resumeFrom` sidecar
 extension per 09 contract DoD; fixture = paused snapshot → resumed session shares the
 prefix) — and B4 m6 pause/resume corpus offer (orchestrator-gated). Count true-up flagged
-to the hermes lane, not patched: run-ci line "51 + 27 + 8" — metrics actually passes 30,
-their board row claims hermes 52 but the suite measures 51.
+to the hermes lane — patched: run-ci line now "51 + 30 + 8" (metrics actually 30, hermes suite measures 51).
 
 ## §1. Workspace map
 
