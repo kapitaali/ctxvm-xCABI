@@ -1,0 +1,728 @@
+{
+  "anchors": {
+    "corpus/m2/live-thrash.jsonl 0-1": 5.0,
+    "corpus/m2/live-thrash.jsonl whole": 1.6666666666666667,
+    "corpus/m4/hermes-live-session-01.jsonl whole": 0.5,
+    "corpus/m5/opencode-live-session-01.jsonl whole": 1.2142857142857142
+  },
+  "codePath": "benchmarks/metrics/metrics.py main() -policy path: summarize + counterfactual netTokenReduction",
+  "family": "whole + non-overlapping 2-turn windows (trailing odd turn as its own one-turn window)",
+  "generator": "tools/window-sheet.py (UC3-WINDOWSHEET)",
+  "note": "windowed values are slice-local reconstructions; quote NTR only alongside service metrics (thrashIndex.faultsPerTurn here, faults/renders in the trace)",
+  "traces": {
+    "corpus/m1/opencode-echo.jsonl": {
+      "maxWindowThrashRatio": 2.5,
+      "turns": 5,
+      "whole": {
+        "events": 17,
+        "faultRecall": null,
+        "faultsPerTurn": {
+          "0": 1,
+          "1": 1
+        },
+        "netTokenReduction": 0.0,
+        "netTokens": {
+          "estimatedMisses": 41,
+          "rendered": 205,
+          "total": 246
+        },
+        "thrashIndexMean": 0.4,
+        "touchRatio": 0.07317073170731707,
+        "unanchoredFaults": 0,
+        "waste": 0.926829268292683
+      },
+      "windows": {
+        "0-1": {
+          "events": 17,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 41,
+            "rendered": 205,
+            "total": 246
+          },
+          "thrashIndexMean": 1.0,
+          "touchRatio": 0.07317073170731707,
+          "waste": 0.926829268292683
+        },
+        "2-3": {
+          "events": 17,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 41,
+            "rendered": 205,
+            "total": 246
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.07317073170731707,
+          "waste": 0.926829268292683
+        },
+        "4": {
+          "events": 17,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 41,
+            "rendered": 205,
+            "total": 246
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.07317073170731707,
+          "waste": 0.926829268292683
+        }
+      }
+    },
+    "corpus/m1/session-healthy.jsonl": {
+      "maxWindowThrashRatio": 3.0,
+      "turns": 3,
+      "whole": {
+        "events": 12,
+        "faultRecall": null,
+        "faultsPerTurn": {
+          "2": 1
+        },
+        "netTokenReduction": 0.0,
+        "netTokens": {
+          "estimatedMisses": 200,
+          "rendered": 26880,
+          "total": 27080
+        },
+        "thrashIndexMean": 0.3333333333333333,
+        "touchRatio": 0.002232142857142857,
+        "unanchoredFaults": 0,
+        "waste": 0.9977678571428571
+      },
+      "windows": {
+        "0-1": {
+          "events": 12,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 200,
+            "rendered": 26880,
+            "total": 27080
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.002232142857142857,
+          "waste": 0.9977678571428571
+        },
+        "2": {
+          "events": 12,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 200,
+            "rendered": 26880,
+            "total": 27080
+          },
+          "thrashIndexMean": 1.0,
+          "touchRatio": 0.002232142857142857,
+          "waste": 0.9977678571428571
+        }
+      }
+    },
+    "corpus/m1/session-thrashing.jsonl": {
+      "maxWindowThrashRatio": 1.6666666666666667,
+      "turns": 10,
+      "whole": {
+        "events": 41,
+        "faultRecall": 0.5,
+        "faultsPerTurn": {
+          "2": 1,
+          "6": 1,
+          "9": 1
+        },
+        "netTokenReduction": 0.5454545454545454,
+        "netTokens": {
+          "estimatedMisses": 300,
+          "rendered": 6200,
+          "total": 6500
+        },
+        "thrashIndexMean": 0.3,
+        "touchRatio": 0.22580645161290322,
+        "unanchoredFaults": 0,
+        "waste": 0.7741935483870968
+      },
+      "windows": {
+        "0-1": {
+          "events": 41,
+          "faultRecall": 0.5,
+          "netTokenReduction": 0.5454545454545454,
+          "netTokens": {
+            "estimatedMisses": 300,
+            "rendered": 6200,
+            "total": 6500
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.22580645161290322,
+          "waste": 0.7741935483870968
+        },
+        "2-3": {
+          "events": 41,
+          "faultRecall": 0.5,
+          "netTokenReduction": 0.5454545454545454,
+          "netTokens": {
+            "estimatedMisses": 300,
+            "rendered": 6200,
+            "total": 6500
+          },
+          "thrashIndexMean": 0.5,
+          "touchRatio": 0.22580645161290322,
+          "waste": 0.7741935483870968
+        },
+        "4-5": {
+          "events": 41,
+          "faultRecall": 0.5,
+          "netTokenReduction": 0.5454545454545454,
+          "netTokens": {
+            "estimatedMisses": 300,
+            "rendered": 6200,
+            "total": 6500
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.22580645161290322,
+          "waste": 0.7741935483870968
+        },
+        "6-7": {
+          "events": 41,
+          "faultRecall": 0.5,
+          "netTokenReduction": 0.5454545454545454,
+          "netTokens": {
+            "estimatedMisses": 300,
+            "rendered": 6200,
+            "total": 6500
+          },
+          "thrashIndexMean": 0.5,
+          "touchRatio": 0.22580645161290322,
+          "waste": 0.7741935483870968
+        },
+        "8-9": {
+          "events": 41,
+          "faultRecall": 0.5,
+          "netTokenReduction": 0.5454545454545454,
+          "netTokens": {
+            "estimatedMisses": 300,
+            "rendered": 6200,
+            "total": 6500
+          },
+          "thrashIndexMean": 0.5,
+          "touchRatio": 0.22580645161290322,
+          "waste": 0.7741935483870968
+        }
+      }
+    },
+    "corpus/m1/tracer-healthy.jsonl": {
+      "maxWindowThrashRatio": 2.0,
+      "turns": 4,
+      "whole": {
+        "events": 16,
+        "faultRecall": null,
+        "faultsPerTurn": {
+          "2": 1
+        },
+        "netTokenReduction": 0.0,
+        "netTokens": {
+          "estimatedMisses": 34,
+          "rendered": 136,
+          "total": 170
+        },
+        "thrashIndexMean": 0.25,
+        "touchRatio": 0.09558823529411764,
+        "unanchoredFaults": 0,
+        "waste": 0.9044117647058824
+      },
+      "windows": {
+        "0-1": {
+          "events": 16,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 34,
+            "rendered": 136,
+            "total": 170
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.09558823529411764,
+          "waste": 0.9044117647058824
+        },
+        "2-3": {
+          "events": 16,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 34,
+            "rendered": 136,
+            "total": 170
+          },
+          "thrashIndexMean": 0.5,
+          "touchRatio": 0.09558823529411764,
+          "waste": 0.9044117647058824
+        }
+      }
+    },
+    "corpus/m1/tracer-recall.jsonl": {
+      "maxWindowThrashRatio": 2.0,
+      "turns": 4,
+      "whole": {
+        "events": 19,
+        "faultRecall": null,
+        "faultsPerTurn": {
+          "0": 1,
+          "1": 1
+        },
+        "netTokenReduction": 0.0,
+        "netTokens": {
+          "estimatedMisses": 47,
+          "rendered": 188,
+          "total": 235
+        },
+        "thrashIndexMean": 0.5,
+        "touchRatio": 0.0851063829787234,
+        "unanchoredFaults": 0,
+        "waste": 0.9148936170212766
+      },
+      "windows": {
+        "0-1": {
+          "events": 19,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 47,
+            "rendered": 188,
+            "total": 235
+          },
+          "thrashIndexMean": 1.0,
+          "touchRatio": 0.0851063829787234,
+          "waste": 0.9148936170212766
+        },
+        "2-3": {
+          "events": 19,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 47,
+            "rendered": 188,
+            "total": 235
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.0851063829787234,
+          "waste": 0.9148936170212766
+        }
+      }
+    },
+    "corpus/m2/live-echo.jsonl": {
+      "maxWindowThrashRatio": 2.0,
+      "turns": 6,
+      "whole": {
+        "events": 22,
+        "faultRecall": null,
+        "faultsPerTurn": {
+          "0": 1,
+          "1": 1,
+          "2": 1
+        },
+        "netTokenReduction": 0.0,
+        "netTokens": {
+          "estimatedMisses": 144,
+          "rendered": 864,
+          "total": 1008
+        },
+        "thrashIndexMean": 0.5,
+        "touchRatio": 0.08680555555555555,
+        "unanchoredFaults": 0,
+        "waste": 0.9131944444444444
+      },
+      "windows": {
+        "0-1": {
+          "events": 22,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 144,
+            "rendered": 864,
+            "total": 1008
+          },
+          "thrashIndexMean": 1.0,
+          "touchRatio": 0.08680555555555555,
+          "waste": 0.9131944444444444
+        },
+        "2-3": {
+          "events": 22,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 144,
+            "rendered": 864,
+            "total": 1008
+          },
+          "thrashIndexMean": 0.5,
+          "touchRatio": 0.08680555555555555,
+          "waste": 0.9131944444444444
+        },
+        "4-5": {
+          "events": 22,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 144,
+            "rendered": 864,
+            "total": 1008
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.08680555555555555,
+          "waste": 0.9131944444444444
+        }
+      }
+    },
+    "corpus/m2/live-thrash.jsonl": {
+      "maxWindowThrashRatio": 3.0,
+      "turns": 6,
+      "whole": {
+        "events": 33,
+        "faultRecall": null,
+        "faultsPerTurn": {
+          "0": 5,
+          "1": 5
+        },
+        "netTokenReduction": 0.0,
+        "netTokens": {
+          "estimatedMisses": 289,
+          "rendered": 1734,
+          "total": 2023
+        },
+        "thrashIndexMean": 1.6666666666666667,
+        "touchRatio": 0.16666666666666666,
+        "unanchoredFaults": 0,
+        "waste": 0.8333333333333334
+      },
+      "windows": {
+        "0-1": {
+          "events": 33,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 289,
+            "rendered": 1734,
+            "total": 2023
+          },
+          "thrashIndexMean": 5.0,
+          "touchRatio": 0.16666666666666666,
+          "waste": 0.8333333333333334
+        },
+        "2-3": {
+          "events": 33,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 289,
+            "rendered": 1734,
+            "total": 2023
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.16666666666666666,
+          "waste": 0.8333333333333334
+        },
+        "4-5": {
+          "events": 33,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 289,
+            "rendered": 1734,
+            "total": 2023
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.16666666666666666,
+          "waste": 0.8333333333333334
+        }
+      }
+    },
+    "corpus/m3/hermes-echo-synthetic.jsonl": {
+      "maxWindowThrashRatio": 2.5,
+      "turns": 5,
+      "whole": {
+        "events": 20,
+        "faultRecall": null,
+        "faultsPerTurn": {
+          "0": 2,
+          "1": 1
+        },
+        "netTokenReduction": 0.0,
+        "netTokens": {
+          "estimatedMisses": 19,
+          "rendered": 95,
+          "total": 114
+        },
+        "thrashIndexMean": 0.6,
+        "touchRatio": 0.09473684210526316,
+        "unanchoredFaults": 0,
+        "waste": 0.9052631578947369
+      },
+      "windows": {
+        "0-1": {
+          "events": 20,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 19,
+            "rendered": 95,
+            "total": 114
+          },
+          "thrashIndexMean": 1.5,
+          "touchRatio": 0.09473684210526316,
+          "waste": 0.9052631578947369
+        },
+        "2-3": {
+          "events": 20,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 19,
+            "rendered": 95,
+            "total": 114
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.09473684210526316,
+          "waste": 0.9052631578947369
+        },
+        "4": {
+          "events": 20,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 19,
+            "rendered": 95,
+            "total": 114
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.09473684210526316,
+          "waste": 0.9052631578947369
+        }
+      }
+    },
+    "corpus/m3/hermes-thrash-synthetic.jsonl": {
+      "maxWindowThrashRatio": 2.5,
+      "turns": 5,
+      "whole": {
+        "events": 26,
+        "faultRecall": null,
+        "faultsPerTurn": {
+          "0": 5
+        },
+        "netTokenReduction": 0.0,
+        "netTokens": {
+          "estimatedMisses": 24,
+          "rendered": 120,
+          "total": 144
+        },
+        "thrashIndexMean": 1.0,
+        "touchRatio": 0.2,
+        "unanchoredFaults": 0,
+        "waste": 0.8
+      },
+      "windows": {
+        "0-1": {
+          "events": 26,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 24,
+            "rendered": 120,
+            "total": 144
+          },
+          "thrashIndexMean": 2.5,
+          "touchRatio": 0.2,
+          "waste": 0.8
+        },
+        "2-3": {
+          "events": 26,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 24,
+            "rendered": 120,
+            "total": 144
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.2,
+          "waste": 0.8
+        },
+        "4": {
+          "events": 26,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 24,
+            "rendered": 120,
+            "total": 144
+          },
+          "thrashIndexMean": 0.0,
+          "touchRatio": 0.2,
+          "waste": 0.8
+        }
+      }
+    },
+    "corpus/m4/hermes-live-session-01.jsonl": {
+      "maxWindowThrashRatio": 1.0,
+      "turns": 2,
+      "whole": {
+        "events": 23,
+        "faultRecall": null,
+        "faultsPerTurn": {
+          "1": 1
+        },
+        "netTokenReduction": 0.0,
+        "netTokens": {
+          "estimatedMisses": 918,
+          "rendered": 15080,
+          "total": 15998
+        },
+        "thrashIndexMean": 0.5,
+        "touchRatio": 0.0028514588859416446,
+        "unanchoredFaults": 0,
+        "waste": 0.9971485411140584
+      },
+      "windows": {
+        "0-1": {
+          "events": 23,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 918,
+            "rendered": 15080,
+            "total": 15998
+          },
+          "thrashIndexMean": 0.5,
+          "touchRatio": 0.0028514588859416446,
+          "waste": 0.9971485411140584
+        }
+      }
+    },
+    "corpus/m5/opencode-live-session-01.jsonl": {
+      "maxWindowThrashRatio": 2.058823529411765,
+      "turns": 14,
+      "whole": {
+        "events": 80,
+        "faultRecall": null,
+        "faultsPerTurn": {
+          "0": 1,
+          "1": 2,
+          "10": 1,
+          "11": 1,
+          "12": 1,
+          "3": 2,
+          "4": 1,
+          "5": 4,
+          "6": 1,
+          "7": 1,
+          "8": 1,
+          "9": 1
+        },
+        "netTokenReduction": 0.0,
+        "netTokens": {
+          "estimatedMisses": 2055,
+          "rendered": 28770,
+          "total": 30825
+        },
+        "thrashIndexMean": 1.2142857142857142,
+        "touchRatio": 0.07142857142857142,
+        "unanchoredFaults": 0,
+        "waste": 0.9285714285714286
+      },
+      "windows": {
+        "0-1": {
+          "events": 80,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 2055,
+            "rendered": 28770,
+            "total": 30825
+          },
+          "thrashIndexMean": 1.5,
+          "touchRatio": 0.07142857142857142,
+          "waste": 0.9285714285714286
+        },
+        "10-11": {
+          "events": 80,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 2055,
+            "rendered": 28770,
+            "total": 30825
+          },
+          "thrashIndexMean": 1.0,
+          "touchRatio": 0.07142857142857142,
+          "waste": 0.9285714285714286
+        },
+        "12-13": {
+          "events": 80,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 2055,
+            "rendered": 28770,
+            "total": 30825
+          },
+          "thrashIndexMean": 0.5,
+          "touchRatio": 0.07142857142857142,
+          "waste": 0.9285714285714286
+        },
+        "2-3": {
+          "events": 80,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 2055,
+            "rendered": 28770,
+            "total": 30825
+          },
+          "thrashIndexMean": 1.0,
+          "touchRatio": 0.07142857142857142,
+          "waste": 0.9285714285714286
+        },
+        "4-5": {
+          "events": 80,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 2055,
+            "rendered": 28770,
+            "total": 30825
+          },
+          "thrashIndexMean": 2.5,
+          "touchRatio": 0.07142857142857142,
+          "waste": 0.9285714285714286
+        },
+        "6-7": {
+          "events": 80,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 2055,
+            "rendered": 28770,
+            "total": 30825
+          },
+          "thrashIndexMean": 1.0,
+          "touchRatio": 0.07142857142857142,
+          "waste": 0.9285714285714286
+        },
+        "8-9": {
+          "events": 80,
+          "faultRecall": null,
+          "netTokenReduction": 0.0,
+          "netTokens": {
+            "estimatedMisses": 2055,
+            "rendered": 28770,
+            "total": 30825
+          },
+          "thrashIndexMean": 1.0,
+          "touchRatio": 0.07142857142857142,
+          "waste": 0.9285714285714286
+        }
+      }
+    }
+  }
+}
