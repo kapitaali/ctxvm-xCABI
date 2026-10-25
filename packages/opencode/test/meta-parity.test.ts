@@ -1,0 +1,53 @@
+/** KIT-1 parity tests — the wire format is shared with packages/hermes.
+ * Source of truth: 09-plugin-parity.md §2/§3. Every change lands in the SAME
+ * card on BOTH sides, so this file stays a mirror of
+ * packages/hermes/test/test_plugin.py::CanonicalSidecarParity. */
+
+import assert from "node:assert/strict";
+import { test } from "node:test";
+
+import { createCtxvmPlugin } from "../src/plugin.ts";
+import { loadEchoFixture, replayHooks } from "./replay-registry.ts";
+
+/** 09-plugin-parity.md §2: canonical per-type key signature (compare as sets). */
+const CANONICAL_EVENT_KEYS: Record<string, string[]> = {
+  "session.open": ["agentId", "budgetTokens", "model", "provider", "tokenizerId", "type"],
+  "page.declare": ["page", "type"],
+  "page.fault": ["page", "source", "turn", "type"],
+  "page.render": ["mode", "page", "turn", "type"],
+  "turn.render": ["evictedTokens", "headroom", "residentTokens", "turn", "type"],
+  "call.meta": ["cacheEstimate", "provider", "turn", "type"],
+};
+
+test("every emitted event type matches the canonical key signature (09-plugin-parity.md §2)", () => {
+  const plugin = createCtxvmPlugin({
+    agentId: "opencode",
+    model: "anthropic/claude-sonnet-4-5",
+    provider: "anthropic",
+    budgetTokens: 200_000,
+  });
+  replayHooks(plugin, loadEchoFixture());
+  const [record] = plugin.finishAll();
+  const events = record.trace.jsonl
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line) as Record<string, unknown>);
+  const exercised = new Set<string>();
+  for (const event of events) {
+    const type = event.type as string;
+    const want = CANONICAL_EVENT_KEYS[type];
+    assert.ok(want, `event type outside the canonical table: ${type}`);
+    assert.deepEqual(
+      Object.keys(event).sort(),
+      [...want].sort(),
+      `canonical key drift for ${type} — update 09-plugin-parity.md §2 AND the hermes mirror in the same card`,
+    );
+    exercised.add(type);
+  }
+  for (const type of Object.keys(CANONICAL_EVENT_KEYS)) {
+    assert.ok(
+      exercised.has(type),
+      `canonical type ${type} not exercised by the live fixture — the table must stay emission-proven`,
+    );
+  }
+});

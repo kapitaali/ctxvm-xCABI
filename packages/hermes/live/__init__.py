@@ -66,6 +66,68 @@ from plugin import create_ctxvm_plugin  # noqa: E402
 # .meta.json so a stale in-process copy is identifiable from its output alone.
 PLUGIN_VERSION = "0.2.0"
 
+# --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
+# Both flush paths build .meta.json through _canon_meta so the harnesses emit
+# identical sidecar SHAPES (packages/opencode/live/ctxvm.ts is the GO mirror).
+
+
+def _rfc3339_z(dt: datetime) -> str:
+    """RFC-3339 with the mandated Z suffix (canonical capturedAt form)."""
+    return dt.isoformat().replace("+00:00", "Z")
+
+
+def _witness(msg: str) -> None:
+    """Best-effort diagnostic witness (09-plugin-parity.md §5): append one
+    timestamped line to hooks-witness.log in the active trace dir so a missing
+    flush is diagnosable. Failures are swallowed by design — a broken witness
+    must never break capture."""
+    try:
+        trace_dir = _active_trace_dir()
+        if not trace_dir:
+            return
+        Path(trace_dir).mkdir(parents=True, exist_ok=True)
+        with open(Path(trace_dir, "hooks-witness.log"), "a", encoding="utf-8") as fh:
+            fh.write(f"{_rfc3339_z(datetime.now(timezone.utc))} {msg}\n")
+    except Exception:
+        pass
+
+
+def _flush_base() -> Optional[str]:
+    """Preferred filename root for flushed captures — parity with opencode's
+    `base || sessionID`: slash-command name first, env second, else None."""
+    state = _state()
+    return state.get("trace_name") or os.environ.get("CTXVM_TRACE_NAME")
+
+
+def _canon_meta(session_id: str, hook_stats: Dict[str, int], trace_stats: Any) -> Dict[str, Any]:
+    """Canonical .meta.json sidecar (09-plugin-parity.md §3). Both writers route
+    through this; the package parity tests assert the exact key sets."""
+    return {
+        "sessionID": session_id,
+        "harness": "hermes-python-plugin",
+        "harnessVersion": os.environ.get("CTXVM_HERMES_VERSION"),
+        "pluginVersion": PLUGIN_VERSION,
+        "model": os.environ.get("CTXVM_MODEL"),
+        "provider": os.environ.get("CTXVM_PROVIDER"),
+        "budgetTokens": _budget_from_env(),
+        "capturedAt": _rfc3339_z(datetime.now(timezone.utc)),
+        "hookStats": {
+            "contexts": hook_stats["pre_llm_calls"],
+            "before": hook_stats["pre_tool_calls"],
+            "after": hook_stats["post_tool_calls"],
+            "completed": hook_stats["completed"],
+            "errored": hook_stats["errored"],
+            "extraHookStats": {
+                "session_starts": hook_stats["session_starts"],
+                "session_ends": hook_stats["session_ends"],
+                "skipped_untraced": hook_stats["skipped_untraced"],
+            },
+            "sessions": [session_id],
+        },
+        "traceStats": trace_stats,
+    }
+
+
 ENV_KEYS = [
     "CTXVM_TRACE_DIR",
     "CTXVM_TRACE_NAME",
@@ -193,6 +255,7 @@ def register(ctx) -> None:
     """Hermes plugin entry point. Hooks always registered; tracing gated lazily."""
     state = _state()
     state["register_calls"] += 1
+    _witness(f"init name={state.get('trace_name') or os.environ.get('CTXVM_TRACE_NAME') or '<session-id>'}")
     stats = state["stats"]  # shared across re-registrations, not per-call
 
     def _ensure_plugin() -> Optional[Any]:
@@ -202,30 +265,19 @@ def register(ctx) -> None:
         return state["plugin"]
 
     def _write_trace(session_id: str, tracer: Any) -> None:
-        """Write a single session's tracer to {session_id}.jsonl/.meta.json."""
+        """Write a single session's tracer to {file}.jsonl/.meta.json."""
         trace_dir = _active_trace_dir()
         if not trace_dir:
             return
         Path(trace_dir).mkdir(parents=True, exist_ok=True)
         trace = tracer.finish()
-        jsonl_path = Path(trace_dir) / f"{session_id}.jsonl"
-        meta_path = Path(trace_dir) / f"{session_id}.meta.json"
+        file = _flush_base() or session_id
+        jsonl_path = Path(trace_dir) / f"{file}.jsonl"
+        meta_path = Path(trace_dir) / f"{file}.meta.json"
         jsonl_path.write_text(trace.jsonl, encoding="utf-8")
+        _witness(f"flush {file}.jsonl bytes={len(trace.jsonl)} session={session_id}")
         meta_path.write_text(
-            json.dumps(
-                {
-                    "sessionID": session_id,
-                    "harness": "hermes-python-plugin",
-                    "pluginVersion": PLUGIN_VERSION,
-                    "model": os.environ.get("CTXVM_MODEL"),
-                    "provider": os.environ.get("CTXVM_PROVIDER"),
-                    "budgetTokens": _budget_from_env(),
-                    "capturedAt": datetime.now(timezone.utc).isoformat(),
-                    "hookStats": {**stats, "sessions": [session_id]},
-                    "traceStats": trace.stats,
-                },
-                indent=2,
-            )
+            json.dumps(_canon_meta(session_id, stats, trace.stats), indent=2)
             + "\n",
             encoding="utf-8",
         )
@@ -237,27 +289,17 @@ def register(ctx) -> None:
         if vm is None or not trace_dir:
             return
         Path(trace_dir).mkdir(parents=True, exist_ok=True)
+        base = _flush_base()
         for record in vm.finish_all():
             session_id = record["sessionID"]
             trace = record["trace"]
-            Path(trace_dir, f"{session_id}.jsonl").write_text(
+            file = base or session_id
+            Path(trace_dir, f"{file}.jsonl").write_text(
                 trace.jsonl, encoding="utf-8"
             )
-            Path(trace_dir, f"{session_id}.meta.json").write_text(
-                json.dumps(
-                    {
-                        "sessionID": session_id,
-                        "harness": "hermes-python-plugin",
-                        "pluginVersion": PLUGIN_VERSION,
-                        "model": os.environ.get("CTXVM_MODEL"),
-                        "provider": os.environ.get("CTXVM_PROVIDER"),
-                        "budgetTokens": _budget_from_env(),
-                        "capturedAt": datetime.now(timezone.utc).isoformat(),
-                        "hookStats": {**stats, "sessions": [session_id]},
-                        "traceStats": trace.stats,
-                    },
-                    indent=2,
-                )
+            _witness(f"flush {file}.jsonl bytes={len(trace.jsonl)} session={session_id}")
+            Path(trace_dir, f"{file}.meta.json").write_text(
+                json.dumps(_canon_meta(session_id, stats, trace.stats), indent=2)
                 + "\n",
                 encoding="utf-8",
             )
@@ -266,6 +308,7 @@ def register(ctx) -> None:
 
     def on_session_start(**kwargs: Any) -> None:
         stats["session_starts"] += 1
+        _witness("session_start")
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_session_start(kwargs)
@@ -274,6 +317,7 @@ def register(ctx) -> None:
 
     def on_pre_tool_call(**kwargs: Any) -> None:
         stats["pre_tool_calls"] += 1
+        _witness(f"before tool={kwargs.get('tool')}")
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_pre_tool_call(kwargs)
@@ -283,6 +327,7 @@ def register(ctx) -> None:
     def on_post_tool_call(**kwargs: Any) -> None:
         stats["post_tool_calls"] += 1
         status = kwargs.get("status")
+        _witness(f"after tool={kwargs.get('tool')} status={status}")
         if status not in ("ok", "completed"):
             stats["errored"] += 1
         else:
@@ -295,6 +340,7 @@ def register(ctx) -> None:
 
     def on_pre_llm_call(**kwargs: Any) -> None:
         stats["pre_llm_calls"] += 1
+        _witness("pre_llm (context)")
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_pre_llm_call(kwargs)
@@ -303,6 +349,7 @@ def register(ctx) -> None:
 
     def on_session_end(**kwargs: Any) -> None:
         stats["session_ends"] += 1
+        _witness("session_end -> flush all tracers")
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_session_end(kwargs)
@@ -339,6 +386,7 @@ def register(ctx) -> None:
             )
 
         if sub == "stop":
+            _witness("trace stop -> flush all tracers")
             _flush_traces()
             state["trace_dir"] = None
             state["plugin"] = None

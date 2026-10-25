@@ -106,7 +106,8 @@ test("live adapter maps the three hooks and flushes a trace on cleanup", async (
 
   const meta = JSON.parse(readFileSync(join(dir, "live-test.meta.json"), "utf8")) as {
     sessionID: string;
-    hookStats: { contexts: number; before: number; after: number; completed: number };
+    [key: string]: unknown;
+    hookStats: Record<string, unknown>;
     traceStats: { turns: number; pages: number; faults: number };
   };
   assert.equal(meta.sessionID, "ses_live_test");
@@ -115,6 +116,21 @@ test("live adapter maps the three hooks and flushes a trace on cleanup", async (
   assert.deepEqual(meta.hookStats.after, 1);
   assert.deepEqual(meta.hookStats.completed, 1);
   assert.deepEqual(meta.traceStats, { turns: 2, pages: 1, faults: 1, residentTokens: 2 });
+
+  // KIT-1 (09-plugin-parity.md §3): canonical sidecar shape — identical to the
+  // hermes `_canon_meta` shape asserted in packages/hermes/test/test_plugin.py.
+  assert.deepEqual(Object.keys(meta).sort(), [
+    "budgetTokens", "capturedAt", "harness", "harnessVersion", "hookStats",
+    "model", "pluginVersion", "provider", "sessionID", "traceStats",
+  ]);
+  assert.equal(meta.harness, "opencode-v2-promise-plugin");
+  assert.equal(meta.harnessVersion, null); // CTXVM_OPENCODE_VERSION not exported in this test
+  assert.equal(typeof meta.pluginVersion, "string"); // resolved from the adapter package
+  assert.ok((meta.capturedAt as string).endsWith("Z"));
+  assert.deepEqual(Object.keys(meta.hookStats).sort(), [
+    "after", "before", "completed", "contexts", "errored", "extraHookStats", "sessions",
+  ]);
+  assert.deepEqual(meta.hookStats.extraHookStats, {});
 
   clearEnv();
 });

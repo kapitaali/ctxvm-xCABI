@@ -18,7 +18,7 @@ for _p in (_HERMES_ROOT, _HERMES_SRC):
         sys.path.insert(0, _p)
 
 from plugin import create_ctxvm_plugin, Tracer, TraceInit, canonical_json, content_hash, tool_ref, identity_tokens  # noqa: E402
-from live import _clear_env_for_tests, register  # noqa: E402
+from live import PLUGIN_VERSION, _canon_meta, _clear_env_for_tests, register  # noqa: E402
 
 INIT = {
     "agentId": "hermes",
@@ -461,6 +461,130 @@ class LiveAdapterTests(unittest.TestCase):
 
         meta = json.loads(meta_path.read_text())
         self.assertEqual(meta["sessionID"], "ses_live_test")
+
+
+# --- KIT-1: canonical wire-format parity (09-plugin-parity.md §2/§3) ----------
+
+CANONICAL_EVENT_KEYS = {
+    "session.open": ["agentId", "budgetTokens", "model", "provider", "tokenizerId", "type"],
+    "page.declare": ["page", "type"],
+    "page.fault": ["page", "source", "turn", "type"],
+    "page.render": ["mode", "page", "turn", "type"],
+    "turn.render": ["evictedTokens", "headroom", "residentTokens", "turn", "type"],
+    "call.meta": ["cacheEstimate", "provider", "turn", "type"],
+}
+CANONICAL_META_KEYS = [
+    "budgetTokens", "capturedAt", "harness", "harnessVersion", "hookStats",
+    "model", "pluginVersion", "provider", "sessionID", "traceStats",
+]
+CANONICAL_HOOKSTAT_KEYS = [
+    "after", "before", "completed", "contexts", "errored", "extraHookStats", "sessions",
+]
+
+
+class CanonicalSidecarParity(unittest.TestCase):
+    """09-plugin-parity.md §2/§3 — mirrors packages/opencode/test/meta-parity.test.ts.
+
+    Any drift lands in the SAME card on BOTH sides: update the contract doc,
+    both emitters, and both test files together."""
+
+    def _mini_run(self) -> dict:
+        vm = create_ctxvm_plugin(INIT)
+        sid = "ses_par"
+        doneread = {"session_id": sid, "tool": "read", "args": {"path": "notes.txt"}}
+        vm.on_session_start({"session_id": sid})
+        vm.on_pre_tool_call(doneread)
+        vm.on_pre_llm_call({"session_id": sid, "conversation_history": [
+            {"role": "user", "content": [{"type": "text", "text": "Read notes.txt"}]},
+        ]})
+        vm.on_post_tool_call({
+            **doneread,
+            "status": "ok",
+            "result": {"content": [{"type": "text", "text": "hello page"}]},
+        })
+        vm.on_pre_llm_call({"session_id": sid, "conversation_history": [
+            {"role": "user", "content": [{"type": "text", "text": "Read notes.txt"}]},
+            {"role": "assistant", "content": [{"type": "text", "text": "It says hello page"}]},
+        ]})
+        # Turn 2: double fetch of the same page -> tool_recall page.fault.
+        vm.on_pre_tool_call(doneread)
+        vm.on_post_tool_call({
+            **doneread,
+            "status": "ok",
+            "result": {"content": [{"type": "text", "text": "hello page"}]},
+        })
+        vm.on_pre_llm_call({"session_id": sid, "conversation_history": [
+            {"role": "user", "content": [{"type": "text", "text": "Read notes.txt again"}]},
+        ]})
+        vm.on_session_end({"session_id": sid})
+        return vm.finish_all()[0]
+
+    def test_event_key_signatures(self):
+        record = self._mini_run()
+        events = [json.loads(l) for l in record["trace"].jsonl.split("\n") if l.strip()]
+        for event in events:
+            t = event["type"]
+            self.assertIn(t, CANONICAL_EVENT_KEYS, f"type outside the canonical table: {t}")
+            self.assertEqual(
+                sorted(event),
+                sorted(CANONICAL_EVENT_KEYS[t]),
+                f"canonical key drift for {t} — update 09-plugin-parity.md §2 AND the opencode mirror in the same card",
+            )
+        self.assertEqual(
+            {e["type"] for e in events},
+            set(CANONICAL_EVENT_KEYS),
+            "the canonical table must stay emission-proven: every type exercised by the mini run",
+        )
+
+    def test_canon_meta_shape_and_mapping(self):
+        hook_stats = {
+            "session_starts": 1,
+            "pre_tool_calls": 2,
+            "post_tool_calls": 2,
+            "completed": 1,
+            "errored": 1,
+            "pre_llm_calls": 1,
+            "session_ends": 1,
+            "skipped_untraced": 3,
+        }
+        trace_stats = {"turns": 1, "pages": 1, "faults": 0, "residentTokens": 10}
+        env = {
+            "CTXVM_HERMES_VERSION": "9.9.9",
+            "CTXVM_MODEL": "test/model",
+            "CTXVM_PROVIDER": "test",
+            "CTXVM_BUDGET_TOKENS": "1234",
+        }
+        old = {k: os.environ.get(k) for k in env}
+        os.environ.update(env)
+        try:
+            meta = _canon_meta("ses_par", hook_stats, trace_stats)
+        finally:
+            for k, v in old.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+        self.assertEqual(sorted(meta), sorted(CANONICAL_META_KEYS))
+        self.assertEqual(meta["harness"], "hermes-python-plugin")
+        self.assertEqual(meta["harnessVersion"], "9.9.9")
+        self.assertEqual(meta["pluginVersion"], PLUGIN_VERSION)
+        self.assertTrue(meta["capturedAt"].endswith("Z"))
+        self.assertEqual(sorted(meta["hookStats"]), sorted(CANONICAL_HOOKSTAT_KEYS))
+        # §3 mapping table: hermes-terrain counters -> canonical hook-agnostic keys.
+        self.assertEqual(meta["hookStats"]["contexts"], 1)
+        self.assertEqual(meta["hookStats"]["before"], 2)
+        self.assertEqual(meta["hookStats"]["after"], 2)
+        self.assertEqual(meta["hookStats"]["completed"], 1)
+        self.assertEqual(meta["hookStats"]["errored"], 1)
+        self.assertEqual(
+            meta["hookStats"]["extraHookStats"],
+            {"session_starts": 1, "session_ends": 1, "skipped_untraced": 3},
+        )
+        self.assertEqual(meta["hookStats"]["sessions"], ["ses_par"])
+        self.assertEqual(meta["traceStats"], trace_stats)
+        self.assertEqual(meta["budgetTokens"], 1234)
+        self.assertEqual(meta["model"], "test/model")
+        self.assertEqual(meta["provider"], "test")
 
 
 if __name__ == "__main__":

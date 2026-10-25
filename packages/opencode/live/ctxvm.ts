@@ -22,13 +22,33 @@
  * metadata is affected; the mapping reads `sessionID` + `messages`, whose shapes match.
  */
 
-import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { createCtxvmPlugin, type CtxvmPlugin } from "../src/plugin.ts";
 
 interface HookRegistration {
   dispose?: () => Promise<void> | void;
+}
+
+/** Sidecar contract (09-plugin-parity.md §3): the adapter's own semver,
+ * best-effort resolve from the adapter package's package.json via the module
+ * URL — null if the module lives somewhere unexpected (shim copies carry the
+ * same file, so the URL is the module's own). */
+function adapterVersion(): string | null {
+  try {
+    // live/ -> ../package.json is packages/opencode/package.json (the adapter
+    // package itself; import.meta.url is the module's own location even when a
+    // shim re-exports it from a project plugin directory).
+    const url = new URL("../package.json", import.meta.url);
+    const pkg = JSON.parse(readFileSync(fileURLToPath(url), "utf8")) as {
+      version?: string;
+    };
+    return pkg.version ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /** Minimal structural view of the v2 plugin context (typed payloads live in the spike). */
@@ -131,12 +151,13 @@ export default {
             {
               sessionID,
               harness: "opencode-v2-promise-plugin",
-              opencodeVersion: process.env.CTXVM_OPENCODE_VERSION ?? null,
+              harnessVersion: process.env.CTXVM_OPENCODE_VERSION ?? null,
+              pluginVersion: adapterVersion(),
               model,
               provider,
               budgetTokens: budgetFromEnv(),
               capturedAt: new Date().toISOString(),
-              hookStats: { ...stats, sessions: [sessionID] },
+              hookStats: { ...stats, extraHookStats: {}, sessions: [sessionID] },
               traceStats: trace.stats,
             },
             null,

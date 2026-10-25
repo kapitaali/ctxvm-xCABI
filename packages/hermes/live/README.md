@@ -21,8 +21,9 @@ export CTXVM_MODEL=nvidia/nemotron-3.5-super-vl-120b-a12b
 export CTXVM_PROVIDER=nvidia
 export CTXVM_AGENT_ID=hermes
 export CTXVM_BUDGET_TOKENS=120000
+export CTXVM_HERMES_VERSION="$(hermes --version 2>/dev/null || echo unknown)"
 
-systemctl --user import-environment CTXVM_TRACE_DIR CTXVM_TRACE_NAME CTXVM_MODEL CTXVM_PROVIDER CTXVM_AGENT_ID CTXVM_BUDGET_TOKENS
+systemctl --user import-environment CTXVM_TRACE_DIR CTXVM_TRACE_NAME CTXVM_MODEL CTXVM_PROVIDER CTXVM_AGENT_ID CTXVM_BUDGET_TOKENS CTXVM_HERMES_VERSION
 hermes gateway restart   # from a separate shell outside the gateway process
 
 hermes -z "…"   # CLI mode; plugin registers hooks, flushes traces on session end
@@ -50,8 +51,25 @@ import-environment` or gateway restart is needed.
 
 On `on_session_end` (and `on_unload`), the adapter writes:
 
-- `<name>.jsonl` — RFC-0 trace (`@ctxvm/node`-equivalent `finish()` output)
-- `<name>.meta.json` — session id, model/provider, hook counts, trace stats
+- `<name>.jsonl` — RFC-0 trace (`@ctxvm/node`-equivalent `finish()` output),
+  where `<name>` is the slash-command/env `CTXVM_TRACE_NAME` or the session id
+  (KIT-1: hermes now matches opencode's `base || sessionID` naming)
+- `<name>.meta.json` — the canonical sidecar (session id, harness/harness/
+  plugin versions, model/provider, `CTXVM_HERMES_VERSION`-backed
+  `harnessVersion`, hookStats mapped to the hook-agnostic keys + an
+  `extraHookStats` carries the hermes-terrain counters, `capturedAt` as RFC-3339
+  with `Z`). Identical shape to opencode's — the exact key list lives in
+  `09-plugin-parity.md` §3 and is asserted by both packages' parity tests.
+- `hooks-witness.log` — one best-effort line per hook fire and flush attempt
+  (Append-to-file, never a failure source) so a missing flush is diagnosable
+  (`09-plugin-parity.md` §5).
+
+Verification after a flush — the SAME tool as for opencode:
+
+```sh
+tools/verify-capture.sh <dir>/<name>.jsonl
+tools/snapshot-capture.sh <dir> <name> <era-label>   # before any later flush overwrites
+```
 
 Without either env-gating or the slash command, the plugin registers hooks but no
 tracing occurs (mirror-only v0: never mutates messages, never evicts).

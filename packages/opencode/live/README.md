@@ -66,6 +66,16 @@ End the capture by terminating the TUI first (the flush owner), then the backgro
 service; verify the flushed file with the replay/profile binaries and
 `benchmarks/metrics/metrics.py`.
 
+**Sidecar canonicalization (KIT-1, 2026-10-25):** post-m5 captures emit the canonical
+sidecar — `harnessVersion` (this env) replaces the temporary `opencodeVersion` key,
+`pluginVersion` (the adapter package's own semver) is added, `hookStats` gains
+`extraHookStats: {}`, and the whole shape is pinned identical to hermes in
+`09-plugin-parity.md` §3 (asserted by `packages/opencode/test/meta-parity.test.ts` and
+the hermes mirror test). Shipped drops (`corpus/m1`–`m5`) keep their era's shape; the
+message above ("its `.meta.json` honestly carries `opencodeVersion: null`") describes the
+m5-era sidecar as shipped. Verify any capture with the shared
+`tools/verify-capture.sh <trace.jsonl>`.
+
 ## Contract notes (v2.1.2, observed)
 
 - `ctx.session.hook("context", cb)` fires once per **primary** model request
