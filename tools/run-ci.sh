@@ -36,6 +36,8 @@ FIXTURES=(
   corpus/m5/opencode-live-session-01.jsonl
   corpus/m6/opencode-pause-session-a.jsonl
   corpus/m6/opencode-resume-session-b.jsonl
+  corpus/m7/hermes-pause-session-a.jsonl
+  corpus/m7/hermes-resume-session-b.jsonl
 )
 
 # 1) rust
@@ -57,7 +59,7 @@ log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode; python — @ctxvm/h
 ( cd packages/py && python -m pytest test/ -q ) >/dev/null
 log "gate 2b: benchmarks/metrics — 07 reference suite + policy simulator"
 ( venvs/odps/bin/python -m pytest benchmarks/metrics -q ) >/dev/null
-log "ts suites green (13 + 50 tests); python suites green (74 + 30 + 8 tests)"
+log "ts suites green (13 + 51 tests); python suites green (74 + 30 + 8 tests)"
 
 # 3) schema + corpus integrity + the T21 export round-trip
 log "gate 3/4: schema validator + corpus checksums + export round-trip"
@@ -68,6 +70,7 @@ venvs/odps/bin/python spec/rfc-0/validate_schema.py "${FIXTURES[@]}"
 ( cd corpus/m4 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd corpus/m5 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd corpus/m6 && sha256sum -c checksums.sha256 ) >/dev/null
+( cd corpus/m7 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd rust && . "$HOME/.cargo/env" 2>/dev/null || true; cargo build --release ) >/dev/null
 EXPORT_TMP="$(mktemp -d)"
 rust/target/release/export corpus/m3/hermes-echo-synthetic.jsonl --turn 2 \

@@ -12,7 +12,7 @@ catalog:
   productReferences:
   - id: ctxvm-corpus-0.1
     productID: ctxvm-corpus-0.1
-    productVersion: 0.6.0
+    productVersion: 0.7.0
     name:
       en: ctxvm Trace Corpus
     description:
@@ -34,7 +34,18 @@ catalog:
         \ at turn 3: the packaged snapshot via the committed export binary plus the\
         \ session booted with CTXVM_RESUME_FROM and the resumeFrom sidecar evidence;\
         \ 9 pages across both sessions, zero evictions, pause byte-identical to the\
-        \ era-as-flushed)."
+        \ era-as-flushed), and corpus/m7 (first hermes-side typed pause/resume pair\
+        \ \u2014 a real interactive hermes TUI session typed /ctxvm-handoff mid-session\
+        \ at turn 3 through the systemd gateway service, and a genuinely fresh session\
+        \ booted with CTXVM_RESUME_FROM: package-verified boot before any hook work,\
+        \ then package-carried reconstruction; 45 pages across both sessions, zero\
+        \ evictions, zero faults, shipped turn-3 package era-as-flushed), and corpus/m7\
+        \ (first hermes-side typed pause/resume pair \u2014 a real interactive hermes\
+        \ TUI session typed /ctxvm-handoff mid-session at turn 3 through the systemd\
+        \ gateway service, and a genuinely fresh session booted with CTXVM_RESUME_FROM:\
+        \ package-verified boot before any hook work, then package-carried reconstruction;\
+        \ 45 pages across both sessions, zero evictions, zero faults, shipped turn-3\
+        \ package digest-pinned to the boot-verified set)."
     productModel:
       standard: ODPS
       version: '4.1'

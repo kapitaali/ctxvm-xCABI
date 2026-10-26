@@ -1,0 +1,56 @@
+{
+  "sessionID": "local-6f581fb1eba2f1d624435e5a6faf4e072bc763395ab02ff866654dc54d460a43",
+  "harness": "hermes-python-plugin",
+  "harnessVersion": "Hermes Agent v0.22.5 (2026.9.24) \u00b7 stable \u00b7 local bf0203a794a0",
+  "pluginVersion": "0.2.0",
+  "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+  "provider": "nvidia",
+  "budgetTokens": 120000,
+  "capturedAt": "2026-10-26T11:02:04.356688Z",
+  "hookStats": {
+    "contexts": 1,
+    "before": 35,
+    "after": 35,
+    "completed": 34,
+    "errored": 1,
+    "extraHookStats": {
+      "session_starts": 1,
+      "session_ends": 1,
+      "skipped_untraced": 0
+    },
+    "sessions": [
+      "local-6f581fb1eba2f1d624435e5a6faf4e072bc763395ab02ff866654dc54d460a43"
+    ]
+  },
+  "traceStats": {
+    "turns": 1,
+    "pages": 34,
+    "faults": 0,
+    "residentTokens": 48080
+  },
+  "resumeFrom": {
+    "snapshot": "/tmp/ctxvm-m7/a/handoff",
+    "snapshotDigest": "sha256:7f746595343528907e1c47edb8aa2cc62e72adc42017dd30ddecab39edef17c2",
+    "snapTurn": 3,
+    "turn": 3,
+    "artifacts": [
+      "/tmp/ctxvm-m7/a/handoff/checksums.sha256",
+      "/tmp/ctxvm-m7/a/handoff/llms.txt",
+      "/tmp/ctxvm-m7/a/handoff/manifest.yaml",
+      "/tmp/ctxvm-m7/a/handoff/page-table-3.json",
+      "/tmp/ctxvm-m7/a/handoff/trace-3.jsonl",
+      "/tmp/ctxvm-m7/a/handoff/trace-3.jsonl.zst"
+    ],
+    "manifest": {
+      "sliceTurn": 3
+    },
+    "projection": {
+      "turn": 3,
+      "slots": 10
+    },
+    "diff": {
+      "source": "/tmp/ctxvm-m7/a/session-a.jsonl",
+      "relation": "divergent"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "drop": "ctxvm-trace-corpus-m7",
+  "product": "ctxvm Trace Corpus (ODPS: 04-odps-dataproduct-corpus.yaml, productVersion 0.7.0)",
+  "createdOn": "2026-10-26",
+  "license": "CC-BY-4.0 for corpus content (per root manifest license.governance block)",
+  "redaction": "No redaction applied. Precedent: corpus/m1-m3 ship clear absolute paths; tool refs truncate their argument JSON at 120 characters by design (RFC-0 §6): read/edit refs are paths + edit fragment values, shell refs are command prefixes. The capture is free of secrets per pattern scan (0 hits for sk-/ghp_/AKIA/xox/Bearer/private-key shapes); the recorded work touches only throwaway workspace fixtures plus read-only repo inspection. No credentials or third-party personal data present.",
+  "status": "LIVE — first HERMES-side typed pause/resume pair, and the first capture driven entirely through the gateway service. Session-a is a real interactive hermes TUI session (user typed prompts, agent worked — m5/m6 used scripted one-shot children) whose typed mid-session `/ctxvm-handoff /tmp/ctxvm-m7/a 3` pause operated the design §2 chain end-to-end through the systemd service (flush → era copies → export --turn 3 --odps → verified=True), CONTINUED tracing through turn 4 (pause is not teardown), and flushed the full trace at /ctxvm-trace stop + exit. Session-b is a genuinely fresh chat (bare `hermes`, no prior context) booted with CTXVM_RESUME_FROM=<package>: the boot verify chain ran BEFORE any hook work (replay exit 0 at turn 3, projection surfaced, diagnostic diff) and the canonical sidecar gained the resumeFrom evidence object; the resumed agent then rebuilt its knowledge strictly from the package artifacts (llms.txt-led), verified the package itself, found a real mirror regression mid-verify, and produced a handoff report — the product demonstrated on its own capture. The capture path was itself the debugging subject: typed dispatch plus all hooks and turns run INSIDE hermes-gateway.service, whose boot-time env and plugin imports are frozen (TUI shell exports are inert for the service runtime); fixed by `systemctl --user set-environment CTXVM_*…` + service restart. Operator rulings (2026-10-26): hermes both sides, same harness (design §4 does not claim cross-harness handoff — the hermes /ctxvm-handoff handler still lacks the TS adapter's handoff_name=CTXVM_TRACE_NAME pass-through, so the pause needs CTXVM_HANDOFF_NAME equal to the trace flush name; run-1 at 12:21 paused the flushed 'session-a' against the name 'handoff' and exited 2 — archived /tmp/ctxvm-m7/a-run1 — and the 11:38 fail-closed resume boot, before any package existed, is the negative twin of session-b's verified boot); mid-session typed pause at turn 3 with real declared pages.",
+  "harness": {
+    "name": "Hermes Agent",
+    "version": "Hermes Agent v0.22.5 (2026.9.24) · stable · local bf0203a794a0",
+    "plugin": "ctxvm-tracer hermes plugin deployed at ~/.hermes/plugins/ctxvm-tracer (v0.2.0; src symlinked to packages/hermes/src, root __init__.py carries the gateway-persistent plugin registry). All agent turns, hook firing and typed command dispatch run inside hermes-gateway.service (systemd user unit, no CTXVM_* keys in the unit file); the long-running service never re-imports, so plugin and env state are boot-time — the canonical discovery witness logged '12:18:22 … 60 enabled' after the restore restart.",
+    "tracer": "@ctxvm tracer chain under ctxvm-core (RFC-0 xCABI JSONL) through the hermes hook host; pause packaging through the committed rust export binary (--turn 3 --odps, documented argv law).",
+    "invocation": "two bare `hermes` TUI sessions under the gateway service armed via `systemctl --user set-environment CTXVM_FEATURES=trace,handoff CTXVM_TRACE_DIR=/tmp/ctxvm-m7/a CTXVM_TRACE_NAME=session-a CTXVM_HANDOFF_DIR=/tmp/ctxvm-m7/a CTXVM_HANDOFF_NAME=session-a CTXVM_RUST_BIN_DIR=<repo>/rust/target/release CTXVM_AGENT_ID=hermes CTXVM_BUDGET_TOKENS=120000 CTXVM_MODEL=nvidia/nemotron-3.5-super-vl-120b-a12b CTXVM_PROVIDER=nvidia` + `systemctl --user restart hermes-gateway.service` (single-session discipline: any concurrent session co-traces into the armed dir). Session-a work: repo state report → scratch notes write (one pre-pause refusal hook, corrected write) → status append → one-paragraph summarize; typed pause after the summarize; one continuation turn (confirm read) post-pause. Session-b re-armed with CTXVM_TRACE_DIR=/tmp/ctxvm-m7/b, CTXVM_TRACE_NAME=session-b, CTXVM_RESUME_FROM=/tmp/ctxvm-m7/a/handoff + restart.",
+    "flush": "session-a: hermes emits session_end per user turn (5 session_ends vs 1 session_start in hookStats) and the tracer re-flushed each time — monotone 1597 → 3654 → 5044 → 5723 → 6161 bytes (append-only law intact); the typed pause produced the 10:48:16Z second 5723-byte flush before packaging (the era copies' source), and the stop flush 6161 bytes. session-b: session_end flush 8523 bytes + identical stop flush 8523 bytes (stable); hooks logged after the stop are inert for the capture (recorded in hooks-witness, never traced).",
+    "model": "nvidia/nemotron-3.5-super-vl-120b-a12b via provider nvidia",
+    "providerSpend": "not surfaced by the harness (call.meta providerReported=false throughout, m5/m6 precedent); free-tier nvidia quota, no purchased spend.",
+    "liveCaptureWorking": "Confirmed twice (the good run): typed /ctxvm-handoff exit_code=0 verified=True divergences=[] relationToSource=identical (29/29 kept) at 12:48:16Z, one post-pause continuation context, stop flush; session-b boot check at 10:53:12Z BEFORE any hook work: resume_from=/tmp/ctxvm-m7/a/handoff verified=True reason='snapshot verified: replay exit 0 at turn 3', 'projection: 10 slot(s) at turn 3', 'diff: source=/tmp/ctxvm-m7/a/session-a.jsonl relation=divergent' (diagnostic, knowledge-stateful shape). Negative twins witnessed the same day: run-1's pause exit 2 (flush-name mismatch, 12:21Z) and the 11:38Z fail-closed resume boot with no package on disk."
+  },
+  "files": [
+    {
+      "file": "hermes-pause-session-a.jsonl",
+      "meta": "hermes-pause-session-a.meta.json",
+      "kind": "live-harness-captured-pause-session",
+      "origin": "Full trace of the pausing session (turns 0-4, 32 events): session.open + 11 page.declare + 10 page.render + 5 call.meta + 5 turn.render; real TUI console work (git/log + README/ncm-integration/08-HANDOFF reads → the scratch notes write, one refused overwrite then corrected write → status-append patch → summarize read), the typed `/ctxvm-handoff /tmp/ctxvm-m7/a 3` taken after the summarize, and one continuation turn (the confirm read) before the stop flush. The one errored hook is the Write refusal — it declined BEFORE declaring a page, so no fault row exists (lawful negative-space error data).",
+      "events": 32,
+      "turns": 5,
+      "pages": 11,
+      "faults": 0,
+      "toolCalls": { "before": 12, "after": 12, "completed": 11, "errored": 1 },
+      "contexts": 5,
+      "residentTokens": 20904,
+      "resumeFrom": null,
+      "pausePackage": "handoff/turn-3/ (29 events of turn-3 state: 10 slots, residency 20276; faithful to the era as flushed — diff(era, package slice) = identical over 29/29; the shipped artifacts are the boot-verified set restored digest-witnessed after the capture-dir mutation, see limitations)"
+    },
+    {
+      "file": "hermes-resume-session-b.jsonl",
+      "meta": "hermes-resume-session-b.meta.json",
+      "kind": "live-harness-captured-resumed-session",
+      "origin": "Trace of the session resumed FROM the package (37 events, one giant resume turn: session.open + 34 page.declare + 1 call.meta + 1 turn.render; no page.render rows — they fire only at later contexts, and this session had exactly one). The agent had no prior chat transcript of session-a — only the 5 package artifacts — and rebuilt strictly from them: read llms.txt → read page-table/manifest/checksums → verify the package itself (sha256sum -c 4/4, decompress byte-identity, replay exit 0, projection byte-match) → repo state reads → a real mirror regression found mid-verify (the opencode dir-chain test failure, later fixed as its own commit) → handoff report. One errored hook = an intentional `ls target/debug target/release` probe (exit 1; the session corrected course). No transcript carrying: v0 resume is verify + provenance, no injection.",
+      "events": 37,
+      "turns": 1,
+      "pages": 34,
+      "faults": 0,
+      "toolCalls": { "before": 35, "after": 35, "completed": 34, "errored": 1 },
+      "contexts": 1,
+      "residentTokens": 48080,
+      "resumeFrom": {
+        "snapshot": "/tmp/ctxvm-m7/a/handoff (content shipped verbatim as handoff/turn-3/)",
+        "snapshotDigest": "sha256:7f746595343528907e1c47edb8aa2cc62e72adc42017dd30ddecab39edef17c2",
+        "snapTurn": 3
+      }
+    }
+  ],
+  "beats": {
+    "declare": "45 pages total across both sessions from real tool results (read/edit/shell/code-execution families; the scratch notes append declares a fresh contentHash — the fresh-fetch law working; session-b's 34 declares are the resumed session's own rebuilt knowledge, carried by no transcript)",
+    "fault": "0 faults recorded on either side: both errored hooks (session-a's Write refusal, session-b's failed ls probe) declined/failed before declaring a page, so they remain lawful non-paged error data; faultRecall KPI = null at the slice (m6 precedent for a fault-free capture)",
+    "pause": "session-a's turn-3 state packaged MID-SESSION by a TYPED command through the gateway service: typed /ctxvm-handoff flushes all tracers (the 10:48:16Z second 5723-byte flush) → era copies session-a-turn-3.{jsonl,meta.json} (cp -n law) → export --turn 3 --output handoff --odps → verified=True render; tracing continued to turn 4 and the full trace flushed at stop — the package byte-reproduces from the era as flushed (diff identical), and the shipped set is further pinned by the boot-time digest (limitations 4)",
+    "resume": "session-b's boot check ran before any hook work: zstd decompress inside the snapshot dir, replay --turn 3 exit 0, checksums row verification, checksums-provenance digest; the sidecar (canonical shape, resumeFrom stamped LAST) carries the full evidence incl. the §3(4) projection (10 slots) and the §3(3) diagnostic diff; v-next in-module checks from UC1-VERIFY-CHECKS ride along — hermes module law, exercised live",
+    "turns": "session-a 5 turn boundaries (0-4; the full trace's tail stamps all turns with post-hoc residency 20904), session-b 1 (the resume turn; its 34 declared pages are all first-seen knowledge — a single-turn session legitimately renders no per-page rows)"
+  },
+  "limitations": [
+    "v0 tracer is observe-only (declared => resident; no page.evict, no stub renders): no paging pressure at 20904 (session-a) / 48080 (session-b) declared tokens against the 120000 budget.",
+    "The derived-composition render tail is KNOWLEDGE-STATEFUL (second measured instance, m6 law): the full session-a tail stamps turns 0-4 with 20904 (11 declared pages incl. the post-pause notes.md re-declare), while the turn-3 package stamps turns 0-3 with 20276 (10 slots). diff(full, package) shares the 21-event lifecycle prefix and departs at event 21 (firstDivergentEvent 21; tallyMismatches turns 0-3: 20904 vs 20276) — diagnostic only, never verdict-forming; the law-bearing canonical pair is era-as-flushed vs package slice = identical (witnessed at capture, 29/29), and the shipped bytes are digest-pinned to it (limitation 4).",
+    "Resume is verify+provenance (design §3 v0): session-b re-reads its own state; page/turn identity transfer is possible in principle (pages are content-addressed) but trace injection (handoff-inject feature) is the gated v-next beat — this drop captures NO injection.",
+    "Post-capture mutation + digest-witnessed restoration: after the boot verify, the RESUMED session's own analysis exports (it ran `export --turn N` against the full trace inside the live snapshot dir) overwrote the package's shared per-dir files (manifest.yaml / llms.txt / checksums.sha256 name the last slice written, while trace-N/page-table-N carry their own turn) with later-turn variants; trace-3.jsonl.zst and page-table-3.json survived untouched. The shipped handoff/turn-3/ is the restored package — re-exported from the era-as-flushed input under the ORIGINAL argv string (/tmp/ctxvm-m7/a/session-a.jsonl; the live file was briefly swapped and restored byte-identically, sha256 a09aab8f… both ways) with the original capture env — and its identity is witnessed three ways: the two surviving artifacts cmp byte-identical to the restoration; the restored checksums.sha256 self-verifies 4/4; snapshotDigest over the shipped checksums recomputes EXACTLY the boot-time sidecar digest sha256:7f746595…. The incident is itself evidence: the mutation was detectable from the sidecar digest alone (the digest-provenance law catching a real drift), and the root wart — per-turn export into one dir clobbers the shared generic names — is a frontier engine item.",
+    "Hermes harness shape: session_end fires per user turn (5 vs 1 session_start); gateway hook payloads report tool=None (the gateway hook key differs from the classic CLI — trace fidelity unharmed, page.declare events carry the full logicalRef); the /ctxvm-handoff handler needs CTXVM_HANDOFF_NAME equal to the trace flush name (run-1 exit 2 is the failure-mode witness); typed dispatch requires the SERVICE environment (TUI shell exports are inert).",
+    "Session-b hooks logged after the trace stop (11:02-11:06Z) are inert for the capture (recorded, traced bytes stable at 8523).",
+    "tokenizerId is apx4-char (ceil(characters/4)) — approximation; absolute tokens are not provider usage. call.meta providerReported=false throughout (no provider cache counters surfaced).",
+    "This drop ships the digest-witnessed restored package and quotes the live hook witnesses; the raw capture trees (/tmp/ctxvm-m7/a, /tmp/ctxvm-m7/b) and their mutation debris are outside the corpus, per the m6 home for the source-of-record (sidecar paths kept verbatim per the m1-m3 clear-paths precedent)."
+  ]
+}

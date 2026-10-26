@@ -9,6 +9,7 @@
 # RE-VALIDATED 2026-10-24 for the M4 live Hermes drop (productVersion 0.4.0, latestDrop corpus/m4).
 # RE-VALIDATED 2026-10-25 for the M5 OpenCode self-capture drop (productVersion 0.5.0, latestDrop corpus/m5).
 # RE-VALIDATED 2026-10-26 for the M6 pause/resume drop (productVersion 0.6.0, latestDrop corpus/m6).
+# RE-VALIDATED 2026-10-26 for the M7 hermes-side typed pause/resume drop (productVersion 0.7.0, latestDrop corpus/m7).
 
 schema: https://opendataproducts.org/v4.1/schema/odps.yaml
 version: "4.1"   # MUST be quoted — unquoted 4.1 parses as YAML float and fails schema
@@ -28,7 +29,7 @@ product:
     contentSchema: https://ctxvm.dev/x-cabi/schema/0.1
     conformanceVectors: https://hub.ctxvm.dev/corpus/0.1/conformance.jsonl
     firstDrop: corpus/m1
-    latestDrop: corpus/m6
+    latestDrop: corpus/m7
 
   details:
     en:
@@ -55,8 +56,20 @@ product:
         trigger at turn 3: the packaged snapshot via the committed export binary plus
         the session booted with CTXVM_RESUME_FROM and the resumeFrom sidecar evidence;
         9 pages across both sessions, zero evictions, pause byte-identical to the
-        era-as-flushed).
-      productVersion: 0.6.0
+        era-as-flushed), and corpus/m7 (first hermes-side typed pause/resume pair
+        — a real interactive hermes TUI session typed /ctxvm-handoff mid-session
+        at turn 3 through the systemd gateway service, and a genuinely fresh
+        session booted with CTXVM_RESUME_FROM: package-verified boot before any
+        hook work, then package-carried reconstruction; 45 pages across both
+        sessions, zero evictions, zero faults, shipped turn-3 package
+        era-as-flushed), and corpus/m7 (first hermes-side typed pause/resume pair
+        — a real interactive hermes TUI session typed /ctxvm-handoff mid-session
+        at turn 3 through the systemd gateway service, and a genuinely fresh
+        session booted with CTXVM_RESUME_FROM: package-verified boot before any
+        hook work, then package-carried reconstruction; 45 pages across both
+        sessions, zero evictions, zero faults, shipped turn-3 package
+        digest-pinned to the boot-verified set).
+      productVersion: 0.7.0
       productSeries: ctxvm open corpus
       visibility: public
       status: draft

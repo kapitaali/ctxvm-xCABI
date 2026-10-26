@@ -1,0 +1,32 @@
+{
+  "sessionID": "local-cbeac4fb6b01ed593029059af30af8907ff8e2ce27f9d9da1d8f1acd5f65f0b8",
+  "harness": "hermes-python-plugin",
+  "harnessVersion": "Hermes Agent v0.22.5 (2026.9.24) \u00b7 stable \u00b7 local bf0203a794a0",
+  "pluginVersion": "0.2.0",
+  "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+  "provider": "nvidia",
+  "budgetTokens": 120000,
+  "capturedAt": "2026-10-26T10:49:30.958827Z",
+  "hookStats": {
+    "contexts": 5,
+    "before": 12,
+    "after": 12,
+    "completed": 11,
+    "errored": 1,
+    "extraHookStats": {
+      "session_starts": 1,
+      "session_ends": 5,
+      "skipped_untraced": 0
+    },
+    "sessions": [
+      "local-cbeac4fb6b01ed593029059af30af8907ff8e2ce27f9d9da1d8f1acd5f65f0b8"
+    ]
+  },
+  "traceStats": {
+    "turns": 5,
+    "pages": 11,
+    "faults": 0,
+    "residentTokens": 20904
+  },
+  "resumeFrom": null
+}
