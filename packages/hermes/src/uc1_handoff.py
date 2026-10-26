@@ -124,7 +124,10 @@ class UC1Handoff(UCModule):
 
         Returns {"exit_code", "snapshot": {...}, "report": {...}, "stderr": str}.
         """
-        handoff_dir = os.environ.get("CTXVM_HANDOFF_DIR") or trace_dir
+        # Dir chain ARG-FIRST (mirrors TS ruling 2bb339a): an env-first line
+        # lets a leaked service environment override the caller's explicit
+        # dir. Explicit trace_dir always wins over CTXVM_HANDOFF_DIR.
+        handoff_dir = trace_dir or os.environ.get("CTXVM_HANDOFF_DIR")
         if not handoff_dir:
             return {
                 "exit_code": 2,
@@ -165,6 +168,10 @@ class UC1Handoff(UCModule):
                 snapshot[ext] = str(dst)
 
         # Step 3: package through the committed export binary.
+        # Export wart (RR-UM7CAPTURE Discoveries 1): rust export writes shared
+        # generic names (manifest.yaml/llms.txt/checksums.sha256) that the next
+        # per-turn export into the same dir clobbers; only trace-N/page-table-N
+        # carry the turn. One dir = one slice. Do not mix turns in one dir.
         snapshot_dir = Path(handoff_dir) / "handoff"
         export_args: List[str] = ["--output", str(snapshot_dir)]
         # argv law (fixed in UC1-PAUSE-MIRROR, 2026-10-25; probed): the bare

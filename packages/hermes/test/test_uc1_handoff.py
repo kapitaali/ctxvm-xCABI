@@ -218,6 +218,21 @@ class UC1PauseWireTests(unittest.TestCase):
                 f"stderr captured: {buf.getvalue()!r}",
             )
 
+    def test_pause_dir_chain_arg_beats_env(self):
+        """pause() dir chain is ARG-FIRST: explicit trace_dir beats leaked
+        CTXVM_HANDOFF_DIR (m7 leak regression, mirrors TS 2bb339a law test)."""
+        with self._stage("dirarg") as td:
+            os.environ["CTXVM_HANDOFF_DIR"] = str(Path(td) / "leaked-no-such-dir")
+            try:
+                result = self.uc1.pause(td, turn=None, handoff_name="dirarg")
+            finally:
+                del os.environ["CTXVM_HANDOFF_DIR"]
+            self.assertEqual(result["exit_code"], 0, result["stderr"])
+            self.assertEqual(
+                result["snapshot"].get("jsonl"),
+                str(Path(td) / "dirarg-flush.jsonl"),
+            )
+
     def test_era_preseed_divergent_unverified(self):
         """Pre-seeded divergent era copy survives cp -n → counterproof unverified."""
         with self._stage() as td:
@@ -320,6 +335,53 @@ class UC1DispatcherTests(unittest.TestCase):
         out = ctx.handler("")
         self.assertIn("Usage:", out)
         self.assertIn("ctxvm-handoff", out)
+        del os.environ["CTXVM_FEATURES"]
+
+    def test_handoff_passes_trace_name_as_handoff_name(self):
+        """m7 run-1 failure mode: /ctxvm-handoff must pass handoff_name=CTXVM_TRACE_NAME
+        when set, so flush and package use the same name (not the default 'handoff')."""
+        os.environ["CTXVM_FEATURES"] = "handoff"
+        os.environ["CTXVM_TRACE_NAME"] = "session-a"
+        ctx, calls = self._make_ctx()
+        live.register(ctx)
+
+        # Inject a mock uc1 that records pause kwargs.
+        import types
+
+        class MockUC1:
+            name = "uc1-handoff"
+            feature = "handoff"
+
+            def __init__(self):
+                self.pause_calls = []
+
+            def enabled(self, features):
+                return True
+
+            def flush(self):
+                return None
+
+            def pause(self, trace_dir, turn=None, handoff_name=None):
+                self.pause_calls.append(
+                    {"trace_dir": trace_dir, "turn": turn, "handoff_name": handoff_name}
+                )
+                return {
+                    "exit_code": 0,
+                    "verified": True,
+                    "divergences": [],
+                    "stderr": "",
+                    "report": {},
+                }
+
+        mock_uc1 = MockUC1()
+        live._state()["ucs"]["uc1-handoff"] = mock_uc1
+
+        td = tempfile.mkdtemp()
+        out = ctx.handler(f"{td} 3")
+        self.assertEqual(len(mock_uc1.pause_calls), 1)
+        self.assertEqual(mock_uc1.pause_calls[0]["handoff_name"], "session-a")
+        del os.environ["CTXVM_TRACE_NAME"]
+        del os.environ["CTXVM_FEATURES"]
 
 
 class UC1ResumeTests(unittest.TestCase):

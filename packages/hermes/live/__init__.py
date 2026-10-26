@@ -753,7 +753,7 @@ def register(ctx) -> None:
                 i += 1
 
         _flush_traces()  # flush live tracers before packaging (docstring promise)
-        result = uc1.pause(trace_dir, turn=turn)
+        result = uc1.pause(trace_dir, turn=turn, handoff_name=_flush_base())
         report = result.get("report", {})
         if isinstance(report, dict):
             out = json.dumps(report, indent=2)
