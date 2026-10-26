@@ -178,7 +178,8 @@ regression — 51/51 green clean AND polluted; PY dir-chain env-first stays
 their module law, mirror-parity frontier). Manifest `latestDrop: corpus/m7`
 productVersion 0.7.0 + hub regen re-baselined; counts `ts 13 + 51` /
 `python 74 + 30 + 8`; ALL GATES GREEN (schema 629 checks / 25 fixtures).
-**Still OPEN:** the gated `handoff-inject` beat (v-next); hermes-lane frontier
+**Landing commits:** 2bb339a (TS dir-chain fix) + 8aa7949 (corpus/m7 drop) +
+eca05a5 (books); pushed to origin/main. **Still OPEN:** the gated `handoff-inject` beat (v-next); hermes-lane frontier
 cards from the m7 capture (typed-handler `handoff_name=CTXVM_TRACE_NAME`
 pass-through; gateway `tool=None` hook-key mapping; verified-boot resume-brief
 UX; the export one-dir-one-slice doc line; PY dir-chain mirror-parity); optional
