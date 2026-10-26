@@ -1,5 +1,5 @@
 {
-  "generatedBy": "UC1-RESUME-MIRROR parity pin (2026-10-25, kapitaali lane)",
+  "generatedBy": "UC1-RESUME-MIRROR parity pin (2026-10-25, kapitaali lane); + UC1-VERIFY-CHECKS v-next fields manifest/projection/diff (2026-10-26, same card, values pinned against BOTH suites)",
   "reference": "packages/hermes/src/uc1_handoff.py resume() @8871dda, snapshot via ctxvm_py._cli.build_handoff_snapshot",
   "anchor": "corpus/m1/session-healthy.jsonl",
   "discipline": "cwd=repo root + RELATIVE trace argv + --turn 0 on BOTH sides: manifest.yaml/llms.txt embed the trace argv string, so relative keeps artifact bytes host-independent (probed 2026-10-25)",
@@ -7,6 +7,17 @@
   "verified": true,
   "reason": "snapshot verified: replay exit 0 at turn 0",
   "snapshotDigest": "sha256:c2f11da82b34b266c877ca88b117f8a6fe66bd78574eae97499cebfd94f7b4b5",
+  "manifest": {
+    "sliceTurn": 0
+  },
+  "projection": {
+    "turn": 0,
+    "slots": 3
+  },
+  "diff": {
+    "source": "corpus/m1/session-healthy.jsonl",
+    "relation": "a_extends_b"
+  },
   "artifactNames": [
     "checksums.sha256",
     "llms.txt",

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 from datetime import datetime, timezone
@@ -39,6 +40,7 @@ from uc_registry import UCModule, UC1_FEATURE, HANDOFF_FEATURE
 # Rust CLI binaries (built by cargo build --release in rust/).
 _EXPORT_BIN = "export"
 _REPLAY_BIN = "replay"
+_DIFF_BIN = "diff"
 
 
 def _rust_bin_dir() -> Optional[Path]:
@@ -206,16 +208,33 @@ class UC1Handoff(UCModule):
 
         Steps:
           1. Locate trace-N.jsonl.zst in snapshot_dir → determine turn N.
-          2. Read manifest.yaml + checksums.sha256 for snapshot integrity.
+          2. Validate manifest.yaml + checksums.sha256 at BYTE level (§3(1)
+             v-next, UC1-VERIFY-CHECKS): every checksums row re-verified
+             against the artifact bytes (the digest alone hashes only the
+             recorded hex strings — a corrupted artifact passed verification
+             before this card), manifest.yaml `sliceTurn` cross-checked
+             against the trace turn.
           3. Decompress trace-N.jsonl.zst → temp file.
           4. Run `replay <trace> --turn N` → exit 0 required (counterproof).
-          5. Compute SHA-256 digest over all artifact checksums.
+          5. Law-aware diff relation (§3(3) v-next, m6 knowledge-stateful-tail
+             law): era copy `*-turn-N.jsonl` beside the package = canonical
+             pair (relation `identical` REQUIRED — mismatch is NOT lawful);
+             otherwise manifest `derivedFrom` is diffed DIAGNOSTIC ONLY (its
+             divergence at `turn.render` residency rows is the lawful shape —
+             surfaced, never failing); no source on disk = skipped.
+          6. Surface the projection (§3(4) v-next): page-table-N.json slots
+             counted into evidence (`projection`) — the call site emits the
+             operator witness line (fidelity reference).
+          7. Compute SHA-256 digest over all artifact checksums.
 
         Never blocks the agent loop: any failure returns verified=False with a
         loud reason; the caller decides whether to continue unverified.
 
-        Returns {"exit_code", "verified", "reason", "evidence"} where evidence
-        carries snapshot, snapshotDigest, snapTurn for sidecar stamping.
+        Returns {"exit_code", "verified", "reason", "evidence"}. The B3
+        landed law (09 §3 extension) stores the WHOLE evidence dict in the
+        sidecar's resumeFrom key, so the v-next manifest/projection/diff keys
+        flow through as nested opt-in fields (top-level sidecar CANON shape
+        untouched).
         """
         snap_path = Path(snapshot_dir)
         if not snap_path.is_dir():
@@ -272,6 +291,150 @@ class UC1Handoff(UCModule):
                 "evidence": {"turn": turn, "snapshot": str(snap_path)},
             }
 
+        # --- §3(1) v-next: checksums VALIDATED at byte level ----------------
+        import hashlib
+
+        checksums_file = snap_path / "checksums.sha256"
+        if not checksums_file.is_file():
+            return {
+                "exit_code": 2,
+                "verified": False,
+                "reason": f"checksums.sha256 missing: {snapshot_dir}",
+                "evidence": {"turn": turn, "snapshot": str(snap_path)},
+            }
+        # Rows in FILE order ("<hash>  <name>", split on the first whitespace
+        # run); blank/malformed rows skip — mirrors the digest parser's law.
+        checksum_lines = checksums_file.read_text(encoding="utf-8").strip().splitlines()
+        for line in checksum_lines:
+            parts = line.split(None, 1)
+            if len(parts) != 2:
+                continue
+            digest_hex, name = parts[0].strip(), parts[1].strip()
+            artifact = snap_path / name
+            if not artifact.is_file():
+                return {
+                    "exit_code": 2,
+                    "verified": False,
+                    "reason": f"checksummed artifact missing: {name}",
+                    "evidence": {"turn": turn, "snapshot": str(snap_path)},
+                }
+            actual = hashlib.sha256(artifact.read_bytes()).hexdigest()
+            if actual != digest_hex:
+                return {
+                    "exit_code": 2,
+                    "verified": False,
+                    "reason": f"checksum mismatch for {name}",
+                    "evidence": {"turn": turn, "snapshot": str(snap_path)},
+                }
+
+        # --- §3(1) v-next: manifest template cross-check --------------------
+        manifest_file = snap_path / "manifest.yaml"
+        if not manifest_file.is_file():
+            return {
+                "exit_code": 2,
+                "verified": False,
+                "reason": f"manifest.yaml missing: {snapshot_dir}",
+                "evidence": {"turn": turn, "snapshot": str(snap_path)},
+            }
+        manifest_text = manifest_file.read_text(encoding="utf-8")
+        # Light template read (module-generated manifest; no YAML dependency
+        # on either side): only `sliceTurn:` cross-checks the trace turn.
+        slice_turn_match = re.search(r"^\s*sliceTurn:\s*(\d+)\s*$", manifest_text, re.M)
+        if not slice_turn_match:
+            return {
+                "exit_code": 2,
+                "verified": False,
+                "reason": f"manifest sliceTurn not found for trace turn {turn}",
+                "evidence": {"turn": turn, "snapshot": str(snap_path)},
+            }
+        slice_turn = int(slice_turn_match.group(1))
+        if slice_turn != turn:
+            return {
+                "exit_code": 2,
+                "verified": False,
+                "reason": f"manifest sliceTurn {slice_turn} != trace turn {turn}",
+                "evidence": {"turn": turn, "snapshot": str(snap_path)},
+            }
+
+        # --- §3(3) v-next: LAW-AWARE diff relation --------------------------
+        # Canonical pair: the era copy `*-turn-N.jsonl` written beside the
+        # package by the mid-session chain — `identical` REQUIRED. Without an
+        # era, the manifest `derivedFrom` trace is diffed DIAGNOSTIC ONLY
+        # (divergence at `turn.render` residency rows is the knowledge-stateful
+        # lawful shape). Relative derivedFrom values resolve from the RESUMING
+        # process's cwd (the manifest's own verify.diff hint assumes the
+        # session root — the golden tests chdir to the repo root).
+        diff_evidence: Optional[Dict[str, str]] = None
+        era_re = re.compile(f"-turn-{turn}\\.jsonl$")
+        decompressed_name = f"trace-{turn}.jsonl"
+        era_candidates = sorted(
+            p.name for p in snap_path.iterdir()
+            if era_re.search(p.name) and p.name != decompressed_name
+        )
+        if era_candidates:
+            era_name = era_candidates[0]
+            d = self._diff_relation(str(snap_path / era_name), str(decompressed))
+            if d["relation"] is None:
+                return {
+                    "exit_code": 2,
+                    "verified": False,
+                    "reason": str(d.get("reason", "diff tool failed")),
+                    "evidence": {"turn": turn, "snapshot": str(snap_path)},
+                }
+            if d["relation"] != "identical":
+                return {
+                    "exit_code": 2,
+                    "verified": False,
+                    "reason": f"era diff {era_name}: relation {d['relation']} expected identical",
+                    "evidence": {"turn": turn, "snapshot": str(snap_path)},
+                }
+            diff_evidence = {"source": era_name, "relation": d["relation"]}
+        else:
+            df_match = re.search(r"^\s*derivedFrom:\s*'([^']*)'", manifest_text, re.M)
+            if df_match and Path(df_match.group(1)).is_file():
+                d = self._diff_relation(df_match.group(1), str(decompressed))
+                if d["relation"] is not None:
+                    diff_evidence = {"source": df_match.group(1), "relation": d["relation"]}
+                # Diagnostic-only either way: never verdict-forming (m6 law).
+
+        # --- §3(4) v-next: projection surfaced ------------------------------
+        page_table_file = snap_path / f"page-table-{turn}.json"
+        if not page_table_file.is_file():
+            return {
+                "exit_code": 2,
+                "verified": False,
+                "reason": f"page-table-{turn}.json missing: {snapshot_dir}",
+                "evidence": {"turn": turn, "snapshot": str(snap_path)},
+            }
+        slots_count = -1
+        try:
+            table = json.loads(page_table_file.read_text(encoding="utf-8"))
+            if isinstance(table, dict):
+                slots = table.get("slots")
+                if isinstance(slots, list):
+                    slots_count = len(slots)
+                turn_in_table = table.get("turn")
+                if (
+                    isinstance(turn_in_table, int)
+                    and not isinstance(turn_in_table, bool)
+                    and turn_in_table != turn
+                ):
+                    return {
+                        "exit_code": 2,
+                        "verified": False,
+                        "reason": f"page-table turn {turn_in_table} != trace turn {turn}",
+                        "evidence": {"turn": turn, "snapshot": str(snap_path)},
+                    }
+        except (ValueError, TypeError):
+            pass
+        if slots_count < 0:
+            return {
+                "exit_code": 2,
+                "verified": False,
+                "reason": f"page-table-{turn}.json unreadable",
+                "evidence": {"turn": turn, "snapshot": str(snap_path)},
+            }
+
         # Compute digest over all artifact checksums (sorted by filename).
         digest = self._snapshot_digest(snap_path)
 
@@ -285,6 +448,9 @@ class UC1Handoff(UCModule):
                 "snapTurn": turn,
                 "turn": turn,
                 "artifacts": sorted(str(p) for p in snap_path.iterdir() if p.is_file()),
+                "manifest": {"sliceTurn": slice_turn},
+                "projection": {"turn": turn, "slots": slots_count},
+                "diff": diff_evidence,
             },
         }
 
@@ -315,6 +481,29 @@ class UC1Handoff(UCModule):
         for _fname, digest_hex in entries:
             h.update(digest_hex.encode())
         return "sha256:" + h.hexdigest()
+
+    @staticmethod
+    def _diff_relation(source: str, slice_path: str) -> Dict[str, Any]:
+        """Shell the rust `diff` CLI (source first, slice second — the
+        manifest's own verify.diff order) and scrape the lowercase relation
+        from its JSON stdout. {"relation": None, "reason": ...} when the
+        invocation or output is unusable."""
+        d = _run(_DIFF_BIN, [source, slice_path])
+        out = d["stdout"]
+        brace = out.find("{")
+        if brace == -1:
+            return {
+                "relation": None,
+                "reason": f"diff tool failed: {(d['stderr'] or out).strip()}",
+            }
+        try:
+            parsed = json.loads(out[brace:])
+        except ValueError:
+            return {"relation": None, "reason": "diff tool output unparseable"}
+        relation = parsed.get("relation") if isinstance(parsed, dict) else None
+        if isinstance(relation, str):
+            return {"relation": relation}
+        return {"relation": None, "reason": "diff tool output unparseable"}
 
     # --- UCModule surface --------------------------------------------------
 

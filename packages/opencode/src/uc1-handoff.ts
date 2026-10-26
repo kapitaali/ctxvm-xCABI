@@ -18,8 +18,11 @@
  *               VALUES, incl. the snapshot dir path, the label, and the turn).
  *   resume()  — zstd decompress of trace-N.jsonl.zst written INSIDE the
  *               snapshot dir, `replay --turn N` counterproof (exit 0),
- *               checksums-provenance digest; byte-identical reason strings;
- *               result {exit_code, verified, reason, evidence}.
+ *               §3(1)(3)(4) v-next checks (checksums byte-validated, manifest
+ *               sliceTurn cross-check, law-aware era/derivedFrom diff,
+ *               projection surfaced), then the checksums-provenance digest;
+ *               byte-identical reason strings; result
+ *               {exit_code, verified, reason, evidence}.
  *
  * Disclosed deltas (RR-UC1PAUSE-MIRROR-20261025):
  *   - argv LAW FIXED both sides in the same card: the reference assembled
@@ -55,6 +58,7 @@ import { fileURLToPath } from "node:url";
 
 const EXPORT_BIN = "export";
 const REPLAY_BIN = "replay";
+const DIFF_BIN = "diff";
 
 /** Shape of a `_run`-style subprocess result (mirror of uc1_handoff._run). */
 interface RunResult {
@@ -63,7 +67,12 @@ interface RunResult {
   stderr: string;
 }
 
-/** Evidence stamped into the sidecar's `resumeFrom` key (09-plugin-parity §3). */
+/** Evidence stamped into the sidecar's `resumeFrom` key (09-plugin-parity §3:
+ * the B3 landed law stores the WHOLE verify evidence dict, so the v-next keys
+ * (UC1-VERIFY-CHECKS) flow through as nested opt-in fields — the CANON
+ * top-level sidecar key list is untouched): `manifest` {sliceTurn},
+ * `projection` {turn, slots}, `diff` {source, relation} | null (null = no
+ * source on disk). */
 export interface ResumeEvidence {
   /** snapshot dir exactly as the caller passed it (env value, not resolved). */
   snapshot?: string;
@@ -327,7 +336,21 @@ export function snapshotDigest(snapshotDir: string): string {
   return "sha256:" + h.digest("hex");
 }
 
-/** Mirror of `UC1Handoff.resume()`: verify + provenance; never blocks. */
+/** Mirror of `UC1Handoff.resume()`: verify + provenance; never blocks.
+ * v-next checks (UC1-VERIFY-CHECKS, 2026-10-26, both sides in one card):
+ *   (1) every checksums.sha256 row re-verified against the artifact BYTES (the
+ *       digest hashes only the recorded hex strings, so a corrupted artifact
+ *       passed verification before this card) + manifest `sliceTurn` ↔ trace
+ *       turn cross-check;
+ *   (3) law-aware diff (m6 knowledge-stateful-tail law): the era copy
+ *       `*-turn-N.jsonl` beside the package is the canonical source pair
+ *       (relation `identical` REQUIRED — a mismatch is NOT a lawful
+ *       divergence); without an era the manifest `derivedFrom` trace is diffed
+ *       DIAGNOSTIC ONLY (its divergence at `turn.render` residency rows is the
+ *       lawful shape — surfaced, never failing); no source on disk = skipped;
+ *   (4) the projection (`page-table-N.json` slots) is surfaced: structured
+ *       evidence here + a witness line at the call site.
+ * Any new-check failure = verified=False, tracer continues UNVERIFIED. */
 export function resumeVerify(snapshotDir: string): ResumeResult {
   if (!isDir(snapshotDir)) {
     return fail(2, `snapshot dir not found: ${snapshotDir}`, {});
@@ -378,6 +401,145 @@ export function resumeVerify(snapshotDir: string): ResumeResult {
     };
   }
 
+  // --- §3(1) v-next: checksums VALIDATED at byte level ---------------------
+  const checksumsFile = join(snapshotDir, "checksums.sha256");
+  if (!isFile(checksumsFile)) {
+    return fail(
+      2,
+      `checksums.sha256 missing: ${snapshotDir}`,
+      { turn, snapshot: snapshotDir },
+    );
+  }
+  // Rows in FILE order ("<hash>  <name>", split on the first whitespace run);
+  // blank/malformed rows skip — mirrors the digest parser's split law.
+  const checksumLines = readFileSync(checksumsFile, "utf8").trim().split("\n");
+  for (const line of checksumLines) {
+    const m = line.match(/^\s*(\S+)\s+(.+)$/);
+    if (!m) continue;
+    const digestHex = m[1].trim();
+    const name = m[2].trim();
+    const artifact = join(snapshotDir, name);
+    if (!isFile(artifact)) {
+      return fail(
+        2,
+        `checksummed artifact missing: ${name}`,
+        { turn, snapshot: snapshotDir },
+      );
+    }
+    const actual = createHash("sha256").update(readFileSync(artifact)).digest("hex");
+    if (actual !== digestHex) {
+      return fail(
+        2,
+        `checksum mismatch for ${name}`,
+        { turn, snapshot: snapshotDir },
+      );
+    }
+  }
+
+  // --- §3(1) v-next: manifest template cross-check -------------------------
+  const manifestFile = join(snapshotDir, "manifest.yaml");
+  if (!isFile(manifestFile)) {
+    return fail(
+      2,
+      `manifest.yaml missing: ${snapshotDir}`,
+      { turn, snapshot: snapshotDir },
+    );
+  }
+  const manifestText = readFileSync(manifestFile, "utf8");
+  // Light template read (module-generated manifest; no YAML dependency on
+  // either side): only `sliceTurn:` cross-checks the trace turn.
+  const sliceTurnMatch = manifestText.match(/^\s*sliceTurn:\s*(\d+)\s*$/m);
+  if (!sliceTurnMatch) {
+    return fail(
+      2,
+      `manifest sliceTurn not found for trace turn ${turn}`,
+      { turn, snapshot: snapshotDir },
+    );
+  }
+  const sliceTurn = parseInt(sliceTurnMatch[1], 10);
+  if (sliceTurn !== turn) {
+    return fail(
+      2,
+      `manifest sliceTurn ${sliceTurn} != trace turn ${turn}`,
+      { turn, snapshot: snapshotDir },
+    );
+  }
+
+  // --- §3(3) v-next: LAW-AWARE diff relation -------------------------------
+  // Canonical pair: the era copy `*-turn-N.jsonl` written beside the package
+  // by the mid-session chain — `identical` REQUIRED. Without an era, the
+  // manifest `derivedFrom` trace is diffed DIAGNOSTIC ONLY (divergence at
+  // `turn.render` residency rows is the knowledge-stateful lawful shape).
+  let diffEvidence: { source: string; relation: string } | null = null;
+  const eraRe = new RegExp(`-turn-${turn}\\.jsonl$`);
+  const decompressedName = `trace-${turn}.jsonl`;
+  const eraCandidates = readdirSync(snapshotDir)
+    .filter((name) => eraRe.test(name) && name !== decompressedName)
+    .sort();
+  if (eraCandidates.length > 0) {
+    const eraName = eraCandidates[0];
+    const d = shellDiff(join(snapshotDir, eraName), decompressed);
+    if (d.relation === null) {
+      return fail(2, d.reason as string, { turn, snapshot: snapshotDir });
+    }
+    if (d.relation !== "identical") {
+      return fail(
+        2,
+        `era diff ${eraName}: relation ${d.relation} expected identical`,
+        { turn, snapshot: snapshotDir },
+      );
+    }
+    diffEvidence = { source: eraName, relation: d.relation };
+  } else {
+    // Relative derivedFrom values resolve from the RESUMING process's cwd
+    // (the manifest's own verify.diff hint assumes the session root — the
+    // golden tests chdir to the repo root for exactly this reason).
+    const dfMatch = manifestText.match(/^\s*derivedFrom:\s*'([^']*)'/m);
+    if (dfMatch && isFile(dfMatch[1])) {
+      const d = shellDiff(dfMatch[1], decompressed);
+      if (d.relation !== null) diffEvidence = { source: dfMatch[1], relation: d.relation };
+      // Diagnostic-only either way: never verdict-forming (m6 law).
+    }
+  }
+
+  // --- §3(4) v-next: projection surfaced -----------------------------------
+  const pageTableFile = join(snapshotDir, `page-table-${turn}.json`);
+  if (!isFile(pageTableFile)) {
+    return fail(
+      2,
+      `page-table-${turn}.json missing: ${snapshotDir}`,
+      { turn, snapshot: snapshotDir },
+    );
+  }
+  let slotsCount = -1;
+  try {
+    const table = JSON.parse(readFileSync(pageTableFile, "utf8")) as {
+      turn?: unknown;
+      slots?: unknown;
+    };
+    if (Array.isArray(table.slots)) slotsCount = table.slots.length;
+    if (typeof table.turn === "number" && table.turn !== turn) {
+      return fail(
+        2,
+        `page-table turn ${table.turn} != trace turn ${turn}`,
+        { turn, snapshot: snapshotDir },
+      );
+    }
+  } catch {
+    return fail(
+      2,
+      `page-table-${turn}.json unreadable`,
+      { turn, snapshot: snapshotDir },
+    );
+  }
+  if (slotsCount < 0) {
+    return fail(
+      2,
+      `page-table-${turn}.json unreadable`,
+      { turn, snapshot: snapshotDir },
+    );
+  }
+
   const digest = snapshotDigest(snapshotDir);
   return {
     exit_code: 0,
@@ -392,6 +554,33 @@ export function resumeVerify(snapshotDir: string): ResumeResult {
         .map((name) => join(snapshotDir, name))
         .filter((p) => isFile(p))
         .sort(),
+      manifest: { sliceTurn },
+      projection: { turn, slots: slotsCount },
+      diff: diffEvidence,
     },
   };
+}
+
+/** Run the rust `diff` CLI (source first, slice second — the manifest's own
+ * verify.diff order) and scrape the lowercase relation from its JSON stdout.
+ * `{relation: null, reason}` when the invocation or output is unusable. */
+function shellDiff(
+  source: string,
+  slice: string,
+): { relation: string | null; reason?: string } {
+  const d = run(DIFF_BIN, [source, slice]);
+  const brace = d.stdout.indexOf("{");
+  if (brace === -1) {
+    return {
+      relation: null,
+      reason: `diff tool failed: ${(d.stderr || d.stdout).trim()}`,
+    };
+  }
+  try {
+    const parsed = JSON.parse(d.stdout.slice(brace)) as { relation?: unknown };
+    if (typeof parsed.relation === "string") return { relation: parsed.relation };
+  } catch {
+    /* fall through */
+  }
+  return { relation: null, reason: "diff tool output unparseable" };
 }

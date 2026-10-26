@@ -325,6 +325,26 @@ def register(ctx) -> None:
                 f"verified={resume_result.get('verified')} "
                 f"reason={resume_result.get('reason')}"
             )
+            # §3(3)(4) surfacing (UC1-VERIFY-CHECKS): on a verified snapshot
+            # the operator sees the projection (fidelity reference) and the
+            # diff relation (law-aware: era `identical` required, derivedFrom
+            # diagnostic only, no source = skipped). Failures stay loud via
+            # the reason line. Python-style rendering so the witness logs
+            # byte-match across harnesses (mirrored: live/ctxvm.ts).
+            if resume_result.get("verified"):
+                ev = resume_result.get("evidence", {})
+                proj = ev.get("projection")
+                if proj:
+                    _witness(
+                        f"projection: {proj.get('slots')} slot(s) "
+                        f"at turn {proj.get('turn')}"
+                    )
+                diff = ev.get("diff")
+                _witness(
+                    f"diff: source={diff['source']} relation={diff['relation']}"
+                    if diff
+                    else "diff: skipped — no source slice on disk"
+                )
             if not resume_result.get("verified"):
                 _witness(
                     f"resume_from={resume_from_env} UNVERIFIED — "

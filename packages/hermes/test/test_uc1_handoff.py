@@ -7,8 +7,11 @@ wrapping the committed Rust CLI binaries.
 Run: python test/test_uc1_handoff.py
 """
 
+import hashlib
 import json
 import os
+import re
+import shutil
 import sys
 import tempfile
 import unittest
@@ -327,6 +330,10 @@ class UC1ResumeGoldenParityTests(unittest.TestCase):
             sorted(os.path.basename(p) for p in ev["artifacts"]),
             golden["artifactNames"],
         )
+        # v-next keys (UC1-VERIFY-CHECKS): same fixture fields on both sides.
+        self.assertEqual(ev["manifest"], golden["manifest"])
+        self.assertEqual(ev["projection"], golden["projection"])
+        self.assertEqual(ev["diff"], golden["diff"])
 
 
 class UC1ResumeWitnessTests(unittest.TestCase):
@@ -372,6 +379,226 @@ class UC1ResumeWitnessTests(unittest.TestCase):
         # Fidelity reference: the packaged projection is present, turn-stamped.
         pt = json.loads((snap / "page-table-2.json").read_text(encoding="utf-8"))
         self.assertEqual(pt["turn"], 2)
+
+
+class UC1ResumeVerifyChecksTests(unittest.TestCase):
+    """UC1 v-next in-module verify checks (UC1-VERIFY-CHECKS, design §3
+    (1)(3)(4)) — mirrors packages/opencode/test/uc1-handoff.test.ts's v-next
+    section: the reason strings are asserted byte-for-byte on BOTH sides.
+
+    Disclosed baseline (card RR): the resume DIGEST hashes only the recorded
+    checksum hex strings, so a corrupted artifact passed boot verification
+    before this card — (1) byte-level row re-verification closes it.
+    """
+
+    def setUp(self):
+        _clear_env_for_tests()
+
+    def _make_snapshot_abs(self, anchor: Path) -> str:
+        """Build a real snapshot from an ABSOLUTE anchor (cwd-independent)."""
+        from ctxvm_py._cli import build_handoff_snapshot  # noqa: F401,E402
+
+        td = tempfile.mkdtemp()
+        out_dir = Path(td) / "handoff"
+        try:
+            build_handoff_snapshot(str(anchor), 0, str(out_dir))
+        except RuntimeError:
+            self.skipTest("release binaries not built — run the cargo build gate")
+        return str(out_dir)
+
+    @staticmethod
+    def _fix_row(snap_dir: str, name: str, digest_hex: str) -> None:
+        """Re-stamp one checksums row after an intentional artifact edit so a
+        LATER check becomes reachable without tripping the byte-level row
+        verification first."""
+        checksums = Path(snap_dir) / "checksums.sha256"
+        pat = re.compile(r"^\s*\S+\s+" + re.escape(name) + r"\s*$")
+        lines = checksums.read_text(encoding="utf-8").splitlines()
+        out = [f"{digest_hex}  {name}" if pat.match(line) else line for line in lines]
+        checksums.write_text("\n".join(out) + "\n", encoding="utf-8")
+
+    def test_corrupted_artifact_checksum_mismatch(self):
+        try:
+            snap_dir = self._make_snapshot_abs(_ANCHORS[0])
+        except ImportError:
+            self.skipTest("ctxvm_py not importable — anchor path may differ")
+        pt = Path(snap_dir) / "page-table-0.json"
+        pt.write_text(pt.read_text(encoding="utf-8") + " ", encoding="utf-8")
+        result = UC1Handoff().resume(snap_dir)
+        self.assertEqual(result["exit_code"], 2)
+        self.assertFalse(result["verified"])
+        self.assertEqual(result["reason"], "checksum mismatch for page-table-0.json")
+        self.assertEqual(result["evidence"], {"turn": 0, "snapshot": snap_dir})
+
+    def test_checksummed_artifact_missing(self):
+        try:
+            snap_dir = self._make_snapshot_abs(_ANCHORS[0])
+        except ImportError:
+            self.skipTest("ctxvm_py not importable — anchor path may differ")
+        os.remove(Path(snap_dir) / "llms.txt")
+        result = UC1Handoff().resume(snap_dir)
+        self.assertEqual(result["exit_code"], 2)
+        self.assertFalse(result["verified"])
+        self.assertEqual(result["reason"], "checksummed artifact missing: llms.txt")
+
+    def test_checksums_file_missing(self):
+        try:
+            snap_dir = self._make_snapshot_abs(_ANCHORS[0])
+        except ImportError:
+            self.skipTest("ctxvm_py not importable — anchor path may differ")
+        os.remove(Path(snap_dir) / "checksums.sha256")
+        result = UC1Handoff().resume(snap_dir)
+        self.assertEqual(result["exit_code"], 2)
+        self.assertFalse(result["verified"])
+        self.assertEqual(
+            result["reason"], f"checksums.sha256 missing: {snap_dir}"
+        )
+
+    def test_manifest_sliceturn_contradiction(self):
+        try:
+            snap_dir = self._make_snapshot_abs(_ANCHORS[0])
+        except ImportError:
+            self.skipTest("ctxvm_py not importable — anchor path may differ")
+        manifest = Path(snap_dir) / "manifest.yaml"
+        manifest.write_text(
+            manifest.read_text(encoding="utf-8").replace("sliceTurn: 0", "sliceTurn: 1"),
+            encoding="utf-8",
+        )
+        self._fix_row(
+            snap_dir,
+            "manifest.yaml",
+            hashlib.sha256(manifest.read_bytes()).hexdigest(),
+        )
+        result = UC1Handoff().resume(snap_dir)
+        self.assertEqual(result["exit_code"], 2)
+        self.assertFalse(result["verified"])
+        self.assertEqual(result["reason"], "manifest sliceTurn 1 != trace turn 0")
+
+    def test_era_copy_identical(self):
+        try:
+            snap_dir = self._make_snapshot_abs(_ANCHORS[0])
+        except ImportError:
+            self.skipTest("ctxvm_py not importable — anchor path may differ")
+        first = UC1Handoff().resume(snap_dir)  # also drops trace-0.jsonl in-dir
+        self.assertTrue(first["verified"], first["reason"])
+        shutil.copyfile(
+            Path(snap_dir) / "trace-0.jsonl",
+            Path(snap_dir) / "foo-turn-0.jsonl",
+        )
+        result = UC1Handoff().resume(snap_dir)
+        self.assertTrue(result["verified"], result["reason"])
+        self.assertEqual(
+            result["evidence"]["diff"],
+            {"source": "foo-turn-0.jsonl", "relation": "identical"},
+        )
+
+    def test_era_copy_mismatch_unverified(self):
+        try:
+            snap_dir = self._make_snapshot_abs(_ANCHORS[0])
+        except ImportError:
+            self.skipTest("ctxvm_py not importable — anchor path may differ")
+        # The full m1 anchor as a turn-0 "era": diff(full, slice) =
+        # a_extends_b — not identical → real anomaly under the law-aware rule.
+        shutil.copyfile(_ANCHORS[0], Path(snap_dir) / "foo-turn-0.jsonl")
+        result = UC1Handoff().resume(snap_dir)
+        self.assertEqual(result["exit_code"], 2)
+        self.assertFalse(result["verified"])
+        self.assertEqual(
+            result["reason"],
+            "era diff foo-turn-0.jsonl: relation a_extends_b expected identical",
+        )
+
+    def test_derivedfrom_divergence_diagnostic_only(self):
+        """Reproduce the m6 shape from committed corpus files only: the staged
+        derivedFrom source is overwritten after packaging (the exact
+        "flushed file overwritten by the continued session" mutation) —
+        diff divergence is the knowledge-stateful lawful shape and must NOT
+        unverify."""
+        try:
+            from ctxvm_py._cli import build_handoff_snapshot  # noqa: F402
+        except ImportError:
+            self.skipTest("ctxvm_py not importable — anchor path may differ")
+        td = tempfile.mkdtemp()
+        src = Path(td) / "src.jsonl"
+        shutil.copyfile(_ANCHORS[0], src)
+        out_dir = Path(td) / "pkg"
+        try:
+            build_handoff_snapshot(str(src), 0, str(out_dir))
+        except RuntimeError:
+            self.skipTest("release binaries not built — run the cargo build gate")
+        shutil.copyfile(_REPO_ROOT / "corpus/m6/opencode-pause-session-a.jsonl", src)
+        result = UC1Handoff().resume(str(out_dir))
+        self.assertTrue(result["verified"], result["reason"])
+        self.assertEqual(
+            result["evidence"]["diff"],
+            {"source": str(src), "relation": "divergent"},
+        )
+
+    def test_diff_skipped_when_no_source(self):
+        try:
+            snap_dir = self._make_snapshot_abs(_ANCHORS[0])
+        except ImportError:
+            self.skipTest("ctxvm_py not importable — anchor path may differ")
+        manifest = Path(snap_dir) / "manifest.yaml"
+        manifest.write_text(
+            re.sub(
+                r"derivedFrom: '[^']*'",
+                "derivedFrom: 'corpus/nonexistent-anchor.jsonl'",
+                manifest.read_text(encoding="utf-8"),
+            ),
+            encoding="utf-8",
+        )
+        self._fix_row(
+            snap_dir,
+            "manifest.yaml",
+            hashlib.sha256(manifest.read_bytes()).hexdigest(),
+        )
+        result = UC1Handoff().resume(snap_dir)
+        self.assertTrue(result["verified"], result["reason"])
+        self.assertIsNone(result["evidence"]["diff"])
+
+    def test_projection_surfaced(self):
+        try:
+            snap_dir = self._make_snapshot_abs(_ANCHORS[0])
+        except ImportError:
+            self.skipTest("ctxvm_py not importable — anchor path may differ")
+        table = json.loads(
+            (Path(snap_dir) / "page-table-0.json").read_text(encoding="utf-8")
+        )
+        result = UC1Handoff().resume(snap_dir)
+        self.assertTrue(result["verified"], result["reason"])
+        self.assertEqual(
+            result["evidence"]["projection"],
+            {"turn": 0, "slots": len(table["slots"])},
+        )
+
+    def test_page_table_unreadable(self):
+        try:
+            snap_dir = self._make_snapshot_abs(_ANCHORS[0])
+        except ImportError:
+            self.skipTest("ctxvm_py not importable — anchor path may differ")
+        pt = Path(snap_dir) / "page-table-0.json"
+        pt.write_text("not-json\n", encoding="utf-8")
+        self._fix_row(snap_dir, "page-table-0.json", hashlib.sha256(pt.read_bytes()).hexdigest())
+        result = UC1Handoff().resume(snap_dir)
+        self.assertEqual(result["exit_code"], 2)
+        self.assertFalse(result["verified"])
+        self.assertEqual(result["reason"], "page-table-0.json unreadable")
+
+    def test_page_table_turn_mismatch(self):
+        try:
+            snap_dir = self._make_snapshot_abs(_ANCHORS[0])
+        except ImportError:
+            self.skipTest("ctxvm_py not importable — anchor path may differ")
+        pt = Path(snap_dir) / "page-table-0.json"
+        table = json.loads(pt.read_text(encoding="utf-8"))
+        table["turn"] = 1
+        pt.write_text(json.dumps(table) + "\n", encoding="utf-8")
+        self._fix_row(snap_dir, "page-table-0.json", hashlib.sha256(pt.read_bytes()).hexdigest())
+        result = UC1Handoff().resume(snap_dir)
+        self.assertEqual(result["exit_code"], 2)
+        self.assertFalse(result["verified"])
+        self.assertEqual(result["reason"], "page-table turn 1 != trace turn 0")
 
 
 if __name__ == "__main__":

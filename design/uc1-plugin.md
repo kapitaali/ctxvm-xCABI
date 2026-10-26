@@ -88,6 +88,33 @@ opt-in beat pending an orchestrator sign-off — rationale in §3.
   opt-in keys `resumeFrom` (`null` default):
   `{ snapshot: "<abs path>", snapshotDigest: "sha256:…", snapTurn: N }` — both
   emitters write the identical shape; both parity tests extend in the same card.
+- **v-next checks LANDED 2026-10-26 (UC1-VERIFY-CHECKS, both sides in one card
+  per the argv-fix precedent):**
+  - (1) is byte-level now — every `checksums.sha256` row is re-verified against
+    the artifact bytes and the manifest template `sliceTurn` cross-checks the
+    trace turn. The digest alone hashes only the recorded hex strings, so a
+    corrupted artifact passed both boot gates before this card (both sides
+    disclosed in the card RR). Any (1)-failure → `verified=False`, loud reason,
+    tracer continues UNVERIFIED.
+  - (3) is LAW-AWARE (m6 ruling): the era copy `*-turn-N.jsonl` beside the
+    package is the canonical source pair and requires relation `identical`
+    (an era mismatch is NOT a lawful divergence → unverified). Without an era,
+    the manifest `derivedFrom` trace is diffed **diagnostic only** — its
+    divergence at `turn.render` residency rows is the knowledge-stateful
+    lawful shape, surfaced in evidence and the witness line but never
+    verdict-forming. No source on disk (era absent, derivedFrom unreachable)
+    = skipped. Relative `derivedFrom` values resolve from the resuming
+    process's cwd (the manifest's own `verify.diff` hint assumes the session
+    root).
+  - (4) the projection is surfaced to the operator: `page-table-N.json` slots
+    counted into the result evidence (`projection`) and rendered as a witness
+    line at the call site (fidelity reference). Page-table unreadable or
+    turn-contradicting → unverified. Sidecar note: the B3 landed law stores
+    the WHOLE evidence dict in `resumeFrom`, so the new keys flow through as
+    nested opt-in fields — the sidecar CANON top-level shape is untouched.
+  - Golden parity: the shared fixture gains `manifest`/`projection`/`diff`
+    fields; both sides' tests pin them (m1 anchor @0: `a_extends_b`, 3 slots,
+    relative derivedFrom).
 - **Injection (opt-in, later):** `handoff-inject` arms boot-time context assembly
   = unrealized (§1.3). Explicitly NOT in the first implementation beats.
 

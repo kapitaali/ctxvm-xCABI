@@ -100,6 +100,22 @@ landed reference (`8871dda`) stores the whole verify evidence dict — parity wi
 mirror follows the hermes reference byte-for-byte; delta disclosed in
 RR-UC1RESUME-MIRROR-20261025).
 
+**B3 v-next extension (UC1-VERIFY-CHECKS, 2026-10-26, both sides in one card):**
+the boot check implements design §3 (1)(3)(4) in-module; the evidence dict gains
+`manifest` (`{sliceTurn}`), `projection` (`{turn, slots}` from `page-table-N.json`
+— the §3(4) fidelity reference, also rendered as a witness line at both call
+sites), and `diff` (`{source, relation}` law-aware per the m6 ruling: era copy
+`*-turn-N.jsonl` vs the package slice requires `identical` and a MISMATCH
+unverifies; the manifest `derivedFrom` diff is diagnostic only — its divergence
+at `turn.render` residency rows is the knowledge-stateful lawful shape; no
+source on disk → `null`). New failure reasons (`checksum mismatch for <name>`,
+`checksummed artifact missing: <name>`, `checksums.sha256 missing: <dir>`,
+`manifest...`, `era diff...`, `page-table...`) are byte-identical on both sides
+and pinned by 11 mirrored tests each. Success reason/exit/digest unchanged.
+Since the sidecar law stores the whole evidence dict, these keys flow through
+`resumeFrom` as nested opt-in fields — the sidecar CANON top-level shape is
+untouched (m6-era sidecars on disk stay valid as captured).
+
 **Mapping table (single source of truth for the hermes mirror):**
 
 | canonical key | hermes source counter | opencode source counter |

@@ -118,6 +118,23 @@ export default {
       wit(
         `resume_from=${resumeFromEnv} verified=${resumeResult.verified ? "True" : "False"} reason=${resumeResult.reason}`,
       );
+      // §3(3)(4) surfacing (UC1-VERIFY-CHECKS): on a verified snapshot the
+      // operator sees the projection (fidelity reference) and the diff
+      // relation (law-aware: era identical required, derivedFrom diagnostic
+      // only, no source = skipped). Failures stay loud via the reason line.
+      if (resumeResult.verified) {
+        const ev = resumeResult.evidence;
+        const proj = ev.projection as { turn?: number; slots?: number } | undefined;
+        if (proj) {
+          wit(`projection: ${proj.slots} slot(s) at turn ${proj.turn}`);
+        }
+        const diff = ev.diff as { source?: string; relation?: string } | null;
+        wit(
+          diff
+            ? `diff: source=${diff.source} relation=${diff.relation}`
+            : "diff: skipped — no source slice on disk",
+        );
+      }
       if (!resumeResult.verified) {
         wit(
           `resume_from=${resumeFromEnv} UNVERIFIED — tracer continues, snapshot not trusted`,

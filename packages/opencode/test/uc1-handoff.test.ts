@@ -37,6 +37,9 @@ const GOLDEN = JSON.parse(readFileSync(GOLDEN_PATH, "utf8")) as {
   reason: string;
   snapshotDigest: string;
   artifactNames: string[];
+  manifest: unknown;
+  projection: unknown;
+  diff: unknown;
 };
 
 function freshTmp(label: string): string {
@@ -62,6 +65,194 @@ function buildGoldenSnapshot(dir: string): void {
   );
   assert.equal(proc.status, 0, `export failed: ${proc.stderr}`);
 }
+
+// ---------------------------------------------------------------------------
+// Resume v-next checks (UC1-VERIFY-CHECKS): design §3 (1)(3)(4) in-module
+// ---------------------------------------------------------------------------
+
+/** Test helper: rewrite one row's recorded hash in checksums.sha256 so an
+ * intentionally re-worded artifact passes row verification and a LATER check
+ * becomes reachable. Row format mirrors the emitter: "<hash>  <name>". */
+function fixRow(dir: string, name: string, digestHex: string): void {
+  const file = join(dir, "checksums.sha256");
+  // Test names are fixed literals — dots are the only metacharacters present.
+  const nameRe = new RegExp(`^\\s*\\S+\\s+${name.replace(/\./g, "\\.")}\\s*$`);
+  const out = readFileSync(file, "utf8").split("\n").map((l) =>
+    nameRe.test(l) ? `${digestHex}  ${name}` : l,
+  );
+  writeFileSync(file, out.join("\n"));
+}
+
+test("v-next (1): corrupted artifact byte → verified=False 'checksum mismatch' (the digest hashed only hex strings — both sides disclosed)", () => {
+  const dir = freshTmp("vnext-corrupt");
+  buildGoldenSnapshot(dir);
+  const pt = join(dir, "page-table-0.json");
+  writeFileSync(pt, readFileSync(pt, "utf8") + " "); // quiet byte corruption
+  const res = resumeVerify(dir);
+  assert.deepEqual(res, {
+    exit_code: 2,
+    verified: false,
+    reason: "checksum mismatch for page-table-0.json",
+    evidence: { turn: 0, snapshot: dir },
+  });
+});
+
+test("v-next (1): checksummed artifact missing → 'checksummed artifact missing: llms.txt'", () => {
+  const dir = freshTmp("vnext-missing");
+  buildGoldenSnapshot(dir);
+  rmSync(join(dir, "llms.txt"));
+  const res = resumeVerify(dir);
+  assert.deepEqual(res, {
+    exit_code: 2,
+    verified: false,
+    reason: "checksummed artifact missing: llms.txt",
+    evidence: { turn: 0, snapshot: dir },
+  });
+});
+
+test("v-next (1): no checksums file → 'checksums.sha256 missing' (design: manifest + checksums validated, both required)", () => {
+  const dir = freshTmp("vnext-nocheck");
+  buildGoldenSnapshot(dir);
+  rmSync(join(dir, "checksums.sha256"));
+  const res = resumeVerify(dir);
+  assert.deepEqual(res, {
+    exit_code: 2,
+    verified: false,
+    reason: `checksums.sha256 missing: ${dir}`,
+    evidence: { turn: 0, snapshot: dir },
+  });
+});
+
+test("v-next (1): manifest sliceTurn contradicts the trace turn → 'manifest sliceTurn 1 != trace turn 0'", () => {
+  const dir = freshTmp("vnext-sliceturn");
+  buildGoldenSnapshot(dir);
+  const mf = join(dir, "manifest.yaml");
+  writeFileSync(mf, readFileSync(mf, "utf8").replace(/sliceTurn: 0/, "sliceTurn: 1"));
+  fixRow(dir, "manifest.yaml", sha256(mf));
+  const res = resumeVerify(dir);
+  assert.deepEqual(res, {
+    exit_code: 2,
+    verified: false,
+    reason: "manifest sliceTurn 1 != trace turn 0",
+    evidence: { turn: 0, snapshot: dir },
+  });
+});
+
+test("v-next (3): era copy present and identical → verified with diff {source, relation identical} (m6 law: canonical pair)", () => {
+  const dir = freshTmp("vnext-era");
+  buildGoldenSnapshot(dir);
+  const res0 = resumeVerify(dir); // also drops trace-0.jsonl into the dir
+  assert.equal(res0.verified, true, res0.reason);
+  copyFileSync(join(dir, "trace-0.jsonl"), join(dir, "foo-turn-0.jsonl"));
+  const res = resumeVerify(dir);
+  assert.equal(res.verified, true, res.reason);
+  assert.deepEqual(res.evidence.diff, {
+    source: "foo-turn-0.jsonl",
+    relation: "identical",
+  });
+});
+
+test("v-next (3): era copy mismatching the slice → UNVERIFIED (era divergence is NOT a lawful shape)", () => {
+  const dir = freshTmp("vnext-erabad");
+  buildGoldenSnapshot(dir);
+  // The full m1 anchor as a turn-0 "era": diff(full, slice) = a_extends_b —
+  // not identical, so this is a real anomaly under the law-aware rule.
+  copyFileSync(join(REPO_ROOT, ANCHOR), join(dir, "foo-turn-0.jsonl"));
+  const res = resumeVerify(dir);
+  assert.deepEqual(res, {
+    exit_code: 2,
+    verified: false,
+    reason: "era diff foo-turn-0.jsonl: relation a_extends_b expected identical",
+    evidence: { turn: 0, snapshot: dir },
+  });
+});
+
+test("v-next (3): derivedFrom divergence is DIAGNOSTIC ONLY → verified stays True (m6 knowledge-stateful tail: full-vs-package diverges lawfully)", () => {
+  const bin = rustBinDir();
+  assert.ok(bin, "release binaries not built — run the cargo build gate");
+  const stage = freshTmp("vnext-late");
+  // Reproduce the m6 shape from committed corpus files ONLY: export @0 while
+  // the staged derivedFrom source holds the m1 anchor, then overwrite the
+  // source with the m6 session-a full trace (32 events / 6 pages — the exact
+  // "flushed file overwritten by the continued session" mutation, whose
+  // diff-vs-package divergence is the law's lawful shape).
+  const src = join(stage, "src.jsonl");
+  copyFileSync(join(REPO_ROOT, ANCHOR), src);
+  const out = join(stage, "pkg");
+  const proc = spawnSync(
+    join(bin, "export"),
+    [src, "--turn", "0", "--output", out, "--odps"],
+    { cwd: REPO_ROOT, encoding: "utf8" },
+  );
+  assert.equal(proc.status, 0, `export failed: ${proc.stderr}`);
+  copyFileSync(join(REPO_ROOT, "corpus/m6/opencode-pause-session-a.jsonl"), src);
+  const res = resumeVerify(out);
+  assert.equal(res.verified, true, res.reason);
+  assert.ok(res.evidence.diff, "diff evidence must be present");
+  const diff = res.evidence.diff as { source: string; relation: string };
+  assert.equal(diff.source, src);
+  assert.equal(diff.relation, "divergent");
+});
+
+test("v-next (3): no source on disk (era absent, derivedFrom unreachable) → evidence.diff null, verified (skipped loudly)", () => {
+  const dir = freshTmp("vnext-skip");
+  buildGoldenSnapshot(dir);
+  const mf = join(dir, "manifest.yaml");
+  writeFileSync(
+    mf,
+    readFileSync(mf, "utf8").replace(/derivedFrom: '[^']*'/, "derivedFrom: 'corpus/nonexistent-anchor.jsonl'"),
+  );
+  fixRow(dir, "manifest.yaml", sha256(mf));
+  const res = resumeVerify(dir);
+  assert.equal(res.verified, true, res.reason);
+  assert.equal(res.evidence.diff, null);
+});
+
+test("v-next (4): projection surfaced — success evidence carries {turn, slots} from page-table-N.json", () => {
+  const dir = freshTmp("vnext-proj");
+  buildGoldenSnapshot(dir);
+  const res = resumeVerify(dir);
+  assert.equal(res.verified, true, res.reason);
+  const expected = JSON.parse(
+    readFileSync(join(dir, "page-table-0.json"), "utf8"),
+  ) as { slots: unknown[] };
+  assert.equal(
+    JSON.stringify(res.evidence.projection),
+    JSON.stringify({ turn: 0, slots: (expected.slots as unknown[]).length }),
+  );
+});
+
+test("v-next (4): unreadable page-table → 'page-table-0.json unreadable' (no engine message in the reason — parity)", () => {
+  const dir = freshTmp("vnext-projbad");
+  buildGoldenSnapshot(dir);
+  const pf = join(dir, "page-table-0.json");
+  writeFileSync(pf, "not-json\n");
+  fixRow(dir, "page-table-0.json", sha256(pf));
+  const res = resumeVerify(dir);
+  assert.deepEqual(res, {
+    exit_code: 2,
+    verified: false,
+    reason: "page-table-0.json unreadable",
+    evidence: { turn: 0, snapshot: dir },
+  });
+});
+
+test("v-next (4): page-table turn contradicts the trace turn → 'page-table turn 1 != trace turn 0'", () => {
+  const dir = freshTmp("vnext-projturn");
+  buildGoldenSnapshot(dir);
+  const pf = join(dir, "page-table-0.json");
+  const table = JSON.parse(readFileSync(pf, "utf8")) as { turn: number };
+  table.turn = 1;
+  writeFileSync(pf, JSON.stringify(table) + "\n");
+  fixRow(dir, "page-table-0.json", sha256(pf));
+  const res = resumeVerify(dir);
+  assert.deepEqual(res, {
+    exit_code: 2,
+    verified: false,
+    reason: "page-table turn 1 != trace turn 0",
+    evidence: { turn: 0, snapshot: dir },
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Resume (B3 mirror)
@@ -122,17 +313,30 @@ test("replay failure → reason law 'replay exit N: <stderr>' (prefix pin)", () 
 
 test("valid snapshot → verified; deep-equals the hermes-generated golden fixture", () => {
   const dir = freshTmp("golden");
-  buildGoldenSnapshot(dir);
-  const res = resumeVerify(dir);
-  assert.equal(res.verified, GOLDEN.verified);
-  assert.equal(res.exit_code, 0);
-  assert.equal(res.reason, GOLDEN.reason);
-  const ev = res.evidence;
-  assert.equal(ev.snapshot, dir);
-  assert.equal(ev.snapshotDigest, GOLDEN.snapshotDigest);
-  assert.equal(ev.snapTurn, GOLDEN.snapTurn);
-  assert.equal(ev.turn, GOLDEN.snapTurn);
-  assert.deepEqual((ev.artifacts ?? []).map(baseName).sort(), GOLDEN.artifactNames);
+  // The manifest's relative derivedFrom anchor resolves from the RESUMING
+  // process's cwd — chdir to the repo root for the duration (the hermes
+  // golden test chdirs the same way; restored afterwards).
+  const prevCwd = process.cwd();
+  process.chdir(REPO_ROOT);
+  try {
+    buildGoldenSnapshot(dir);
+    const res = resumeVerify(dir);
+    assert.equal(res.verified, GOLDEN.verified);
+    assert.equal(res.exit_code, 0);
+    assert.equal(res.reason, GOLDEN.reason);
+    const ev = res.evidence;
+    assert.equal(ev.snapshot, dir);
+    assert.equal(ev.snapshotDigest, GOLDEN.snapshotDigest);
+    assert.equal(ev.snapTurn, GOLDEN.snapTurn);
+    assert.equal(ev.turn, GOLDEN.snapTurn);
+    assert.deepEqual((ev.artifacts ?? []).map(baseName).sort(), GOLDEN.artifactNames);
+    // v-next keys (UC1-VERIFY-CHECKS): same fixture fields on both sides.
+    assert.deepEqual(ev.manifest, GOLDEN.manifest);
+    assert.deepEqual(ev.projection, GOLDEN.projection);
+    assert.deepEqual(ev.diff, GOLDEN.diff);
+  } finally {
+    process.chdir(prevCwd);
+  }
 });
 
 test("snapshotDigest — checksums-hex path and name+bytes fallback mirrored exactly", () => {
