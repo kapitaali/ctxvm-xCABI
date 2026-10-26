@@ -12,7 +12,7 @@ catalog:
   productReferences:
   - id: ctxvm-corpus-0.1
     productID: ctxvm-corpus-0.1
-    productVersion: 0.5.0
+    productVersion: 0.6.0
     name:
       en: ctxvm Trace Corpus
     description:
@@ -29,7 +29,12 @@ catalog:
         \ 0.2.0, paths redacted), and corpus/m5 (first interactive self-capture \u2014\
         \ a long-running OpenCode TUI agent recording its own working turns: 17 pages,\
         \ 17 one-turn-late cold-entry faults, 14 turns, zero evictions, flush witnessed\
-        \ at graceful TUI exit)."
+        \ at graceful TUI exit), and corpus/m6 (first pause/resume pair \u2014 a real\
+        \ OpenCode agent run paused mid-session by the UC1 turn-shaped handoff trigger\
+        \ at turn 3: the packaged snapshot via the committed export binary plus the\
+        \ session booted with CTXVM_RESUME_FROM and the resumeFrom sidecar evidence;\
+        \ 9 pages across both sessions, zero evictions, pause byte-identical to the\
+        \ era-as-flushed)."
     productModel:
       standard: ODPS
       version: '4.1'

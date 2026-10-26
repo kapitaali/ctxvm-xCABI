@@ -1,0 +1,41 @@
+{
+  "sessionID": "ses_e88e1c5f1ffeZEjMDNSN0Krnbo",
+  "harness": "opencode-v2-promise-plugin",
+  "harnessVersion": "2.1.4",
+  "pluginVersion": "0.0.1",
+  "model": "opencode/glm-5.3-flash-free",
+  "provider": "opencode",
+  "budgetTokens": 200000,
+  "capturedAt": "2026-10-26T07:30:59.844Z",
+  "hookStats": {
+    "contexts": 3,
+    "before": 2,
+    "after": 2,
+    "completed": 2,
+    "errored": 0,
+    "sessions": [
+      "ses_e88e1c5f1ffeZEjMDNSN0Krnbo"
+    ],
+    "extraHookStats": {}
+  },
+  "traceStats": {
+    "turns": 3,
+    "pages": 2,
+    "faults": 2,
+    "residentTokens": 74
+  },
+  "resumeFrom": {
+    "snapshot": "/tmp/opencode/m6-cap/a/handoff",
+    "snapshotDigest": "sha256:1ca356871fab2663830d4b9e61e2f94b905fa06968807248c62b2cb3ce9145ac",
+    "snapTurn": 3,
+    "turn": 3,
+    "artifacts": [
+      "/tmp/opencode/m6-cap/a/handoff/checksums.sha256",
+      "/tmp/opencode/m6-cap/a/handoff/llms.txt",
+      "/tmp/opencode/m6-cap/a/handoff/manifest.yaml",
+      "/tmp/opencode/m6-cap/a/handoff/page-table-3.json",
+      "/tmp/opencode/m6-cap/a/handoff/trace-3.jsonl",
+      "/tmp/opencode/m6-cap/a/handoff/trace-3.jsonl.zst"
+    ]
+  }
+}

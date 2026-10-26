@@ -1,0 +1,69 @@
+{
+  "drop": "ctxvm-trace-corpus-m6",
+  "product": "ctxvm Trace Corpus (ODPS: 04-odps-dataproduct-corpus.yaml, productVersion 0.6.0)",
+  "createdOn": "2026-10-26",
+  "license": "CC-BY-4.0 for corpus content (per root manifest license.governance block)",
+  "redaction": "No redaction applied. Precedent: corpus/m1–m3 ship clear absolute paths; tool refs truncate their argument JSON at 120 characters by design (RFC-0 §6): read/edit refs are paths + edit fragment values, shell refs are command prefixes. The capture is free of secrets per pattern scan (0 hits for PAT/API-key/token/credential patterns); the recorded tool work touches only throwaway workspace fixtures (notes/*.md under a scratch project). No credentials or third-party personal data present.",
+  "status": "LIVE — first pause/resume pair: the UC1-PLUGIN B4 beat (proposal reports/B4-PROPOSAL-20261025.md) operated end-to-end on the OpenCode lane. Session-a is a real scripted one-shot agent run (m2-pattern `opencode run --standalone --auto`, free tier) whose adapter fired the design §2 mid-session turn-shaped handoff trigger at turn 3 (UC1-TRIGGER, 2026-10-26: idempotent-finish probe → same-naming-law flush → era copy → `--turn 3 --odps` package through the committed export binary → `/ctxvm-handoff` rendering line), CONTINUED tracing to turn 6 (pause is not teardown; CTXVM_HANDOFF_STOP unset), and flushed the full trace at plugin unload — sessions witness the whole chain in hooks-witness.log. Session-b is a real run booted with CTXVM_RESUME_FROM=<package>: the UC1 resume verify chain ran before any hook work (zstd decompress → replay --turn 3 exit 0 → checksums digest) and the canonical sidecar gained the resumeFrom evidence object. Operator rulings on the proposal's open questions (2026-10-26): opencode both sides (design §4 does not claim cross-harness handoff; the hermes /ctxvm-handoff handler still ships without the flush-before-package its docstring promises — their lane disclosure), and a mid-session pause at turn 3 with real declared pages.",
+  "harness": {
+    "name": "OpenCode",
+    "version": "2.1.4",
+    "plugin": "packages/opencode/live/ctxvm.ts (v2 promise-plugin shim .opencode/plugins/ctxvm.ts re-exporting the repo adapter absolute path; UC1-PAUSE-MIRROR uc1-handoff.ts + UC1-TRIGGER mid-session path active)",
+    "tracer": "@ctxvm/node tracer chain under ctxvm-core (RFC-0 xCABI JSONL); finish() idempotent since UC1-TRIGGER (T17.7 parity)",
+    "invocation": "two separate one-shot child processes of `opencode run --standalone --auto -m opencode/glm-5.3-flash-free` in a scratch workspace (cwd carries only the shim + notes fixtures); session-a env: CTXVM_TRACE_DIR=CTXVM_HANDOFF_DIR=/tmp/opencode/m6-cap/a, CTXVM_TRACE_NAME=m6-a, CTXVM_AGENT_ID=ctxvm-m6, CTXVM_BUDGET_TOKENS=200000, CTXVM_OPENCODE_VERSION=2.1.4, CTXVM_HANDOFF_TURN=3; session-b env: CTXVM_TRACE_DIR=/tmp/opencode/m6-cap/b, CTXVM_TRACE_NAME=m6-b, CTXVM_RESUME_FROM=/tmp/opencode/m6-cap/a/handoff (handoff envs unset)",
+    "flush": "session-a: MID-SESSION trigger flush at turn 3 (finishAll -> writeFileSync, witnessed flush m6-a.jsonl bytes=2671) held in memory only for the export input — the event stream itself was not mutated (idempotent finish); tracing continued through turns 4-6; final flush at graceful child exit (plugin cleanup, witnessed bytes=4573). session-b: single flush at exit (bytes=1746). One CTXVM_TRACE_NAME per session; era copies taken by the pause itself (cp -n: m6-a-turn-3.{jsonl,meta.json}, labels turn-3).",
+    "model": "opencode/glm-5.3-flash-free via provider opencode",
+    "providerSpend": "USD 0 (free-tier provider; scripted scratch-work beats)",
+    "liveCaptureWorking": "Confirmed twice: session-a pause chain witnessed end-to-end (trigger line, mid-session flush, ctxvm-handoff exit_code=0 verified=True, continuation contexts, cleanup flush); session-b boot check witnessed (resume_from=<snapshot> verified=True reason=snapshot verified: replay exit 0 at turn 3) before any hook work."
+  },
+  "files": [
+    {
+      "file": "opencode-pause-session-a.jsonl",
+      "meta": "opencode-pause-session-a.meta.json",
+      "kind": "live-harness-captured-pause-session",
+      "origin": "Full trace of the pausing session (turns 0-6, 32 events): sequenced real tool work on scratch fixtures (read alpha+beta → edit alpha phrase → re-read alpha (new contentHash) → read gamma → shell cat notes/*.md) with the turn-3 mid-session pause package taken between the edit and the gamma read",
+      "events": 32,
+      "turns": 7,
+      "pages": 6,
+      "faults": 5,
+      "toolCalls": { "before": 6, "after": 6, "completed": 6, "errored": 0 },
+      "contexts": 7,
+      "residentTokens": 253,
+      "resumeFrom": null,
+      "pausePackage": "handoff/turn-3/ (18 events of turn-3 state: 3 pages, residency 93; faithful to the era as flushed — diff(era, package) identical)"
+    },
+    {
+      "file": "opencode-resume-session-b.jsonl",
+      "meta": "opencode-resume-session-b.meta.json",
+      "kind": "live-harness-captured-resumed-session",
+      "origin": "Trace of the session resumed FROM the package (13 events, 3 turns, 2 pages: read the edited alpha.md + shell wc -l notes/*.md). The boot check verified the package before any hook work; the sidecar evidence keeps the capture-time absolute snapshot path verbatim per the m1-m3 clear-paths precedent, and snapshotDigest recomputes from the SHIPPED handoff/turn-3/checksums.sha256 and matches",
+      "events": 13,
+      "turns": 3,
+      "pages": 2,
+      "faults": 2,
+      "toolCalls": { "before": 2, "after": 2, "completed": 2, "errored": 0 },
+      "contexts": 3,
+      "residentTokens": 72,
+      "resumeFrom": {
+        "snapshot": "/tmp/opencode/m6-cap/a/handoff (content shipped verbatim as handoff/turn-3/)",
+        "snapshotDigest": "sha256:1ca356871fab2663830d4b9e61e2f94b905fa06968807248c62b2cb3ce9145ac",
+        "snapTurn": 3
+      }
+    }
+  ],
+  "beats": {
+    "declare": "9 pages total across both sessions from real tool results (read/edit/shell families; edit/page declare on the changed contentHash — fresh-fetch law, no waste row)",
+    "fault": "7 faults, one per novel page per session (cold-entry double-row shape: declare -> fault@t -> full render@t+1)",
+    "pause": "session-a's turn-3 state packaged MID-SESSION (not at teardown): the trigger probe used the idempotent finish() (events untouched), the package is byte-reproducible from the era-as-flushed (diff identical), and tracing endured to turn 6 — CTXVM_HANDOFF_STOP=1 unused by design",
+    "resume": "session-b's boot check ran zstd decompress inside the snapshot dir, replay --turn 3 (exit 0), and the checksums-provenance digest BEFORE the first tool call; the sidecar (canonical shape, resumeFrom stamped LAST) carries the evidence; v0 resume is verify+provenance only — no trace injection (handoff-inject is the gated v-next beat)",
+    "turns": "session-a 7 turn boundaries (residentTokens constant 253 in the post-hoc full tail), session-b 3 (74); no evictions (v0 hold-everything law)"
+  },
+  "limitations": [
+    "v0 tracer is observe-only (declared => resident; no page.evict, no stub renders): no paging pressure at 253 (session-a) / 74 (session-b) declared tokens against the 200000 budget.",
+    "The derived-composition render tail is KNOWLEDGE-STATEFUL: a slice taken at turn N cannot prefix-extend a trace whose later turns declared new pages, and the full trace's final tail stamps earlier turns with post-hoc residency (253) that the mid-session package honestly shows as 93. diff(full, package) = shared pre-tail lifecycle prefix (10 events) + tallyMismatches turns 0-3 (253 vs 93); the design §3(3) shared-prefix evidence is carried by the CANONICAL pair instead — diff(era-as-flushed, package slice) = identical — precisely because the export chain is replay-deterministic. The m2 witness chain satisfied the naive full-vs-slice law only because m2-echo declares all pages by turn 2; m6 is the first drop to exercise a pause with later pages.",
+    "Resume is verify+provenance (design §3 v0): session-b re-reads its own state; page/turn identity transfer is possible in principle (pages are content-addressed) but trace injection (handoff-inject feature) is the gated v-next beat — this drop captures NO injection.",
+    "Session-b's resume evidence keeps the capture-time absolute snapshot path (corpus mapping documented in README); snapshotDigest links the shipped package bytes regardless.",
+    "tokenizerId is apx4-char (ceil(characters/4)) — approximation; absolute tokens are not provider usage. call.meta providerReported=false throughout (no provider cache counters surfaced).",
+    "The scripted beats run one-shot children (m2 pattern): hookStats context counts are the child runs' own model requests (session-a 7, session-b 3), not a long TUI session like m5."
+  ]
+}

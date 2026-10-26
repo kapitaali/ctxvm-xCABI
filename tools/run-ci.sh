@@ -34,6 +34,8 @@ FIXTURES=(
   corpus/m3/hermes-thrash-synthetic.jsonl
   corpus/m4/hermes-live-session-01.jsonl
   corpus/m5/opencode-live-session-01.jsonl
+  corpus/m6/opencode-pause-session-a.jsonl
+  corpus/m6/opencode-resume-session-b.jsonl
 )
 
 # 1) rust
@@ -65,6 +67,7 @@ venvs/odps/bin/python spec/rfc-0/validate_schema.py "${FIXTURES[@]}"
 ( cd corpus/m3 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd corpus/m4 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd corpus/m5 && sha256sum -c checksums.sha256 ) >/dev/null
+( cd corpus/m6 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd rust && . "$HOME/.cargo/env" 2>/dev/null || true; cargo build --release ) >/dev/null
 EXPORT_TMP="$(mktemp -d)"
 rust/target/release/export corpus/m3/hermes-echo-synthetic.jsonl --turn 2 \

@@ -1,0 +1,61 @@
+{
+  "turn": 3,
+  "slots": [
+    {
+      "reference": {
+        "id": {
+          "logicalRef": "tool:read({\"path\":\"notes/alpha.md\"})",
+          "contentHash": "sha256:804abd95"
+        },
+        "kind": "tool_result",
+        "tokens": 56
+      },
+      "mode": "full",
+      "pinned": false
+    },
+    {
+      "reference": {
+        "id": {
+          "logicalRef": "tool:read({\"path\":\"notes/beta.md\"})",
+          "contentHash": "sha256:95511733"
+        },
+        "kind": "tool_result",
+        "tokens": 27
+      },
+      "mode": "full",
+      "pinned": false
+    },
+    {
+      "reference": {
+        "id": {
+          "logicalRef": "tool:edit({\"newString\":\"it mentions the gamma plan.\",\"oldString\":\"it mentions nothing yet.\",\"path\":\"notes/alpha.md\"})",
+          "contentHash": "sha256:290aed65"
+        },
+        "kind": "tool_result",
+        "tokens": 10
+      },
+      "mode": "full",
+      "pinned": false
+    }
+  ],
+  "tally": {
+    "residentTokens": 93,
+    "stubbedTokens": 0,
+    "stubbedSlots": 0,
+    "residentSlots": 3
+  },
+  "violations": [
+    {
+      "seq": 2,
+      "kind": "faultOfResidentPage"
+    },
+    {
+      "seq": 5,
+      "kind": "faultOfResidentPage"
+    },
+    {
+      "seq": 8,
+      "kind": "faultOfResidentPage"
+    }
+  ]
+}

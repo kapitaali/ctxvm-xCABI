@@ -1,0 +1,20 @@
+# ctxvm handoff snapshot — turn 3
+
+xCABI v0.1 trace slice for resuming an agent session within one harness. The trace up to turn 3 is a complete, self-contained snapshot of what the model has seen.
+
+## Artifacts
+
+- trace-3.jsonl.zst — 18/18 source events from /tmp/opencode/m6-cap/a/m6-a.jsonl. Slice rule: events up to the last event with a turn <= 3 (trailing turn-less bookkeeping excluded). zstd-compressed; decompress to verify.
+- page-table-3.json — 3 page slots at turn 3: 3 resident, 0 stubbed. Derived deterministically from the slice (slot structure is a pure function of the events).
+- manifest.yaml — ODPS 4.1-flavored manifest: DQ checks (replay determinism, source fidelity, pin lint, redaction scan) and the three KPIs.
+- checksums.sha256 — SHA-256 of every other artifact.
+
+## Verify (before trusting the handoff)
+
+- (decompress first: zstd -d trace-3.jsonl.zst -o trace-3.jsonl)
+- ctxvm replay trace-3.jsonl --turn 3   # expect exit 0, divergences: []
+- ctxvm diff /tmp/opencode/m6-cap/a/m6-a.jsonl trace-3.jsonl   # expect extension relation; shared prefix matches
+
+## Resume (same harness)
+
+Seed the next loop from page-table-3.json: resident pages render full; stubbed pages show their re-materialization instructions in the slice's page.evict rows.

@@ -191,6 +191,25 @@ opt-in beat pending an orchestrator sign-off — rationale in §3.
   digest/reason/artifact set on both sides (09 §4).
 - **B4 (corpus offer, orchestrator-gated):** propose the m6 drop shape = a real
   pause/resume pair (operator runs the beat; packaging rules per corpus/README).
+  **LANDED 2026-10-26 (UC1-B4-M6CAPTURE, operator execution):** `corpus/m6/` — the first
+  real pause/resume pair, operated end-to-end on the opencode lane per the operator's
+  rulings on this beat's open questions (opencode both sides — cross-harness not claimed
+  per §4 and the hermes `/ctxvm-handoff` flush-before-package bug is still their lane;
+  mid-session turn-3 pause with real pages). Session-a: a real scripted one-shot agent
+  run whose adapter fired the §2 turn-shaped trigger at turn N=3 — idempotent-finish
+  probe, same-naming-law flush, era copies, the `--turn 3 --odps` package, the
+  `/ctxvm-handoff` rendering line — and CONTINUED to turn 6 (pause is not teardown)
+  before the exit flush. Session-b: CTXVM_RESUME_FROM boot verification before any hook
+  work (decompress → replay --turn 3 exit 0 → digest) + the `resumeFrom` sidecar
+  evidence, whose snapshotDigest recomputes exactly from the shipped package checksums.
+  New engine law recorded BY the drop: the derived-composition render tail is
+  knowledge-stateful — diff(full, mid-session slice) shares the pre-tail lifecycle
+  prefix and legitimately diverges at `turn.render` residency rows (253 post-hoc vs 93
+  mid-session); the shared-prefix counterproof's canonical pair is
+  **diff(era-as-flushed, package slice) = identical**, which the mid-session chain
+  satisfies (m2's full-vs-slice a_extends_b held only because that fixture declares all
+  pages by the pause turn). Gates: m6 in run-ci FIXTURES/schema, per-drop checksum, hub
+  "latestDrop corpus/m6" productVersion 0.6.0 regen — ALL GATES GREEN.
 
 ## 7. Open questions for the orchestrator
 
