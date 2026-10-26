@@ -752,6 +752,7 @@ def register(ctx) -> None:
                     return f"ctxvm-handoff: turn requires a number, got '{argv[i]}'"
                 i += 1
 
+        _flush_traces()  # flush live tracers before packaging (docstring promise)
         result = uc1.pause(trace_dir, turn=turn)
         report = result.get("report", {})
         if isinstance(report, dict):

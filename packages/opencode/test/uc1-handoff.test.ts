@@ -372,7 +372,7 @@ test("pause argv law: turn rides the documented --turn N flag form", () => {
   copyFileSync(join(REPO_ROOT, ANCHOR), join(dir, "handoff.jsonl"));
   const result = uc1Pause({ traceDir: dir, turn: 2 });
   assert.equal(result.exit_code, 0, `export failed: ${result.stderr}`);
-  assert.equal(result.verified, true); // reference dead-path law, disclosed
+  assert.equal(result.verified, true); // counterproof now live (era copy == package slice on this anchor)
   const snapshotDir = join(dir, "handoff");
   assert.ok(
     Object.keys(result.snapshot).includes("handoff_dir"),

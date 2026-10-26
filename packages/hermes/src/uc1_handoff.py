@@ -134,7 +134,19 @@ class UC1Handoff(UCModule):
             }
         name = handoff_name or os.environ.get("CTXVM_HANDOFF_NAME") or "handoff"
         if turn is None:
-            turn = int(os.environ.get("CTXVM_HANDOFF_TURN", "0")) or None
+            raw_turn = os.environ.get("CTXVM_HANDOFF_TURN", "0")
+            try:
+                turn = int(raw_turn) or None
+            except (ValueError, TypeError):
+                # arm-but-degrade: loud witness, trigger off (never crash the
+                # call path; capture continues unbarked).
+                import sys
+
+                print(
+                    f"CTXVM_HANDOFF_TURN={raw_turn} not an integer — handoff trigger disarmed",
+                    file=sys.stderr,
+                )
+                turn = None
 
         Path(handoff_dir).mkdir(parents=True, exist_ok=True)
 
@@ -169,18 +181,63 @@ class UC1Handoff(UCModule):
         result = _run(_EXPORT_BIN, [trace_jsonl] + export_args)
 
         # Step 4: verification (replay counterproof) — best effort, never blocks.
+        # Retargeted (UC1-VERIFY-CHECKS follow-up): the package's zst is the
+        # slice; replay it at its turn, type-guard the divergence reader
+        # (non-dict parse no longer crashes), and — when a turn is set — run
+        # the era-vs-package _diff_relation expecting `identical` (m6 law:
+        # the era copy beside the package is the canonical pair).
         replay_ok = True
         replay_divergences: List[Any] = []
-        zst_path = snapshot_dir / "trace-N.jsonl.zst"
-        if result["exit_code"] == 0 and zst_path.is_file():
-            replay_result = _run(_REPLAY_BIN, [str(zst_path)])
-            if replay_result["exit_code"] != 0:
-                replay_ok = False
+        diff_relation: Optional[str] = None
+        zst_files = sorted(snapshot_dir.glob("trace-*.jsonl.zst")) if snapshot_dir.is_dir() else []
+        if result["exit_code"] == 0 and zst_files:
+            zst_path = zst_files[0]
+            # Parse slice turn from the zst filename (trace-N.jsonl.zst).
+            stem = zst_path.stem  # "trace-3.jsonl"
             try:
-                rep = json.loads(replay_result["stdout"])
-                replay_divergences = rep.get("divergences", [])
-            except (json.JSONDecodeError, ValueError):
-                pass
+                slice_turn = int(stem.split("-")[1].split(".")[0])
+            except (IndexError, ValueError):
+                slice_turn = turn
+            if slice_turn is None:
+                slice_turn = turn
+            # Decompress the zst to a temp file (outside the snapshot dir, to
+            # avoid polluting the packaged artifact set).
+            import tempfile
+
+            decompressed = (
+                Path(tempfile.mktemp(prefix=f"trace-{slice_turn}-", suffix=".jsonl"))
+                if slice_turn is not None
+                else None
+            )
+            if decompressed is not None:
+                decomp = subprocess.run(
+                    ["zstd", "-d", str(zst_path), "-o", str(decompressed), "-f"],
+                    capture_output=True,
+                    text=True,
+                )
+                if decomp.returncode != 0:
+                    replay_ok = False
+                else:
+                    replay_args = [str(decompressed)]
+                    if slice_turn is not None:
+                        replay_args += ["--turn", str(slice_turn)]
+                    replay_result = _run(_REPLAY_BIN, replay_args)
+                    if replay_result["exit_code"] != 0:
+                        replay_ok = False
+                    try:
+                        rep = json.loads(replay_result["stdout"])
+                        if isinstance(rep, dict):
+                            replay_divergences = rep.get("divergences", [])
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+                    # Era-vs-package diff (when turn is set): identical required.
+                    if turn is not None and replay_ok:
+                        era_path = snapshot.get("jsonl")
+                        if era_path and Path(era_path).is_file():
+                            d = self._diff_relation(str(era_path), str(decompressed))
+                            diff_relation = d.get("relation")
+                            if diff_relation is not None and diff_relation != "identical":
+                                replay_ok = False
 
         snapshot["handoff_dir"] = str(snapshot_dir)
         snapshot["label"] = label
@@ -193,6 +250,7 @@ class UC1Handoff(UCModule):
             "stderr": result["stderr"],
             "verified": replay_ok,
             "divergences": replay_divergences,
+            "diff_relation": diff_relation,
             "witness": {
                 "paused_at": _rfc3339_z(),
                 "turn": turn,

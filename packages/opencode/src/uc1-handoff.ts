@@ -103,6 +103,7 @@ export interface PauseResult {
   stderr: string;
   verified?: boolean;
   divergences?: unknown[];
+  diff_relation?: string | null;
   witness?: {
     paused_at: string;
     turn: number | null;
@@ -256,21 +257,61 @@ export function uc1Pause(options?: PauseOptions): PauseResult {
   const result = run(EXPORT_BIN, [traceJsonl, ...exportArgs]);
 
   // Step 4: verification (replay counterproof) — best effort, never blocks.
-  // Reference-verbatim: the literal "trace-N.jsonl.zst" name never exists (the
-  // binary writes trace-<turn>.jsonl.zst), so this branch is dead and
-  // `verified` stays True; mirrored as-is until the hermes lane retargets it.
+  // Retargeted (UC1-VERIFY-CHECKS follow-up): glob the package's zst, replay
+  // it at its turn, type-guard the divergence reader, and — when a turn is set
+  // — run the era-vs-package shellDiff expecting `identical` (m6 law: the era
+  // copy beside the package is the canonical pair).
   let replayOk = true;
   const replayDivergences: unknown[] = [];
-  const zstPath = join(snapshotDir, "trace-N.jsonl.zst");
-  if (result.exit_code === 0 && isFile(zstPath)) {
-    const replayResult = run(REPLAY_BIN, [zstPath]);
-    if (replayResult.exit_code !== 0) replayOk = false;
-    const rep = parseJson(replayResult.stdout);
-    const div =
-      typeof rep === "object" && rep !== null
-        ? (rep as Record<string, unknown>).divergences
-        : undefined;
-    if (Array.isArray(div)) replayDivergences.push(...div);
+  let diffRelation: string | null = null;
+  const zstFiles = existsSync(snapshotDir)
+    ? readdirSync(snapshotDir)
+        .filter((n: string) => /^trace-.*\.jsonl\.zst$/.test(n))
+        .sort()
+    : [];
+  if (result.exit_code === 0 && zstFiles.length > 0) {
+    const zstName = zstFiles[0];
+    const zstPath = join(snapshotDir, zstName);
+    const stem = zstName.replace(/\.zst$/, "");
+    const segment = stem.split("-")[1]?.split(".")[0] ?? "";
+    let sliceTurn: number | null = /^[0-9]+$/.test(segment)
+      ? parseInt(segment, 10)
+      : null;
+    if (sliceTurn === null) sliceTurn = turn;
+    if (sliceTurn !== null) {
+      const decompressed = join(
+        (process.env.TMPDIR ?? process.env.TEMP ?? "/tmp"),
+        `trace-${sliceTurn}-${Date.now()}.jsonl`,
+      );
+      const decomp = spawnSync(
+        "zstd",
+        ["-d", zstPath, "-o", decompressed, "-f"],
+        { encoding: "utf8" },
+      );
+      if (decomp.status === null || decomp.status !== 0) {
+        replayOk = false;
+      } else {
+        const replayResult = run(REPLAY_BIN, [decompressed, "--turn", String(sliceTurn)]);
+        if (replayResult.exit_code !== 0) replayOk = false;
+        const rep = parseJson(replayResult.stdout);
+        const div =
+          typeof rep === "object" && rep !== null
+            ? (rep as Record<string, unknown>).divergences
+            : undefined;
+        if (Array.isArray(div)) replayDivergences.push(...div);
+        // Era-vs-package diff (when turn is set): identical required.
+        if (turn !== null && replayOk) {
+          const eraPath = snapshot.jsonl;
+          if (typeof eraPath === "string" && isFile(eraPath)) {
+            const d = shellDiff(eraPath, decompressed);
+            diffRelation = d.relation;
+            if (diffRelation !== null && diffRelation !== "identical") {
+              replayOk = false;
+            }
+          }
+        }
+      }
+    }
   }
 
   snapshot.handoff_dir = snapshotDir;
@@ -284,6 +325,7 @@ export function uc1Pause(options?: PauseOptions): PauseResult {
     stderr: result.stderr,
     verified: replayOk,
     divergences: replayDivergences,
+    diff_relation: diffRelation,
     witness: {
       paused_at: rfc3339Z(),
       turn,
