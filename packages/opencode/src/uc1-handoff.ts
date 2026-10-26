@@ -31,17 +31,19 @@
  *     hermes pause(..., turn=N) failed on the wire; the mirror emits the
  *     documented form [trace, --turn N, --output DIR, --odps] and the hermes
  *     argv assembly is patched to match in the same commit.
- *   - the pause replay counterproof is reference-dead (it checks the literal
- *     name "trace-N.jsonl.zst" that never exists), mirrored verbatim: verified
- *     stays True and the counterproof is unproven until the hermes lane
- *     retargets the artifact path;
- *   - CTXVM_HANDOFF_TURN junk: the reference crashes on int(); the mirror
- *     keeps the module non-blocking where the reference's FAILURE paths are
- *     non-blocking, and raises a loud equivalent for junk env values;
+ *   - the pause replay counterproof is now LIVE both sides (UC1-PAUSE-WIRE
+ *     retarget: the packaged trace-*.jsonl.zst is globbed, decompressed to a
+ *     temp file, replayed --turn N, divergence reader type-guarded, and the
+ *     era pair diffed expecting `identical` — m6 law);
+ *   - CTXVM_HANDOFF_TURN junk: converged with the reference in UC1-PAUSE-WIRE
+ *     (both sides) — the module DEGRADES arm-but-degrade style: loud line to
+ *     stderr (byte-identical text; see uc1Pause's catch) and the trigger rides
+ *     off (turn=null). The strict read (turnFromEnv) keeps throwing so the
+ *     adapter's separate arm-time junk witness keeps its own catch;
  *   - `paused_at` sub-second precision differs (python microseconds vs JS
  *     milliseconds; both Z-suffixed);
- *   - the reference's dead-path divergence reader would crash on non-dict
- *     parse (rep.get on a str); the TS dead path types its way around it.
+ *   - the divergence reader is type-guarded on BOTH sides: a non-dict replay
+ *     stdout records no divergences instead of crashing.
  *
  * Flush-time wiring (`live/ctxvm.ts`): with CTXVM_HANDOFF_DIR (or
  * CTXVM_HANDOFF_TURN) set, cleanup calls pause() after flushing — the design
@@ -193,10 +195,13 @@ function rfc3339Z(): string {
 // Pause (mirror of UC1Handoff.pause)
 // ---------------------------------------------------------------------------
 
-/** Mirror of the reference's turn-from-env read: `int(env.get(…, "0")) or None`.
- * Junk env values crash the reference (uncaught int()); the mirror raises a
- * loud equivalent instead of silently mis-parsing. int()-permitted forms
- * accepted: optional sign, digits with underscores, surrounding whitespace. */
+/** Strict reference turn-from-env read: `int(env.get(…, "0")) or None`, for
+ * int()-permitted forms (optional sign, digits with underscores, surrounding
+ * whitespace). Throws on junk so the two callers can branch on it as each
+ * side's law demands: uc1Pause() catches and degrades loudly (reference
+ * parity, printed stderr line — UC1-PAUSE-WIRE), while the adapter's arm-time
+ * read lets it throw into its own catch for the separate "trigger not armed"
+ * witness. */
 function turnFromEnv(): number | null {
   const raw = process.env.CTXVM_HANDOFF_TURN;
   const spec = (raw ?? "0").trim();
@@ -208,7 +213,10 @@ function turnFromEnv(): number | null {
 }
 
 /** The mid-session trigger arm reads the SAME env turn law the module reads —
- * single truth for `CTXVM_HANDOFF_TURN` (`int(…, "0") or None`; junk raises). */
+ * single truth for `CTXVM_HANDOFF_TURN`. This keeps the THROW deliberately:
+ * the adapter arm-witnesses junk separately ("trigger not armed (junk
+ * CTXVM_HANDOFF_TURN)" in live/ctxvm.ts); the module's own degrade lives in
+ * uc1Pause's catch (UC1-PAUSE-WIRE junk-law convergence). */
 export function pauseTurnFromEnv(): number | null {
   return turnFromEnv();
 }
@@ -228,7 +236,21 @@ export function uc1Pause(options?: PauseOptions): PauseResult {
     options?.handoffName ?? process.env.CTXVM_HANDOFF_NAME ?? "handoff";
   let turn = options?.turn ?? null;
   if (turn === null || turn === undefined) {
-    turn = turnFromEnv();
+    try {
+      turn = turnFromEnv();
+    } catch {
+      // Junk-env arm-but-degrade (UC1-PAUSE-WIRE, both sides; their
+      // uc1_handoff.pause()): loud line to stderr — byte-identical to the
+      // reference's print(..., file=sys.stderr) with the RAW env value — then
+      // continue with the trigger off (turn=null → label `flush`, no --turn;
+      // the counterproof still runs, the era diff is simply skipped). The
+      // capture never breaks.
+      const raw = process.env.CTXVM_HANDOFF_TURN ?? "0";
+      process.stderr.write(
+        `CTXVM_HANDOFF_TURN=${raw} not an integer — handoff trigger disarmed\n`,
+      );
+      turn = null;
+    }
   }
 
   // Era snapshot label uses the turn so repeated pauses keep history. The

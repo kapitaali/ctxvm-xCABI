@@ -28,7 +28,9 @@ for _p in (_HERMES_ROOT, _HERMES_SRC, _PY_ROOT):
 
 import live  # noqa: E402  (after sys.path insert)
 from live import _clear_env_for_tests, register  # noqa: E402
+import uc1_handoff  # noqa: E402  (module handle for mock.patch in PauseWire tests)
 from uc1_handoff import UC1Handoff  # noqa: E402
+from unittest import mock  # noqa: E402
 from uc_registry import (  # noqa: E402
     HANDOFF_FEATURE,
     TRACE_FEATURE,
@@ -110,9 +112,10 @@ class UC1HandoffTests(unittest.TestCase):
             shutil.copyfile(src, Path(td) / "handoff.jsonl")
             result = uc1.pause(td, turn=2)
             self.assertEqual(result["exit_code"], 0, f"pause failed: {result['stderr']}")
-            # Reference dead-path law (probed): the counterproof checks a
-            # literal "trace-N.jsonl.zst" that never exists → verified stays
-            # True.
+            # UC1-PAUSE-WIRE retarget: the counterproof is LIVE — the packaged
+            # zst is replayed at its slice turn and the era pair is diffed
+            # expecting `identical` (m6 law) — a healthy anchor verifies True.
+            self.assertEqual(result["diff_relation"], "identical")
             self.assertTrue(result["verified"])
             self.assertEqual(result["snapshot"]["label"], "turn-2")
             self.assertEqual(result["snapshot"]["turn"], 2)
@@ -161,6 +164,110 @@ class UC1HandoffTests(unittest.TestCase):
             parse_features("handoff"),
             {HANDOFF_FEATURE},
         )
+
+
+class UC1PauseWireTests(unittest.TestCase):
+    """Backfill for UC1-PAUSE-WIRE (their 5e1dcfd) — pause() retarget semantics.
+
+    The card's three fixes landed without tests; this class covers them on the
+    hermes side: the retargeted counterproof (glob zst → temp decompress →
+    replay --turn N → era pair diff expecting `identical`, m6 law), the
+    type-guarded divergence reader (non-dict replay stdout no longer crashes),
+    and the junk-env arm-but-degrade loud line (turn=None, capture continues).
+    """
+
+    def setUp(self):
+        _clear_env_for_tests()
+        export_bin = _REPO_ROOT / "rust/target/release/export"
+        replay_bin = _REPO_ROOT / "rust/target/release/replay"
+        if not (export_bin.is_file() and replay_bin.is_file()):
+            self.skipTest("release binaries not built")
+        src = _REPO_ROOT / "corpus/m1/session-healthy.jsonl"
+        if not src.is_file():
+            self.skipTest("corpus anchor missing")
+        self.src = src
+        self.uc1 = UC1Handoff()
+
+    def _stage(self, name: str = "handoff"):
+        """Temporary pause target containing a flushed base file for `name`."""
+        td = tempfile.TemporaryDirectory()
+        shutil.copyfile(self.src, Path(td.name) / f"{name}.jsonl")
+        return td
+
+    def test_junk_env_degrades_loud_with_turn_none(self):
+        """Junk CTXVM_HANDOFF_TURN → loud stderr line, trigger rides off (turn=None)."""
+        import contextlib
+        import io
+
+        with self._stage() as td:
+            os.environ["CTXVM_HANDOFF_TURN"] = "not-a-number"
+            buf = io.StringIO()
+            try:
+                with contextlib.redirect_stderr(buf):
+                    result = self.uc1.pause(td, turn=None)
+            finally:
+                del os.environ["CTXVM_HANDOFF_TURN"]
+            self.assertEqual(result["exit_code"], 0, result["stderr"])
+            # trigger off: flush label, no turn, era diff simply skipped
+            self.assertEqual(result["snapshot"]["label"], "flush")
+            self.assertIsNone(result["snapshot"]["turn"])
+            self.assertIsNone(result["diff_relation"])
+            self.assertIn(
+                "CTXVM_HANDOFF_TURN=not-a-number not an integer — handoff trigger disarmed",
+                buf.getvalue(),
+                f"stderr captured: {buf.getvalue()!r}",
+            )
+
+    def test_era_preseed_divergent_unverified(self):
+        """Pre-seeded divergent era copy survives cp -n → counterproof unverified."""
+        with self._stage() as td:
+            # Lawful divergent pre-seed = a REAL different trace. (A junk byte
+            # file would make the diff CLI exit 2 unparseable → relation None,
+            # which the pause's best-effort counterproof records as `None` and
+            # skips — disclosed in RR-UC1PAUSEWIRE; only junk on the RESUME
+            # side fail-closes.)
+            thrash = _REPO_ROOT / "corpus/m1/session-thrashing.jsonl"
+            shutil.copyfile(thrash, Path(td) / "handoff-turn-2.jsonl")
+            result = self.uc1.pause(td, turn=2)
+            self.assertEqual(result["exit_code"], 0, result["stderr"])
+            # cp -n law: the pre-seed era is NOT clobbered by the fresh copy
+            self.assertEqual(
+                (Path(td) / "handoff-turn-2.jsonl").read_bytes(),
+                thrash.read_bytes(),
+            )
+            # era pair is canonical (m6 law): anything but `identical` unverifies
+            self.assertFalse(result["verified"])
+            self.assertEqual(result["diff_relation"], "divergent")
+
+    def test_replay_non_dict_json_no_crash(self):
+        """Type-guarded divergence reader: a non-dict replay stdout ('[]') is fine."""
+        real_run = uc1_handoff._run
+
+        def fake_run(name, args):
+            if name == uc1_handoff._REPLAY_BIN:
+                return {"exit_code": 0, "stdout": "[]", "stderr": ""}
+            return real_run(name, args)
+
+        with self._stage() as td:
+            with mock.patch.object(uc1_handoff, "_run", fake_run):
+                result = self.uc1.pause(td, turn=2)
+        self.assertEqual(result["exit_code"], 0, result["stderr"])
+        # no crash; a non-dict parse records NO divergences and the replay
+        # exit code still verifies the package
+        self.assertEqual(result["divergences"], [])
+        self.assertTrue(result["verified"])
+
+    def test_env_int_turn_used(self):
+        """Positive int CTXVM_HANDOFF_TURN rides the env turn law (turn=3)."""
+        with self._stage() as td:
+            os.environ["CTXVM_HANDOFF_TURN"] = "3"
+            try:
+                result = self.uc1.pause(td, turn=None)
+            finally:
+                del os.environ["CTXVM_HANDOFF_TURN"]
+        self.assertEqual(result["snapshot"]["turn"], 3)
+        self.assertEqual(result["snapshot"]["label"], "turn-3")
+        self.assertTrue(result["verified"])
 
 
 class UC1DispatcherTests(unittest.TestCase):

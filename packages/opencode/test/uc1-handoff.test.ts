@@ -25,7 +25,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
 import type { ResumeResult } from "../src/uc1-handoff.ts";
-import { resumeVerify, rustBinDir, snapshotDigest, uc1Pause } from "../src/uc1-handoff.ts";
+import { pauseTurnFromEnv, resumeVerify, rustBinDir, snapshotDigest, uc1Pause } from "../src/uc1-handoff.ts";
 
 const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
 const ANCHOR = "corpus/m1/session-healthy.jsonl"; // relative argv (fixture discipline)
@@ -373,6 +373,7 @@ test("pause argv law: turn rides the documented --turn N flag form", () => {
   const result = uc1Pause({ traceDir: dir, turn: 2 });
   assert.equal(result.exit_code, 0, `export failed: ${result.stderr}`);
   assert.equal(result.verified, true); // counterproof now live (era copy == package slice on this anchor)
+  assert.equal(result.diff_relation, "identical"); // era pair canonical — m6 law (UC1-PAUSE-WIRE backfill)
   const snapshotDir = join(dir, "handoff");
   assert.ok(
     Object.keys(result.snapshot).includes("handoff_dir"),
@@ -415,6 +416,64 @@ test("pause era copies: cp -n never clobbers; snapshot records paths regardless"
   const rep = result.report as Record<string, unknown>;
   const snap = rep.snapshot as Record<string, unknown>;
   assert.equal(snap.sourceEvents, 12);
+});
+
+// ---------------------------------------------------------------------------
+// UC1-PAUSE-WIRE backfill — pause() retarget semantics (5e1dcfd's fixes)
+// ---------------------------------------------------------------------------
+
+test("pause junk CTXVM_HANDOFF_TURN: arm-but-degrade loud line, turn=null", () => {
+  const dir = freshTmp("junkenv");
+  copyFileSync(join(REPO_ROOT, ANCHOR), join(dir, "handoff.jsonl"));
+  process.env.CTXVM_HANDOFF_TURN = "not-a-number";
+  const writes: string[] = [];
+  const origWrite = process.stderr.write;
+  process.stderr.write = ((chunk: string | Uint8Array): boolean => {
+    writes.push(String(chunk));
+    return true;
+  }) as typeof process.stderr.write;
+  const result = uc1Pause({ traceDir: dir }); // must NOT throw (capture never breaks)
+  process.stderr.write = origWrite;
+  delete process.env.CTXVM_HANDOFF_TURN;
+  // module degrades: still packages, flush label, era diff skipped (turn null)
+  assert.equal(result.exit_code, 0, result.stderr);
+  assert.equal(result.snapshot.turn, null);
+  assert.equal(result.snapshot.label, "flush");
+  assert.equal(result.diff_relation, null);
+  // byte-identical to the reference's print(..., file=sys.stderr) loud line
+  assert.ok(
+    writes.includes(
+      "CTXVM_HANDOFF_TURN=not-a-number not an integer — handoff trigger disarmed\n",
+    ),
+    `expected the loud line; stderr had: ${JSON.stringify(writes)}`,
+  );
+});
+
+test("pause pre-seed era divergent → verified=False, diff_relation 'divergent'", () => {
+  const dir = freshTmp("eradiv");
+  copyFileSync(join(REPO_ROOT, ANCHOR), join(dir, "handoff.jsonl"));
+  // Lawful divergent pre-seed = a REAL different trace (a junk byte file yields
+  // diff exit 2 → relation None → the best-effort pause skips; only the RESUME
+  // side fail-closes on it — disclosed in RR-UC1PAUSEWIRE).
+  const thrash = "corpus/m1/session-thrashing.jsonl";
+  copyFileSync(join(REPO_ROOT, thrash), join(dir, "handoff-turn-2.jsonl"));
+  const result = uc1Pause({ traceDir: dir, turn: 2 });
+  assert.equal(result.exit_code, 0, result.stderr);
+  // cp -n law: the pre-seed era is NOT clobbered by the fresh copy
+  const eraSrc = readFileSync(join(REPO_ROOT, thrash));
+  assert.deepEqual(readFileSync(join(dir, "handoff-turn-2.jsonl")), eraSrc);
+  // the era pair is canonical (m6 law): anything but identical ⇒ unverified
+  assert.equal(result.verified, false);
+  assert.equal(result.diff_relation, "divergent");
+});
+
+test("pauseTurnFromEnv keeps throwing on junk (adapter arm-witness law intact)", () => {
+  process.env.CTXVM_HANDOFF_TURN = "not-a-number";
+  try {
+    assert.throws(() => pauseTurnFromEnv(), /invalid integer in CTXVM_HANDOFF_TURN/);
+  } finally {
+    delete process.env.CTXVM_HANDOFF_TURN;
+  }
 });
 
 test("pause packages byte-identical to a direct export run (design §6 B2 TODO closed)", () => {
