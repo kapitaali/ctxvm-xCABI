@@ -34,6 +34,36 @@ type List = Record<string, unknown>[];
 const of = (events: readonly object[], type: string): List =>
   events.filter((e) => (e as Record<string, unknown>).type === type) as List;
 
+test("finish() idempotent (T17.7 parity): tail computed per call, never appended", () => {
+  // Mirror of the hermes TracerTests idempotency pin (landed same card —
+  // plugin.py's finish docstring was never test-enforced before): repeated
+  // flushes produce the same JSONL; lifecycle recorded after a first flush
+  // joins the next transcript exactly once with a regenerated tail.
+  const vm = createTrace(INIT);
+  vm.page({ ref: "file:src/a.ts", kind: "file", content: "A" });
+  vm.render();
+  vm.render({ latencyMs: 100 });
+  const first = vm.finish();
+  const again = vm.finish();
+  assert.equal(again.jsonl, first.jsonl);
+  // Mid-session flush continues: new lifecycle, then the second finish.
+  vm.page({ ref: "file:src/b.ts", kind: "file", content: "B" });
+  vm.render({ latencyMs: 200 });
+  const second = vm.finish();
+  assert.deepEqual(
+    of(second.events, "turn.render").map((e) => e.turn),
+    [0, 1, 2],
+  );
+  assert.equal(of(second.events, "call.meta").length, 3);
+  assert.equal(of(second.events, "page.declare").length, 2);
+  // The first flushed transcript was never mutated by the later flush.
+  assert.deepEqual(
+    of(first.events, "turn.render").map((e) => e.turn),
+    [0, 1],
+  );
+  assert.equal(of(first.events, "page.declare").length, 1);
+});
+
 test("event types + field order match the RFC-0 §6 payload shapes", () => {
   const { events } = runHealthy();
   assert.equal((events[0] as List[number]).type, "session.open");

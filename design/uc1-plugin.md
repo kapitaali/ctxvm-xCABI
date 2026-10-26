@@ -163,9 +163,16 @@ opt-in beat pending an orchestrator sign-off — rationale in §3.
   pause replay counterproof is reference-dead (checks a literal `trace-N.jsonl.zst`)
   — mirrored verbatim, retarget pending; `/ctxvm-handoff` never flushes live tracers
   before packaging (its docstring promises both) — opencode's flush-time path has the
-  ordering right by construction. Mid-session turn-shaped triggers + the TS `finish()`
-  idempotency (T17.7 parity on `@ctxvm/node`: hermes finish is idempotent, TS re-pushes
-  turn facts) = explicit follow-up card.
+  ordering right by construction. The follow-up card LANDED (UC1-TRIGGER, 2026-10-26):
+  TS `finish()` now carries the T17.7 idempotency on `@ctxvm/node` (tail computed per
+  call, never appended; `pendingMeta` re-rendered each call — pinned by tests BOTH
+  sides, hermes side pinning its OWN law for the first time), and the design-§2
+  mid-session turn-shaped trigger fires on opencode: once per session right after the
+  turn-N boundary (probe = idempotent finish), same-flush-law flush → era → `--turn N`
+  package, tracing continues unless `CTXVM_HANDOFF_STOP=1` (registration disposal);
+  cleanup packages only as a fallback when no trigger fired. Junk
+  `CTXVM_HANDOFF_TURN` degrades to a loud witness line mid-session (capture never
+  breaks) — the module's mirrored loud raise stays internal.
 - **B3 (resume modules, both packages):** `CTXVM_RESUME_FROM` boot checks +
   `resumeFrom` sidecar extension via the 09 contract DoD (both parity tests in the
   same commit); fixture witness: paused snapshot from m2-echo → resumed session-b

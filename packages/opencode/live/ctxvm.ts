@@ -27,7 +27,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createCtxvmPlugin, type CtxvmPlugin } from "../src/plugin.ts";
-import { resumeVerify, uc1Pause } from "../src/uc1-handoff.ts";
+import { pauseTurnFromEnv, resumeVerify, uc1Pause } from "../src/uc1-handoff.ts";
 
 interface HookRegistration {
   dispose?: () => Promise<void> | void;
@@ -137,11 +137,129 @@ export default {
 
     const stats: CaptureStats = { contexts: 0, before: 0, after: 0, completed: 0, errored: 0, sessions: [] };
     const regs: HookRegistration[] = [];
+
+    // --- UC1 mid-session turn-shaped handoff trigger (design §2) -------------
+    // CTXVM_HANDOFF_TURN=N (positive int; "0"/unset = package at flush — the
+    // pause() env law `int(…,"0") or None`) arms a per-session trigger that
+    // fires RIGHT AFTER the session's turn N boundary: that context fire
+    // registered turn N, the flush tail emits its turn.render row and the
+    // package exports `--turn N` (uc1Pause re-reads the same env — one turn
+    // law, single truth). Tracing CONTINUES unless CTXVM_HANDOFF_STOP=1
+    // (pause is not teardown by default). Arm-but-degrade: a junk env value
+    // is a loud witness line and capture continues (the module itself still
+    // raises loudly — the hermes reference instead crashes its slash command;
+    // disclosed in RR-UC1TRIGGER).
+    const handoffFired = new Set<string>();
+    let handoffTurn: number | null = null;
+    try {
+      handoffTurn = pauseTurnFromEnv();
+    } catch (err) {
+      wit(
+        `ctxvm-handoff: trigger not armed (junk CTXVM_HANDOFF_TURN): ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+
+    /** The flushed sidecar — identical composition for every flush (the B3
+     * LAST-slot `resumeFrom` law lives here, one truth). */
+    const writeMeta = (
+      sessionID: string,
+      traceStats: unknown,
+      file: string,
+    ): void => {
+      writeFileSync(join(traceDir, `${file}.meta.json`),
+        `${JSON.stringify(
+          {
+            sessionID,
+            harness: "opencode-v2-promise-plugin",
+            harnessVersion: process.env.CTXVM_OPENCODE_VERSION ?? null,
+            pluginVersion: adapterVersion(),
+            model,
+            provider,
+            budgetTokens: budgetFromEnv(),
+            capturedAt: new Date().toISOString(),
+            hookStats: { ...stats, extraHookStats: {}, sessions: [sessionID] },
+            traceStats,
+            // B3 (§3 contract): resumeFrom stamped LAST — null when the
+            // session is not resuming, the evidence dict (incl. {} on
+            // failed boot checks) otherwise.
+            resumeFrom,
+          },
+          null,
+          2,
+        )}\n`);
+    };
+
+    /** Flush every session tracer through the SAME naming law (design §2 flow
+     * step 1) — used by the mid-session trigger AND by cleanup. */
+    const flushTraces = (): ReturnType<CtxvmPlugin["finishAll"]> => {
+      const flushed = vm.finishAll();
+      mkdirSync(traceDir, { recursive: true });
+      const base = process.env.CTXVM_TRACE_NAME;
+      for (const { sessionID, trace } of flushed) {
+        const file = base || sessionID;
+        writeFileSync(join(traceDir, `${file}.jsonl`), trace.jsonl);
+        wit(`flush ${file}.jsonl bytes=${trace.jsonl.length} session=${sessionID}`);
+        writeMeta(sessionID, trace.stats, file);
+        stats.sessions.push(sessionID);
+      }
+      return flushed;
+    };
+
+    /** The hermes `/ctxvm-handoff` output rendering — one rendering law. */
+    const witnessHandoffLine = (pauseResult: ReturnType<typeof uc1Pause>): void => {
+      const verified =
+        pauseResult.verified === undefined ? "None" : pauseResult.verified ? "True" : "False";
+      const divergences =
+        pauseResult.divergences === undefined
+          ? "None"
+          : JSON.stringify(pauseResult.divergences);
+      wit(
+        `ctxvm-handoff: exit_code=${pauseResult.exit_code} verified=${verified} divergences=${divergences}`,
+      );
+      if (pauseResult.stderr) wit(`ctxvm-handoff stderr: ${pauseResult.stderr}`);
+    };
+
+    /** Package the flushed era + snapshot through uc1Pause (env turn law). */
+    const pausePackage = (): void => {
+      witnessHandoffLine(
+        uc1Pause({ traceDir, handoffName: process.env.CTXVM_TRACE_NAME ?? undefined }),
+      );
+    };
+
     regs.push(
-      await ctx.session.hook("context", (input) => {
+      await ctx.session.hook("context", async (input) => {
         stats.contexts += 1;
         wit(`context session=${input?.sessionID ?? "?"}`);
         vm.onSessionContext(input);
+        // UC1 turn-shaped trigger (design §2): RIGHT AFTER this fire
+        // registered turn N — the flushed tail emits that turn's turn.render
+        // row (the probe is an idempotent finish(), T17.7 parity, events
+        // untouched; no --turn-less triggers: "0"/unset stay the flush-time
+        // path). One fire per session.
+        if (handoffTurn !== null) {
+          const sessionID = String(input?.sessionID ?? "?");
+          if (!handoffFired.has(sessionID)) {
+            try {
+              const probe = vm.tracerFor(sessionID).finish();
+              if (probe.stats.turns === handoffTurn + 1) {
+                handoffFired.add(sessionID);
+                wit(
+                  `handoff trigger turn=${handoffTurn} session=${sessionID} (flush → era copy → package → continue unless CTXVM_HANDOFF_STOP=1)`,
+                );
+                flushTraces();
+                pausePackage();
+                if (process.env.CTXVM_HANDOFF_STOP === "1") {
+                  for (const reg of regs) await reg.dispose?.();
+                  wit("handoff stop: hook registrations disposed (tracing stops; cleanup still flushes)");
+                }
+              }
+            } catch (err) {
+              wit(
+                `ctxvm-handoff: trigger failed (capture continues): ${err instanceof Error ? err.message : String(err)}`,
+              );
+            }
+          }
+        }
       }),
     );
     regs.push(
@@ -163,39 +281,8 @@ export default {
 
     return async () => {
       wit("cleanup entered (plugin unload)");
-      const flushed = vm.finishAll();
+      const flushed = flushTraces();
       wit(`cleanup finishAll -> ${flushed.length} tracer(s)`);
-      mkdirSync(traceDir, { recursive: true });
-      const base = process.env.CTXVM_TRACE_NAME;
-      for (const { sessionID, trace } of flushed) {
-        const file = base || sessionID;
-        writeFileSync(join(traceDir, `${file}.jsonl`), trace.jsonl);
-        wit(`flush ${file}.jsonl bytes=${trace.jsonl.length} session=${sessionID}`);
-        writeFileSync(
-          join(traceDir, `${file}.meta.json`),
-          `${JSON.stringify(
-            {
-              sessionID,
-              harness: "opencode-v2-promise-plugin",
-              harnessVersion: process.env.CTXVM_OPENCODE_VERSION ?? null,
-              pluginVersion: adapterVersion(),
-              model,
-              provider,
-              budgetTokens: budgetFromEnv(),
-              capturedAt: new Date().toISOString(),
-              hookStats: { ...stats, extraHookStats: {}, sessions: [sessionID] },
-              traceStats: trace.stats,
-              // B3 (§3 contract): resumeFrom stamped LAST — null when the
-              // session is not resuming, the evidence dict (incl. {} on
-              // failed boot checks) otherwise.
-              resumeFrom,
-            },
-            null,
-            2,
-          )}\n`,
-        );
-        stats.sessions.push(sessionID);
-      }
 
       // UC1-PAUSE-MIRROR: design §2 "package at flush" — with the handoff
       // envelope set (CTXVM_HANDOFF_DIR and/or CTXVM_HANDOFF_TURN), package
@@ -204,28 +291,14 @@ export default {
       // (the flush is deferred to the caller by reference design). handoff
       // dir resolves env-first (reference law) — the env recipe keeps
       // CTXVM_HANDOFF_DIR equal to CTXVM_TRACE_DIR so the flushed files are
-      // found. Witness line mirrors their /ctxvm-handoff output rendering
-      // (Python-style True/False/None). Mid-session CTXVM_HANDOFF_TURN
-      // triggers need TS finish() idempotency — follow-up card.
+      // found (Python-style True/False/None rendered by the shared
+      // witness law). With a turn trigger ARMED (UC1-TRIGGER card), the
+      // mid-session package already ran per fired session — the flush-time
+      // package runs then only as the FALLBACK (nothing fired: the session
+      // ended before reaching turn N — still exported with the env turn per
+      // the pause() env law).
       if (process.env.CTXVM_HANDOFF_DIR || process.env.CTXVM_HANDOFF_TURN) {
-        const pauseResult = uc1Pause({
-          traceDir,
-          handoffName: process.env.CTXVM_TRACE_NAME ?? undefined,
-        });
-        const verified =
-          pauseResult.verified === undefined
-            ? "None"
-            : pauseResult.verified
-              ? "True"
-              : "False";
-        const divergences =
-          pauseResult.divergences === undefined
-            ? "None"
-            : JSON.stringify(pauseResult.divergences);
-        wit(
-          `ctxvm-handoff: exit_code=${pauseResult.exit_code} verified=${verified} divergences=${divergences}`,
-        );
-        if (pauseResult.stderr) wit(`ctxvm-handoff stderr: ${pauseResult.stderr}`);
+        if (handoffTurn === null || handoffFired.size === 0) pausePackage();
       }
 
       for (const reg of regs) await reg.dispose?.();

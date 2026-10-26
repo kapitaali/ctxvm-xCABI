@@ -197,6 +197,12 @@ function turnFromEnv(): number | null {
   return parsed === 0 ? null : parsed;
 }
 
+/** The mid-session trigger arm reads the SAME env turn law the module reads —
+ * single truth for `CTXVM_HANDOFF_TURN` (`int(…, "0") or None`; junk raises). */
+export function pauseTurnFromEnv(): number | null {
+  return turnFromEnv();
+}
+
 export function uc1Pause(options?: PauseOptions): PauseResult {
   const traceDir = options?.traceDir ?? "";
   let handoffDir = process.env.CTXVM_HANDOFF_DIR || traceDir;

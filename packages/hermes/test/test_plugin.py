@@ -77,6 +77,36 @@ class TracerTests(unittest.TestCase):
         first_cm = min(i for i, e in enumerate(lines) if e["type"] == "call.meta")
         self.assertLess(last_tr, first_cm)
 
+    def test_finish_idempotent_tail_regenerates(self):
+        """T17.7 law pinned BOTH sides this card (mirrors the node tracer test).
+
+        The tail is computed per call and never appended to the event stream:
+        repeated flushes (mid-session handoff trigger, session end, dispose)
+        produce the same JSONL; lifecycle recorded after a first flush joins
+        the next transcript exactly once, with a regenerated tail.
+        """
+        vm = Tracer(TRACE_INIT)
+        vm.page({"ref": "file:src/a.ts", "kind": "file", "content": "A"})
+        vm.render()
+        vm.render({"latencyMs": 100})
+        first = vm.finish()
+        again = vm.finish()
+        self.assertEqual(again.jsonl, first.jsonl)
+        # Mid-session flush continues: new lifecycle, then the second finish.
+        vm.page({"ref": "file:src/b.ts", "kind": "file", "content": "B"})
+        vm.render({"latencyMs": 200})
+        second = vm.finish()
+        self.assertEqual(
+            [e["turn"] for e in second.events if e["type"] == "turn.render"], [0, 1, 2]
+        )
+        self.assertEqual(len([e for e in second.events if e["type"] == "call.meta"]), 3)
+        self.assertEqual(len([e for e in second.events if e["type"] == "page.declare"]), 2)
+        # The first flushed transcript was never mutated by the later flush.
+        self.assertEqual(
+            [e["turn"] for e in first.events if e["type"] == "turn.render"], [0, 1]
+        )
+        self.assertEqual(len([e for e in first.events if e["type"] == "page.declare"]), 1)
+
     def test_resident_render_sums_match_declared_pages(self):
         trace = self.run_healthy()
         lines = [json.loads(l) for l in trace.jsonl.strip().split("\n")]

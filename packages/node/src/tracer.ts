@@ -268,8 +268,17 @@ export function createTrace(init: TraceInit): Tracer {
       // page key is resident at every turn in v0 — there is no evict path, and
       // ctxvm-core `tally_at` sums the WHOLE table. Turn facts therefore flush here,
       // after all content is known, instead of eagerly mid-session.
+      //
+      // T17.7 parity (hermes plugin.py finish, docstring mirrored): "Flush:
+      // turn.render × (turn+1) then call.meta × len(pending_meta). Idempotent:
+      // the tail is computed per call and never appended to the event stream,
+      // so repeated flushes (mid-session handoff, session end, unload) produce
+      // the same JSONL instead of duplicating turn/meta records." pendingMeta
+      // is never cleared — the tail re-renders from live state each call, so
+      // lifecycle recorded AFTER a first flush joins the next transcript.
       let resident = 0;
       for (const tokens of allDeclared.values()) resident += tokens;
+      const tail: object[] = [];
       for (let t = 0; t <= turn; t++) {
         const tr: Record<string, unknown> = {
           type: "turn.render",
@@ -278,7 +287,7 @@ export function createTrace(init: TraceInit): Tracer {
           evictedTokens: 0,
         };
         if (init.budgetTokens > 0) tr.headroom = init.budgetTokens - resident;
-        push(tr);
+        tail.push(tr);
       }
       for (const m of pendingMeta) {
         const meta: Record<string, unknown> = {
@@ -292,11 +301,12 @@ export function createTrace(init: TraceInit): Tracer {
           },
         };
         if (m.latencyMs !== undefined) meta.latencyMs = m.latencyMs;
-        push(meta);
+        tail.push(meta);
       }
+      const merged = [...events, ...tail];
       return {
-        jsonl: `${events.map((e) => JSON.stringify(e)).join("\n")}\n`,
-        events,
+        jsonl: `${merged.map((e) => JSON.stringify(e)).join("\n")}\n`,
+        events: merged,
         stats: { turns: turn + 1, pages: allDeclared.size, faults: faultCount, residentTokens: resident },
       };
     },

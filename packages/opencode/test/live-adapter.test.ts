@@ -22,6 +22,7 @@ const ENV_KEYS = [
   "CTXVM_RESUME_FROM",
   "CTXVM_HANDOFF_DIR",
   "CTXVM_HANDOFF_TURN",
+  "CTXVM_HANDOFF_STOP",
 ] as const;
 
 function clearEnv(): void {
@@ -272,6 +273,160 @@ test("B2 flush-time handoff: CTXVM_HANDOFF_DIR packages the flushed capture", as
   // verified True; empty divergences list renders as []).
   const witnessFile = readFileSync(join(dir, "hooks-witness.log"), "utf8");
   assert.match(witnessFile, /ctxvm-handoff: exit_code=0 verified=True divergences=\[\]/);
+
+  clearEnv();
+});
+
+test("B2 mid-session trigger: CTXVM_HANDOFF_TURN packages at the turn boundary, tracing continues", async () => {
+  clearEnv();
+  const dir = mkdtempSync(join(tmpdir(), "ctxvm-live-trigger-"));
+  process.env.CTXVM_TRACE_DIR = dir;
+  process.env.CTXVM_TRACE_NAME = "hand-test";
+  process.env.CTXVM_HANDOFF_DIR = dir;
+  process.env.CTXVM_HANDOFF_TURN = "1";
+
+  let sessionCb: (input: unknown) => void | Promise<void> = () => {};
+  let beforeCb: (input: unknown) => void = () => {};
+  let afterCb: (input: unknown) => void = () => {};
+  const ctx = {
+    session: {
+      hook: async (_name: string, cb: (input: unknown) => void | Promise<void>) => {
+        sessionCb = cb;
+        return { dispose() {} };
+      },
+    },
+    tool: {
+      hook: async (name: string, cb: (input: unknown) => void) => {
+        if (name === "execute.before") beforeCb = cb;
+        else afterCb = cb;
+        return { dispose() {} };
+      },
+    },
+  };
+  const cleanup = await live.setup(ctx as never);
+  const base = { sessionID: "ses_trig", agent: "build", id: "call_1" };
+  const fire = (text: string) =>
+    sessionCb({
+      sessionID: base.sessionID,
+      model: { id: "deepseek-v4.1-flash-free", providerID: "opencode", variant: "default" },
+      messages: [{ role: "user", content: [{ type: "text", text }] }],
+    });
+
+  // Turn 0: no trigger (HANDOFF_TURN=1 arms the turn-1 boundary); the turn-N
+  // probe is the idempotent finish() (T17.7 parity) — events untouched.
+  await fire("Read notes.txt");
+  beforeCb({ ...base, tool: "read", input: { path: "notes.txt" } });
+  afterCb({
+    ...base,
+    tool: "read",
+    input: { path: "notes.txt" },
+    status: "completed",
+    result: { content: [{ type: "text", text: "hello" }] },
+  });
+  assert.ok(!existsSync(join(dir, "handoff")), "no package before the boundary turn");
+
+  // Turn 1 fires the trigger: flush → era copy → package (--turn 1 via the
+  // env law, uc1Pause re-reads).
+  await fire("Read again.txt");
+  const witness = readFileSync(join(dir, "hooks-witness.log"), "utf8");
+  assert.match(witness, /handoff trigger turn=1 session=ses_trig/);
+  assert.match(witness, /ctxvm-handoff: exit_code=0 verified=True divergences=\[\]/);
+  assert.ok(existsSync(join(dir, "hand-test-turn-1.jsonl")), "era copy with the turn label");
+  assert.ok(existsSync(join(dir, "hand-test-turn-1.meta.json")));
+  const packaged = readdirSync(join(dir, "handoff")).sort();
+  assert.ok(packaged.includes("manifest.yaml"));
+  assert.ok(packaged.some((name) => /^trace-\d+\.jsonl\.zst$/.test(name)));
+  assert.ok(packaged.includes("checksums.sha256"));
+
+  // Tracing CONTINUES (design §2: pause is not teardown by default): turn 2
+  // fires and the trigger does NOT re-fire.
+  await fire("Read third.txt");
+  const witness2 = readFileSync(join(dir, "hooks-witness.log"), "utf8");
+  assert.equal(
+    witness2.split("handoff trigger turn=1").length - 1,
+    1,
+    "trigger fires exactly once per session",
+  );
+
+  // Cleanup: the flush-time package was the fallback only — the trigger
+  // already packaged, so no second ctxvm-handoff line and no flush era.
+  await (cleanup as () => Promise<void>)();
+  const witness3 = readFileSync(join(dir, "hooks-witness.log"), "utf8");
+  assert.equal(
+    witness3.split("ctxvm-handoff: exit_code=").length - 1,
+    1,
+    "no second package at cleanup after a fired trigger",
+  );
+  assert.ok(
+    !existsSync(join(dir, "hand-test-flush.jsonl")),
+    "no flush-era copy when the trigger already packaged",
+  );
+  // the continued tracing is not lost: the final flush still landed
+  assert.ok(existsSync(join(dir, "hand-test.jsonl")));
+
+  clearEnv();
+});
+
+test("B2 mid-session trigger + CTXVM_HANDOFF_STOP=1: package, then hook disposal", async () => {
+  clearEnv();
+  const dir = mkdtempSync(join(tmpdir(), "ctxvm-live-triggerstop-"));
+  process.env.CTXVM_TRACE_DIR = dir;
+  process.env.CTXVM_TRACE_NAME = "hand-test";
+  process.env.CTXVM_HANDOFF_DIR = dir;
+  process.env.CTXVM_HANDOFF_TURN = "1";
+  process.env.CTXVM_HANDOFF_STOP = "1";
+
+  let sessionCb: (input: unknown) => void | Promise<void> = () => {};
+  let beforeCb: (input: unknown) => void = () => {};
+  let afterCb: (input: unknown) => void = () => {};
+  let sessionDisposed = false;
+  let toolDisposed = false;
+  const ctx = {
+    session: {
+      hook: async (_name: string, cb: (input: unknown) => void | Promise<void>) => {
+        sessionCb = cb;
+        return {
+          dispose() {
+            sessionDisposed = true;
+          },
+        };
+      },
+    },
+    tool: {
+      hook: async (name: string, cb: (input: unknown) => void) => {
+        if (name === "execute.before") beforeCb = cb;
+        else afterCb = cb;
+        return {
+          dispose() {
+            toolDisposed = true;
+          },
+        };
+      },
+    },
+  };
+  const cleanup = await live.setup(ctx as never);
+  const base = { sessionID: "ses_stop", agent: "build", id: "call_1" };
+  const fire = (text: string) =>
+    sessionCb({
+      sessionID: base.sessionID,
+      model: { id: "deepseek-v4.1-flash-free", providerID: "opencode", variant: "default" },
+      messages: [{ role: "user", content: [{ type: "text", text }] }],
+    });
+
+  await fire("Read notes.txt");
+  await fire("Read again.txt"); // the boundary turn: package + STOP disposal
+
+  const witness = readFileSync(join(dir, "hooks-witness.log"), "utf8");
+  assert.match(witness, /handoff trigger turn=1 session=ses_stop/);
+  assert.match(witness, /ctxvm-handoff: exit_code=0 verified=True divergences=\[\]/);
+  assert.match(witness, /handoff stop: hook registrations disposed/);
+  assert.ok(sessionDisposed, "the stop law disposes the hook registrations");
+  assert.ok(toolDisposed);
+  assert.ok(existsSync(join(dir, "hand-test-turn-1.jsonl")));
+
+  await (cleanup as () => Promise<void>)();
+  // re-dispose is idempotent-safe and cleanup still flushes the final trace
+  assert.ok(existsSync(join(dir, "hand-test.jsonl")));
 
   clearEnv();
 });
