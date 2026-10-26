@@ -115,7 +115,12 @@ export interface PauseResult {
 }
 
 export interface PauseOptions {
-  /** Reference trace_dir argument (env CTXVM_HANDOFF_DIR wins when set). */
+  /** Reference trace_dir argument. Dir resolution is ARG-FIRST
+   * (arg > env CTXVM_HANDOFF_DIR — m7 capture ruling): the reference Python
+   * chain `os.environ.get("CTXVM_HANDOFF_DIR") or trace_dir` is env-first,
+   * letting a leaked service environment (systemd set-environment) override
+   * the caller's explicit dir and hijack the pause. The Python line is
+   * hermes-module law and stays untouched (frontier: mirror-parity card). */
   traceDir: string;
   /** Reference turn argument (env CTXVM_HANDOFF_TURN fallback when omitted). */
   turn?: number | null;
@@ -223,7 +228,13 @@ export function pauseTurnFromEnv(): number | null {
 
 export function uc1Pause(options?: PauseOptions): PauseResult {
   const traceDir = options?.traceDir ?? "";
-  let handoffDir = process.env.CTXVM_HANDOFF_DIR || traceDir;
+  // Dir chain ARG-FIRST (`traceDir || CTXVM_HANDOFF_DIR`): the reference
+  // Python is env-first here while its own NAME chain is arg-first — an
+  // internal inconsistency, witnessed live when the m7 gateway service env
+  // leaked into a spawned `node --test` and the leaked CTXVM_HANDOFF_DIR
+  // hijacked explicit test dirs (RR-UM7CAPTURE-20261026). The mirror emits
+  // the consistent arg-first law.
+  let handoffDir = traceDir || process.env.CTXVM_HANDOFF_DIR;
   if (!handoffDir) {
     return {
       exit_code: 2,

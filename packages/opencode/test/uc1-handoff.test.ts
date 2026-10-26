@@ -43,6 +43,13 @@ const GOLDEN = JSON.parse(readFileSync(GOLDEN_PATH, "utf8")) as {
 };
 
 function freshTmp(label: string): string {
+  // Test isolation (m7 gate-2 regression, RR-UM7CAPTURE): these tests may be
+  // spawned from a gateway service whose manager environment carries leaked
+  // CTXVM_* keys (systemd set-environment). Quarantine them here — any test
+  // that needs a key sets it locally after freshTmp() returns.
+  for (const key of Object.keys(process.env)) {
+    if (key.startsWith("CTXVM_")) delete process.env[key];
+  }
   return mkdtempSync(join(tmpdir(), `ctxvm-b3-${label}-`));
 }
 
@@ -536,4 +543,18 @@ test("pause name chain: arg > env > 'handoff' (reference OR-chain law)", () => {
   delete process.env.CTXVM_HANDOFF_NAME;
   assert.equal(envWins.exit_code, 0, envWins.stderr);
   assert.equal(envWins.snapshot.jsonl, join(dir, "envname-flush.jsonl"));
+});
+
+test("pause dir chain: arg > env (m7 leak regression — explicit dir must beat a leaked CTXVM_HANDOFF_DIR)", () => {
+  const dir = freshTmp("dirchain");
+  copyFileSync(join(REPO_ROOT, ANCHOR), join(dir, "dirarg.jsonl"));
+  // Under the env-first law (reference Python line) the leaked dir wins and
+  // export cannot read the nonexistent trace there — red even in a clean
+  // shell. Under the arg-first law the explicit dir wins and the pause is
+  // exit 0 with the era copy beside it.
+  process.env.CTXVM_HANDOFF_DIR = join(dir, "leaked-no-such-dir");
+  const argWins = uc1Pause({ traceDir: dir, handoffName: "dirarg" });
+  delete process.env.CTXVM_HANDOFF_DIR;
+  assert.equal(argWins.exit_code, 0, argWins.stderr);
+  assert.equal(argWins.snapshot.jsonl, join(dir, "dirarg-flush.jsonl"));
 });
