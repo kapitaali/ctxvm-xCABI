@@ -179,7 +179,10 @@ their module law, mirror-parity frontier). Manifest `latestDrop: corpus/m7`
 productVersion 0.7.0 + hub regen re-baselined; counts `ts 13 + 51` /
 `python 74 + 30 + 8`; ALL GATES GREEN (schema 629 checks / 25 fixtures).
 **Landing commits:** 2bb339a (TS dir-chain fix) + 8aa7949 (corpus/m7 drop) +
-eca05a5 (books); pushed to origin/main. **Still OPEN:** the gated `handoff-inject` beat (v-next); hermes-lane frontier
+eca05a5 (books); pushed to origin/main. **Still OPEN:** the gated `handoff-inject`
+beat (v-next); remaining hermes-lane frontier (gateway `tool=None` hook-key
+mapping; verified-boot resume-brief UX); T15 (Vercel AI SDK adapter — now
+PROPOSED, reports/T15-PROPOSAL-20261027.md).
 **UC1-PAUSE-PATH LANDED (RR-UC1PAUSEPATH-20261026):** the m7 frontier card DONE —
 `/ctxvm-handoff` now passes `handoff_name=_flush_base()` (closes the run-1
 name mismatch); `pause()` dir chain ARG-FIRST (`trace_dir or env`, mirrors TS
@@ -187,10 +190,6 @@ name mismatch); `pause()` dir chain ARG-FIRST (`trace_dir or env`, mirrors TS
 + dir-chain law); counts `ts 13 + 51` / `python 76 + 30 + 8`; ALL GATES GREEN.
 Remaining frontier: gateway `tool=None` hook-key mapping; verified-boot resume-brief
 UX; gated handoff-inject v-next beat (parked).
-cards from the m7 capture (typed-handler `handoff_name=CTXVM_TRACE_NAME`
-pass-through; gateway `tool=None` hook-key mapping; verified-boot resume-brief
-UX; the export one-dir-one-slice doc line; PY dir-chain mirror-parity); optional
-T15 (Vercel AI SDK adapter, unproposed future card).
 
 ## §1. Workspace map
 
