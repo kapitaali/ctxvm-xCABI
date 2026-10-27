@@ -226,10 +226,13 @@ ruling). Landing commits: `d7e2728` (B0–B2) + `801047c` (B3/wiring) + books.
 
 **Current frontier (status 2026-10-27):** T15 closed. Remaining: the hermes-lane
 frontier lines above (gateway `tool=None` hook-key mapping; verified-boot resume-brief
-UX; gated handoff-inject v-next beat, parked) + the parked T15 follow-ups — UC1 (typed
-pause/resume) and UC2 (forensics CLI) ports to the ai-sdk library adapter. RFC-0 makes
-drops harness-agnostic, so benchmark/UC3 chains already consume `corpus/m8` without
-adapter awareness.
+UX; gated handoff-inject v-next beat, parked) + the parked T15 follow-ups —
+**UC1 port now PROPOSED as T22** (`reports/T22-PROPOSAL-20261027.md`:
+typed pause/resume mirror into `packages/ai-sdk`, library-shaped explicit API,
+provider-key-free synthetic proof; awaiting orchestrator rulings), while **UC2
+needs no port card** (the forensics CLI is RFC-0-trace-based and host-agnostic
+already — proposal §6 records the verdict). RFC-0 makes drops harness-agnostic,
+so benchmark/UC3 chains already consume `corpus/m8` without adapter awareness.
 
 ## §1. Workspace map
 
