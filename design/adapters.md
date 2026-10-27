@@ -229,6 +229,33 @@ export async function* ctxvmTap(stream: AsyncIterable<TextStreamPart>) {
 
 ---
 
+## Adapter B ERRATUM — re-pin survey (2026-10-27, T15 B0 at `ai` 7.0.154)
+
+No hook-point drift: all five surfaces survive into the latest stable tag.
+Formal deltas vs the pinned-commit text above:
+
+1. **Middleware typing is V4-based.** `LanguageModelMiddleware` is now
+   `Omit<LanguageModelV4Middleware, 'specificationVersion'> & { specificationVersion?: string }`
+   (`ai` dist/index.d.ts:158–168), with `transformParams({ type: 'generate' |
+   'stream', params: LanguageModelV4CallOptions, model })`, `wrapGenerate`, and
+   `wrapStream` all present (`@ai-sdk/provider` dist/index.d.ts:3536–3573).
+   V3 middleware payloads remain accepted.
+2. **NEW: `tool-result.preliminary?: boolean`.** Partial/promise-tool results
+   stream as `preliminary` parts before the final result. The tap pages only
+   `preliminary !== true` results; preliminary parts pass through unmapped.
+   Recorded as T15 implementation risk 6 (glue unit pins it).
+3. **Part union intact** at 7.0.154: `text-delta`, `reasoning-delta`,
+   `tool-call`, `tool-result`, `tool-error`, `tool-output-denied`,
+   `start-step`, `finish-step` (union shape as tabulated; line refs moved).
+   Unknown part kinds pass through unmapped by contract (mirror law).
+   App-layer field rename inside `text-delta`: `TextStreamPart`'s text-delta
+   carries **`text`** (the provider-layer `LanguageModelV4StreamPart` keeps
+   `delta`) — fixtures and the tap bind to the app-layer name.
+4. **T15 pins `ai@7.0.154`** (latest stable tag per B0 ruling) — package
+   devDependency, exact version.
+
+---
+
 ## Cross-adapter notes
 
 - **Ecosystem fact:** the AI SDK organization already ships first-party harness

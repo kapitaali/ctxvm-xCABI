@@ -1,0 +1,18 @@
+{
+  "name": "@ctxvm/ai-sdk",
+  "version": "0.0.1",
+  "private": true,
+  "description": "T15 — Vercel AI SDK adapter wiring @ctxvm/node into middleware + fullStream tap (mirror-only, T7 Adapter B).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "scripts": {
+    "test": "node --test test/",
+    "gen": "node test/gen-fixture.ts"
+  },
+  "devDependencies": {
+    "ai": "7.0.154"
+  }
+}

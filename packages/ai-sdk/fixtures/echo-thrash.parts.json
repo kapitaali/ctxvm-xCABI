@@ -1,0 +1,190 @@
+[
+  {
+    "type": "start"
+  },
+  {
+    "type": "start-step",
+    "request": {},
+    "warnings": []
+  },
+  {
+    "type": "text-start",
+    "id": "t1"
+  },
+  {
+    "type": "text-delta",
+    "id": "t1",
+    "text": "Echo reply for "
+  },
+  {
+    "type": "text-end",
+    "id": "t1"
+  },
+  {
+    "type": "tool-input-start",
+    "id": "call-1",
+    "toolName": "echo",
+    "inputEncoding": "json",
+    "dynamic": false
+  },
+  {
+    "type": "tool-input-delta",
+    "id": "call-1",
+    "delta": "{\"message\":\"hello\"}"
+  },
+  {
+    "type": "tool-input-end",
+    "id": "call-1"
+  },
+  {
+    "type": "tool-call",
+    "toolCallId": "call-1",
+    "toolName": "echo",
+    "input": {
+      "message": "hello"
+    }
+  },
+  {
+    "type": "tool-result",
+    "toolCallId": "call-1",
+    "toolName": "echo",
+    "input": {
+      "message": "hello"
+    },
+    "output": {
+      "echo": "hello"
+    },
+    "dynamic": false
+  },
+  {
+    "type": "finish-step",
+    "finishReason": "tool-calls",
+    "usage": {
+      "inputTokens": 10,
+      "inputTokenDetails": {
+        "noCacheTokens": 10,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0
+      },
+      "outputTokens": 5,
+      "outputTokenDetails": {
+        "textTokens": 5,
+        "reasoningTokens": 0
+      },
+      "totalTokens": 15
+    }
+  },
+  {
+    "type": "start-step",
+    "request": {},
+    "warnings": []
+  },
+  {
+    "type": "tool-input-start",
+    "id": "call-2",
+    "toolName": "echo",
+    "inputEncoding": "json",
+    "dynamic": false
+  },
+  {
+    "type": "tool-input-delta",
+    "id": "call-2",
+    "delta": "{\"message\":\"hello\"}"
+  },
+  {
+    "type": "tool-input-end",
+    "id": "call-2"
+  },
+  {
+    "type": "tool-call",
+    "toolCallId": "call-2",
+    "toolName": "echo",
+    "input": {
+      "message": "hello"
+    }
+  },
+  {
+    "type": "tool-result",
+    "toolCallId": "call-2",
+    "toolName": "echo",
+    "input": {
+      "message": "hello"
+    },
+    "output": {
+      "echo": "hello"
+    },
+    "dynamic": false
+  },
+  {
+    "type": "finish-step",
+    "finishReason": "tool-calls",
+    "usage": {
+      "inputTokens": 10,
+      "inputTokenDetails": {
+        "noCacheTokens": 10,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0
+      },
+      "outputTokens": 5,
+      "outputTokenDetails": {
+        "textTokens": 5,
+        "reasoningTokens": 0
+      },
+      "totalTokens": 15
+    }
+  },
+  {
+    "type": "start-step",
+    "request": {},
+    "warnings": []
+  },
+  {
+    "type": "text-start",
+    "id": "t2"
+  },
+  {
+    "type": "text-delta",
+    "id": "t2",
+    "text": "done"
+  },
+  {
+    "type": "text-end",
+    "id": "t2"
+  },
+  {
+    "type": "finish-step",
+    "finishReason": "stop",
+    "usage": {
+      "inputTokens": 10,
+      "inputTokenDetails": {
+        "noCacheTokens": 10,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0
+      },
+      "outputTokens": 5,
+      "outputTokenDetails": {
+        "textTokens": 5,
+        "reasoningTokens": 0
+      },
+      "totalTokens": 15
+    }
+  },
+  {
+    "type": "finish",
+    "finishReason": "stop",
+    "totalUsage": {
+      "inputTokens": 30,
+      "inputTokenDetails": {
+        "noCacheTokens": 30,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0
+      },
+      "outputTokens": 15,
+      "outputTokenDetails": {
+        "textTokens": 15,
+        "reasoningTokens": 0
+      },
+      "totalTokens": 45
+    }
+  }
+]
