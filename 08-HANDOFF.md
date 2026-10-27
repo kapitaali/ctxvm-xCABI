@@ -50,7 +50,7 @@ closed here by reference: **T13** calibration corpus (v1–v3; of record `cal-v1
 umpire `050bffe`) and **T14** direction decided **local-only now; hybrid later** (umpire
 `RR-T14-20261023`) with M3 capture/refit/packaging landed; the residual is the *future hybrid-switch
 event* gating Phase C's hosted elements (llms.txt/agent port/publication are runnable locally unless
-a hosted surface is chosen). **T15** (Vercel AI SDK adapter) remains an unproposed future card;
+a hosted surface is chosen). **T15** (Vercel AI SDK adapter) **LANDED 2026-10-27** (landing block at the end of §0 + RR-T15-20261027);
 **T17** (UC1 Hermes plugin, UCVERIFY build-first chain) **DONE 2026-10-24** — Hermes
 workstream delivered `packages/hermes/` (see board row). The earlier "live captures blocked
 by gateway architecture" limitation is **superseded**: T17.7 confirmed the real cause was a
@@ -181,8 +181,8 @@ productVersion 0.7.0 + hub regen re-baselined; counts `ts 13 + 51` /
 **Landing commits:** 2bb339a (TS dir-chain fix) + 8aa7949 (corpus/m7 drop) +
 eca05a5 (books); pushed to origin/main. **Still OPEN:** the gated `handoff-inject`
 beat (v-next); remaining hermes-lane frontier (gateway `tool=None` hook-key
-mapping; verified-boot resume-brief UX); T15 (Vercel AI SDK adapter — now
-PROPOSED, reports/T15-PROPOSAL-20261027.md).
+mapping; verified-boot resume-brief UX); T15 (Vercel AI SDK adapter — **LANDED**
+2026-10-27, `packages/ai-sdk` + live `corpus/m8`, RR-T15-20261027).
 **UC1-PAUSE-PATH LANDED (RR-UC1PAUSEPATH-20261026):** the m7 frontier card DONE —
 `/ctxvm-handoff` now passes `handoff_name=_flush_base()` (closes the run-1
 name mismatch); `pause()` dir chain ARG-FIRST (`trace_dir or env`, mirrors TS
@@ -190,6 +190,44 @@ name mismatch); `pause()` dir chain ARG-FIRST (`trace_dir or env`, mirrors TS
 + dir-chain law); counts `ts 13 + 51` / `python 76 + 30 + 8`; ALL GATES GREEN.
 Remaining frontier: gateway `tool=None` hook-key mapping; verified-boot resume-brief
 UX; gated handoff-inject v-next beat (parked).
+
+**T15 LANDED (RR-T15-20261027), 2026-10-27:** the Vercel AI SDK adapter shipped as
+`packages/ai-sdk` (`@ctxvm/ai-sdk@0.0.1`, pin `ai@7.0.154`) per
+`reports/T15-PROPOSAL-20261027.md`. B0 re-pin survey found **no hook-point drift**;
+four formal deltas sealed as `design/adapters.md` Adapter B ERRATUM (V4 middleware
+typing; `tool-result.preliminary` skipped + counted; app-layer `text-delta.text`;
+`providerOptions[<name>]` spreads raw body fields — the channel that carries
+`chat_template_kwargs`). B1 glue = middleware render anchor (`transformParams` one fire
+= one xCABI turn, params returned UNCHANGED — mirror law test-pinned) + fullStream
+pass-over tap (recall before execute; page on FINAL tool results; per-step scan
+attributed to the producing turn; real `tool-error` parts → deny → no page) +
+env-gated flush producing RFC-0 JSONL + a meta sidecar whose
+`hookStats`/`mirrorCountsAgree` make the design-risk-1 counts witness checkable per
+drop. B2 = canonical mock fixtures with the live-stream recipe canon in the generator
+header (`stopWhen: stepCountIs(N)` required; mock `finishReason` must be an
+`{unified, raw}` object; text/tool-input streaming fences; app-layer `finish-step`
+wall-clock fields stripped in canon) — 8/8 suite green, fixture replay through the REAL
+tracer byte-identical, double-run sha256 byte-stable. B3 live drop `corpus/m8` on the
+**NVIDIA NIM free tier at USD 0** after the **zen-free-lane BLOCKED eyewitness**
+(gateway 429 `FreeUsageLimitError` on bare, CLI-credential-Bearer, and
+client-emulating calls; the CLI's success path is client-session-gated — a scripted
+`streamText` loop cannot drive zen): model `nvidia/nemotron-3.5-super-vl-120b-a12b`
+thinking off per beat; echo 31 events / 10 turns / 3 pages / 4 faults incl. the
+**thrown** ghost read that pages NOTHING (error-as-result bodies DO page — the no-page
+tier is the thrown one, re-witnessed by re-capturing the canon), thrash 22 events / 6
+turns / 3 pages / 3 faults = one `tool_recall` per page·source (m2's fault-dedup law on
+a third adapter); schema PASS 108 checks, replay exit 0 both traces
+(`faultOfResidentPage` 4×/3×, m2's expected class), checksums sealed; manifest 0.8.0 +
+hub re-baselined (m7 duplicate-sentence splice repaired ride-along); run-ci counts
+`ts 13 + 51 + 8`. **UC1/UC2 adapter ports deferred as separate future cards** (T15
+ruling). Landing commits: `d7e2728` (B0–B2) + `801047c` (B3/wiring) + books.
+
+**Current frontier (status 2026-10-27):** T15 closed. Remaining: the hermes-lane
+frontier lines above (gateway `tool=None` hook-key mapping; verified-boot resume-brief
+UX; gated handoff-inject v-next beat, parked) + the parked T15 follow-ups — UC1 (typed
+pause/resume) and UC2 (forensics CLI) ports to the ai-sdk library adapter. RFC-0 makes
+drops harness-agnostic, so benchmark/UC3 chains already consume `corpus/m8` without
+adapter awareness.
 
 ## §1. Workspace map
 
@@ -298,6 +336,7 @@ orchestrator task only).
 | T19 | UC1 §4: `ctxvm diff` positional two-trace comparison (user-directed 2026-10-24, continues the UCVERIFY build-first chain) | S | RR-UCVERIFY, T18 | **DONE** (RR-T19-DIFF-20261024; core `diff_traces` — common-prefix/first-divergence, relations identical/b-extends-a/a-extends-b/divergent, page-level delta (declared-only sides, divergent-hash M1b class, tally mismatches at common turn.render facts) + 4 tests (core 24; workspace 42/42, 0 warnings); CLI `diff <a.jsonl> <b.jsonl> [--output FILE] [--help]` with cross-check exit contract (0 shared region matches · 1 divergent · 2 usage); witnessed: UC1 extension shape exit 0 with 12→13 events, mutated-hash copy → divergent@1 + exact M1b divergent-hash row exit 1, unrelated corpus pair correctly divergent @0 with disjoint page rosters; run-ci ALL GATES GREEN) |
 | T20 | replay `--pin (ref, hash)` precision mode (user-directed 2026-10-24, closes the last `--pin` surface of UCVERIFY class F) | S | RR-UCVERIFY, T16 | **DONE** (RR-T20-PINPRECISION-20261024; core `Pin` enum — `Ref` broad (T16 semantics unchanged) + `Identity{logical_ref, content_hash}` precision; `with_forced_resident` now takes `&[Pin]` (+2 tests, core 26; workspace 44/44, 0 warnings); CLI `--pin '(ref, hash)'` pins one exact variant (memo `page:` prefix composes; mixed kinds allowed; `pins` report field stays string-array with normalized `(ref, hash)` labels — T16 shape kept); validation exit 2: unknown ref w/ roster, declared-but-other-hash w/ per-ref hash roster, malformed tuple forms; last-comma split handles comma/quote/paren-bearing refs; single-variant refs: precision ≡ broad (witnessed on m1); flip counts Stub→Full only (already-Full target valid, no flip); exit contract untouched (divergent vectors still exit 1); run-ci ALL GATES GREEN) |
 | T21 | `ctxvm export` handoff snapshot builder — UC1 §2–§3 (user-directed 2026-10-24, closes UC1's CLI surface) | S | UC1 memo, T18, T19, T20 | **DONE** (RR-T21-EXPORT-20261024; core `export.rs` — positional-prefix slice (last event with turn ≤ N; trailing turn-less bookkeeping excluded; tail-flush sweep-ins proven inert), replay counterproof, turn-N projection, pin lint, redaction scan, 3 KPIs with pinned v0 formulas (+8 tests, core 34 / workspace 52, 0 warnings); CLI `export <trace> [--turn N] [--output DIR] [--odps]` — byte-identical trace slice + page-table-N.json, `--odps` = ODPS 4.1-flavored manifest.yaml (dataQuality: replayDeterminism/sourceFidelity/pinLint/redactionScan + KPI targets + verify commands) + llms.txt + zstd trace + checksums.sha256, exit 0-on-success/2-usage; witnessed: m3 echo @2 (replay slice exit 0 divergences [], diff a_extends_b 18/18, byte-identity, checksums OK), m1 thrash @2 net-token 0.2857, --turn 999 ≡ identity, 2-run determinism, exit-law classes; run-ci gate 3 now enforces the export round-trip chain — ALL GATES GREEN) |
+| T15 | Vercel AI SDK adapter — Adapter B implementation + first live drop `corpus/m8` (orchestrator-approved proposal reports/T15-PROPOSAL-20261027.md) | M | T7, T8 | **DONE** (RR-T15-20261027; landing commits `d7e2728` B0–B2 + `801047c` B3/wiring + books; `packages/ai-sdk` = `@ctxvm/ai-sdk@0.0.1` at pin `ai@7.0.154`: middleware render anchor (`transformParams` one fire = one turn, params returned unchanged — mirror law test-pinned) + fullStream pass-over tap (recall before execute, page on final tool results, per-step scan attributed to the producing turn, real `tool-error` parts → deny → no page) + env-gated flush with hookStats + `mirrorCountsAgree` counts witness; design/adapters.md Adapter B ERRATUM (no hook-point drift at the pin: V4 middleware typing, `tool-result.preliminary` skipped, app-layer `text-delta.text`, `providerOptions[<name>]` raw body spread); 8-test canonical fixture suite with the recipe canon in the generator header, fixture replay through the REAL tracer byte-identical, double-run sha256 byte-stable; live `corpus/m8` on NVIDIA NIM free tier at USD 0 after the zen-free-lane FreeUsageLimitError BLOCKED eyewitness (CLI lane client-session-gated — scripted streamText cannot drive zen), model `nvidia/nemotron-3.5-super-vl-120b-a12b` thinking off per beat; echo 31 events/10 turns/3 pages/4 faults incl. the thrown ghost read paging NOTHING (error-as-result bodies DO page — re-captured canon shows both tiers), thrash 22 events/6 turns/3 pages/3 faults = one tool_recall per page·source (m2 fault-dedup law); middlewareRenders == tapStepEnds both traces (10/10, 6/6), mirrorCountsAgree true both; schema PASS 108 checks, replay exit 0 both (faultOfResidentPage 4×/3× = m2's expected class), checksums 4/4; run-ci: m8 fixtures + checksum gate + gate-2 ai-sdk suite + counts line `ts 13 + 51 + 8`; manifest 0.8.0 latestDrop corpus/m8 + RE-VALIDATED line + m7 splice-dedup ride-along; hub regen + hub.sha256 re-baseline; ALL GATES GREEN) |
 
 ---
 
