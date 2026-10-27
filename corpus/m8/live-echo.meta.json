@@ -1,0 +1,29 @@
+{
+  "sessionID": "local",
+  "harness": "ai-sdk",
+  "aiSdkVersion": "7.0.154",
+  "captureVersion": "0.1",
+  "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+  "provider": "nvidia",
+  "agentId": "ctxvm-ai-sdk",
+  "budgetTokens": 120000,
+  "capturedAt": "2026-10-27T07:31:05.074Z",
+  "hookStats": {
+    "middlewareRenders": 10,
+    "tapStepEnds": 10,
+    "toolCalls": 5,
+    "toolResults": 4,
+    "preliminarySkipped": 0,
+    "deniedOrErrors": 1,
+    "textDeltas": 32,
+    "scannedBytes": 387,
+    "steps": 10
+  },
+  "mirrorCountsAgree": true,
+  "traceStats": {
+    "turns": 10,
+    "pages": 3,
+    "faults": 4,
+    "residentTokens": 81
+  }
+}

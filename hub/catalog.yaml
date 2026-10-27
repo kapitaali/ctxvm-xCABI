@@ -12,7 +12,7 @@ catalog:
   productReferences:
   - id: ctxvm-corpus-0.1
     productID: ctxvm-corpus-0.1
-    productVersion: 0.7.0
+    productVersion: 0.8.0
     name:
       en: ctxvm Trace Corpus
     description:
@@ -39,13 +39,14 @@ catalog:
         \ at turn 3 through the systemd gateway service, and a genuinely fresh session\
         \ booted with CTXVM_RESUME_FROM: package-verified boot before any hook work,\
         \ then package-carried reconstruction; 45 pages across both sessions, zero\
-        \ evictions, zero faults, shipped turn-3 package era-as-flushed), and corpus/m7\
-        \ (first hermes-side typed pause/resume pair \u2014 a real interactive hermes\
-        \ TUI session typed /ctxvm-handoff mid-session at turn 3 through the systemd\
-        \ gateway service, and a genuinely fresh session booted with CTXVM_RESUME_FROM:\
-        \ package-verified boot before any hook work, then package-carried reconstruction;\
-        \ 45 pages across both sessions, zero evictions, zero faults, shipped turn-3\
-        \ package digest-pinned to the boot-verified set)."
+        \ evictions, zero faults, shipped turn-3 package digest-pinned to the boot-verified\
+        \ set), and corpus/m8 (first Vercel AI SDK adapter drop \u2014 scripted echo\
+        \ and sustained re-read sessions driven through the ai 7.0.154 streamText\
+        \ plugin pair with @ai-sdk/openai-compatible on NVIDIA NIM's free tier at\
+        \ USD 0: a 10-turn echo walking read \u2192 re-read (tool_recall) \u2192 edit\
+        \ \u2192 fresh read \u2192 a genuinely thrown tool error (no page), and a\
+        \ 6-turn 3-round re-read thrash; middleware render count equals tap step count\
+        \ on both traces, counts witness green)."
     productModel:
       standard: ODPS
       version: '4.1'

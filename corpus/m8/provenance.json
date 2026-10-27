@@ -1,0 +1,50 @@
+{
+  "drop": "ctxvm-trace-corpus-m8",
+  "product": "ctxvm Trace Corpus (ODPS: 04-odps-dataproduct-corpus.yaml, productVersion 0.8.0)",
+  "createdOn": "2026-10-27",
+  "license": "CC-BY-4.0 for corpus content (per root manifest license.governance block)",
+  "redaction": "Live sessions ran in disposable mkdtemp /tmp workspaces containing only this card's fixture files (notes/alpha.md, notes/beta.md, notes/a-c.md); no user repositories, credentials, or personal data entered any context. The NVIDIA API key was read per-invocation into the process environment only and is absent from every trace, sidecar, and log. Model output is limited to tool-driven instructions and one-sentence summaries. Manual review: no secrets, no /home paths, no environment values; traces contain session ids, tool refs, hashes and token estimates only.",
+  "status": "LIVE — first Vercel AI SDK adapter captures (M8). Both traces are schema-validated and replay-divergence-free, captured through the T15 adapter (packages/ai-sdk: ctxvmMiddleware render anchor + ctxvmTap fullStream pass-over) driving streamText with @ai-sdk/openai-compatible on NVIDIA NIM's free tier at USD 0 provider spend.",
+  "harness": {
+    "name": "Vercel AI SDK",
+    "version": "7.0.154",
+    "versionNote": "ai@7.0.154 is the latest stable tag (B0 survey ruling). Hook points verified intact at the pin (LanguageModelMiddleware transformParams/wrapGenerate/wrapStream; TextStreamPart union); formal deltas recorded in design/adapters.md Adapter B ERRATUM — V4 middleware typing, tool-result.preliminary (tap skips), app-layer text-delta text rename.",
+    "plugin": "packages/ai-sdk/{src/middleware.ts (transformParams = one-fire-one-turn render anchor, params returned unchanged), src/tap.ts (fullStream pass-over: recall before execute, page on final results, per-step scan), src/index.ts (env-gated createCtxvmCapture), live/gen-live.ts (this driver)}",
+    "wiring": "createCtxvmCapture({ agentId, model, provider, budgetTokens }); model wrapped via wrapLanguageModel({ model: provider.chatModel(MODEL_ID), middleware: capture.middleware }); app consumes capture.tap(result.fullStream); capture.finishAll() flushes",
+    "invocation": "node packages/ai-sdk/live/gen-live.ts (NVIDIA_API_KEY env; NVIDIA_MODEL override; scripted beats per session)",
+    "flush": "capture.finishAll() → @ctxvm/node finish() → RFC-0 JSONL + .meta.json sidecar (hookStats {middlewareRenders, tapStepEnds, toolCalls, toolResults, preliminarySkipped, deniedOrErrors, textDeltas, scannedBytes, steps} + mirrorCountsAgree)",
+    "providerSpend": "USD 0 — NVIDIA NIM free tier (integrate.api.nvidia.com/v1), model nvidia/nemotron-3.5-super-vl-120b-a12b, thinking off via chat_template_kwargs"
+  },
+  "files": [
+    {
+      "file": "live-echo.jsonl",
+      "meta": "live-echo.meta.json",
+      "kind": "live-harness-captured",
+      "origin": "live streamText loop (T15), five scripted beats: read notes/alpha.md → re-read (tool_recall) → edit append (2nd page) → fresh read notes/beta.md (new contentHash, no fault) → read notes/ghost.md (thrown tool error, tool-error part, no page)",
+      "events": 31,
+      "turns": 10,
+      "pages": 3,
+      "faults": 4,
+      "toolCalls": { "calls": 5, "results": 4, "deniedOrErrors": 1, "preliminarySkipped": 0 }
+    },
+    {
+      "file": "live-thrash.jsonl",
+      "meta": "live-thrash.meta.json",
+      "kind": "live-harness-captured",
+      "origin": "live streamText loop (T15), three scripted rounds re-reading notes/{a,b,c}.md in order (9 reads) — sustained re-fetch pressure, pre-eviction thrash shape",
+      "events": 22,
+      "turns": 6,
+      "pages": 3,
+      "faults": 3,
+      "toolCalls": { "calls": 9, "results": 9, "deniedOrErrors": 0, "preliminarySkipped": 0 }
+    }
+  ],
+  "limitations": [
+    "v0 tracer has no eviction path (declared ⇒ resident): the live thrash drop exercises sustained re-fetch pressure (3 files × 3 rounds → one tool_recall fault per page·source) but cannot exhibit page.evict or second-slot paging. The synthetic P-pathology vector in corpus/m1 remains the eviction-shape reference.",
+    "Faults are deduped per page·source by the tracer, so kinds of repeats: round 2's re-reads trip all three tool_recall faults; round 3's repeats are lawful repeat pressure carried by call.meta per-turn hit/miss estimates instead of new fault rows (same law the M2 drop documented).",
+    "The T15 adapter is trace-only mirror mode (m7 rulings): no UC1/UC2 port, no control path (assistant text is never rewritten; transformParams returns params unchanged; the tap yields every fullStream part untouched).",
+    "Design risk 1 counts witness: middlewareRenders == tapStepEnds on both traces (10/10 and 6/6); mirrorCountsAgree=true in both sidecars. A divergence would taint the sidecar, never mis-score.",
+    "budgetTokens=120000 is the T15 fixture convention (the T9/m2 crew used 200000); it is declared headroom bookkeeping, not the provider's measured context window.",
+    "Free-tier model behaviour varies; beats were induced by explicit step-by-step prompts, captured in one run each (no retries). The recorded traces carry the model's hidden reasoning only as pass-through fullStream parts (thinking disabled per-beat; providers reasoning channels are never paged)."
+  ]
+}

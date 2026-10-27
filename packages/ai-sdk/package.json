@@ -13,6 +13,7 @@
     "gen": "node test/gen-fixture.ts"
   },
   "devDependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.79",
     "ai": "7.0.154"
   }
 }

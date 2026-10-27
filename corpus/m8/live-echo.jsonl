@@ -1,0 +1,31 @@
+{"type":"session.open","agentId":"ctxvm-ai-sdk","model":"nvidia/nemotron-3.5-super-vl-120b-a12b","provider":"nvidia","budgetTokens":120000,"tokenizerId":"apx4-char"}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:read({\"path\":\"notes/alpha.md\"})","contentHash":"sha256:a29a22e3"},"kind":"tool_result","tokens":33}}
+{"type":"page.render","turn":1,"page":{"logicalRef":"tool:read({\"path\":\"notes/alpha.md\"})","contentHash":"sha256:a29a22e3"},"mode":"full"}
+{"type":"page.fault","turn":1,"page":{"logicalRef":"tool:read({\"path\":\"notes/alpha.md\"})","contentHash":"sha256:a29a22e3"},"source":"identifier_scan"}
+{"type":"page.fault","turn":2,"page":{"logicalRef":"tool:read({\"path\":\"notes/alpha.md\"})","contentHash":"sha256:a29a22e3"},"source":"tool_recall"}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:edit({\"line\":\"alpha: edited during corpus m8 capture.\",\"path\":\"notes/alpha.md\"})","contentHash":"sha256:7c9e37b7"},"kind":"tool_result","tokens":13}}
+{"type":"page.render","turn":5,"page":{"logicalRef":"tool:edit({\"line\":\"alpha: edited during corpus m8 capture.\",\"path\":\"notes/alpha.md\"})","contentHash":"sha256:7c9e37b7"},"mode":"full"}
+{"type":"page.fault","turn":5,"page":{"logicalRef":"tool:edit({\"line\":\"alpha: edited during corpus m8 capture.\",\"path\":\"notes/alpha.md\"})","contentHash":"sha256:7c9e37b7"},"source":"identifier_scan"}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:read({\"path\":\"notes/beta.md\"})","contentHash":"sha256:f1faba71"},"kind":"tool_result","tokens":35}}
+{"type":"page.render","turn":7,"page":{"logicalRef":"tool:read({\"path\":\"notes/beta.md\"})","contentHash":"sha256:f1faba71"},"mode":"full"}
+{"type":"page.fault","turn":7,"page":{"logicalRef":"tool:read({\"path\":\"notes/beta.md\"})","contentHash":"sha256:f1faba71"},"source":"identifier_scan"}
+{"type":"turn.render","turn":0,"residentTokens":81,"evictedTokens":0,"headroom":119919}
+{"type":"turn.render","turn":1,"residentTokens":81,"evictedTokens":0,"headroom":119919}
+{"type":"turn.render","turn":2,"residentTokens":81,"evictedTokens":0,"headroom":119919}
+{"type":"turn.render","turn":3,"residentTokens":81,"evictedTokens":0,"headroom":119919}
+{"type":"turn.render","turn":4,"residentTokens":81,"evictedTokens":0,"headroom":119919}
+{"type":"turn.render","turn":5,"residentTokens":81,"evictedTokens":0,"headroom":119919}
+{"type":"turn.render","turn":6,"residentTokens":81,"evictedTokens":0,"headroom":119919}
+{"type":"turn.render","turn":7,"residentTokens":81,"evictedTokens":0,"headroom":119919}
+{"type":"turn.render","turn":8,"residentTokens":81,"evictedTokens":0,"headroom":119919}
+{"type":"turn.render","turn":9,"residentTokens":81,"evictedTokens":0,"headroom":119919}
+{"type":"call.meta","turn":0,"provider":"nvidia","cacheEstimate":{"estHitTokens":0,"estMissTokens":0,"providerReported":false}}
+{"type":"call.meta","turn":1,"provider":"nvidia","cacheEstimate":{"estHitTokens":0,"estMissTokens":33,"providerReported":false}}
+{"type":"call.meta","turn":2,"provider":"nvidia","cacheEstimate":{"estHitTokens":33,"estMissTokens":0,"providerReported":false}}
+{"type":"call.meta","turn":3,"provider":"nvidia","cacheEstimate":{"estHitTokens":33,"estMissTokens":0,"providerReported":false}}
+{"type":"call.meta","turn":4,"provider":"nvidia","cacheEstimate":{"estHitTokens":33,"estMissTokens":0,"providerReported":false}}
+{"type":"call.meta","turn":5,"provider":"nvidia","cacheEstimate":{"estHitTokens":33,"estMissTokens":13,"providerReported":false}}
+{"type":"call.meta","turn":6,"provider":"nvidia","cacheEstimate":{"estHitTokens":46,"estMissTokens":0,"providerReported":false}}
+{"type":"call.meta","turn":7,"provider":"nvidia","cacheEstimate":{"estHitTokens":46,"estMissTokens":35,"providerReported":false}}
+{"type":"call.meta","turn":8,"provider":"nvidia","cacheEstimate":{"estHitTokens":81,"estMissTokens":0,"providerReported":false}}
+{"type":"call.meta","turn":9,"provider":"nvidia","cacheEstimate":{"estHitTokens":81,"estMissTokens":0,"providerReported":false}}
