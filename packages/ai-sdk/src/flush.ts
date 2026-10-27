@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import type { FinishedTrace } from "../../node/src/index.ts";
 import type { TurnAgreement } from "./contract.ts";
 import type { TapStats } from "./tap.ts";
+import type { ResumeEvidence } from "./uc1-handoff.ts";
 
 /** Version of the pinned `ai` SDK, resolved best-effort at flush time. */
 function aiVersion(): string | null {
@@ -42,6 +43,10 @@ export interface FlushInput {
     provider: string;
     budgetTokens: number;
   };
+  /** T22 UC1: whole-resumeVerify evidence dict when the capture was booted
+   * with `resumeFrom` (09-plugin-parity §3 — the WHOLE dict flows through as
+   * a nested opt-in field; the canon top-level sidecar keys are untouched). */
+  resumeFrom?: ResumeEvidence;
 }
 
 export function writeCapture(input: FlushInput): { jsonlPath: string; metaPath: string } {
@@ -69,6 +74,7 @@ export function writeCapture(input: FlushInput): { jsonlPath: string; metaPath: 
     },
     mirrorCountsAgree: input.counts.agree(),
     traceStats: input.trace.stats,
+    ...(input.resumeFrom ? { resumeFrom: input.resumeFrom } : {}),
   };
   writeFileSync(metaPath, `${JSON.stringify(meta, null, 2)}\n`);
   return { jsonlPath, metaPath };
