@@ -287,6 +287,30 @@ class PluginTests(unittest.TestCase):
         self.assertEqual(len(declares), 1)
         self.assertIn("read_file" if False else "read", declares[0]["page"]["id"]["logicalRef"])
 
+    def test_tool_none_maps_to_tool_name(self):
+        """Gateway payload with tool:null + tool_name set must still declare a page.
+
+        The hook-key mapping falls back from tool to tool_name; tool=None (key
+        present, value null) is falsy and must not leak into the ref as
+        tool:None(...).
+        """
+        plugin = create_ctxvm_plugin(INIT)
+        plugin.on_session_start({"session_id": "ses_tn"})
+        plugin.on_pre_tool_call({
+            "session_id": "ses_tn", "tool": None, "tool_name": "read",
+            "args": {"path": "notes/alpha.md"},
+        })
+        plugin.on_post_tool_call({
+            "session_id": "ses_tn", "tool": None, "tool_name": "read",
+            "args": {"path": "notes/alpha.md"},
+            "status": "ok",
+            "result": "hello world",
+        })
+        record = plugin.finish_all()[0]
+        declares = [e for e in record["trace"].events if e["type"] == "page.declare"]
+        self.assertEqual(len(declares), 1)
+        self.assertIn("read", declares[0]["page"]["id"]["logicalRef"])
+
     def test_finish_all_returns_trace_with_jsonl_and_stats(self):
         record = self._run_once()
         self.assertIn("sessionID", record)

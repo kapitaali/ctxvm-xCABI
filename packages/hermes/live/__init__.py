@@ -767,6 +767,50 @@ def register(ctx) -> None:
             out += f"\n{stop_out}"
         return out
 
+    def _handle_resume_cmd(raw_args: str) -> str:
+        """Handle /ctxvm-resume <snapshot-dir>.
+
+        Verified-boot resume: verify a paused snapshot (checksums byte-level,
+        manifest sliceTurn cross-check, replay counterproof, law-aware diff
+        relation, projection surfacing) and print a brief result.
+        Never blocks the agent loop: any failure returns verified=False with a
+        loud reason.
+        """
+        argv = raw_args.strip().split()
+        if not argv:
+            return (
+                "Usage: /ctxvm-resume <snapshot-dir>\n"
+                "  <snapshot-dir> — directory of a paused handoff snapshot\n"
+                "  (contains trace-N.jsonl.zst, checksums.sha256, manifest.yaml)\n"
+            )
+        snapshot_dir = argv[0]
+        ucs = _state().get("ucs", {})
+        uc1 = ucs.get("uc1-handoff")
+        if uc1 is None:
+            return ("ctxvm-resume: UC1 module not available "
+                    "(is CTXVM_FEATURES=handoff set?)")
+        result = uc1.resume(snapshot_dir)
+        if not isinstance(result, dict):
+            return f"ctxvm-resume: {result}"
+        verified = result.get("verified", False)
+        reason = result.get("reason", "")
+        ev = result.get("evidence", {})
+        digest = ev.get("snapshotDigest", "")
+        proj = ev.get("projection")
+        diff = ev.get("diff")
+        lines = [
+            f"ctxvm-resume: exit_code={result.get('exit_code')} "
+            f"verified={verified}",
+            f"  reason: {reason}",
+        ]
+        if digest:
+            lines.append(f"  snapshotDigest: {digest}")
+        if proj:
+            lines.append(f"  projection: {proj.get('slots')} slot(s) at turn {proj.get('turn')}")
+        if diff:
+            lines.append(f"  diff: source={diff.get('source')} relation={diff.get('relation')}")
+        return "\n".join(lines)
+
     # Register hooks (always; tracing gated lazily inside each handler)
     ctx.register_hook("on_session_start", on_session_start)
     ctx.register_hook("pre_tool_call", on_pre_tool_call)
@@ -795,6 +839,14 @@ def register(ctx) -> None:
             "ctxvm-handoff",
             _handle_handoff_cmd,
             description="UC1 pause: flush → era snapshot → export package (handoff snapshot).",
+        )
+
+    # Register slash command for UC1 verified-boot resume: verify snapshot, print brief result
+    if HANDOFF_FEATURE in _features():
+        ctx.register_command(
+            "ctxvm-resume",
+            _handle_resume_cmd,
+            description="UC1 resume: verified-boot a paused snapshot, print brief result.",
         )
 
     # Register cleanup on plugin unload

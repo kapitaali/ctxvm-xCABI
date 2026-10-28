@@ -297,6 +297,7 @@ class UC1DispatcherTests(unittest.TestCase):
         class FakeCtx:
             def __init__(self):
                 self.calls = calls
+                self.handlers = {}
 
             def register_hook(self, name, cb):
                 self.calls.append(("hook", name))
@@ -308,7 +309,7 @@ class UC1DispatcherTests(unittest.TestCase):
 
             def register_command(self, name, handler, description=""):
                 self.calls.append(("command", name))
-                self.handler = handler
+                self.handlers[name] = handler
                 return None
 
         return FakeCtx(), calls
@@ -319,7 +320,7 @@ class UC1DispatcherTests(unittest.TestCase):
         ctx, calls = self._make_ctx()
         live.register(ctx)
         self.assertIn(("command", "ctxvm-handoff"), calls)
-        self.assertIsNotNone(ctx.handler)
+        self.assertIsNotNone(ctx.handlers["ctxvm-handoff"])
 
     def test_handoff_command_not_registered_without_feature(self):
         """Without CTXVM_FEATURES=handoff, no ctxvm-handoff command."""
@@ -332,7 +333,7 @@ class UC1DispatcherTests(unittest.TestCase):
         os.environ["CTXVM_FEATURES"] = "handoff"
         ctx, calls = self._make_ctx()
         live.register(ctx)
-        out = ctx.handler("")
+        out = ctx.handlers["ctxvm-handoff"]("")
         self.assertIn("Usage:", out)
         self.assertIn("ctxvm-handoff", out)
         del os.environ["CTXVM_FEATURES"]
@@ -377,10 +378,35 @@ class UC1DispatcherTests(unittest.TestCase):
         live._state()["ucs"]["uc1-handoff"] = mock_uc1
 
         td = tempfile.mkdtemp()
-        out = ctx.handler(f"{td} 3")
+        out = ctx.handlers["ctxvm-handoff"](f"{td} 3")
         self.assertEqual(len(mock_uc1.pause_calls), 1)
         self.assertEqual(mock_uc1.pause_calls[0]["handoff_name"], "session-a")
         del os.environ["CTXVM_TRACE_NAME"]
+        del os.environ["CTXVM_FEATURES"]
+
+    def test_resume_command_registered_with_feature(self):
+        """With CTXVM_FEATURES=handoff, /ctxvm-resume command is registered."""
+        os.environ["CTXVM_FEATURES"] = "handoff"
+        ctx, calls = self._make_ctx()
+        live.register(ctx)
+        self.assertIn(("command", "ctxvm-resume"), calls)
+        self.assertIsNotNone(ctx.handlers["ctxvm-resume"])
+        del os.environ["CTXVM_FEATURES"]
+
+    def test_resume_command_not_registered_without_feature(self):
+        """Without CTXVM_FEATURES=handoff, no ctxvm-resume command."""
+        ctx, calls = self._make_ctx()
+        live.register(ctx)
+        self.assertNotIn(("command", "ctxvm-resume"), calls)
+
+    def test_resume_usage_output(self):
+        """resume command with no args returns usage."""
+        os.environ["CTXVM_FEATURES"] = "handoff"
+        ctx, calls = self._make_ctx()
+        live.register(ctx)
+        out = ctx.handlers["ctxvm-resume"]("")
+        self.assertIn("Usage:", out)
+        self.assertIn("ctxvm-resume", out)
         del os.environ["CTXVM_FEATURES"]
 
 

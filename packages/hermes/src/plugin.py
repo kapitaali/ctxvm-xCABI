@@ -168,8 +168,8 @@ class Tracer:
         content = input["content"]
         content_str = content if isinstance(content, str) else canonical_json(content)
         hash_val = content_hash(content_str)
-        ref = input.get("ref") or tool_ref(input.get("server"), input.get("tool", "unknown"),
-                                            input.get("args", None))
+        ref = input.get("ref") or tool_ref(input.get("server"), input.get("tool") or "unknown",
+                                        input.get("args", None))
         tokens = input.get("tokens") or approx4(content_str)
         kind = input.get("kind") or ("image_ref" if isinstance(content, str)
                                      and content_str.startswith("http") else "tool_result")
@@ -217,8 +217,8 @@ class Tracer:
 
     def recall(self, input: Dict[str, Any]) -> None:
         """Mark a pre-execution re-call (tool.execute.before)."""
-        ref = input.get("ref") or tool_ref(input.get("server"), input.get("tool", "unknown"),
-                                           input.get("args", None))
+        ref = input.get("ref") or tool_ref(input.get("server"), input.get("tool") or "unknown",
+                                        input.get("args", None))
         if ref in self._declared:
             self._pending_recall.add(ref)
 
