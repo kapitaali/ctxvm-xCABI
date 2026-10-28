@@ -256,7 +256,12 @@ lane's +4 tests were already in-tree when the landing gate ran — LOG T24 +
 hermes row push tails, §5 tail; it rides THIS push together with this board
 refresh; its echo run is witnessed post-push and deliberately unrecorded, the
 T22/T23 pattern). **Board EMPTY** — remaining frontier: the per-harness
-`handoff-inject` beat for hermes/opencode (parked, v-next) and a third-host
+`handoff-inject` beat — **opencode half now PROPOSED as T25**
+(`reports/T25-PROPOSAL-20261028.md`: the pinned `session.context` contract
+documents **mutable `messages`**, so the design's UNVERIFIED mutation-reach
+question is resolved at pin time; §7 rulings pending, incl. the cross-lane
+clearance for `packages/opencode/**`); hermes half stays verify-only (their
+`/ctxvm-resume` UX is the design's lawful fallback); and a third-host
 live pause/resume pair (B4 shape — parked: requires the operator to stash the
 NEW NVIDIA key locally; the old stash is shredded, its replacement never
 transited this chat, RR-T22 §disclosed). Current counts `ts 13 + 51 + 45` /
