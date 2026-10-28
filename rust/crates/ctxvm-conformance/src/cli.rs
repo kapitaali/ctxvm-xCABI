@@ -803,7 +803,22 @@ fn llms_txt(
 /// `ctxvm export` — everything after argument parsing (also used by ctxvm-py).
 /// Writes the artifact tree itself; the report is the stdout payload and
 /// warning lines ride `warnings` (the CLI prints them after the report).
-pub fn export_core(trace: &str, turn: Option<u64>, output: Option<&str>, odps: bool) -> CliOutcome {
+///
+/// T23 dir-hygiene law: a target dir already holding artifacts of a DIFFERENT
+/// slice (turn-named artifacts whose numeric turn differs from this run's
+/// effective turn, or a manifest.yaml whose `sliceTurn` differs) blocks the
+/// export with exit 2 — re-exporting would overwrite the shared `--odps` trio
+/// (manifest.yaml / llms.txt / checksums.sha256 carry no turn) and orphan the
+/// older slice's checksum coverage (the m7 clobber wart). `--force` proceeds
+/// with a warning per foreign artifact and a `dirHygiene` report field.
+/// Same-turn re-exports (the m6/m7 restore pattern) stay a clean pass.
+pub fn export_core(
+    trace: &str,
+    turn: Option<u64>,
+    output: Option<&str>,
+    odps: bool,
+    force: bool,
+) -> CliOutcome {
     let out_dir = match output {
         None => {
             return CliOutcome::fail(2, "missing --output DIR (refusing to write into the working directory)")
@@ -843,11 +858,34 @@ pub fn export_core(trace: &str, turn: Option<u64>, output: Option<&str>, odps: b
     let snapshot = build_handoff_snapshot(&source, turn);
     let slice = handoff_prefix(&source, turn);
 
+    let mut warnings: Vec<String> = Vec::new();
+
+    // T23 dir-hygiene guard (the m7 per-turn export clobber wart): detect
+    // foreign-slice artifacts BEFORE any write — a blocked run leaves the
+    // target dir byte-untouched.
+    let foreign = foreign_slice_artifacts(out_dir, turn);
+    let mut dir_hygiene: Option<serde_json::Value> = None;
+    if !foreign.is_empty() {
+        if !force {
+            return CliOutcome::fail(
+                2,
+                format!(
+                    "target dir `{out_dir}` holds foreign slice artifacts ({}); re-export at turn {turn} would overwrite the shared manifest/llms/checksums and orphan those slices — use --force to proceed",
+                    foreign.join(", ")
+                ),
+            );
+        }
+        for name in &foreign {
+            warnings.push(format!(
+                "dir hygiene forced: foreign slice artifact `{name}` remains — its checksum coverage was last written by its own export run"
+            ));
+        }
+        dir_hygiene = Some(json!({ "status": "forced", "foreign": foreign }));
+    }
+
     if let Err(e) = fs::create_dir_all(out_dir) {
         return CliOutcome::fail(2, format!("cannot create output directory `{out_dir}`: {e}"));
     }
-
-    let mut warnings: Vec<String> = Vec::new();
 
     // Trace slice — verbatim source lines when they align with the decoded
     // events (byte-faithful handoff); canonical re-encoding as fallback.
@@ -1002,7 +1040,7 @@ pub fn export_core(trace: &str, turn: Option<u64>, output: Option<&str>, odps: b
     }
 
     // Report (stdout).
-    let report = json!({
+    let mut report = json!({
         "command": "export",
         "trace": trace,
         "turn": turn,
@@ -1018,6 +1056,9 @@ pub fn export_core(trace: &str, turn: Option<u64>, output: Option<&str>, odps: b
         "snapshot": snapshot,
         "warnings": warnings.clone(),
     });
+    if let Some(hygiene) = &dir_hygiene {
+        report["dirHygiene"] = hygiene.clone();
+    }
     let pretty = serde_json::to_string_pretty(&report).expect("report is serializable");
     let mut body = pretty;
     body.push('\n');
@@ -1026,6 +1067,216 @@ pub fn export_core(trace: &str, turn: Option<u64>, output: Option<&str>, odps: b
     outcome.stdout = body;
     outcome.warnings = warnings;
     outcome
+}
+
+/// T23 dir-hygiene scan: turn-named artifacts in `out_dir` whose numeric turn
+/// differs from `turn` (`trace-N.jsonl[.zst]`, `page-table-N.json`), plus a
+/// `manifest.yaml` whose `sliceTurn` differs (light parse of the
+/// module-generated manifest — trimmed `sliceTurn:` prefix, integer value;
+/// absent/unparseable → not foreign). Bare names, sorted; empty when the dir
+/// is missing or unreadable. The `--odps` shared trio is exactly what this
+/// exists to protect: re-exporting at another turn rewrites it and orphans
+/// the older slice's checksum coverage (the m7 clobber wart).
+fn foreign_slice_artifacts(out_dir: &str, turn: u64) -> Vec<String> {
+    let mut names: Vec<String> = match fs::read_dir(out_dir) {
+        Ok(entries) => entries
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().to_string())
+            .collect(),
+        Err(_) => return Vec::new(),
+    };
+    names.sort();
+    names.dedup();
+    let mut foreign = Vec::new();
+    for name in names {
+        let foreign_turn = if let Some(stem) = name
+            .strip_suffix(".jsonl.zst")
+            .or_else(|| name.strip_suffix(".jsonl"))
+            .and_then(|stem| stem.strip_prefix("trace-"))
+        {
+            stem.parse::<u64>().ok()
+        } else if let Some(stem) = name
+            .strip_suffix(".json")
+            .and_then(|stem| stem.strip_prefix("page-table-"))
+        {
+            stem.parse::<u64>().ok()
+        } else if name == "manifest.yaml" {
+            fs::read_to_string(format!("{out_dir}/{name}"))
+                .ok()
+                .and_then(|text| {
+                    text.lines().find_map(|line| {
+                        line.trim()
+                            .strip_prefix("sliceTurn:")
+                            .map(|value| value.trim().parse::<u64>().ok())
+                    })
+                })
+                .flatten()
+        } else {
+            None
+        };
+        if foreign_turn.is_some_and(|t| t != turn) {
+            foreign.push(name);
+        }
+    }
+    foreign
+}
+
+#[cfg(test)]
+mod export_dir_hygiene_tests {
+    //! T23 — the dir-hygiene guard at the `export_core` boundary (the m7
+    //! per-turn export clobber wart): foreign-slice artifacts block unless
+    //! `--force`; same-turn re-exports (the m6/m7 restore pattern) stay a
+    //! clean pass; a blocked run leaves the target dir byte-untouched.
+
+    use super::export_core;
+    use serde_json::Value;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    const CLEAN: &str = include_str!("../vectors/session-clean.jsonl");
+
+    fn scratch(label: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .subsec_nanos();
+        let dir = std::env::temp_dir().join(format!("ctxvm-t23-{label}-{nanos}"));
+        fs::create_dir_all(&dir).expect("scratch dir created");
+        dir
+    }
+
+    fn write_trace(dir: &PathBuf) -> PathBuf {
+        let trace = dir.join("session-clean.jsonl");
+        fs::write(&trace, CLEAN).expect("trace written");
+        trace
+    }
+
+    fn dir_snapshot(dir: &PathBuf) -> Vec<(String, u64)> {
+        let mut snapshot: Vec<(String, u64)> = fs::read_dir(dir)
+            .unwrap()
+            .map(|entry| {
+                let entry = entry.unwrap();
+                let len = entry.metadata().unwrap().len();
+                (entry.file_name().to_string_lossy().to_string(), len)
+            })
+            .collect();
+        snapshot.sort();
+        snapshot
+    }
+
+    #[test]
+    fn foreign_slice_blocks_export_and_leaves_dir_untouched() {
+        let tmp = scratch("block");
+        let trace = write_trace(&tmp);
+        let out = tmp.join("handoff");
+        let first = export_core(trace.to_str().unwrap(), Some(1), Some(out.to_str().unwrap()), true, false);
+        assert_eq!(first.exit, 0, "{}", first.fatal.clone().unwrap_or_default());
+        let before = dir_snapshot(&out);
+        assert!(before.iter().any(|(n, _)| n == "trace-1.jsonl.zst"), "{before:?}");
+
+        let second = export_core(trace.to_str().unwrap(), Some(3), Some(out.to_str().unwrap()), true, false);
+        assert_eq!(second.exit, 2);
+        let fatal = second.fatal.as_deref().expect("fatal reason present");
+        assert!(fatal.contains("holds foreign slice artifacts"), "{fatal}");
+        assert!(fatal.contains("--force to proceed"), "{fatal}");
+        // the block NAMES the foreign artifacts (the older slice's zst, its
+        // page-table, and the manifest whose sliceTurn is 1)
+        assert!(fatal.contains("trace-1.jsonl.zst"), "{fatal}");
+        assert!(fatal.contains("page-table-1.json"), "{fatal}");
+        assert!(fatal.contains("manifest.yaml"), "{fatal}");
+        // NOTHING was written: the dir is byte-untouched, no report printed.
+        assert_eq!(dir_snapshot(&out), before);
+        assert!(second.stdout.is_empty(), "blocked runs print no report");
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    #[test]
+    fn foreign_slice_forced_export_reports_hygiene() {
+        let tmp = scratch("forced");
+        let trace = write_trace(&tmp);
+        let out = tmp.join("handoff");
+        assert_eq!(export_core(trace.to_str().unwrap(), Some(1), Some(out.to_str().unwrap()), true, false).exit, 0);
+        let forced = export_core(trace.to_str().unwrap(), Some(3), Some(out.to_str().unwrap()), true, true);
+        assert_eq!(forced.exit, 0, "{}", forced.fatal.clone().unwrap_or_default());
+        assert_eq!(forced.warnings.len(), 3, "{forced:?}");
+        assert!(forced.warnings.iter().all(|w| w.contains("dir hygiene forced")), "{forced:?}");
+        let report: Value = serde_json::from_str(&forced.stdout).unwrap();
+        let hygiene = report.get("dirHygiene").expect("dirHygiene present when forced");
+        assert_eq!(hygiene["status"], "forced");
+        assert_eq!(hygiene["foreign"].as_array().map(|a| a.len()), Some(3));
+        // forced does NOT delete the older slice — both coexist...
+        assert!(out.join("trace-1.jsonl.zst").exists());
+        assert!(out.join("trace-3.jsonl.zst").exists());
+        // ...while the trio now describes the NEW slice only (the disclosed
+        // consequence: the old slice's checksum coverage is gone; the
+        // resume-side sliceTurn cross-check fail-closes such dirs).
+        let manifest = fs::read_to_string(out.join("manifest.yaml")).unwrap();
+        assert!(manifest.contains("sliceTurn: 3"), "{manifest}");
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    #[test]
+    fn same_turn_reexport_is_a_clean_pass() {
+        let tmp = scratch("sameturn");
+        let trace = write_trace(&tmp);
+        let out = tmp.join("handoff");
+        let first = export_core(trace.to_str().unwrap(), Some(2), Some(out.to_str().unwrap()), true, false);
+        assert_eq!(first.exit, 0, "{}", first.fatal.clone().unwrap_or_default());
+        let again = export_core(trace.to_str().unwrap(), Some(2), Some(out.to_str().unwrap()), true, false);
+        assert_eq!(again.exit, 0, "{}", again.fatal.clone().unwrap_or_default());
+        assert!(again.warnings.is_empty(), "same-turn re-export must not warn: {again:?}");
+        let report: Value = serde_json::from_str(&again.stdout).unwrap();
+        assert!(report.get("dirHygiene").is_none(), "no dirHygiene on clean passes");
+        // the m6/m7 restore pattern stays byte-stable (T21 2-run determinism)
+        assert_eq!(first.stdout, again.stdout, "double-run byte identity");
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    #[test]
+    fn foreign_raw_trace_blocks() {
+        let tmp = scratch("rawforeign");
+        let trace = write_trace(&tmp);
+        let out = tmp.join("out");
+        fs::create_dir_all(&out).unwrap();
+        fs::write(out.join("trace-3.jsonl"), "a foreign raw slice from another turn\n").unwrap();
+        let blocked = export_core(trace.to_str().unwrap(), Some(1), Some(out.to_str().unwrap()), false, false);
+        assert_eq!(blocked.exit, 2);
+        assert!(blocked.fatal.as_deref().unwrap().contains("trace-3.jsonl"), "{blocked:?}");
+        // the raw lane keeps its own turn-named artifact intact
+        assert_eq!(fs::read_to_string(out.join("trace-3.jsonl")).unwrap(), "a foreign raw slice from another turn\n");
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    #[test]
+    fn foreign_manifest_sliceturn_blocks() {
+        let tmp = scratch("manifest");
+        let trace = write_trace(&tmp);
+        let out = tmp.join("out");
+        fs::create_dir_all(&out).unwrap();
+        fs::write(out.join("manifest.yaml"), "# stub manifest\nproduct:\n  metadata:\n    sliceTurn: 7\n").unwrap();
+        let blocked = export_core(trace.to_str().unwrap(), Some(1), Some(out.to_str().unwrap()), false, false);
+        assert_eq!(blocked.exit, 2);
+        assert!(blocked.fatal.as_deref().unwrap().contains("manifest.yaml"), "{blocked:?}");
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    #[test]
+    fn zero_padded_turn_names_compare_numerically() {
+        let tmp = scratch("zeropad");
+        let trace = write_trace(&tmp);
+        let out = tmp.join("out");
+        fs::create_dir_all(&out).unwrap();
+        // `trace-02.jsonl` is turn 2 — the SAME slice when re-exporting at
+        // turn 2, so no block (numeric compare, not string compare).
+        fs::write(out.join("trace-02.jsonl"), "foreign in name, same in number\n").unwrap();
+        let pass = export_core(trace.to_str().unwrap(), Some(2), Some(out.to_str().unwrap()), false, false);
+        assert_eq!(pass.exit, 0, "{}", pass.fatal.clone().unwrap_or_default());
+        assert!(pass.warnings.is_empty(), "{pass:?}");
+        let report: Value = serde_json::from_str(&pass.stdout).unwrap();
+        assert!(report.get("dirHygiene").is_none());
+        fs::remove_dir_all(&tmp).unwrap();
+    }
 }
 
 // ---------------------------------------------------------------------------

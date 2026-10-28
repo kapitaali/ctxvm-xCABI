@@ -19,7 +19,9 @@
 //!
 //! Exit:   0 = snapshot written (DQ failures do NOT change the exit — the
 //!         manifest carries verification; warnings go to stderr) ·
-//!         2 = usage/IO/parse error
+//!         2 = usage/IO/parse error, or a blocked dir-hygiene collision
+//!         (T23: foreign-slice artifacts in the target dir; `--force` to
+//!         proceed)
 //! Output: JSON report on stdout; artifacts under --output DIR. `--odps`
 //! shells out to `zstd`/`sha256sum` when present and degrades with warnings.
 //!
@@ -32,7 +34,7 @@ use std::{env, process::ExitCode};
 
 use ctxvm_conformance::cli;
 
-const USAGE: &str = "usage: export <trace.jsonl> [--turn N] [--output DIR] [--odps]";
+const USAGE: &str = "usage: export <trace.jsonl> [--turn N] [--output DIR] [--odps] [--force]";
 
 fn fail(code: u8, message: &str) -> ExitCode {
     eprintln!("ctxvm export: {message}");
@@ -46,6 +48,10 @@ fn help() -> ExitCode {
          --odps             full package: manifest.yaml (ODPS 4.1-flavored, DQ checks,\n\
          KPIs), llms.txt, checksums.sha256, and a zstd-compressed trace\n\
          (`zstd`/`sha256sum` binaries required; falls back with a warning)\n\
+         --force            proceed past a dir-hygiene block (T23: the target\n\
+         dir holds foreign-slice artifacts — different-turn traces or a\n\
+         manifest whose sliceTurn differs; forced runs warn per artifact and\n\
+         carry dirHygiene in the report)\n\
          --help | -h        this usage\n\n\
          Exit: 0 snapshot written (DQ failures are warnings — the manifest\n\
          carries verification) · 2 usage/IO/parse error. Slice rule: events up\n\
@@ -60,11 +66,13 @@ struct Args {
     turn: Option<u64>,
     output: Option<String>,
     odps: bool,
+    force: bool,
 }
 
 fn parse_args() -> Result<Args, String> {
     let mut argv = env::args().skip(1);
-    let (mut trace, mut turn, mut output, mut odps, mut help) = (None, None, None, false, false);
+    let (mut trace, mut turn, mut output, mut odps, mut force, mut help) =
+        (None, None, None, false, false, false);
     while let Some(arg) = argv.next() {
         macro_rules! value_of {
             ($name:literal) => {
@@ -77,6 +85,7 @@ fn parse_args() -> Result<Args, String> {
         match arg.as_str() {
             "--help" | "-h" => help = true,
             "--odps" => odps = true,
+            "--force" => force = true,
             "--turn" => {
                 let v = value_of!("--turn");
                 turn = match v.parse() {
@@ -98,6 +107,7 @@ fn parse_args() -> Result<Args, String> {
                         };
                     }
                     ("--output", Some(v)) if !v.is_empty() => output = Some(v),
+                    ("--force", None) => force = true,
                     _ => return Err(format!("unknown flag `{name}` (try --help)")),
                 }
             }
@@ -113,7 +123,7 @@ fn parse_args() -> Result<Args, String> {
     if output.is_none() {
         return Err("missing --output DIR (refusing to write into the working directory)".into());
     }
-    Ok(Args { trace, turn, output, odps })
+    Ok(Args { trace, turn, output, odps, force })
 }
 
 fn main() -> ExitCode {
@@ -127,6 +137,7 @@ fn main() -> ExitCode {
         args.turn,
         args.output.as_deref(),
         args.odps,
+        args.force,
     );
     print!("{}", outcome.stdout);
     let stderr = outcome.stderr_text("export");

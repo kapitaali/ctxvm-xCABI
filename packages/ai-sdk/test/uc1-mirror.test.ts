@@ -156,6 +156,43 @@ test("T22 pauseAll flush-first law: flushed name paused, era pair identical, ver
   }
 });
 
+test("T23 dir-hygiene ride-along: pauseAll at a SECOND turn hits the export guard — exit 2 witnessed, package dir untouched (the m7 clobber wart made loud)", async () => {
+  const tmp = freshTmp("dirhygiene");
+  try {
+    const capture = armCapture(tmp, "base-x");
+    const groups = stepGroups();
+    await replayGroups(capture, groups.slice(0, 2)); // turns 1–2
+    const first = capture.pauseAll({ turn: 2 });
+    assert.equal(first.exit_code, 0, first.stderr);
+    assert.equal(first.verified, true);
+    const snapshotDir = join(tmp, "handoff");
+    const before = readdirSync(snapshotDir).sort();
+
+    // A second pause at a DIFFERENT turn targets the same snapshot dir, which
+    // now holds turn-2 artifacts: the export dir-hygiene guard BLOCKS it (the
+    // T23 engine law), the pause result carries the exit-2 shape, and the
+    // capture never breaks.
+    const second = capture.pauseAll({ turn: 3 });
+    assert.equal(second.exit_code, 2, second.stderr);
+    // Mirror law (reference pause): `verified` = "the replay counterproof
+    // passed" — a blocked export produces NO package, so the counterproof
+    // never runs and the flag keeps its default. The guard's loud signal is
+    // the exit code + stderr reason, not a verified flip.
+    assert.equal(second.verified, true);
+    assert.deepEqual(second.divergences, []);
+    assert.equal(second.diff_relation, null);
+    assert.match(second.stderr, /holds foreign slice artifacts/);
+    assert.match(second.stderr, /--force to proceed/);
+    assert.match(second.stderr, /trace-2\.jsonl\.zst/);
+    // the blocked export wrote NOTHING: the package dir is byte-untouched
+    assert.deepEqual(readdirSync(snapshotDir).sort(), before);
+  } finally {
+    delete process.env.CTXVM_TRACE_DIR;
+    delete process.env.CTXVM_TRACE_NAME;
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("T22 pauseAll name law: arg > flush base, never 'handoff' (m7 run-1 anti-recurrence)", async () => {
   const tmp = freshTmp("namelaw");
   try {
