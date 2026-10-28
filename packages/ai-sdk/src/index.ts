@@ -32,6 +32,7 @@ import { createTrace, type FinishedTrace, type TraceInit, type Tracer } from "..
 import { TurnAgreement } from "./contract.ts";
 import { witnessLine, writeCapture } from "./flush.ts";
 import { ctxvmMiddleware } from "./middleware.ts";
+import { assembleResumeBrief, type MaterializeFn } from "./resume-brief.ts";
 import { ctxvmTap, newTapStats, type TapHandle, type TapStats } from "./tap.ts";
 import {
   resumeVerify,
@@ -47,6 +48,12 @@ export {
   snapshotDigest,
   uc1Pause,
 } from "./uc1-handoff.ts";
+export { assembleResumeBrief } from "./resume-brief.ts";
+export type {
+  MaterializeFn,
+  ResumeBrief,
+  ResumeSlot,
+} from "./resume-brief.ts";
 export type {
   PauseOptions,
   PauseResult,
@@ -68,6 +75,20 @@ export interface CtxvmCaptureInit extends TraceInit {
    * splice in mirror v0; the evidence, not a splice, is the provenance.
    */
   resumeFrom?: { dir: string };
+  /**
+   * T24 handoff-inject (library lane), ruled injection-as-DATA 2026-10-28:
+   * arm resume-brief assembly from the VERIFIED package (meaningful only
+   * together with `resumeFrom` — the boot law runs first, throw-on-unverified
+   * unchanged). `materialize` is the app-supplied content resolver for FULL
+   * slots — the package is content-blind for renders (`page.render` carries
+   * references, not text; RFC-0), so the library never invents content;
+   * STUBS need no resolver (`page.evict` ships the exact `stubText` the model
+   * was told). The assembled brief is handed over via
+   * `capture.resumeBrief()` — the app prepends it to its own message
+   * history; the middleware stays a byte-mirror in EVERY case (mutating
+   * `params.prompt` is the recorded v-next control shape, not built).
+   */
+  inject?: { materialize?: MaterializeFn };
 }
 
 export interface FinishedCapture {
@@ -101,6 +122,14 @@ export interface CtxvmCapture {
    * -duty reference law, use the raw exported `uc1Pause` instead.
    */
   pauseAll(options?: { turn?: number | null; dir?: string; name?: string }): PauseResult;
+  /**
+   * T24 handoff-inject (injection-as-DATA): the assembled resume brief from
+   * the verified package (armed via `inject`). The app prepends it to its
+   * own message history — the middleware never mutates params (the mirror
+   * law is red-pinned in every case). null when the capture did not boot
+   * from a package with inject armed.
+   */
+  resumeBrief(): string | null;
 }
 
 export function createCtxvmCapture(init: CtxvmCaptureInit): CtxvmCapture {
@@ -116,6 +145,15 @@ export function createCtxvmCapture(init: CtxvmCaptureInit): CtxvmCapture {
       );
     }
     resumeEvidence = rv.evidence;
+  }
+
+  // T24: assemble the resume brief from the VERIFIED package. Structural
+  // package problems throw here (init-time, loud — consistent with the boot
+  // law); resolver results never throw (they degrade to loud markers inside
+  // the brief).
+  let brief: ReturnType<typeof assembleResumeBrief> | null = null;
+  if (resumeEvidence && init.inject && init.resumeFrom) {
+    brief = assembleResumeBrief(init.resumeFrom.dir, init.inject.materialize);
   }
   const traceDir = process.env.CTXVM_TRACE_DIR;
   const armed = Boolean(traceDir);
@@ -146,6 +184,14 @@ export function createCtxvmCapture(init: CtxvmCaptureInit): CtxvmCapture {
     // The witness line is the call-side §3(4) surfacing the reference
     // resume kept (projection likewise flows through the evidence dict).
     witness(`resumeFrom verified digest=${resumeEvidence.snapshotDigest} turn=${resumeEvidence.snapTurn}`);
+  }
+  if (brief) {
+    // T24: the injection-as-DATA arm witness — the brief is handed to the
+    // app, never spliced into any stream.
+    witness(
+      `resumeBrief assembled: slots=${brief.slots} full=${brief.full} stub=${brief.stub}` +
+        ` digest=${resumeEvidence?.snapshotDigest} turn=${brief.turn}`,
+    );
   }
 
   const middleware = ctxvmMiddleware({ vmFor, sessionKey, counts, witness, armed });
@@ -219,5 +265,6 @@ export function createCtxvmCapture(init: CtxvmCaptureInit): CtxvmCapture {
     },
     finishAll: flushAll,
     pauseAll,
+    resumeBrief: () => brief?.text ?? null,
   };
 }

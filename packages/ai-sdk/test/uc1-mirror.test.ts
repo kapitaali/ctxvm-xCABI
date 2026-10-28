@@ -28,6 +28,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { createCtxvmCapture } from "../src/index.ts";
+import { assembleResumeBrief, type ResumeSlot } from "../src/resume-brief.ts";
 import {
   pauseTurnFromEnv,
   resumeVerify,
@@ -118,7 +119,12 @@ async function replayGroups(
   }
 }
 
-function armCapture(tmp: string, name: string, resumeFrom?: { dir: string }) {
+function armCapture(
+  tmp: string,
+  name: string,
+  resumeFrom?: { dir: string },
+  inject?: { materialize?: (slot: ResumeSlot) => string | null },
+) {
   process.env.CTXVM_TRACE_DIR = tmp;
   process.env.CTXVM_TRACE_NAME = name;
   return createCtxvmCapture({
@@ -127,6 +133,7 @@ function armCapture(tmp: string, name: string, resumeFrom?: { dir: string }) {
     provider: "ctxvm-mock",
     budgetTokens: 120000,
     ...(resumeFrom ? { resumeFrom } : {}),
+    ...(inject ? { inject } : {}),
   });
 }
 
@@ -312,6 +319,240 @@ test("T22 e2e: verified mid-session pause → resumeFrom boot-verified capture �
       mirrorCountsAgree: boolean;
     }).mirrorCountsAgree;
     assert.equal(metaCounts, true);
+  } finally {
+    delete process.env.CTXVM_TRACE_DIR;
+    delete process.env.CTXVM_TRACE_NAME;
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// T24 handoff-inject: injection-as-DATA (resume brief from a verified package)
+// ---------------------------------------------------------------------------
+
+/** Thrash package via direct export (m1 thrashing anchor — the only corpus
+ * anchor whose projection carries BOTH modes at one turn: @2 is 1 full +
+ * 1 stub). Fresh dir each time (the T23 guard is moot for fresh dirs). */
+function buildThrashSnapshot(dir: string, turn: number): void {
+  const bin = rustBinDir();
+  assert.ok(bin, "release binaries not built — run the cargo build gate");
+  const proc = spawnSync(
+    join(bin, "export"),
+    ["corpus/m1/session-thrashing.jsonl", "--turn", String(turn), "--output", dir, "--odps"],
+    { cwd: REPO_ROOT, encoding: "utf8" },
+  );
+  assert.equal(proc.status, 0, `export failed: ${proc.stderr}`);
+}
+
+/** The package's events (decompressing the zst beside itself when a verified
+ * boot or a prior brief assembly has not already left the plain slice). */
+function packageEvents(dir: string): Record<string, unknown>[] {
+  const zsts = readdirSync(dir).filter((n) => /^trace-.*\.jsonl\.zst$/.test(n)).sort();
+  assert.ok(zsts.length > 0, "no package slice");
+  const turn = parseInt(zsts[0]!.replace(/\.zst$/, "").split("-")[1]!.split(".")[0]!, 10);
+  const plain = join(dir, `trace-${turn}.jsonl`);
+  if (!existsSync(plain)) {
+    const proc = spawnSync("zstd", ["-d", join(dir, zsts[0]!), "-o", plain, "-f"], {
+      encoding: "utf8",
+    });
+    assert.equal(proc.status, 0, proc.stderr);
+  }
+  return readFileSync(plain, "utf8")
+    .split("\n")
+    .filter((l) => l.trim())
+    .map((l) => JSON.parse(l) as Record<string, unknown>);
+}
+
+function pageTableOf(dir: string): {
+  slots: Array<{ mode: string; reference: { id: { logicalRef: string; contentHash: string }; kind: string; tokens: number }; pinned?: boolean }>;
+  tally: Record<string, unknown>;
+  turn: number;
+} {
+  const zsts = readdirSync(dir).filter((n) => /^trace-.*\.jsonl\.zst$/.test(n)).sort();
+  const turn = parseInt(zsts[0]!.replace(/\.zst$/, "").split("-")[1]!.split(".")[0]!, 10);
+  return JSON.parse(readFileSync(join(dir, `page-table-${turn}.json`), "utf8"));
+}
+
+test("T24 brief assembly: full slots render the resolver's content, stubs carry the slice stubText verbatim, provenance in the header/footer", () => {
+  const tmp = freshTmp("brief");
+  const pkg = join(tmp, "pkg");
+  buildThrashSnapshot(pkg, 2);
+  const table = pageTableOf(pkg);
+  assert.equal(table.slots.length, 2);
+  assert.deepEqual(table.slots.map((s) => s.mode), ["full", "stub"]);
+
+  const brief = assembleResumeBrief(pkg, (slot: ResumeSlot) => `MATERIALIZED:${slot.logicalRef}`);
+  assert.equal(brief.turn, 2);
+  assert.equal(brief.slots, 2);
+  assert.equal(brief.full, 1);
+  assert.equal(brief.stub, 1);
+  assert.ok(brief.text.startsWith("# ctxvm resume brief — turn 2\n"), brief.text.slice(0, 80));
+  assert.ok(brief.text.includes(snapshotDigest(pkg)), "header carries the checksums-provenance digest");
+  // full slot: the resolver's content, indented under its reference line
+  const fullRef = table.slots[0]!.reference.id.logicalRef;
+  assert.ok(brief.text.includes(`- ${fullRef} (file, 1000 tok,`), "reference line shape");
+  assert.ok(brief.text.includes(`  MATERIALIZED:${fullRef}`), "resolver content rendered");
+  assert.ok(!brief.text.includes("[unresolved:"), "resolver satisfied every full slot");
+  // stub slot: the slice's stubText bytes verbatim (indented block)
+  const stubRef = table.slots[1]!.reference.id.logicalRef;
+  const evict = packageEvents(pkg).filter((e) => e.type === "page.evict" && (e.page as { logicalRef: string }).logicalRef === stubRef).at(-1) as { stubText: string };
+  assert.ok(evict, "the stub slot has an evict row in the slice");
+  assert.ok(
+    brief.text.includes(evict.stubText.split("\n").map((l) => `  ${l}`).join("\n")),
+    "stubText rendered verbatim (indented)",
+  );
+  // section order: resident before stubbed; footer carries slots + tally
+  const residentAt = brief.text.indexOf("## Resident pages (1)");
+  const stubAt = brief.text.indexOf("## Stubbed pages (1)");
+  assert.ok(residentAt !== -1 && stubAt !== -1 && residentAt < stubAt);
+  assert.ok(brief.text.includes("- slots: 2 (1 full, 1 stub)"));
+  assert.ok(brief.text.includes(`- tally: ${JSON.stringify(table.tally)}`));
+  rmSync(tmp, { recursive: true, force: true });
+});
+
+test("T24 brief degrade: no resolver / null resolver → loud unresolved markers, stubs unaffected, never throws", () => {
+  const tmp = freshTmp("brief-degrade");
+  const pkg = join(tmp, "pkg");
+  buildThrashSnapshot(pkg, 2);
+  const table = pageTableOf(pkg);
+  const fullRef = table.slots[0]!.reference.id.logicalRef;
+
+  const brief = assembleResumeBrief(pkg); // no resolver at all
+  assert.ok(brief.text.includes(`  [unresolved: ${fullRef} — content not provided]`));
+  // stubs need no resolver — still verbatim
+  const stubRef = table.slots[1]!.reference.id.logicalRef;
+  const evict = packageEvents(pkg).filter((e) => e.type === "page.evict" && (e.page as { logicalRef: string }).logicalRef === stubRef).at(-1) as { stubText: string };
+  assert.ok(brief.text.includes(evict.stubText.split("\n").map((l) => `  ${l}`).join("\n")));
+
+  // a THROWING resolver degrades exactly like null (the brief is data — it
+  // must not break boot)
+  const thrown = assembleResumeBrief(pkg, () => {
+    throw new Error("app resolver bug");
+  });
+  assert.ok(thrown.text.includes("[unresolved:"));
+  assert.ok(!thrown.text.includes("app resolver bug"), "the error itself is not leaked into the brief");
+  rmSync(tmp, { recursive: true, force: true });
+});
+
+test("T24 capture surface: resumeBrief() null without resumeFrom (armed and unarmed); unverified boot + inject still throws the T22 reason FIRST", async () => {
+  const tmp = freshTmp("brief-null");
+  try {
+    const armed = armCapture(tmp, "no-resume");
+    assert.equal(armed.resumeBrief(), null);
+    await replayGroups(armed, stepGroups().slice(0, 1));
+    assert.equal(armed.resumeBrief(), null, "still null after renders — no package, no brief");
+
+    const unarmed = createCtxvmCapture({
+      agentId: "ctxvm-ai-sdk",
+      model: "ctxvm-mock/echo-model",
+      provider: "ctxvm-mock",
+      budgetTokens: 120000,
+    });
+    assert.equal(unarmed.resumeBrief(), null);
+
+    // inject cannot rescue an unverified boot: the T22 law runs first
+    const missing = join(tmpdir(), "ctxvm-t24-no-such-snapshot");
+    rmSync(missing, { force: true, recursive: true });
+    assert.throws(
+      () =>
+        createCtxvmCapture({
+          agentId: "ctxvm-ai-sdk",
+          model: "m",
+          provider: "p",
+          budgetTokens: 1000,
+          resumeFrom: { dir: missing },
+          inject: { materialize: () => "x" },
+        }),
+      (err: Error) =>
+        err.message === `createCtxvmCapture: resumeFrom boot verification FAILED: snapshot dir not found: ${missing}`,
+    );
+  } finally {
+    delete process.env.CTXVM_TRACE_DIR;
+    delete process.env.CTXVM_TRACE_NAME;
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("T24 mirror law red-pin: with inject ARMED the middleware still returns the SAME params object, prompt untouched (the mutability temptation guarded forever)", async () => {
+  const tmp = freshTmp("brief-mirror");
+  try {
+    const capture = armCapture(tmp, "base-x");
+    const groups = stepGroups();
+    await replayGroups(capture, groups.slice(0, 2));
+    const paused = capture.pauseAll({ turn: 2 });
+    assert.equal(paused.exit_code, 0, paused.stderr);
+
+    const snapshotDir = join(tmp, "handoff");
+    const captureB = armCapture(
+      tmp, "mirror-inject", { dir: snapshotDir }, { materialize: () => "MATERIALIZED" },
+    );
+    const input = {
+      type: "stream",
+      params: { prompt: [{ role: "user", content: "hello" }] },
+      model: {},
+    };
+    const out = await captureB.middleware.transformParams!(input as never);
+    assert.equal(out, input.params, "SAME object identity — injection-as-data never mutates the stream");
+    assert.equal((out as { prompt: unknown[] }).prompt.length, 1);
+    assert.equal(
+      ((out as { prompt: Array<{ content: string }> }).prompt[0] as { content: string }).content,
+      "hello",
+    );
+    // and the brief rides as DATA alongside — never spliced into the stream
+    assert.ok(captureB.resumeBrief()!.includes("MATERIALIZED"));
+  } finally {
+    delete process.env.CTXVM_TRACE_DIR;
+    delete process.env.CTXVM_TRACE_NAME;
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("T24 e2e: pause → resume+inject → the app prepends the brief to its own prompt → trace completes lawfully; sidecar canon untouched", async () => {
+  const tmp = freshTmp("brief-e2e");
+  try {
+    const capture = armCapture(tmp, "e2e-brief");
+    const groups = stepGroups();
+    await replayGroups(capture, groups.slice(0, 2));
+    const paused = capture.pauseAll({ turn: 2 });
+    assert.equal(paused.exit_code, 0, paused.stderr);
+
+    const snapshotDir = join(tmp, "handoff");
+    const captureB = armCapture(
+      tmp, "e2e-brief-b", { dir: snapshotDir }, { materialize: (slot) => `CONTENT-OF:${slot.logicalRef}` },
+    );
+    const brief = captureB.resumeBrief();
+    assert.ok(brief, "the resumed capture carries the assembled brief");
+    assert.ok(brief!.includes(snapshotDigest(snapshotDir)), "brief provenance == the boot digest");
+    assert.ok(!brief!.includes("file:src/db/schema.sql"), "the parts package's brief carries no foreign refs");
+
+    // the APP prepends the brief to its own prompt (injection-as-DATA): the
+    // middleware passes it through UNCHANGED (mirror law at the boundary).
+    const input = {
+      type: "stream",
+      params: { prompt: [{ role: "system", content: brief! }] },
+      model: {},
+    };
+    const out = await captureB.middleware.transformParams!(input as never);
+    assert.equal(out, input.params);
+    assert.equal(
+      ((out as { prompt: Array<{ content: string }> }).prompt[0] as { content: string }).content,
+      brief,
+      "the app's brief rides its own context — the middleware never touched it",
+    );
+    for await (const _ of captureB.tap((async function* () { yield* groups[2]!; })())) {} // continued session
+    const finishedB = captureB.finishAll();
+    assert.equal(finishedB.length, 1);
+    const meta = JSON.parse(readFileSync(finishedB[0]!.metaPath!, "utf8")) as {
+      mirrorCountsAgree: boolean;
+      resumeFrom?: Record<string, unknown>;
+    };
+    assert.equal(meta.mirrorCountsAgree, true, "the mirror law stays green on the injected session");
+    // canon keys untouched: the brief is derived data, NOT recorded state
+    assert.ok(meta.resumeFrom, "resumeFrom evidence still stamped");
+    assert.equal(meta.resumeFrom!.snapshotDigest, snapshotDigest(snapshotDir));
+    assert.ok(!("brief" in meta), "no brief key in the sidecar canon");
+    assert.ok(!("injected" in meta), "no injected key in the sidecar canon");
+    assert.ok(!("resumeBrief" in (meta.resumeFrom as Record<string, unknown>)));
   } finally {
     delete process.env.CTXVM_TRACE_DIR;
     delete process.env.CTXVM_TRACE_NAME;
