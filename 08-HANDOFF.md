@@ -188,8 +188,7 @@ mapping; verified-boot resume-brief UX); T15 (Vercel AI SDK adapter — **LANDED
 name mismatch); `pause()` dir chain ARG-FIRST (`trace_dir or env`, mirrors TS
 2bb339a); export one-dir-one-slice doc line; 2 new tests (handoff-name pass-through
 + dir-chain law); counts `ts 13 + 51` / `python 76 + 30 + 8`; ALL GATES GREEN.
-Remaining frontier: gateway `tool=None` hook-key mapping; verified-boot resume-brief
-UX; gated handoff-inject v-next beat (parked).
+Remaining frontier: gated handoff-inject v-next beat (parked).
 
 **T15 LANDED (RR-T15-20261027), 2026-10-27:** the Vercel AI SDK adapter shipped as
 `packages/ai-sdk` (`@ctxvm/ai-sdk@0.0.1`, pin `ai@7.0.154`) per
