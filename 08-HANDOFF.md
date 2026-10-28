@@ -231,7 +231,10 @@ port LANDED as T22** (`reports/RR-T22-20261027.md`: typed pause/resume mirror
 into `packages/ai-sdk`, library-shaped explicit API, provider-key-free
 synthetic proof; counts `ts 13 + 51 + 39`, suite 39/39 green first run; pushed
 2026-10-27 (origin/main at `0e80bfe`); Actions run `40481242116` **green 4/4**
-(rust/ts/schema/hub)), while **UC2
+(rust/ts/schema/hub)). **Next: T23 PROPOSED** (`reports/T23-PROPOSAL-20261028.md`:
+`ctxvm export` dir-hygiene guard — foreign-slice protection closing the
+m7-recorded per-turn export clobber wart; block-unless-`--force` law, §7
+awaiting orchestrator rulings), while **UC2
 needs no port card** (the forensics CLI is RFC-0-trace-based and host-agnostic
 already — proposal §6 records the verdict). RFC-0 makes drops harness-agnostic,
 so benchmark/UC3 chains already consume `corpus/m8` without adapter awareness.
