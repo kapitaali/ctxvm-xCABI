@@ -226,7 +226,8 @@ ruling). Landing commits: `d7e2728` (B0–B2) + `801047c` (B3/wiring) + books.
 **Current frontier (status 2026-10-28):** T15 closed. Hermes-lane frontier LANDED
 2026-10-28 (`reports/RR-HERMES-FRONTIER-20261028.md`: gateway `tool=None` hook-key
 mapping fixed + `/ctxvm-resume` verified-boot slash command; all 80 hermes tests
-green). The gated `handoff-inject` beat is LANDED for the library lane as T24
+green; pushed 2026-10-28 with the combined batch — Actions run `40713312977`
+**green 4/4**). The gated `handoff-inject` beat is LANDED for the library lane as T24
 below (injection-as-DATA); the per-harness injection beat for hermes/opencode
 stays parked (v-next). T15 follow-ups settled: **UC1
 port LANDED as T22** (`reports/RR-T22-20261027.md`: typed pause/resume mirror
@@ -249,6 +250,17 @@ run `40713312977` **green 4/4** (rust/ts/schema/hub)), while **UC2
 needs no port card** (the forensics CLI is RFC-0-trace-based and host-agnostic
 already — proposal §6 records the verdict). RFC-0 makes drops harness-agnostic,
 so benchmark/UC3 chains already consume `corpus/m8` without adapter awareness.
+**T24 books addendum `bd297f4` in flight** (post-push witness records: RR
+verification + the counts erratum `python 76` → `80` truth-up — the hermes
+lane's +4 tests were already in-tree when the landing gate ran — LOG T24 +
+hermes row push tails, §5 tail; it rides THIS push together with this board
+refresh; its echo run is witnessed post-push and deliberately unrecorded, the
+T22/T23 pattern). **Board EMPTY** — remaining frontier: the per-harness
+`handoff-inject` beat for hermes/opencode (parked, v-next) and a third-host
+live pause/resume pair (B4 shape — parked: requires the operator to stash the
+NEW NVIDIA key locally; the old stash is shredded, its replacement never
+transited this chat, RR-T22 §disclosed). Current counts `ts 13 + 51 + 45` /
+`python 80 + 30 + 8`.
 
 ## §1. Workspace map
 
