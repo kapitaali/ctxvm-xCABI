@@ -236,7 +236,12 @@ synthetic proof; counts `ts 13 + 51 + 39`, suite 39/39 green first run; pushed
 m7-recorded per-turn export clobber wart; block-unless-`--force` law; counts
 `ts 13 + 51 + 40`, rust workspace 52 → 58, all gates green; pushed 2026-10-28
 (origin/main at `958e5c4`); Actions run `40704790775` **green 4/4**
-(rust/ts/schema/hub)), while **UC2
+(rust/ts/schema/hub)). **T23 books closed 2026-10-28 (addendum `7258413`, echo
+run green). Next: T24 PROPOSED** (`reports/T24-PROPOSAL-20261028.md`:
+handoff-inject for `@ctxvm/ai-sdk` — the design's gated control beat resolved
+as injection-as-DATA in the library lane (the package is content-blind for
+full pages → app-supplied resolver; stubs are package-complete via
+`stubText`); §7 awaiting orchestrator rulings), while **UC2
 needs no port card** (the forensics CLI is RFC-0-trace-based and host-agnostic
 already — proposal §6 records the verdict). RFC-0 makes drops harness-agnostic,
 so benchmark/UC3 chains already consume `corpus/m8` without adapter awareness.
