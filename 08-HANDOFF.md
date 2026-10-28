@@ -223,9 +223,12 @@ ruling). Landing commits: `d7e2728` (B0–B2) + `801047c` (B3/wiring) + books.
 **Pushed 2026-10-27 to origin/main** (tip `3132805`); Actions run `40470047706`
 **green 4/4** (rust/ts/schema/hub).
 
-**Current frontier (status 2026-10-27):** T15 closed. Remaining: the hermes-lane
-frontier lines above (gateway `tool=None` hook-key mapping; verified-boot resume-brief
-UX; gated handoff-inject v-next beat, parked). T15 follow-ups settled: **UC1
+**Current frontier (status 2026-10-28):** T15 closed. Hermes-lane frontier LANDED
+2026-10-28 (`reports/RR-HERMES-FRONTIER-20261028.md`: gateway `tool=None` hook-key
+mapping fixed + `/ctxvm-resume` verified-boot slash command; all 80 hermes tests
+green). The gated `handoff-inject` beat is LANDED for the library lane as T24
+below (injection-as-DATA); the per-harness injection beat for hermes/opencode
+stays parked (v-next). T15 follow-ups settled: **UC1
 port LANDED as T22** (`reports/RR-T22-20261027.md`: typed pause/resume mirror
 into `packages/ai-sdk`, library-shaped explicit API, provider-key-free
 synthetic proof; counts `ts 13 + 51 + 39`, suite 39/39 green first run; pushed
