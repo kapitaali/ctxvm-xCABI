@@ -117,12 +117,22 @@ CLI: `ctxvm trace`, `ctxvm profile`, `ctxvm replay`, `ctxvm diff a.jsonl b.jsonl
 
 ## 7. Risks & positions
 
-- **Standards need adoption →** telemetry wedge makes integration value immediate; adapters
-  contributed upstream; LF/ODPS governance borrowed rather than cold-started.
+- **Standards need adoption →** telemetry wedge makes integration value immediate and the
+  adapters are thin (one hook mapping per harness; `design/adapters.md` pins the anchor
+  points file-by-file).
+  *Honest status 2026-10-29:* there is one author, one machine and no external adopter;
+  the ODPS/ODPC packaging is borrowed **as a distribution format**, not as governance, and
+  no foundation has been approached. The governance roadmap is in `README.md`
+  § Governance: a second implementer comes before any governance claim.
 - **Silent-reference faults are the hard 20% →** layering: tool_recall (works per Pichay) +
   identifier_scan + explicit API; profiler makes misses visible; semantic plugins later.
-- **Pager vendors could standardize →** unlikely — each profits from lock-in; our edge is
-  being the Switzerland (LF-governed, Apache-licensed, no product to sell).
+  *Measured caveat (2026-10-29):* the identifier_scan surface is currently dead on live
+  Hermes payloads (`reports/RR-W4-20261029.md`), so the layer that is supposed to cover the
+  hard 20 % is, today, covering nothing in that harness.
+- **Pager vendors could standardize →** unlikely — each profits from lock-in. What the
+  project actually offers is narrower than "neutral Switzerland": an Apache-2.0 format and
+  replay engine with **no hosted product**, published by one person who is not a foundation.
+  Neutrality is a claim to earn with a second implementer, not a position to assert.
 - **Prompt-cache rewrite costs →** boundary-aligned eviction + cache-cost accounting in every
   benchmark claim.
 
