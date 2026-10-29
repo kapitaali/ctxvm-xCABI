@@ -85,3 +85,8 @@ world changed, not that the model erred.
 1. Go-ahead for the live run (recipe + analyzer already work end-to-end).
 2. W8 pressure design will follow from finding 1 — flagging early so it can
    ride the W3/W8 planning, not surprise later.
+
+## Post-push witness
+
+Pushed 2026-10-29 (origin/main at `2a39ddc`) with Actions run `40843322867`
+green 4/4 jobs rust/ts/schema/hub.

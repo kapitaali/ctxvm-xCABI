@@ -115,3 +115,8 @@ its v1 numbers re-emit once W2 lands.
    with the plugin armed (nothing leaves the machine). Say the word and
    I'll ship the recipe + analyzer; the dry run on m7 starts meanwhile.
 3. **D5 later:** W8's budget cap — not needed until W2–W4 land.
+
+## Post-push witness
+
+Pushed 2026-10-29 (origin/main at `2a39ddc`) with Actions run `40843322867`
+green 4/4 jobs rust/ts/schema/hub.
