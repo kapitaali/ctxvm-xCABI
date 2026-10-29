@@ -295,15 +295,22 @@ hook cost and the four findings; the load-bearing one is **F1: `identifier_scan`
 is DEAD on live Hermes payloads** (`_transcript_texts` expects a parts list;
 Hermes sends `content` as a plain string — `conversation_loop.py:350`), so every
 live hermes trace (m4, m7) under-reports to zero faults and W1's hermes rows are
-not measurements; m7's provenance now carries the erratum). **Next frontier
-(adoption push):** W4b needs a lane clearance to land the proven 12-line fix
-(`reports/W4B-PROPOSAL-20261029.md`); then **W5** cross-harness `ctxvm diff`
-(it must classify hermes user-turn vs opencode/ai-sdk model-request turn units
-as unit mismatches, never behaviour), **W6** `design/otel-mapping.md`, **W7**
-RFC-0.1 proposal (now three motivations: umpire's re-execution overload, the
-`model_pin`/`seed` ref exclusion, and `call.meta`'s missing provider-usage
-field), **W8** gated on W2–W4 + D5, **W11** README honesty pass, **W12**
-Steps 0–1.
+not measurements; m7's provenance now carries the erratum).
+**W6 LANDED** (2026-10-29, `design/otel-mapping.md` + `tools/otel-export.mjs`):
+the OTel view is a **lossy projection, not a container** — xCABI has no clock,
+`residentTokens` is not `gen_ai.usage.input_tokens`, and `page.declare` carries no
+turn; Langfuse would ingest the projection unchanged (any `gen_ai.*` attribute)
+while Phoenix treats `gen_ai.*` as second class (Arize: OpenInference Stable, GenAI
+still in development). D3 open — the doc recommends layered as an input only.
+**Next frontier (adoption push):** W4b needs a lane clearance to land the proven
+12-line fix (`reports/W4B-PROPOSAL-20261029.md`); then **W5** cross-harness
+`ctxvm diff` (it must classify hermes user-turn vs opencode/ai-sdk model-request
+turn units as unit mismatches, never behaviour), **W7** RFC-0.1 proposal (now
+FIVE motivations: umpire's re-execution overload, the `model_pin`/`seed` ref
+exclusion, `call.meta`'s missing provider-usage field, the missing clock, and
+`page.declare`'s missing turn), **W8** gated on W2–W4 + D5, **W11** README honesty
+pass, **W12** Steps 0–1. Owner decisions outstanding: D1 (positioning), D3
+(OTel shape), D4 (RFC-0.1 unsealing), D5 (W8 budget).
 
 ## §1. Workspace map
 
@@ -422,6 +429,7 @@ orchestrator task only).
 | W3 | fix the metrics — falsifiability (adoption push) | M | W2 marks | **LANDED** (RR-W3-20261029: `refetch_rate` rename + `hard_fault_recall` ground truth per Pichay §3.2 — explicit re-calls only, n=4 on real captures → gate UNMEASURED, falsifiable in principle, ablation = W8-grade; `bootstrap.py` deterministic CIs seed 20261029/2000 on every gate metric; `prices.json` pinned v1 — observed free tiers nvidia/opencode, openai UNVERIFIED nulls, cache-write unmodeled in v0; M0 gate re-anchored hard-fault ≥95% CI-lower n≥30; 07 §W3 section; python 30→44, counts `80 + 44 + 8`; ALL GATES GREEN; pushed 2026-10-29, run 40845029026 green 4/4) |
 | W4 | Hermes adapter — official-docs hook-surface verification + cheap-hooks audit + `turn.render` gap in provenance (adoption push) | M | W1 findings | **DONE (audit; no code change — hermes lane)** (RR-W4-20261029: docs-anchored against `developer-guide/observer-hooks` + source @bf0203a794; NEW `packages/hermes/OBSERVABILITY.md` — contract table with locators, what the hooks CANNOT see (system prompt, tool schemas, cache breakpoints, `select_context`/`prune_tool_results_only` replacements, post-`post_tool_call` `transform_tool_result` bodies ⇒ `turn.render` is a page-table mirror, never the request), measured hook cost (no network import, one flush, scan 5.86 ms @34 pages/222 tokens/80k chars vs the 30 s hook budget); FOUR FINDINGS: F1 `identifier_scan` DEAD on live payloads (`_transcript_texts` parses `content` as a parts list; Hermes sends a plain string — conversation_loop.py:350/oneshot.py:103 — so `''` every live turn; census m3 synthetic 2 vs m4/m7 LIVE 0; patch proven red→green in memory), F2 turn units = USER turn (docs) vs model request on opencode/ai-sdk → W5 must classify unit mismatches, F3 provider `usage` available on `post_api_request` but `call.meta` is `additionalProperties:false` → W2b is a SPEC question (W7), F4 `telemetry_schema_version` unrecorded; m7 provenance gains the capture-surface ERRATUM (faults:0 = artifact, share UNMEASURED not 0) + checksum re-baselined, no trace byte touched; ALL GATES GREEN ts 13+58+45 / python 80+44+8 / schema 682 checks · 27 fixtures) |
 | W4b | Hermes capture-surface fix — live-shape `_transcript_texts` + live-shape fixture (PROPOSAL, approval requested) | S | RR-W4, lane clearance | **OPEN — `reports/W4B-PROPOSAL-20261029.md`** (B1 the 12-line fix + 3 tests incl. the red-before regression pin, patch proven to flip the surface; B2 a live-shape generator session so no fixture can green a dead surface again; B3 provider-usage + B4 contract-version ROUTED TO W7 as spec/canon questions; F2 turn granularity explicitly NOT proposed — it changes turn identity and every committed hermes trace, W5 classifies instead) |
+| W6 | OpenTelemetry decision — mapping note (design) + exporter prototype | M | W5 findings (informative only) | **LANDED (analysis + prototype; D3 NOT decided)** (RR-W6-20261029: NEW `design/otel-mapping.md` — semconv vocabulary verified from `open-telemetry/semantic-conventions-genai` (pushed 2026-10-29; the OTel site now redirects there) + OTLP 1.11.1 §JSON encoding, every GenAI signal `Development`; event→signal table (session.open→`invoke_agent`, turn.render→`chat`, page.declare→`execute_tool`, fault/evict/render/pin→`ctxvm.*` span events, cacheEstimate→`gen_ai.usage.cache_read` ONLY when providerReported); THREE structural gaps: xCABI has NO clock (schema has zero time fields ⇒ time-less OTel spans), `residentTokens` ≠ `gen_ai.usage.input_tokens` (filling it would reintroduce W3 dishonesty), `page.declare` carries no turn (tool spans cannot parent) — the first and third are RFC-0.1 candidates routed to W7; coexistence WITH LOCATORS (Langfuse exports any span carrying a `gen_ai.*` attr; Arize: OpenInference Stable vs GenAI still-in-development and Phoenix reads `gen_ai.*` with reduced UI); prototype `tools/otel-export.mjs` 235 lines, no deps/network, NOT wired into CI by design — m1/m6/m7/m8 project with 0 OTLP-JSON violations (13/14/17/10 spans); D3 options table, layered recommended as INPUT ONLY; ALL GATES GREEN) |
 
 ---
 
