@@ -29,6 +29,16 @@ The mechanism is proven; the layer that turns it into an ecosystem does not exis
 > `github.com/sarath-m-s/l1-pager`; arXiv 2310.08560 (MemGPT coined "virtual context
 > management"); arXiv 2603.02228 (CPP + Semantic Belady). Repo rule (08-HANDOFF §4):
 > prior-art claims must carry locators at first mention — no unsourced prose.
+>
+> **Independent re-check (2026-10-29, adoption-intake):** all three arXiv pointers
+> re-verified fresh from the papers (abs pages ×3 + 2603.09023 full text v1):
+> Pichay system name ✓, "It is L1 cache" ✓, 857 sessions ✓, 21.8% ✓, 84.4× median
+> amplification (§1 + §5.1, full-text only) ✓, §3.5 fault-driven pinning incl.
+> unpin-on-content-change (step 4) ✓, 2603.02228 CPP + Semantic Belady ✓,
+> 2310.08560 "virtual context management" ✓ — ALL CONFIRMED. Paper-internal note:
+> the 2603.09023 abs landing page says "4.45 million" tokens where the full text
+> says "4.45 billion" (self-consistent at billion; this repo never quotes the 4.45
+> figure). See reports/RR-ADOPTIONINTAKE-20261029.md §1.
 
 ## 2. The three pillars (and what's missing in each)
 
