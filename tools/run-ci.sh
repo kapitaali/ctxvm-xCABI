@@ -46,6 +46,8 @@ FIXTURES=(
 log "gate 1/4: rust — cargo test"
 ( cd rust && . "$HOME/.cargo/env" 2>/dev/null || true; cargo test ) >/dev/null
 log "rust suite green"
+( cd rust && . "$HOME/.cargo/env" 2>/dev/null || true; cargo test -p ctxvm-tokenizer --features tiktoken ) >/dev/null
+log "tokenizer tiktoken feature green (real BPE backends)"
 
 # 1b) release binaries for the golden parity suites (UC2 forensics + UC1 resume:
 # hermes python + opencode TS both deep-equal the shared fixtures through the

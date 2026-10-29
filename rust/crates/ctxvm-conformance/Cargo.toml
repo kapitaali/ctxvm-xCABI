@@ -8,4 +8,10 @@ license.workspace = true
 [dependencies]
 ctxvm-codec = { workspace = true }
 ctxvm-core = { workspace = true }
+ctxvm-tokenizer = { workspace = true }
 serde_json = { workspace = true }
+
+[features]
+# Forward the real BPE backends to the `tokens` CLI (W2). Off by default; the
+# bin reports a rebuild-with-feature error for tiktoken ids instead.
+tiktoken = ["ctxvm-tokenizer/tiktoken"]

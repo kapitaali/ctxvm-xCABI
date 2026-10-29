@@ -1,9 +1,15 @@
 [package]
 name = "ctxvm-tokenizer"
-description = "Token counting backends behind feature flags (tiktoken / HF). Deferred in T-series; stub only."
+description = "Token counting backends (W2): apx4-char baseline + tiktoken BPE vocabularies behind the `tiktoken` feature. Counts are tokenizer_id-scoped (02 §session.open); every count carries a tokens_source mark (provider | estimated)."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+[features]
+# Real BPE vocabularies (embedded via tiktoken-rs). Off by default: the embedded
+# ranks add compile time and binary size, and the default build must stay the
+# lean baseline every existing trace was produced with. CI exercises the feature.
+tiktoken = ["dep:tiktoken-rs"]
+
 [dependencies]
-# TODO(T-series): tiktoken / HF tokenizers behind features; per-model budgets.
+tiktoken-rs = { version = "0.12", optional = true }

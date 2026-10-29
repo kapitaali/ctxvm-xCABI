@@ -25,6 +25,9 @@ jobs:
       - name: cargo test
         run: cargo test
         working-directory: rust
+      - name: ctxvm-tokenizer tiktoken feature (real BPE backends, W2)
+        run: cargo test -p ctxvm-tokenizer --features tiktoken
+        working-directory: rust
 
   ts:
     runs-on: ubuntu-latest
