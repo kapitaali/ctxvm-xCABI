@@ -309,15 +309,23 @@ no real session has ever paged, the hard-fault gate is n=4, tokens are
 `apx4-char`, 0/85 provider-reported, the hermes fault surface is dead), and the
 "claims nothing you can't re-run" / "Switzerland (LF-governed)" claims are gone,
 replaced by what the gates prove and what they do not.
+**W12 Steps 0–1 LANDED** (2026-10-29, `design/runtime-abi/00-reconciliation-and-
+justification.md`): no `00-SPEC.md` exists and today's "xCABI" is an exchange
+format, so the runtime-ABI drafts use the provisional name `ctxvm-rt` (D7);
+and the zero-copy justification **fails its own test** — 5 of 85 `call.meta` carry
+`latencyMs` and all five are in the synthetic m1 seed, so the benefit is
+unmeasurable and the ABI shrinks to safe handles (0.26 ms to hash a 50 KB result
+vs any model round trip). Implementation stays gated on W8/D7.
 **Next frontier (adoption push):** W4b needs a lane clearance to land the proven
 12-line fix (`reports/W4B-PROPOSAL-20261029.md`); then **W5** cross-harness
 `ctxvm diff` (it must classify hermes user-turn vs opencode/ai-sdk model-request
 turn units as unit mismatches, never behaviour), **W7** RFC-0.1 proposal (now
 FIVE motivations: umpire's re-execution overload, the `model_pin`/`seed` ref
 exclusion, `call.meta`'s missing provider-usage field, the missing clock, and
-`page.declare`'s missing turn), **W8** gated on W2–W4 + D5, **W12** Steps 0–1.
+`page.declare`'s missing turn — the clock is wanted by W6, W7 and W12 alike),
+**W8** gated on W2–W4 + D5, **W12 Steps 2+** gated on W8/D7.
 Owner decisions outstanding: D1 (positioning), D3 (OTel shape), D4 (RFC-0.1
-unsealing), D5 (W8 budget).
+unsealing), D5 (W8 budget), D7 (runtime ABI).
 
 ## §1. Workspace map
 
