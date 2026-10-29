@@ -278,10 +278,16 @@ provider-reported usage wiring = W2b pending lane clearance; rust 59 default
 reference metrics.py byte-identical; zero evictions on every real capture →
 measured paging waste = 0 and W8 must create pressure deliberately; same-args
 re-executions 10–18% but true duplicates 0 — every re-call saw a changed
-world; live run gated on owner). **Pushed 2026-10-29**: origin/main at
+world; live run gated on owner). **W3 LANDED** (2026-10-29,
+`reports/RR-W3-20261029.md` — falsifiability fix: `refetch_rate` rename +
+`hard_fault_recall` ground truth per Pichay §3.2 (explicit re-calls only;
+n = 4 on real captures → the re-anchored M0 gate is UNMEASURED, falsifiable
+in principle, W8 supplies volume); deterministic bootstrap CIs on every gate
+metric; pinned `prices.json` v1 (nulls never substituted); counts
+`python 80 + 44 + 8`). **Pushed 2026-10-29**: origin/main at
 `2a39ddc` with Actions run `40843322867` green 4/4 (rust/ts/schema/hub; the
 rust job's 7 steps include the new tiktoken-feature gate). Current counts
-`ts 13 + 58 + 45` / `python 80 + 30 + 8`.
+`ts 13 + 58 + 45` / `python 80 + 44 + 8`.
 
 ## §1. Workspace map
 
@@ -397,6 +403,7 @@ orchestrator task only).
 | T25 | per-harness injection-as-DATA for `packages/opencode` — the design's per-harness beat resolved as gated mutation (orchestrator-approved proposal reports/T25-PROPOSAL-20261028.md; one commit, all §7 recommendations accepted; §7 acceptance doubled as the cross-lane clearance for `packages/opencode/**`) | M | T24, UC1-RESUME-MIRROR, UC1-PAUSE-MIRROR | **DONE** (RR-T25-20261029; the plugin HOLDS the assembled request draft at `session.context` — pinned contract: `SessionContext extends SessionRequest` with mutable `messages`, design/adapters.md; no app above the plugin — so the design-letter shape is executable as written, off by default; NEW `src/resume-brief.ts` = line-for-lines mirror of the ai-sdk module (T24) with ONE ruled delta — resolver-less v0: stubs package-complete verbatim (`page.evict` `stubText`), full slots degrade loudly to `[unresolved: …]` markers; live wiring: arm at boot AFTER the unchanged resume check (verified boot + `CTXVM_FEATURES` containing `handoff-inject` — the hermes `parse_features` law's shape — + assembly succeeds; failure = loud NOT-armed witness, the plugin must never break capture), then INJECT FIRST in the context hook (Q4 ruling), exactly once per session, `(input as {system: unknown[]}).system.unshift(brief.text)` (Q2 surface ruling), witness `resumeBrief injected turn=N session=… surface=system`; hostile payload → loud FAILED witness, capture continues, never retried; sidecar canon UNTOUCHED (derived data — the T24 law; the witness log is the provenance channel); tracer stays read-only in every path; DISCLOSED: the system surface is NOT metered by the v0 transcript view (`transcriptTexts` reads messages only — provenance lives in the witness log + `resumeFrom` evidence; a messages-surface variant is the recorded v-next alternative); NO corpus drop (the m6/m7 observation-not-injection law stays true for every shipped package); hermes stays verify-only (their `/ctxvm-resume` IS the design's fallback); 7 new tests, suite 51 → 58 green first run; counts `ts 13 + 58 + 45`; ALL GATES GREEN; pushed 2026-10-29, run 40843322867 green 4/4) |
 | W2 | real tokenization (adoption push): the `ctxvm-tokenizer` stub replaced | S | — | **v0 LANDED** (RR-W2-20261029: `apx4-char` backend byte-mirrors node `approx4` + `tiktoken-rs 0.12.1` o200k/cl100k behind the non-default `tiktoken` feature + `ctxvm tokens` CLI + the `tokens_source` marking vocabulary; rust 59 default / 60 with the feature, ALL GATES GREEN incl. the new feature gate line; W2b = provider-reported usage wiring OPEN — needs lane clearance: node/hermes do-not-touch, opencode per-card, ai-sdk open; pushed 2026-10-29, run 40843322867 green 4/4) |
 | W1 | dogfood the profiler (adoption push) | M | W2 marks | **dry-run LANDED** (RR-DOGFOOD-20261029: `tools/waste-report.mjs`, parity with metrics.py byte-identical; 6 real traces + snapshot + synthetic validation; zero evictions on real captures → waste = 0 measured, W8 must create pressure; dup-args 10–18% all content-hash DIVERGENT, true dups 0; providerReported 0/32; hermes fault-surface gap → W4; live run gated on owner; pushed 2026-10-29, run 40843322867 green 4/4) |
+| W3 | fix the metrics — falsifiability (adoption push) | M | W2 marks | **LANDED** (RR-W3-20261029: `refetch_rate` rename + `hard_fault_recall` ground truth per Pichay §3.2 — explicit re-calls only, n=4 on real captures → gate UNMEASURED, falsifiable in principle, ablation = W8-grade; `bootstrap.py` deterministic CIs seed 20261029/2000 on every gate metric; `prices.json` pinned v1 — observed free tiers nvidia/opencode, openai UNVERIFIED nulls, cache-write unmodeled in v0; M0 gate re-anchored hard-fault ≥95% CI-lower n≥30; 07 §W3 section; python 30→44, counts `80 + 44 + 8`; ALL GATES GREEN) |
 
 ---
 

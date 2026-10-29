@@ -1,0 +1,41 @@
+{
+  "priceModelVersion": 1,
+  "updated": "2026-10-29",
+  "currency": "USD",
+  "unit": "per 1e6 tokens",
+  "note": "W3 explicit price input (07): net-cost rankings are computed under a PINNED priceModelVersion; a report must state which version it used. Every entry carries a source + verified status — null prices are UNVERIFIED and are NEVER silently substituted (0.0 is an observed free tier, null is 'we do not know'). v0 models cached-read and uncached-input only: xCABI v0 call.meta records estimated hit/miss tokens, not cache-write, so the write premium is UNMODELED — the field exists for v1 and stays null until the trace schema carries it.",
+  "providers": {
+    "nvidia": {
+      "entry": "nim free tier",
+      "usdPer1mInput": 0.0,
+      "usdPer1mCachedRead": 0.0,
+      "usdPer1mCacheWrite": null,
+      "source": "corpus/m8/provenance.json — observed spend USD 0.00 (NVIDIA NIM free tier, m8 live captures)",
+      "verified": "observed"
+    },
+    "opencode": {
+      "entry": "glm-5.3-flash-free",
+      "usdPer1mInput": 0.0,
+      "usdPer1mCachedRead": 0.0,
+      "usdPer1mCacheWrite": null,
+      "source": "corpus/m6/provenance.json — the OpenCode lane's own free model, observed spend USD 0.00",
+      "verified": "observed"
+    },
+    "openai": {
+      "entry": "synthetic fixtures only",
+      "usdPer1mInput": null,
+      "usdPer1mCachedRead": null,
+      "usdPer1mCacheWrite": null,
+      "source": "the m1/m2 fixtures' session.open names openai/gpt-5 but the traces are SYNTHETIC — no real spend exists to observe; fill from the provider's price page WITH a locator before any priced ranking",
+      "verified": "unverified"
+    },
+    "_template": {
+      "entry": "fill per provider",
+      "usdPer1mInput": null,
+      "usdPer1mCachedRead": null,
+      "usdPer1mCacheWrite": null,
+      "source": "fill from the provider's price page with a locator + access date",
+      "verified": "unverified"
+    }
+  }
+}

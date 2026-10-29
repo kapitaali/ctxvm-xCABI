@@ -12,9 +12,15 @@ from benchmarks.metrics.metrics import (
     counterfactual_naive,
     fault_recall,
     fault_series,
+    hard_fault_recall,
+    hard_faults,
+    load_prices,
+    net_cost,
     net_tokens,
     net_token_reduction,
     parse_jsonl,
+    refetch_rate,
+    summarize,
     thrash_index,
     touch_ratio,
     waste,
@@ -137,3 +143,119 @@ class TestEdges:
             for line in text.splitlines():
                 if line.strip():
                     parse_jsonl(line)  # raises on non-object/malformed JSON
+
+
+# ── W3: ground truth (hard faults), deterministic CIs, the price model ───────
+# Every expectation hand-computed; undefined is None, never fudged.
+
+
+class TestW3GroundTruth:
+    def test_refetch_rate_is_the_old_formula(self) -> None:
+        # 07 §W3 rename: same arithmetic fault_recall ever had (2/4)
+        assert refetch_rate(THRASH) == pytest.approx(0.5)
+        assert fault_recall(THRASH) == refetch_rate(THRASH)  # legacy alias
+
+    def test_hard_fault_recall_on_thrash_is_2_over_2(self) -> None:
+        # ground truth = explicit re-calls only: B@2 + B@6 (tool_recall);
+        # A@9 is identifier_scan — an INFERENCE surface, excluded.
+        # recovered: B@2 (full render fact @3), B@6 (full render fact @7) ⇒ 2/2.
+        assert hard_fault_recall(THRASH) == pytest.approx(1.0)
+
+    def test_hard_fault_recall_undefined_without_hard_faults(self) -> None:
+        # HEALTHY's single fault is identifier_scan — no ground truth ⇒ None
+        assert hard_fault_recall(HEALTHY) is None
+        assert hard_fault_recall([]) is None
+
+    def test_identifier_scan_never_enters_ground_truth(self) -> None:
+        e = [
+            {"type": "page.declare", "page": {"id": {"logicalRef": "x", "contentHash": "h"},
+                                              "kind": "file", "tokens": 10}},
+            {"type": "page.render", "turn": 1, "page": {"logicalRef": "x", "contentHash": "h"},
+             "mode": "full"},
+            {"type": "page.fault", "turn": 0, "page": {"logicalRef": "x", "contentHash": "h"},
+             "source": "identifier_scan"},
+        ]
+        assert hard_faults(e) == []
+        assert hard_fault_recall(e) is None
+
+    def test_semantic_is_also_not_ground_truth(self) -> None:
+        e = [{"type": "page.fault", "turn": 0,
+              "page": {"logicalRef": "x", "contentHash": "h"}, "source": "semantic"}]
+        assert hard_faults(e) == []
+
+
+class TestW3Bootstrap:
+    def test_ci_is_deterministic_same_seed(self) -> None:
+        assert summarize(THRASH)["ci"] == summarize(THRASH)["ci"]
+
+    def test_single_turn_record_ci_collapses_to_the_point(self) -> None:
+        # one turn ⇒ every resample is the same record ⇒ ci95 == [point, point]
+        one = [
+            {"type": "page.declare", "page": {"id": {"logicalRef": "x", "contentHash": "h"},
+                                              "kind": "file", "tokens": 50}},
+            {"type": "turn.render", "turn": 0, "residentTokens": 100, "evictedTokens": 0},
+            {"type": "page.fault", "turn": 0, "page": {"logicalRef": "x", "contentHash": "h"},
+             "source": "tool_recall"},
+        ]
+        ci = summarize(one)["ci"]["touchRatio"]
+        assert ci["point"] == pytest.approx(0.5)
+        assert ci["ci95"] == [pytest.approx(0.5), pytest.approx(0.5)]
+        assert ci["failed"] == 0
+        assert ci["seed"] == 20261029
+
+    def test_undefined_replicates_are_dropped_never_fudged(self) -> None:
+        zero = [
+            {"type": "turn.render", "turn": 0, "residentTokens": 0, "evictedTokens": 9},
+        ]
+        ci = summarize(zero)["ci"]["touchRatio"]
+        assert ci["point"] is None
+        assert ci["ci95"] is None
+        assert ci["successful"] == 0
+        assert ci["failed"] == ci["replicates"]
+
+    def test_hard_fault_recall_ci_on_thrash_is_constant_one(self) -> None:
+        # both hard faults recovered ⇒ every replicate is 1.0
+        ci = summarize(THRASH)["ci"]["hardFaultRecall"]
+        assert ci["point"] == pytest.approx(1.0)
+        assert ci["ci95"] == [1.0, 1.0]
+
+    def test_refetch_rate_takes_no_ci_by_law(self) -> None:
+        # the eviction-denominator metric is continuity-only (07 §W3)
+        assert "refetchRate" not in summarize(THRASH)["ci"]
+
+
+class TestW3Prices:
+    def test_pinned_model_shape(self) -> None:
+        prices = load_prices(str(HERE / "prices.json"))
+        assert prices["priceModelVersion"] >= 1
+        assert prices["providers"]["nvidia"]["verified"] == "observed"
+        assert prices["providers"]["nvidia"]["usdPer1mInput"] == 0.0
+        assert prices["providers"]["openai"]["usdPer1mInput"] is None  # UNVERIFIED
+
+    def test_net_cost_arithmetic_with_a_test_entry(self) -> None:
+        trace = [
+            {"type": "call.meta", "turn": 0, "provider": "testprov",
+             "cacheEstimate": {"estHitTokens": 300, "estMissTokens": 200,
+                               "providerReported": False}},
+            {"type": "turn.render", "turn": 0, "residentTokens": 1000, "evictedTokens": 0},
+        ]
+        prices = {"priceModelVersion": 1, "providers": {"testprov": {
+            "usdPer1mInput": 1.0, "usdPer1mCachedRead": 0.1, "usdPer1mCacheWrite": None,
+            "verified": "test", "source": "test"}}}
+        out = net_cost(trace, prices)
+        # (300 hit × 0.1 + 200 miss × 1.0) / 1e6 = 230 / 1e6
+        assert out["byProvider"]["testprov"]["usd"] == pytest.approx(230 / 1e6)
+
+    def test_unknown_provider_never_substitutes_a_rate(self) -> None:
+        trace = [{"type": "call.meta", "turn": 0, "provider": "ghost",
+                  "cacheEstimate": {"estHitTokens": 1, "estMissTokens": 1,
+                                    "providerReported": False}}]
+        out = net_cost(trace, load_prices(str(HERE / "prices.json")))
+        assert out["byProvider"]["ghost"]["usd"] is None
+        assert "no price entry" in out["byProvider"]["ghost"]["reason"]
+
+    def test_null_priced_provider_is_unverified_never_zero(self) -> None:
+        # HEALTHY's call.meta names openai — synthetic fixtures, no real spend
+        out = net_cost(HEALTHY, load_prices(str(HERE / "prices.json")))
+        assert out["byProvider"]["openai"]["usd"] is None
+        assert "UNVERIFIED" in out["byProvider"]["openai"]["reason"]
