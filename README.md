@@ -14,14 +14,26 @@ Vercel AI SDK, Node), and a public trace corpus. `ctxvm` / `xCABI` are working n
 
 - **One author, one machine.** Every trace in `corpus/` was captured by the same person on
   the same laptop. No outside contributor has sent a trace, a bug report, or a patch.
-- **Not published.** Nothing is on npm, crates.io, or PyPI. The only consumer outside this
-  repo is [`umpire`](https://github.com/kapitaali/umpire), which is also this author's.
+- **One external index selection — pending.** [XERJ](https://xerj.org/) selected the
+  [W3 metrics implementation](https://github.com/kapitaali/ctxvm-xCABI/commit/7a4f499765da082f7b5d5a2c05fc896b5b6a8988)
+  ([report](reports/RR-W3-20261029.md)) for inclusion in its public
+  [Corpus Hub](https://hub.xerj.org/) index, under Apache-2.0 with attribution (XERJ
+  founder email to the maintainer, 2026-10-29). The listing is **pending — UNVERIFIED**:
+  at the 2026-10-29 check, neither the Hub catalogue
+  (`https://hub.xerj.org/llms.txt`, 530 corpora) nor the `corpus-hub` registry in
+  [`xerj-org/xerj`](https://github.com/xerj-org/xerj) contained a `ctxvm` or `xcabi`
+  entry. This is a reference-index selection of one artifact, not adoption of xCABI: no
+  XERJ trace in `corpus/`, no second implementation, and no outside downstream xCABI
+  reader is public.
+- **Not published.** Nothing is on npm, crates.io, or PyPI. The only *runtime* consumer
+  outside this repo is [`umpire`](https://github.com/kapitaali/umpire), which is also this
+  author's.
 - **No foundation, no affiliation.** The project is Apache-2.0 and unattached. It is not an
   LF/CNCF/OpenSSF project and does not claim to be governed by one (see
   [Governance](#governance)).
 - **What would count as adoption:** a second implementer of the schema, a trace captured by
   someone else's harness, or a downstream product reading the format. None of those exist
-  today.
+  today; the XERJ selection above is distribution, not adoption.
 
 ## Quickstart (5 minutes, from a checkout)
 

@@ -120,9 +120,11 @@ CLI: `ctxvm trace`, `ctxvm profile`, `ctxvm replay`, `ctxvm diff a.jsonl b.jsonl
 - **Standards need adoption →** telemetry wedge makes integration value immediate and the
   adapters are thin (one hook mapping per harness; `design/adapters.md` pins the anchor
   points file-by-file).
-  *Honest status 2026-10-29:* there is one author, one machine and no external adopter;
-  the ODPS/ODPC packaging is borrowed **as a distribution format**, not as governance, and
-  no foundation has been approached. The governance roadmap is in `README.md`
+  *Honest status 2026-10-29:* there is one author, one machine and no external adopter
+  (XERJ selected the W3 metrics work for a public reference index; the listing is pending,
+  and an index entry is distribution, not adoption); the ODPS/ODPC packaging is borrowed
+  **as a distribution format**, not as governance, and no foundation has been approached.
+  The governance roadmap is in `README.md`
   § Governance: a second implementer comes before any governance claim.
 - **Silent-reference faults are the hard 20% →** layering: tool_recall (works per Pichay) +
   identifier_scan + explicit API; profiler makes misses visible; semantic plugins later.
