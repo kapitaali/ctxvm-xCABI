@@ -27,6 +27,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createCtxvmPlugin, type CtxvmPlugin } from "../src/plugin.ts";
+import { assembleResumeBrief } from "../src/resume-brief.ts";
 import { pauseTurnFromEnv, resumeVerify, uc1Pause } from "../src/uc1-handoff.ts";
 
 interface HookRegistration {
@@ -109,12 +110,14 @@ export default {
     // adapter is inert without CTXVM_TRACE_DIR by contract (§1 09-plugin-
     // parity.md); hermes has no capture-independent boot witness either.
     let resumeFrom: Record<string, unknown> | null = null;
+    let resumeVerified = false;
     const resumeFromEnv = process.env.CTXVM_RESUME_FROM;
     if (resumeFromEnv) {
       const resumeResult = resumeVerify(resumeFromEnv);
       // Hermes law mirrored: the evidence dict ALWAYS replaces the slot ({}
       // on early failures) — null stays reserved for "not resuming".
       resumeFrom = resumeResult.evidence;
+      resumeVerified = resumeResult.verified;
       wit(
         `resume_from=${resumeFromEnv} verified=${resumeResult.verified ? "True" : "False"} reason=${resumeResult.reason}`,
       );
@@ -138,6 +141,44 @@ export default {
       if (!resumeResult.verified) {
         wit(
           `resume_from=${resumeFromEnv} UNVERIFIED — tracer continues, snapshot not trusted`,
+        );
+      }
+    }
+
+    // --- T25 handoff-inject: gated mutation arm (§7 rulings 2026-10-28) -----
+    // Injection-as-DATA (T24, library lane) becomes GATED MUTATION here: the
+    // plugin HOLDS the assembled request draft at the `session.context` hook
+    // (pinned contract: `SessionContext extends SessionRequest` with mutable
+    // `messages`; design/adapters.md) — no app sits above the plugin, so the
+    // design's per-harness beat is executable exactly as the design letter
+    // wrote it: "materialize ... into the new session's assembled context at
+    // boot, per the handoff-inject feature (off by default)". Arming chain:
+    // VERIFIED boot (the T22 law runs first — inject never rescues an
+    // unverified boot) + the explicit CTXVM_FEATURES token (comma/whitespace-
+    // separated, case-insensitive — the hermes parse_features law's shape;
+    // the token is the design's own feature name) + assembly succeeds.
+    // Arm-but-degrade: assembly failure = loud witness + disarmed (the
+    // plugin must never break capture — witness law; a verified boot already
+    // fail-closed every reachable structural shape, so the catch is
+    // defense-in-depth). The brief is DERIVED DATA: no sidecar-canon keys —
+    // the witness log is the provenance channel.
+    let brief: ReturnType<typeof assembleResumeBrief> | null = null;
+    const injectedSessions = new Set<string>();
+    const injectArmed =
+      resumeVerified &&
+      (process.env.CTXVM_FEATURES ?? "")
+        .split(/[,\s]+/)
+        .some((feature) => feature.trim().toLowerCase() === "handoff-inject");
+    if (injectArmed && resumeFromEnv) {
+      try {
+        brief = assembleResumeBrief(resumeFromEnv);
+        wit(
+          `resumeBrief assembled: slots=${brief.slots} full=${brief.full} stub=${brief.stub}` +
+            ` digest=${resumeFrom?.snapshotDigest} turn=${brief.turn}`,
+        );
+      } catch (err) {
+        wit(
+          `resumeBrief NOT armed (assembly failed, capture continues): ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     }
@@ -245,6 +286,26 @@ export default {
 
     regs.push(
       await ctx.session.hook("context", async (input) => {
+        // T25: INJECT FIRST (§7 Q4 order ruling — the mutation precedes the
+        // capture read), exactly ONCE per session on the FIRST fire (boot
+        // semantics). The controlled escape from the readonly shim view IS
+        // the gated mutation; a hostile/immutable payload throws → loud
+        // witness, capture continues, never retried. The tracer stays
+        // read-only in every path (it meters the draft; it never mutates).
+        if (brief !== null && input && typeof input === "object") {
+          const sessionID = String((input as { sessionID?: unknown }).sessionID ?? "?");
+          if (!injectedSessions.has(sessionID)) {
+            injectedSessions.add(sessionID); // never retry a failed injection
+            try {
+              (input as { system: unknown[] }).system.unshift(brief.text);
+              wit(`resumeBrief injected turn=${brief.turn} session=${sessionID} surface=system`);
+            } catch (err) {
+              wit(
+                `resumeBrief inject FAILED (capture continues): ${err instanceof Error ? err.message : String(err)}`,
+              );
+            }
+          }
+        }
         stats.contexts += 1;
         wit(`context session=${input?.sessionID ?? "?"}`);
         vm.onSessionContext(input);
