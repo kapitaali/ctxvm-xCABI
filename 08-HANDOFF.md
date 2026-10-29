@@ -339,12 +339,38 @@ produced ONE run at the tip, Actions run `40941042878` green 4/4 jobs
 hub/schema/rust/ts (the rust job includes the tiktoken-feature step; the ts job
 includes the hermes suite, the py binding and the benchmarks suite). This
 addendum's own echo run will be witnessed but NOT recorded (books law).
+**W10 PREPARE LANDED** (2026-10-29, `design/packaging.md` + README quickstart;
+**nothing published, submitted, tagged, or renamed**): the audit found the npm
+package is **not publishable as-is** — `exports` points at `./src/index.ts` and
+Node "refuses to handle TypeScript files inside folders under a `node_modules`
+path" (`https://nodejs.org/api/typescript.html`), so a JS build + `files`/
+LICENSE metadata is a prerequisite (`engines >=22.6.0` also predates default
+type stripping, v22.18/v23.6); crates.io has a **version-requirement blocker**
+(`cargo publish --dry-run -p ctxvm-core` exit 101 — workspace path deps lack
+`version`; `ctxvm-codec` alone packages and verifies, EXIT 0); the PyPI wheel
+builds (`ctxvm_py-0.1.0-py3-none-any.whl`, 4,939 B) but is a subprocess wrapper
+that needs the Rust binaries, so a clean install would be broken. Names:
+`ctxvm`/`xcabi` are free on npm, crates.io, PyPI and GitHub; `umpire` is TAKEN
+on all four (unrelated incumbents: npm logical framework, crates "Combat Quest
+of the Millennium", PyPI Signiant resolver, GitHub org since 2013) ⇒ any future
+publication needs a qualified name; npm scope `@ctxvm` ownership UNVERIFIED
+(org page 403). License audit: all resolved Rust deps are MIT/Apache-2.0/
+Unicode-3.0/Unlicense class, **no copyleft**; npm runtime deps zero; Python
+stdlib-only; gate-only ODPS SDK license NOASSERTION/UNVERIFIED. Trademark: web
+search only, no record surfaced, **UNVERIFIED** (not a clearance search);
+Cursor's "Agent Trace" RFC is an adjacent-words risk, different semantics.
+Hermes catalog + OpenCode ecosystem entries are DRAFTED, not submitted; the
+Hermes index URL was 404 at check time so exact JSON keys are UNVERIFIED. The
+README gains a 5-minute checkout quickstart after the adoption-status block
+(W11 first), with OpenCode shim + Hermes `/ctxvm-trace` recipes.
 **Next frontier (adoption push):** W4b needs a lane clearance to land the proven
 12-line fix (`reports/W4B-PROPOSAL-20261029.md`); then **W5** cross-harness
 `ctxvm diff` (it must classify hermes user-turn vs opencode/ai-sdk model-request
 turn units as unit mismatches, never behaviour), **W8** gated on W2–W4 + D5,
 **W12 Steps 2+** gated on W8/D7; **W7** now waits on **D4** (six proposal
-questions in `design/rfc-0.1-proposal.md` §8).
+questions in `design/rfc-0.1-proposal.md` §8); **W10** prepare is done and awaits
+a publication decision (npm build step, crate version requirements, PyPI binary
+strategy — `design/packaging.md` §6).
 Owner decisions outstanding: D1 (positioning), D3 (OTel shape), D4 (RFC-0.1
 unsealing), D5 (W8 budget), D7 (runtime ABI).
 
@@ -469,6 +495,7 @@ orchestrator task only).
 | W11 | Scope discipline — README honesty pass (adoption status, measured limitations, governance) | S | W1, W3, W4 findings | **DONE** (RR-W11-20261029: root `README.md` rewritten around Adoption status (one author/one machine/nothing published/no external adopter — umpire is the same author), Measured limitations (7 rows w/ evidence pointers: no real session ever paged — 4 evicts all on synthetic m1, 10 real captures at 0; hard-fault gate UNMEASURED n=4<30; apx4-char estimates and 0/85 call.meta provider-reported; hermes identifier surface dead ⇒ m4/m7 under-report; cross-harness turn units differ; single corpus on free tiers; the 1.5× control-plane milestone untested), Status 2026-10-29 (rust 59/60, schema 682 checks/27 fixtures, ts 13+58+45, python 80+44+8, 17 traces), and Governance + a 4-step roadmap (portability evidence → capture surface → RFC-0.1 + conformance kit → governance only after the first external implementer); the "claims nothing you can't re-run" overclaim replaced by what-the-gates-prove / what-they-do-NOT-prove; `01-PLAN.md` §7 rewritten — the "Switzerland (LF-governed)" line is gone (Apache-2.0, no hosted product, one author, not a foundation) and ODPS is named as a distribution format, not governance; NO hub/llms.txt/manifest/package-metadata edits — W10 owns packaging and publication stays gated; every number re-measured before writing; ALL GATES GREEN; pushed 2026-10-29, run 40941042878 green 4/4) |
 | W12 (S0–S1) | Runtime ABI architecture — Steps 0–1 reconciliation + justification (design-only, gated) | S | W4, W6 findings | **DONE (Steps 0–1 only; implementation and `ctxvm_abi.h` stay gated on W8/D7)** (RR-W12-S01-20261029: `design/runtime-abi/00-reconciliation-and-justification.md` — Step 0: no `00-SPEC.md` exists (spec surface = `02` + sealed `spec/rfc-0/`), today's "xCABI" is an EXCHANGE format so W12's C-ABI usage is a NAME COLLISION → drafts use provisional `ctxvm-rt`, flagged under D7; Step 1: the prescribed real-latency measurement is IMPOSSIBLE — 5 of 85 call.meta carry latencyMs and all five are in the SYNTHETIC m1 seed, zero real latency anywhere — so the owned path is measured instead (canon+sha256 0.26 ms @50 KB / 192 MB/s, 5.7 ms @1 MB, JSONL parse 40 MB/s, whole corpus 4 ms) ⇒ ≤0.1% of a model round trip ⇒ "benefit not measurable, shrink the ABI to safe handles": opaque generation-tagged handles + explicit ownership + error codes, nothing more; arena/CoW/bytecode dispatch stay unbuilt; discovery: W6, W7 and W12 all want the SAME missing clock field, and `post_api_request` already carries `api_duration` ⇒ strongest case yet for one clock card; pushed 2026-10-29, run 40941042878 green 4/4) |
 | W7 | RFC-0.1 from umpire's friction — proposal only, never applied (adoption push) | M | RR-W4 findings, RR-W6 gaps | **PROPOSAL LANDED — awaiting D4 (unsealing stays the owner's)** (RR-W7-20261029: `design/rfc-0.1-proposal.md` + `design/rfc-0.1/` fixtures; friction reproduced exactly — `ab-demo.before.jsonl` replay yields 3 `faultOfResidentPage` violations at seq 2/3/5, exit 0, and umpire's own validator PASS 113 checks; SIX items: R1 fault source `intentional_rerun` (new enum value, valid resident-or-stubbed, exempt from the fault-resident rule, never deduped, never ground truth — an `intentional` flag is the recorded smaller-change fallback but leaves source-keyed classifiers wrong by default), R2 pin/seed stay OUT of the ref as a normative clarification (moving them in would turn A/B into new pages), R3 optional `call.meta.providerUsage` (input/output/cached, provider-reported, omitted when unknown — W4B B3's target), R4 optional `ts` on every event + `page.declare.latencyMs` (the one clock W6/W12 also want; excluded from replay state, omitted in golden fixtures), R5 optional `page.declare.turn`, R0 optional `session.open.schemaVersion` `"0.1"` as the version boundary; compatibility DEMONSTRATED — the after-file and every v0.1-only line are rejected by the sealed v0 parser/validator (exit 2 / FAILURES on all 5 lines), intended strictness not a bug; after-file classification 3 intentional / 0 paging is rule-level, no v0.1 replayer exists; minting cross-check byte-identical (4 decide / 4 hash / 9 approx / canon; 17/17 umpire records re-mint) but umpire's module declares itself a Python MIRROR of `ident.ts @ 361043e` ⇒ conformance check, NOT a second implementation, phrase must not be used; no schema/spec/validator/replayer/metric/package/corpus byte edited; proposal fixtures deliberately NOT in the CI list (v0.1 shapes, invalid under sealed v0); ALL GATES GREEN, counts unchanged; pushed 2026-10-29, run 40941042878 green 4/4) |
+| W10 | Packaging and distribution — prepare only; publish/submit/tag only with approval (adoption push) | M | W11 (README ownership), owner gates | **PREPARE DONE — nothing published/submitted/tagged** (RR-W10-20261029: NEW `design/packaging.md` + README 5-minute checkout quickstart; four hard blockers found and evidenced — npm `@ctxvm/node` cannot ship as-is because `exports` is `./src/index.ts` and Node refuses TypeScript under `node_modules` (needs a JS build + `files`/LICENSE/repository; `engines >=22.6` predates default type stripping 22.18/23.6), `cargo publish --dry-run -p ctxvm-core` exit 101 (workspace path deps lack `version`; `ctxvm-codec` alone EXIT 0 with no repo/readme warnings), PyPI `ctxvm-py` wheel builds (4,939 B) but is a subprocess wrapper needing the Rust binaries (needs platform wheels or a documented prerequisite), and bare `umpire` is taken on npm/crates/PyPI/GitHub org by unrelated projects so any publication needs a qualified name; `ctxvm`/`xcabi` names are free on all four, npm scope `@ctxvm` UNVERIFIED (org page 403); license audit clean — Rust deps MIT/Apache-2.0/Unicode-3.0/Unlicense, no copyleft, zero npm runtime deps, Python stdlib-only, gate-only ODPS SDK license UNVERIFIED; trademark is a web observation only (no record surfaced, UNVERIFIED) with Cursor's "Agent Trace" RFC recorded as an adjacent-words risk; Hermes catalog + OpenCode ecosystem entries DRAFTED and NOT submitted (Hermes index URL 404 at check, exact keys UNVERIFIED; OpenCode entry is a docs-table PR); no `packages/node`/`packages/hermes` metadata edited (lane rule) and no hub/llms.txt changes) |
 
 ---
 

@@ -23,6 +23,58 @@ Vercel AI SDK, Node), and a public trace corpus. `ctxvm` / `xCABI` are working n
   someone else's harness, or a downstream product reading the format. None of those exist
   today.
 
+## Quickstart (5 minutes, from a checkout)
+
+Nothing is published yet — npm, crates.io and PyPI publication is pending the packaging
+work in [`design/packaging.md`](design/packaging.md). Today the install is a clone plus a
+Rust build.
+
+```sh
+git clone https://github.com/kapitaali/ctxvm-xCABI.git
+cd ctxvm-xCABI
+cargo build --release
+
+# the synthetic thrash demo: evictions, faults, per-turn residency
+./rust/target/release/replay corpus/m1/session-thrashing.jsonl    # exit 0 = no replay divergence
+./rust/target/release/profile corpus/m1/session-thrashing.jsonl  # per-page/turn profile
+```
+
+`profile` prints every page's decision history, faults and the per-turn residency for any
+RFC-0 trace. `cargo install --path rust/crates/ctxvm-conformance` puts all five binaries
+(`replay`, `profile`, `diff`, `export`, `tokens`) on `PATH`.
+
+**Wrap an agent.** Nothing is captured unless a trace directory is set.
+
+*OpenCode* — add a one-line shim at `<project>/.opencode/plugins/ctxvm.ts`:
+
+```ts
+export { default } from "/absolute/path/to/ctxvm/packages/opencode/live/ctxvm.ts";
+```
+
+then run with capture enabled:
+
+```sh
+CTXVM_TRACE_DIR=/tmp/ctxvm-capture CTXVM_TRACE_NAME=demo \
+CTXVM_MODEL=<provider/model> CTXVM_PROVIDER=<provider> \
+opencode run --standalone --auto -m <provider/model> "your task"
+```
+
+The trace and its sidecar appear when the process exits gracefully.
+
+*Hermes* — copy `packages/hermes/live/` to `~/.hermes/plugins/ctxvm-tracer/`, enable it,
+then from inside Hermes:
+
+```
+/ctxvm-trace start /tmp/ctxvm-capture demo
+... run your task ...
+/ctxvm-trace stop
+```
+
+Either way, profile the result with
+`./rust/target/release/profile /tmp/ctxvm-capture/demo.jsonl`. Full recipes:
+[`packages/opencode/live/README.md`](packages/opencode/live/README.md) and
+[`packages/hermes/live/README.md`](packages/hermes/live/README.md).
+
 ## Measured limitations (2026-10-29)
 
 These are the numbers the repo can currently defend. Anything not listed here is not
