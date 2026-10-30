@@ -63,6 +63,9 @@ the apparent fault rate" (arXiv 2603.09023). W3 therefore:
    — `page.fault` with `source: tool_recall` (the model re-invoked the tool) or
    `explicit_api` (the harness re-materialized by explicit API).
    `identifier_scan` and `semantic` are INFERENCE surfaces, never ground truth.
+   RFC-0.1 adds `intentional_rerun`: a deliberate re-execution of a resident
+   page. It is exempt from the fault-resident rule and is NEVER ground truth
+   for W3 (it is a priced event, not a paging mistake).
    `hard_fault_recall = recovered hard faults / hard faults` (recovery = a
    full-render FACT after the fault turn — unchanged law).
 3. **Re-anchors the M0 gate** to `hard_fault_recall ≥ 0.95` at the bootstrap

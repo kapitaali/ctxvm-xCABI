@@ -1,0 +1,6 @@
+{"type":"session.open","agentId":"conformance-v0.1","model":"example/model","provider":"example","budgetTokens":120000,"tokenizerId":"apx4-char","schemaVersion":"0.1","ts":"2026-10-29T15:16:58.000Z"}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:read_file({\"path\":\"notes/alpha.md\"})","contentHash":"sha256:18b4e2bf"},"kind":"tool_result","tokens":19},"turn":0,"latencyMs":42,"ts":"2026-10-29T15:16:58.120Z"}
+{"type":"page.render","turn":0,"page":{"logicalRef":"tool:read_file({\"path\":\"notes/alpha.md\"})","contentHash":"sha256:18b4e2bf"},"mode":"full","ts":"2026-10-29T15:16:58.400Z"}
+{"type":"page.fault","turn":0,"page":{"logicalRef":"tool:read_file({\"path\":\"notes/alpha.md\"})","contentHash":"sha256:18b4e2bf"},"source":"intentional_rerun","ts":"2026-10-29T15:16:58.500Z"}
+{"type":"call.meta","turn":0,"provider":"example","cacheEstimate":{"estHitTokens":0,"estMissTokens":19,"providerReported":false},"latencyMs":1240,"providerUsage":{"inputTokens":19,"outputTokens":7},"ts":"2026-10-29T15:16:59.640Z"}
+{"type":"turn.render","turn":0,"residentTokens":19,"evictedTokens":0,"headroom":119981,"ts":"2026-10-29T15:16:59.645Z"}

@@ -55,15 +55,15 @@ impl From<serde_json::Error> for CodecError {
 /// the conformance suite fails if a line carrying a valid tag trips its allowlist
 /// (i.e. the vector corpus exercises every declared field).
 const FIELD_ALLOWLIST: &[(&str, &[&str])] = &[
-    ("session.open", &["agentId", "model", "provider", "budgetTokens", "tokenizerId"]),
-    ("page.declare", &["page"]),
-    ("page.render", &["turn", "page", "mode"]),
-    ("page.evict", &["turn", "page", "stubText"]),
-    ("page.fault", &["turn", "page", "source", "latencyMs"]),
-    ("page.pin", &["page", "reason"]),
-    ("page.unpin", &["page", "reason"]),
-    ("turn.render", &["turn", "residentTokens", "evictedTokens", "headroom"]),
-    ("call.meta", &["turn", "provider", "cacheEstimate", "latencyMs"]),
+    ("session.open", &["agentId", "model", "provider", "budgetTokens", "tokenizerId", "schemaVersion", "ts"]),
+    ("page.declare", &["page", "turn", "latencyMs", "ts"]),
+    ("page.render", &["turn", "page", "mode", "ts"]),
+    ("page.evict", &["turn", "page", "stubText", "ts"]),
+    ("page.fault", &["turn", "page", "source", "latencyMs", "ts"]),
+    ("page.pin", &["page", "reason", "ts"]),
+    ("page.unpin", &["page", "reason", "ts"]),
+    ("turn.render", &["turn", "residentTokens", "evictedTokens", "headroom", "ts"]),
+    ("call.meta", &["turn", "provider", "cacheEstimate", "latencyMs", "providerUsage", "ts"]),
 ];
 
 fn allowlist_for(tag: &str) -> Option<&'static [&'static str]> {
@@ -165,23 +165,29 @@ mod tests {
                 provider: "openai".into(),
                 budget_tokens: 120_000,
                 tokenizer_id: "tiktoken-o200k_base".into(),
+                schema_version: None,
+                ts: None,
             },
             Event::PageDeclare {
                 page: PageRef { id: page(), kind: PageKind::ToolResult, tokens: 8200 },
+                turn: None,
+                latency_ms: None,
+                ts: None,
             },
-            Event::PageRender { turn: 0, page: page(), mode: RenderMode::Full },
+            Event::PageRender { turn: 0, page: page(), mode: RenderMode::Full, ts: None },
             Event::PageEvict {
                 turn: 1,
                 page: page(),
                 stub_text: "[Paged out: read src/auth/session.ts (8.2k tok, 187 lines).\n \
                             Re-call read_file(path=\"src/auth/session.ts\") to re-materialize.]"
                     .into(),
+                ts: None,
             },
-            Event::PageRender { turn: 1, page: page(), mode: RenderMode::Stub },
-            Event::TurnRender { turn: 1, resident_tokens: 47_800, evicted_tokens: 82, headroom: Some(64_000) },
-            Event::PageFault { turn: 2, page: page(), source: FaultSource::ToolRecall, latency_ms: Some(180) },
-            Event::PagePin { page: page(), reason: "explicit_api: harness re-materialized the page".into() },
-            Event::PageUnpin { page: page(), reason: "budget headroom restored".into() },
+            Event::PageRender { turn: 1, page: page(), mode: RenderMode::Stub, ts: None },
+            Event::TurnRender { turn: 1, resident_tokens: 47_800, evicted_tokens: 82, headroom: Some(64_000), ts: None },
+            Event::PageFault { turn: 2, page: page(), source: FaultSource::ToolRecall, latency_ms: Some(180), ts: None },
+            Event::PagePin { page: page(), reason: "explicit_api: harness re-materialized the page".into(), ts: None },
+            Event::PageUnpin { page: page(), reason: "budget headroom restored".into(), ts: None },
             Event::CallMeta {
                 turn: 2,
                 provider: "openai".into(),
@@ -191,6 +197,8 @@ mod tests {
                     provider_reported: false,
                 },
                 latency_ms: Some(1_240),
+                provider_usage: None,
+                ts: None,
             },
         ]
     }
@@ -214,14 +222,14 @@ mod tests {
     fn option_permutations_roundtrip_exactly() {
         for source in [FaultSource::ToolRecall, FaultSource::IdentifierScan, FaultSource::ExplicitApi, FaultSource::Semantic] {
             for latency in [None, Some(0), Some(u64::MAX)] {
-                let e = Event::PageFault { turn: 7, page: page(), source, latency_ms: latency };
+                let e = Event::PageFault { turn: 7, page: page(), source, latency_ms: latency, ts: None };
                 let line = to_line(&e);
                 assert_eq!(parse_line(&line).unwrap(), e);
                 assert_eq!(to_line(&parse_line(&line).unwrap()), line);
             }
         }
         for headroom in [None, Some(0), Some(u64::MAX)] {
-            let e = Event::TurnRender { turn: 0, resident_tokens: 1, evicted_tokens: 0, headroom };
+            let e = Event::TurnRender { turn: 0, resident_tokens: 1, evicted_tokens: 0, headroom, ts: None };
             let line = to_line(&e);
             assert_eq!(parse_line(&line).unwrap(), e);
             assert_eq!(to_line(&parse_line(&line).unwrap()), line);
@@ -236,6 +244,8 @@ mod tests {
                     provider_reported: reported,
                 },
                 latency_ms: None,
+                provider_usage: None,
+                ts: None,
             };
             let line = to_line(&e);
             assert_eq!(parse_line(&line).unwrap(), e);
@@ -250,7 +260,7 @@ mod tests {
 
     #[test]
     fn unknown_field_is_hard_error_not_a_silent_drop() {
-        let e = Event::PagePin { page: page(), reason: "r".into() };
+        let e = Event::PagePin { page: page(), reason: "r".into(), ts: None };
         let mut line = to_line(&e);
         // splice a bogus extra field into the canonical line
         line = line.replace(
@@ -279,7 +289,7 @@ mod tests {
 
     #[test]
     fn read_jsonl_reports_the_offending_line() {
-        let good = to_line(&Event::PageRender { turn: 0, page: page(), mode: RenderMode::Full });
+        let good = to_line(&Event::PageRender { turn: 0, page: page(), mode: RenderMode::Full, ts: None });
         let src = format!("{good}\nnot json at all\n{good}\n");
         let err = read_jsonl(&src).unwrap_err();
         assert_eq!(err.line, Some(2), "{err}");
@@ -305,5 +315,48 @@ mod tests {
             let l2 = to_line(&parse_line(&l1).unwrap());
             assert_eq!(l1, l2);
         }
+    }
+}
+
+#[cfg(test)]
+mod rfc01_tests {
+    use super::*;
+    use crate::{CacheEstimate, Event, FaultSource, PageId, ProviderUsage};
+
+    #[test]
+    fn intentional_rerun_round_trips() {
+        let e = Event::PageFault {
+            turn: 0,
+            page: PageId { logical_ref: "x".into(), content_hash: "h".into() },
+            source: FaultSource::IntentionalRerun,
+            latency_ms: None,
+            ts: None,
+        };
+        let line = to_line(&e);
+        assert!(line.contains("\"intentional_rerun\""), "{line}");
+        assert_eq!(parse_line(&line).unwrap(), e);
+    }
+
+    #[test]
+    fn provider_usage_round_trips_and_omitted_stays_omitted() {
+        let with = Event::CallMeta {
+            turn: 0,
+            provider: "p".into(),
+            cache_estimate: CacheEstimate {
+                est_hit_tokens: 1,
+                est_miss_tokens: 2,
+                provider_reported: true,
+            },
+            latency_ms: None,
+            provider_usage: Some(ProviderUsage {
+                input_tokens: 7,
+                output_tokens: 3,
+                cached_input_tokens: None,
+            }),
+            ts: None,
+        };
+        let line = to_line(&with);
+        assert!(line.contains("\"providerUsage\":{\"inputTokens\":7,\"outputTokens\":3}"), "{line}");
+        assert_eq!(parse_line(&line).unwrap(), with);
     }
 }

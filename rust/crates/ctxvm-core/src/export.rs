@@ -173,7 +173,7 @@ pub fn build_handoff_snapshot(source: &[Event], turn: u64) -> HandoffSnapshot {
     // Touch: distinct page identities with a recorded full render, turn ≤ N…
     let mut touched: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
     for event in prefix {
-        if let Event::PageRender { turn: t, page, mode: RenderMode::Full } = event {
+        if let Event::PageRender { turn: t, page, mode: RenderMode::Full, .. } = event {
             if *t <= turn {
                 touched.insert(format!("{}|{}", page.logical_ref, page.content_hash));
             }
@@ -252,6 +252,8 @@ mod tests {
             provider: "p".into(),
             budget_tokens: 120000,
             tokenizer_id: "apx4-char".into(),
+            schema_version: None,
+            ts: None,
         }
     }
 
@@ -265,6 +267,9 @@ mod tests {
                 kind: PageKind::File,
                 tokens,
             },
+            latency_ms: None,
+            ts: None,
+            turn: None,
         }
     }
 
@@ -277,6 +282,7 @@ mod tests {
             turn,
             page: pid(logical, hash),
             stub_text: "[stub] re-call the tool to re-materialize".into(),
+            ts: None,
         }
     }
 
@@ -286,6 +292,7 @@ mod tests {
             page: pid(logical, hash),
             source: FaultSource::ToolRecall,
             latency_ms: None,
+            ts: None,
         }
     }
 
@@ -294,11 +301,12 @@ mod tests {
             turn,
             page: pid(logical, hash),
             mode: RenderMode::Full,
+            ts: None,
         }
     }
 
     fn turn_render(turn: u64, tokens: u64) -> Event {
-        Event::TurnRender { turn, resident_tokens: tokens, evicted_tokens: 0, headroom: None }
+        Event::TurnRender { turn, resident_tokens: tokens, evicted_tokens: 0, headroom: None, ts: None }
     }
 
     fn call_meta(turn: u64) -> Event {
@@ -311,6 +319,8 @@ mod tests {
                 provider_reported: false,
             },
             latency_ms: None,
+            provider_usage: None,
+            ts: None,
         }
     }
 
@@ -424,7 +434,7 @@ mod tests {
         let mut src = flush_tail_stream();
         // Trailing bookkeeping after the last turn fact — excluded by the rule.
         src.push(declare("file:trail", "h-t", 5));
-        src.push(Event::PagePin { page: pid("file:trail", "h-t"), reason: "hot".into() });
+        src.push(Event::PagePin { page: pid("file:trail", "h-t"), reason: "hot".into(), ts: None });
 
         let whole = handoff_prefix(&src, 9);
         assert_eq!(whole.len(), src.len() - 2, "trailing declare+pin excluded");
@@ -480,7 +490,7 @@ mod tests {
         let src = vec![
             open(),
             declare("file:p", "h-p", 10),
-            Event::PagePin { page: pid("file:p", "h-p"), reason: "hot".into() },
+            Event::PagePin { page: pid("file:p", "h-p"), reason: "hot".into(), ts: None },
             evict(0, "file:p", "h-p"), // evict-while-pinned violation + stray stub
             turn_render(0, 0),
             call_meta(0),
@@ -513,7 +523,7 @@ mod tests {
         // A recorded fact that the derived schedule cannot reproduce stays
         // dirty inside the slice — the DQ gate IS the replay gate.
         let mut src = flush_tail_stream();
-        src.push(Event::TurnRender { turn: 4, resident_tokens: 999, evicted_tokens: 0, headroom: None });
+        src.push(Event::TurnRender { turn: 4, resident_tokens: 999, evicted_tokens: 0, headroom: None, ts: None });
         let snapshot = build_handoff_snapshot(&src, 4);
         assert!(!snapshot.replay_determinism());
         assert!(snapshot.replay.divergences.iter().any(|d| matches!(

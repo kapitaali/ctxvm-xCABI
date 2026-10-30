@@ -99,7 +99,7 @@ pub fn profile(trace: &[Event]) -> ProfileReport {
     // First-declaration stream index per page identity.
     let mut declared_at: BTreeMap<(String, String), usize> = BTreeMap::new();
     for (idx, event) in trace.iter().enumerate() {
-        if let Event::PageDeclare { page } = event {
+        if let Event::PageDeclare { page, .. } = event {
             let key = page_id_key(&page.id);
             declared_at.entry(key).or_insert(idx);
         }
@@ -111,7 +111,7 @@ pub fn profile(trace: &[Event]) -> ProfileReport {
     let mut turn_refs: BTreeSet<u64> = BTreeSet::new();
     for event in trace {
         match event {
-            Event::PageEvict { turn, page, stub_text } => {
+            Event::PageEvict { turn, page, stub_text, .. } => {
                 turn_refs.insert(*turn);
                 evictions.push(EvictRow {
                     turn: *turn,
@@ -119,7 +119,7 @@ pub fn profile(trace: &[Event]) -> ProfileReport {
                     stub_text: stub_text.clone(),
                 });
             }
-            Event::PageFault { turn, page, source, latency_ms } => {
+            Event::PageFault { turn, page, source, latency_ms, .. } => {
                 turn_refs.insert(*turn);
                 faults.push(FaultRow {
                     turn: *turn,
@@ -244,6 +244,9 @@ mod tests {
                 kind: PageKind::File,
                 tokens,
             },
+            latency_ms: None,
+            ts: None,
+            turn: None,
         }
     }
 
@@ -252,6 +255,7 @@ mod tests {
             turn,
             page: PageId { logical_ref: logical.into(), content_hash: hash.into() },
             stub_text: format!("[Paged out: {logical}]"),
+            ts: None,
         }
     }
 
@@ -261,11 +265,12 @@ mod tests {
             page: PageId { logical_ref: logical.into(), content_hash: hash.into() },
             source,
             latency_ms: None,
+            ts: None,
         }
     }
 
     fn turn_render(turn: u64, tokens: u64) -> Event {
-        Event::TurnRender { turn, resident_tokens: tokens, evicted_tokens: 0, headroom: None }
+        Event::TurnRender { turn, resident_tokens: tokens, evicted_tokens: 0, headroom: None, ts: None }
     }
 
     fn sample_trace() -> Vec<Event> {
@@ -276,6 +281,8 @@ mod tests {
                 provider: "p".into(),
                 budget_tokens: 200_000,
                 tokenizer_id: "apx4-char".into(),
+                schema_version: None,
+                ts: None,
             },
             declare("file:a", "h-a", 120),
             declare("tool:b", "h-b", 400),
@@ -298,6 +305,8 @@ mod tests {
                 provider_reported: false,
             },
             latency_ms: Some(10),
+            provider_usage: None,
+            ts: None,
         }
     }
 

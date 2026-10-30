@@ -245,6 +245,9 @@ mod tests {
                 kind: PageKind::File,
                 tokens,
             },
+            latency_ms: None,
+            ts: None,
+            turn: None,
         }
     }
 
@@ -253,6 +256,7 @@ mod tests {
             turn,
             page: PageId { logical_ref: logical.into(), content_hash: hash.into() },
             stub_text: SPEC_STUB.into(),
+            ts: None,
         }
     }
 
@@ -262,15 +266,16 @@ mod tests {
             page: PageId { logical_ref: logical.into(), content_hash: hash.into() },
             source: FaultSource::ToolRecall,
             latency_ms: None,
+            ts: None,
         }
     }
 
     fn pin(page: PageId, reason: &str) -> Event {
-        Event::PagePin { page, reason: reason.into() }
+        Event::PagePin { page, reason: reason.into(), ts: None }
     }
 
     fn unpin(page: PageId, reason: &str) -> Event {
-        Event::PageUnpin { page, reason: reason.into() }
+        Event::PageUnpin { page, reason: reason.into(), ts: None }
     }
 
     /// ── Scenario 1 — stable session: everything resident, no paging. ─────────
@@ -285,6 +290,8 @@ mod tests {
                 provider: "p".into(),
                 budget_tokens: 120_000,
                 tokenizer_id: "t".into(),
+                schema_version: None,
+                ts: None,
             },
             declare_file("file:auth.ts", "h-a", 1000),
             Event::PageDeclare {
@@ -296,6 +303,9 @@ mod tests {
                     kind: PageKind::ToolResult,
                     tokens: 400,
                 },
+                latency_ms: None,
+                ts: None,
+                turn: None,
             },
             Event::PageDeclare {
                 page: PageRef {
@@ -303,6 +313,9 @@ mod tests {
                     kind: PageKind::Summary,
                     tokens: 60,
                 },
+                latency_ms: None,
+                ts: None,
+                turn: None,
             },
         ];
         let mut pb = Playback::new();
@@ -473,6 +486,8 @@ mod tests {
                     provider_reported: false,
                 },
                 latency_ms: Some(1_240),
+                provider_usage: None,
+                ts: None,
             },
         ];
 

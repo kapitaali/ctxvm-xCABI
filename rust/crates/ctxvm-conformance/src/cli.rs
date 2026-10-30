@@ -95,7 +95,7 @@ fn declared_refs(trace: &[Event]) -> Vec<String> {
     trace
         .iter()
         .filter_map(|e| match e {
-            Event::PageDeclare { page } => Some(page.id.logical_ref.clone()),
+            Event::PageDeclare { page, .. } => Some(page.id.logical_ref.clone()),
             _ => None,
         })
         .collect::<BTreeSet<_>>()
@@ -108,7 +108,7 @@ fn declared_identities(trace: &[Event]) -> BTreeSet<(String, String)> {
     trace
         .iter()
         .filter_map(|e| match e {
-            Event::PageDeclare { page } => {
+            Event::PageDeclare { page, .. } => {
                 Some((page.id.logical_ref.clone(), page.id.content_hash.clone()))
             }
             _ => None,
@@ -218,6 +218,11 @@ pub fn replay_core(trace: &str, turn: Option<u64>, pins: &[String], output: Opti
         Err(e) => return CliOutcome::fail(2, format!("parse error: {e}")),
         Ok(t) => t,
     };
+    // RFC-0.1 R0: a trace without `schemaVersion` is v0, and v0 carries no
+    // RFC-0.1-only fields. Reject rather than guess (R0 consumer law).
+    if let Err(e) = ctxvm_codec::check_version(&trace) {
+        return CliOutcome::fail(2, format!("parse error: {e}"));
+    }
 
     // Guard AFTER read/parse — phase order mirrors the pre-extraction CLI
     // (read → parse → pin guard → report) so the argv-driven behavior is
@@ -392,6 +397,9 @@ pub fn profile_core(
         Err(e) => return CliOutcome::fail(2, format!("parse error: {e}")),
         Ok(t) => t,
     };
+    if let Err(e) = ctxvm_codec::check_version(&trace) {
+        return CliOutcome::fail(2, format!("parse error: {e}"));
+    }
 
     let report = profile(&trace);
 
@@ -473,7 +481,10 @@ pub fn diff_core(a: &str, b: &str, output: Option<&str>) -> CliOutcome {
             Err(e) => return Err(CliOutcome::fail(2, format!("cannot read `{path}`: {e}"))),
         };
         match read_jsonl(&src) {
-            Ok(t) => Ok(t),
+            Ok(t) => match ctxvm_codec::check_version(&t) {
+                Ok(()) => Ok(t),
+                Err(e) => Err(CliOutcome::fail(2, format!("parse error in `{path}`: {e}"))),
+            },
             Err(e) => Err(CliOutcome::fail(2, format!("parse error in `{path}`: {e}"))),
         }
     };
@@ -838,7 +849,10 @@ pub fn export_core(
             .map(|l| l.to_string())
             .collect();
         match read_jsonl(&text) {
-            Ok(t) => t,
+            Ok(t) => match ctxvm_codec::check_version(&t) {
+                Ok(()) => t,
+                Err(e) => return CliOutcome::fail(2, format!("parse error in `{trace}`: {e}")),
+            },
             Err(e) => return CliOutcome::fail(2, format!("parse error in `{trace}`: {e}")),
         }
     };

@@ -67,6 +67,53 @@ mod tests {
         assert_eq!(err.line, Some(4), "offending line should be 4, got {err}");
     }
 
+    const VECTORS_V01: &str = include_str!("../vectors/events-v0-1.jsonl");
+
+    #[test]
+    fn v01_vector_roundtrips_byte_identical() {
+        let events = read_jsonl(VECTORS_V01).expect("v0.1 vector must parse");
+        assert_eq!(
+            write_jsonl(&events),
+            VECTORS_V01,
+            "v0.1 vector is not canonical"
+        );
+    }
+
+    #[test]
+    fn v01_vector_passes_the_version_gate() {
+        let events = read_jsonl(VECTORS_V01).unwrap();
+        ctxvm_codec::check_version(&events).expect("v0.1 vector must satisfy R0");
+    }
+
+    #[test]
+    fn replay_core_rejects_rfc01_fields_on_a_v0_trace() {
+        // The gate must live in the CLI read path, not only in the library.
+        // Found during RFC-0.1 verification: with the check unwired, `replay`
+        // exited 0 on a v0 trace carrying `intentional_rerun` — silently
+        // accepting a v0 trace that v0 semantics reject.
+        let dir = std::env::temp_dir().join(format!("ctxvm-rfc01-gate-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("v0-with-intentional.jsonl");
+        let src = concat!(
+            "{\"type\":\"session.open\",\"agentId\":\"a\",\"model\":\"m\",\"provider\":\"p\",\"budgetTokens\":1000,\"tokenizerId\":\"t\"}\n",
+            "{\"type\":\"page.declare\",\"page\":{\"id\":{\"logicalRef\":\"x\",\"contentHash\":\"h\"},\"kind\":\"file\",\"tokens\":1}}\n",
+            "{\"type\":\"page.fault\",\"turn\":0,\"page\":{\"logicalRef\":\"x\",\"contentHash\":\"h\"},\"source\":\"intentional_rerun\"}\n"
+        );
+        std::fs::write(&path, src).unwrap();
+        let out = crate::cli::replay_core(path.to_str().unwrap(), None, &[], None);
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(
+            out.exit, 2,
+            "a v0 trace carrying intentional_rerun must be rejected, got exit {} stdout {}",
+            out.exit, out.stdout
+        );
+        let fatal = out.fatal.unwrap_or_default();
+        assert!(
+            fatal.contains("intentional_rerun requires schemaVersion"),
+            "fatal message should name the R0 contract, got: {fatal}"
+        );
+    }
+
     // ── replay conformance (T1d) ─────────────────────────────────────────────
 
     use ctxvm_core::replay;

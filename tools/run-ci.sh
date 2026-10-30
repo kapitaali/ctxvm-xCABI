@@ -69,6 +69,7 @@ log "ts suites green (13 + 58 + 45 tests); python suites green (87 + 44 + 8 test
 # 3) schema + corpus integrity + the T21 export round-trip
 log "gate 3/4: schema validator + corpus checksums + export round-trip"
 venvs/odps/bin/python spec/rfc-0/validate_schema.py "${FIXTURES[@]}"
+venvs/odps/bin/python spec/rfc-0.1/validate_schema_v0_1.py rust/crates/ctxvm-conformance/vectors/events-v0-1.jsonl
 ( cd corpus/m1 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd corpus/m2 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd corpus/m3 && sha256sum -c checksums.sha256 ) >/dev/null

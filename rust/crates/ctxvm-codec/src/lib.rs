@@ -16,5 +16,6 @@ pub mod model;
 
 pub use jsonl::{parse_line, read_jsonl, to_line, write_jsonl, CodecError};
 pub use model::{
-    CacheEstimate, Event, FaultSource, PageId, PageKind, PageRef, RenderMode,
+    check_version, schema_version_of, CacheEstimate, Event, FaultSource, PageId, PageKind,
+    PageRef, ProviderUsage, RenderMode,
 };

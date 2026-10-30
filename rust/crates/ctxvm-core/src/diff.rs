@@ -119,7 +119,7 @@ pub fn diff_traces(a: &[Event], b: &[Event]) -> TraceDiff {
     let mut declared_b: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for (side, stream) in [(&mut declared_a, a), (&mut declared_b, b)] {
         for event in stream {
-            if let Event::PageDeclare { page } = event {
+            if let Event::PageDeclare { page, .. } = event {
                 side.entry(page.id.logical_ref.clone())
                     .or_default()
                     .insert(page.id.content_hash.clone());
@@ -219,6 +219,9 @@ mod tests {
                 kind: PageKind::File,
                 tokens,
             },
+            latency_ms: None,
+            ts: None,
+            turn: None,
         }
     }
 
@@ -229,11 +232,12 @@ mod tests {
             turn,
             page: PageId { logical_ref: logical.into(), content_hash: hash.into() },
             stub_text: "[stub]".into(),
+            ts: None,
         }
     }
 
     fn turn_render(turn: u64, tokens: u64) -> Event {
-        Event::TurnRender { turn, resident_tokens: tokens, evicted_tokens: 0, headroom: None }
+        Event::TurnRender { turn, resident_tokens: tokens, evicted_tokens: 0, headroom: None, ts: None }
     }
 
     fn call_meta(turn: u64) -> Event {
@@ -246,6 +250,8 @@ mod tests {
                 provider_reported: false,
             },
             latency_ms: None,
+            provider_usage: None,
+            ts: None,
         }
     }
 
@@ -328,8 +334,11 @@ mod tests {
                     kind: PageKind::File,
                     tokens: 1,
                 },
+                latency_ms: None,
+                ts: None,
+                turn: None,
             },
-            Event::PagePin { page: PageId { logical_ref: "x".into(), content_hash: "h".into() }, reason: "r".into() },
+            Event::PagePin { page: PageId { logical_ref: "x".into(), content_hash: "h".into() }, reason: "r".into(), ts: None },
         ] {
             assert_eq!(event_turn(&event), None);
         }

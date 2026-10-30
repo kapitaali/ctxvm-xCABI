@@ -88,7 +88,7 @@ fn check_facts(trace: &[Event], pb: &Playback, at: impl Fn(u64) -> bool) -> Vec<
     let mut divergences = Vec::new();
     for event in trace {
         match event {
-            Event::PageRender { turn, page, mode } if at(*turn) => match pb.page(page) {
+            Event::PageRender { turn, page, mode, .. } if at(*turn) => match pb.page(page) {
                 None => divergences.push(Divergence::RenderOfUnknownPage {
                     turn: *turn,
                     page: page.clone(),
@@ -129,6 +129,9 @@ mod tests {
     fn declare(id: PageId, tokens: u64) -> Event {
         Event::PageDeclare {
             page: PageRef { id, kind: PageKind::File, tokens },
+            latency_ms: None,
+            ts: None,
+            turn: None,
         }
     }
 
@@ -138,6 +141,7 @@ mod tests {
             turn: 0,
             page: PageId { logical_ref: "ghost".into(), content_hash: "h".into() },
             mode: RenderMode::Full,
+            ts: None,
         }];
         let report = replay(&trace);
         assert_eq!(report.divergences.len(), 1);
@@ -154,8 +158,8 @@ mod tests {
                 PageId { logical_ref: "a".into(), content_hash: "h-a".into() },
                 100,
             ),
-            Event::TurnRender { turn: 0, resident_tokens: 100, evicted_tokens: 0, headroom: None },
-            Event::TurnRender { turn: 1, resident_tokens: 200, evicted_tokens: 0, headroom: None },
+            Event::TurnRender { turn: 0, resident_tokens: 100, evicted_tokens: 0, headroom: None, ts: None },
+            Event::TurnRender { turn: 1, resident_tokens: 200, evicted_tokens: 0, headroom: None, ts: None },
             Event::CallMeta {
                 turn: 1,
                 provider: "p".into(),
@@ -165,6 +169,8 @@ mod tests {
                     provider_reported: false,
                 },
                 latency_ms: None,
+                provider_usage: None,
+                ts: None,
             },
         ];
         let r1 = replay(&trace);
@@ -183,8 +189,8 @@ mod tests {
                 PageId { logical_ref: "a".into(), content_hash: "h-a".into() },
                 100,
             ),
-            Event::TurnRender { turn: 0, resident_tokens: 100, evicted_tokens: 0, headroom: None },
-            Event::TurnRender { turn: 1, resident_tokens: 200, evicted_tokens: 0, headroom: None },
+            Event::TurnRender { turn: 0, resident_tokens: 100, evicted_tokens: 0, headroom: None, ts: None },
+            Event::TurnRender { turn: 1, resident_tokens: 200, evicted_tokens: 0, headroom: None, ts: None },
         ]
     }
 
@@ -218,8 +224,9 @@ mod tests {
                 page: PageId { logical_ref: "a".into(), content_hash: "h-a".into() },
                 source: ctxvm_codec::FaultSource::ToolRecall,
                 latency_ms: None,
+                ts: None,
             },
-            Event::TurnRender { turn: 1, resident_tokens: 100, evicted_tokens: 0, headroom: None },
+            Event::TurnRender { turn: 1, resident_tokens: 100, evicted_tokens: 0, headroom: None, ts: None },
         ];
         let report = replay_turn(&trace, 1);
         assert!(report.divergences.is_empty());

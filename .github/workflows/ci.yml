@@ -90,6 +90,8 @@ jobs:
           corpus/m3/hermes-thrash-synthetic.jsonl
           corpus/m4/hermes-live-session-01.jsonl
           corpus/m5/opencode-live-session-01.jsonl
+      - name: rfc-0.1 schema validator (additive)
+        run: python spec/rfc-0.1/validate_schema_v0_1.py rust/crates/ctxvm-conformance/vectors/events-v0-1.jsonl
       - name: corpus drop checksums (M1 seed)
         run: sha256sum -c checksums.sha256
         working-directory: corpus/m1

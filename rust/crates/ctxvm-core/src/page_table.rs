@@ -128,6 +128,8 @@ pub struct Playback {
     order: Vec<PageKey>,
     violations: Vec<Violation>,
     seq: usize,
+    /// Negotiated schema version (RFC-0.1 R0). None = v0.
+    schema_version: Option<String>,
 }
 
 impl Playback {
@@ -150,7 +152,7 @@ impl Playback {
         let before = self.violations.len();
 
         match event {
-            Event::PageDeclare { page } => {
+            Event::PageDeclare { page, .. } => {
                 let key = page_key(&page.id);
                 match self.pages.get(&key) {
                     Some(existing) if existing.reference == *page => {}
@@ -173,7 +175,7 @@ impl Playback {
                     }
                 }
             }
-            Event::PageEvict { turn, page, stub_text } => {
+            Event::PageEvict { turn, page, stub_text, .. } => {
                 // Clone-then-mutate: violation checks read a private copy, so
                 // logging never races the table borrow.
                 let key = page_key(page);
@@ -193,7 +195,7 @@ impl Playback {
                     }
                 }
             }
-            Event::PageFault { turn, page, .. } => {
+            Event::PageFault { turn, page, source, .. } => {
                 // Fault discovered at turn t; page re-materializes at t + 1.
                 let next_turn = turn.saturating_add(1);
                 let key = page_key(page);
@@ -201,10 +203,19 @@ impl Playback {
                     None => self.log_unknown(seq, page, "fault"),
                     Some(track) => match track.mode_at(*turn) {
                         RenderMode::Full => {
-                            self.log(
-                                seq,
-                                ViolationKind::FaultOfResidentPage { page: page.clone() },
-                            );
+                            // RFC-0.1 R1: a deliberate re-execution of a resident
+                            // page is exempt from the fault-resident rule — but only
+                            // when the trace negotiated v0.1. Version-branched, not
+                            // source-branched: the same event in a v0 trace is a
+                            // paging mistake and still violates.
+                            let exempt = *source == ctxvm_codec::FaultSource::IntentionalRerun
+                                && self.schema_version.as_deref() == Some("0.1");
+                            if !exempt {
+                                self.log(
+                                    seq,
+                                    ViolationKind::FaultOfResidentPage { page: page.clone() },
+                                );
+                            }
                         }
                         RenderMode::Stub => {
                             // Redundant fault against an already-pending rematerialize?
@@ -249,10 +260,10 @@ impl Playback {
             }
             // Facts and metadata events do not schedule state (facts are T1d's
             // comparison surface; session/call events are profiler metadata).
-            Event::PageRender { .. }
-            | Event::TurnRender { .. }
-            | Event::SessionOpen { .. }
-            | Event::CallMeta { .. } => {}
+            Event::SessionOpen { schema_version, .. } => {
+                self.schema_version = schema_version.clone();
+            }
+            Event::PageRender { .. } | Event::TurnRender { .. } | Event::CallMeta { .. } => {}
         }
 
         self.violations[before..].to_vec()
@@ -373,15 +384,18 @@ mod tests {
     fn declare(id: &PageId, kind: PageKind, tokens: u64) -> Event {
         Event::PageDeclare {
             page: PageRef { id: id.clone(), kind, tokens },
+            latency_ms: None,
+            ts: None,
+            turn: None,
         }
     }
 
     fn evict(turn: u64, id: &PageId) -> Event {
-        Event::PageEvict { turn, page: id.clone(), stub_text: format!("stub for {}", id.logical_ref) }
+        Event::PageEvict { turn, page: id.clone(), stub_text: format!("stub for {}", id.logical_ref), ts: None }
     }
 
     fn fault(turn: u64, id: &PageId) -> Event {
-        Event::PageFault { turn, page: id.clone(), source: FaultSource::ToolRecall, latency_ms: None }
+        Event::PageFault { turn, page: id.clone(), source: FaultSource::ToolRecall, latency_ms: None, ts: None }
     }
 
     #[test]
@@ -434,5 +448,72 @@ mod tests {
         assert_eq!(track.mode_at(3), RenderMode::Full); // materialized@3
         // hand-summed changes: exactly two scheduled changes
         assert_eq!(track.scheduled_changes(), 2);
+    }
+}
+
+#[cfg(test)]
+mod rfc01_tests {
+    use super::*;
+    use ctxvm_codec::{Event, FaultSource, PageId, PageKind, PageRef};
+
+    fn declare(id: PageId, tokens: u64) -> Event {
+        Event::PageDeclare {
+            page: PageRef { id, kind: PageKind::File, tokens },
+            turn: None,
+            latency_ms: None,
+            ts: None,
+        }
+    }
+
+    fn open(schema_version: Option<&str>) -> Event {
+        Event::SessionOpen {
+            agent_id: "a".into(),
+            model: "m".into(),
+            provider: "p".into(),
+            budget_tokens: 1000,
+            tokenizer_id: "t".into(),
+            schema_version: schema_version.map(str::to_string),
+            ts: None,
+        }
+    }
+
+    #[test]
+    fn intentional_rerun_is_exempt_on_a_resident_page_in_v01() {
+        let id = PageId { logical_ref: "a".into(), content_hash: "h".into() };
+        let events = vec![
+            open(Some("0.1")),
+            declare(id.clone(), 10),
+            Event::PageRender { turn: 0, page: id.clone(), mode: RenderMode::Full, ts: None },
+            Event::PageFault {
+                turn: 0,
+                page: id.clone(),
+                source: FaultSource::IntentionalRerun,
+                latency_ms: None,
+                ts: None,
+            },
+        ];
+        let pb = Playback::new_with(&events);
+        assert!(pb.violations().is_empty(), "violations: {:?}", pb.violations());
+    }
+
+    #[test]
+    fn intentional_rerun_still_violates_in_v0() {
+        // The exemption is VERSION-branched, not source-branched: the same event
+        // in a trace without `schemaVersion` is a paging mistake.
+        let id = PageId { logical_ref: "a".into(), content_hash: "h".into() };
+        let events = vec![
+            open(None),
+            declare(id.clone(), 10),
+            Event::PageRender { turn: 0, page: id.clone(), mode: RenderMode::Full, ts: None },
+            Event::PageFault {
+                turn: 0,
+                page: id.clone(),
+                source: FaultSource::IntentionalRerun,
+                latency_ms: None,
+                ts: None,
+            },
+        ];
+        let pb = Playback::new_with(&events);
+        assert_eq!(pb.violations().len(), 1, "v0 must still log the fault");
     }
 }
