@@ -112,7 +112,7 @@ CLI: `ctxvm trace`, `ctxvm profile`, `ctxvm replay`, `ctxvm diff a.jsonl b.jsonl
 |---|---|---|
 | M0 spike | 2 | Pure Rust: page table + event log + deterministic renderer + golden vectors. No FFI. |
 | M1 alpha | 3–4 | napi-rs binding + tracer API + identifier-scanning faults + `ctxvm profile`. Demo: waste numbers on a real agent. |
-| M2 beta | 3–4 | Two harness adapters (OpenCode + Vercel AI SDK) emitting identical traces. **xCABI RFC-0** + JSON schema + conformance vectors + ODPS corpus 0.1 shipped. |
+| M2 beta | 3–4 | **Two harnesses emitting RFC-0-valid traces — DONE 2026-10-30 via W5 (RR-W5-20261030): OpenCode + hermes; the Vercel AI SDK adapter was replaced by hermes as the second harness in the adoption push.** Both W5 captures replay clean (exit 0); raw cross-harness `ctxvm diff` diverges by construction (v0 has no canonical-ref law — the faithful identity minting carries each harness's native tool names/args/receipt bodies, classified in RR-W5 §4-§5); equivalence claims route through the W7 intake, not a byte diff. **xCABI RFC-0** + JSON schema + conformance vectors + ODPS corpus 0.1 shipped. |
 | M3 1.0 | 6+ | Control-plane pager behind `policy` flag (FaultPinPolicy), PyO3 binding, semantic-fault plugin interface, trace corpus → policy leaderboard (ODPS-derived rankings). |
 
 ## 7. Risks & positions
