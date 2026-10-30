@@ -17,7 +17,7 @@ for _p in (_HERMES_ROOT, _HERMES_SRC):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from plugin import create_ctxvm_plugin, Tracer, TraceInit, canonical_json, content_hash, tool_ref, identity_tokens  # noqa: E402
+from plugin import CtxvmPlugin, create_ctxvm_plugin, Tracer, TraceInit, canonical_json, content_hash, tool_ref, identity_tokens  # noqa: E402
 from live import PLUGIN_VERSION, _canon_meta, _clear_env_for_tests, register  # noqa: E402
 
 INIT = {
@@ -310,6 +310,90 @@ class PluginTests(unittest.TestCase):
         declares = [e for e in record["trace"].events if e["type"] == "page.declare"]
         self.assertEqual(len(declares), 1)
         self.assertIn("read", declares[0]["page"]["id"]["logicalRef"])
+
+    def test_live_shape_string_content_scan_fires(self):
+        """W4b B1 regression pin — RED before the fix, green after.
+
+        Live Hermes v0.22.5 appends assistant messages with ``content`` as a
+        PLAIN STRING (agent/conversation_loop.py:350, oneshot.py:103). The old
+        parser expected a parts list, so identifier_scan saw '' every live
+        turn and could never fire (m4/m7 LIVE: 0 faults).
+        """
+        plugin = create_ctxvm_plugin(INIT)
+        plugin.on_session_start({"session_id": "ses_str"})
+        plugin.on_pre_tool_call({
+            "session_id": "ses_str", "tool": "read", "args": {"path": "notes/alpha.md"},
+        })
+        plugin.on_post_tool_call({
+            "session_id": "ses_str", "tool": "read", "args": {"path": "notes/alpha.md"},
+            "status": "ok",
+            "result": "alpha contents",
+        })
+        plugin.on_pre_llm_call({
+            "session_id": "ses_str",
+            "conversation_history": [
+                {"role": "assistant", "content": "I read notes/alpha.md"},
+            ],
+        })
+        record = plugin.finish_all()[0]
+        faults = [e for e in record["trace"].events if e["type"] == "page.fault"]
+        self.assertEqual(len(faults), 1, "the live string shape must fire identifier_scan")
+        self.assertEqual(faults[0]["source"], "identifier_scan")
+
+    def test_live_shape_multimodal_parts_still_scan(self):
+        """W4b B1 guard — the block shape (multimodal / OpenCode-style) keeps firing."""
+        plugin = create_ctxvm_plugin(INIT)
+        plugin.on_session_start({"session_id": "ses_blk"})
+        plugin.on_pre_tool_call({
+            "session_id": "ses_blk", "tool": "read", "args": {"path": "notes/alpha.md"},
+        })
+        plugin.on_post_tool_call({
+            "session_id": "ses_blk", "tool": "read", "args": {"path": "notes/alpha.md"},
+            "status": "ok",
+            "result": "alpha contents",
+        })
+        plugin.on_pre_llm_call({
+            "session_id": "ses_blk",
+            "conversation_history": [
+                {"role": "user", "content": [{"type": "text", "text": "Read notes/alpha.md again"}]},
+            ],
+        })
+        record = plugin.finish_all()[0]
+        faults = [e for e in record["trace"].events if e["type"] == "page.fault"]
+        self.assertEqual(len(faults), 1)
+        self.assertEqual(faults[0]["source"], "identifier_scan")
+
+    def test_transcript_texts_shape_matrix(self):
+        """W4b B1 unit matrix — the next Hermes shape change fails one obvious test."""
+        T = CtxvmPlugin._transcript_texts
+        self.assertEqual(
+            T([{"role": "assistant", "content": "plain string body"}]),
+            "plain string body",
+        )
+        self.assertEqual(
+            T([{"role": "user", "content": [
+                {"type": "text", "text": "block one"},
+                {"type": "text", "text": "block two"},
+            ]}]),
+            "block one\nblock two",
+        )
+        self.assertEqual(
+            T([{"role": "user", "parts": [{"type": "text", "text": "part one"}, "part two str"]}]),
+            "part one\npart two str",
+        )
+        self.assertEqual(
+            T([{"role": "user", "text": "direct text"}]),
+            "direct text",
+        )
+        # Non-text blocks, bare strings, junk dicts, and non-dict messages.
+        self.assertEqual(
+            T([{"role": "user", "content": [{"type": "image", "url": "x"}, "str item", {"bogus": 1}, 42]}]),
+            "str item",
+        )
+        self.assertEqual(
+            T(["not a dict", {"role": "user", "content": "after non-dict"}]),
+            "after non-dict",
+        )
 
     def test_finish_all_returns_trace_with_jsonl_and_stats(self):
         record = self._run_once()

@@ -424,14 +424,25 @@ class CtxvmPlugin:
 
     @staticmethod
     def _transcript_texts(messages: List[Dict[str, Any]]) -> str:
-        """All text entering the compose window this turn (user + assistant + tool summaries)."""
+        """All text entering the compose window this turn (user + assistant + tool summaries).
+
+        Shapes seen in the wild (Hermes v0.22.5): ``content`` as a plain string
+        (agent/conversation_loop.py:350, oneshot.py:103), as a list of content
+        blocks (multimodal / OpenCode-style), and ``parts`` (OpenCode recordings).
+        """
         parts: List[str] = []
         for message in messages:
+            if not isinstance(message, dict):
+                continue
             zone = message.get("parts") or message.get("content")
-            if zone:
+            if isinstance(zone, str):
+                parts.append(zone)                      # the live shape (W4b B1)
+            elif isinstance(zone, list):
                 for part in zone:
                     if isinstance(part, dict) and part.get("text"):
                         parts.append(part["text"])
+                    elif isinstance(part, str):
+                        parts.append(part)
             elif message.get("text"):
                 parts.append(message["text"])
         return "\n".join(parts)
