@@ -64,7 +64,7 @@ log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode + @ctxvm/ai-sdk; pyt
 ( cd packages/py && python -m pytest test/ -q ) >/dev/null
 log "gate 2b: benchmarks/metrics — 07 reference suite + policy simulator"
 ( venvs/odps/bin/python -m pytest benchmarks/metrics -q ) >/dev/null
-log "ts suites green (13 + 58 + 45 tests); python suites green (83 + 44 + 8 tests)"
+log "ts suites green (13 + 58 + 45 tests); python suites green (87 + 44 + 8 tests)"
 
 # 3) schema + corpus integrity + the T21 export round-trip
 log "gate 3/4: schema validator + corpus checksums + export round-trip"
