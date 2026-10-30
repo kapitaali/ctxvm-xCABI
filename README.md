@@ -155,6 +155,19 @@ Roadmap, in the order the evidence allows:
 4. Governance changes (a second maintainer, a foundation, a versioned change policy) follow
    the first *external* implementer — not before.
 
+## Support this project
+
+Every number here was measured on free-tier models — which is also why the decisive
+paging experiment (W8) is still unmeasured and the corpus stays small. Donations buy
+model compute for larger measurement corpora and fund development.
+
+Bitcoin: `bc1qrdah46qfwkd03nqv88d9rw9mpgqat3ymhv0268` (bech32 P2WSH)
+
+**All donations are used to buy more compute and develop this project** — no legal
+entity, no tax deductibility, no perks; one maintainer, Apache-2.0, and the only thing
+on offer is more measurement. Donations raise the corpus budget above the current
+preregistered cap; the cap and its spend stay recorded in `reports/`.
+
 ## Repo map
 
 Curated details live in [`00-README.md`](00-README.md) (file index + locked-decisions table).
