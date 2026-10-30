@@ -15,3 +15,15 @@ target/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# White-paper build output (MyST/Sphinx). Regenerate from
+# research/white-paper/{conf.py,index.md}; 7 MB of theme/locale assets.
+research/white-paper/_build/
+
+# Per-project OpenCode plugin shim used for live captures. It re-exports the
+# repo adapter by ABSOLUTE path (install steps: packages/opencode/live/README.md),
+# so it is local harness state, never repo content.
+.opencode/
+
+# Capture-task artifacts written when tools/w5-owner-run runs from the repo root.
+/notes/
