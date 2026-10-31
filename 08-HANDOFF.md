@@ -592,6 +592,19 @@ M8 era had no integrity check in CI), and the export round-trip chain was absent
 Rehearsal red-before proven (`run: exit 7` → FAIL, exit 1); rehearsal OK 4/4 jobs in a
 pristine clone; ALL GATES GREEN. VERIFIED ON GITHUB: run 41240870951 on `31bd84f` — 4/4 jobs,
 34 s, every new step executed (step conclusions only; the job-log endpoint needs auth here).
+**DAY CLOSE 2026-10-31 — `reports/RR-DAY-20261031.md`.** Fifteen commits: the RFC-0.1 emitter
+switch (`7aa6972`), W2b provider usage (`5567d86`), R4-ts on both lanes (`7292c42`, `6695baa`),
+R5/R4 `page.declare turn`+`latencyMs` (`0da0afb`), W10 node build (`72360f1`) and its CI wiring
+(`1aeee16`), CI-1 + rehearsal tool (`efef2c2`, `31bd84f`), and four books commits. Verified the
+same day: `ALL GATES GREEN`, Rust 66, ts 20+58+45, python 91+44+8, schema v0 682 checks, node
+build parity 16 events, export round-trip green; GitHub run `41240870951` 4/4 jobs in 34 s with
+every new step executed. Two red-before probes on record (`rewriteRelativeImportExtensions`
+off → `TS5096`; `run: exit 7` → rehearsal exits 1). Defects found by verification, not by plan:
+three CI↔mirror drifts (now closed), and my own overstated npm framing (corrected in the report
+and `design/packaging.md` §9). State: `HEAD 715c31e`, `origin/main` agrees, tree clean, sealed
+surfaces untouched. Open and NOT started: W8 (owner-gated, $25 + preregistration), D3-c, W12,
+CI option 3 (release card), the `engines` floor (unverified, so unchanged), rehearsal-in-CI, and
+job-log detail from GitHub (endpoint needs auth; step conclusions only).
 **Next frontier 7 (umpire tail landed; status 2026-10-31):** the RFC-0.1 chain is closed
 end to end; remaining work is the emitter-side feed for `latencyMs` only if a lane ever
 measures a hook latency → W10 node build/metadata (owner-cleared, no publish/tag) → W8
