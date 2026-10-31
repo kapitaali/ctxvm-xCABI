@@ -57,10 +57,14 @@ class TracerTests(unittest.TestCase):
         # RFC-0.1 §R0 extends the session.open shape: schemaVersion rides
         # directly after tokenizerId (the canonical v0.1 wire order the rust
         # writer minted) — same card as the opencode mirror and the parity doc.
+        # R4-ts (RR-R4TS2): ts rides LAST on the line — same card as the node
+        # mirror and the parity doc (D9 per-lane law, port stamping its own).
         self.assertEqual(
             list(lines[0].keys()),
-            ["type", "agentId", "model", "provider", "budgetTokens", "tokenizerId", "schemaVersion"],
+            ["type", "agentId", "model", "provider", "budgetTokens", "tokenizerId", "schemaVersion", "ts"],
         )
+        # The v0.1 schema's ts pattern, mirrored: RFC 3339 UTC, milliseconds.
+        self.assertRegex(lines[0]["ts"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
         declares = [e for e in lines if e["type"] == "page.declare"]
         self.assertEqual(list(declares[0]["page"].keys()), ["id", "kind", "tokens"])
         turns = [e for e in lines if e["type"] == "turn.render"]
@@ -159,7 +163,52 @@ class TracerTests(unittest.TestCase):
         self.assertEqual(len(faults), 1)
 
     def test_determinism_identical_sessions_byte_identical(self):
-        self.assertEqual(self.run_healthy().jsonl, self.run_healthy().jsonl)
+        # D9: ts default-ON stamps each trace's own wall-clock; the per-trace
+        # opt-out is the named byte-stability mechanism.
+        prev = os.environ.get("CTXVM_TRACE_TS")
+        os.environ["CTXVM_TRACE_TS"] = "0"
+        try:
+            self.assertEqual(self.run_healthy().jsonl, self.run_healthy().jsonl)
+        finally:
+            if prev is None:
+                os.environ.pop("CTXVM_TRACE_TS", None)
+            else:
+                os.environ["CTXVM_TRACE_TS"] = prev
+
+    def test_ts_rides_last_on_every_event_rfc3339_utc_ms_default_on(self):
+        # RFC-0.1 §R4 (D9 default-ON, RR-R4TS2): ts on EVERY event, LAST key,
+        # RFC 3339 UTC ms, monotonic across the stream (live pushes + cached
+        # tail snapshots mint in temporal order by construction).
+        vm = self.run_healthy()
+        events = vm.events
+        for e in events:
+            keys = list(e.keys())
+            self.assertEqual(keys[-1], "ts", f"ts must ride LAST on {e['type']}")
+            self.assertRegex(
+                e["ts"], r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:([0-5]\d|60)\.\d{3}Z$",
+            )
+        stamps = [e["ts"] for e in events]
+        self.assertEqual(sorted(stamps), stamps, "ts monotonic across the stream")
+        # Tail snapshots mint at their turn's render snapshot time: repeated
+        # finish() flushes re-derive the SAME stamps — covered by
+        # test_finish_idempotent_tail_regenerates, deliberately left unwrapped
+        # so it proves idempotency holds under default-ON.
+
+    def test_ctxvm_trace_ts_0_opts_out_bytewise(self):
+        # CTXVM_TRACE_TS=0: no ts on any line, byte determinism restored (D9).
+        prev = os.environ.get("CTXVM_TRACE_TS")
+        os.environ["CTXVM_TRACE_TS"] = "0"
+        try:
+            first = self.run_healthy()
+            again = self.run_healthy()
+            for e in first.events + again.events:
+                self.assertNotIn("ts", e, f"no ts under the opt-out on {e['type']}")
+            self.assertEqual(again.jsonl, first.jsonl, "the opt-out is the byte-stability mechanism")
+        finally:
+            if prev is None:
+                os.environ.pop("CTXVM_TRACE_TS", None)
+            else:
+                os.environ["CTXVM_TRACE_TS"] = prev
 
     def test_content_hash_and_canonical_json(self):
         self.assertRegex(content_hash("anything"), r"^sha256:[0-9a-f]{8}$")
@@ -608,13 +657,16 @@ class LiveAdapterTests(unittest.TestCase):
 
 # RFC-0.1 (RR-RFC01E1): session.open gains `schemaVersion` — updated on BOTH
 # sides in the same card, together with the contract doc table (2026-10-31).
+# R4-ts (RR-R4TS2): ts gains on ALL types in the hermes port's own per-lane
+# card (statuses the §R3-note precedent; updated with the parity doc + the
+# node mirror's opencode table already carrying its lane's ts in RR-R4TS1).
 CANONICAL_EVENT_KEYS = {
-    "session.open": ["agentId", "budgetTokens", "model", "provider", "schemaVersion", "tokenizerId", "type"],
-    "page.declare": ["page", "type"],
-    "page.fault": ["page", "source", "turn", "type"],
-    "page.render": ["mode", "page", "turn", "type"],
-    "turn.render": ["evictedTokens", "headroom", "residentTokens", "turn", "type"],
-    "call.meta": ["cacheEstimate", "provider", "turn", "type"],
+    "session.open": ["agentId", "budgetTokens", "model", "provider", "schemaVersion", "tokenizerId", "ts", "type"],
+    "page.declare": ["page", "ts", "type"],
+    "page.fault": ["page", "source", "turn", "ts", "type"],
+    "page.render": ["mode", "page", "turn", "ts", "type"],
+    "turn.render": ["evictedTokens", "headroom", "residentTokens", "turn", "ts", "type"],
+    "call.meta": ["cacheEstimate", "provider", "turn", "ts", "type"],
 }
 CANONICAL_META_KEYS = [
     "budgetTokens", "capturedAt", "harness", "harnessVersion", "hookStats",

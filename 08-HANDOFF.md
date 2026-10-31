@@ -288,9 +288,10 @@ metric; pinned `prices.json` v1 (nulls never substituted); counts
 `7a4f499` with Actions run `40845029026` green 4/4 (schema/hub/rust/ts) —
 the W3 commit solo on top of the `2a39ddc` batch (whose run `40843322867`
 was green 4/4; the rust job's 7 steps include the new tiktoken-feature
-gate). Current counts `ts 18 + 58 + 45` / `python 87 + 44 + 8` (hermes +3 from W4b B1
-and +4 from W4b B2, 2026-10-30; node +3 from the W2b tracer usage API and +2 from
-the R4-ts card, 2026-10-31; was `80 + 44 + 8` through 2026-10-29).
+gate). Current counts `ts 18 + 58 + 45` / `python 89 + 44 + 8` (hermes +3 from W4b B1
+and +4 from W4b B2, 2026-10-30, +2 more from its R4-ts card, 2026-10-31; node +3 from
+the W2b tracer usage API +2 from the node R4-ts card, 2026-10-31; was `80 + 44 + 8`
+through 2026-10-29).
 **W4 audit LANDED** (2026-10-29, `reports/RR-W4-20261029.md` — docs-anchored:
 `packages/hermes/OBSERVABILITY.md` records the verified contract, the measured
 hook cost and the four findings; the load-bearing one is **F1: `identifier_scan`
@@ -517,6 +518,20 @@ hermes stamps in its own per-lane card. Counts: `ts 18 + 58 + 45` (node +2).
 (owner-cleared, no publish/tag) → umpire cross-repo tail (owner coordination —
 dirty worktree) → W8 ($25, preregistered; D12's est* decision made there) →
 D3-c exporter promotion → W12 Steps 2+ (post-W8).
+**R4-ts CARD 2 LANDED (2026-10-31, `reports/RR-R4TS2-20261031.md`):** the hermes
+python port stamps `ts` — same law as the node card (per-trace opt-out, one mint
+per turn at render() close feeding both tail facts, idempotency under default-ON,
+byte-compare pins under the named opt-out); the live-echo fixture regen gained ts
+on all 20 lines with the B2 frozen corridor printing SKIPPED and the artifact
+staying v0.1-validator-CLEAN; both parity tables + the §2 note updated. ALL FOUR
+LANES now stamp per-event `ts` (RFC-0.1 §R4 fully in force on the emission side;
+only the `page.declare ` latencyMs half of R4 and R5's turn remain as later cards).
+Counts: `python 89 + 44 + 8` (hermes +2); `ts 18 + 58 + 45`.
+**Next frontier 5 (R4-ts-2 landed; status 2026-10-31):** `page.declare` `turn`/
+`latencyMs` (R5 + R4 halves) cards → W10 node build/metadata (owner-cleared, no
+publish/tag) → umpire cross-repo tail (owner coordination — dirty worktree) →
+W8 ($25, preregistered; D12's est* decision made there) → D3-c exporter promotion →
+W12 Steps 2+ (post-W8).
 **Owner decisions D8–D11 recorded (2026-10-31, `reports/RR-DECISIONS-20261031.md`):**
 D8 emitter split (version switch first — landed above as `7aa6972`) · D9 `ts`
 default-ON with the `CTXVM_TRACE_TS=0` per-trace opt-out (implemented with a lane's

@@ -23,6 +23,8 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set, Union
 
 Json = Union[None, bool, int, float, str, List["Json"], Dict[str, "Json"]]
@@ -123,6 +125,14 @@ class Tracer:
         self._fault_count = 0
         self._all_declared: Dict[str, int] = {}  # ref|hash → tokens
         self._pending_meta: List[Dict[str, Any]] = []
+        # RFC-0.1 §R4 (D9 policy): every event gains `ts` — RFC 3339 UTC ms.
+        # DEFAULT ON; the per-trace opt-out `CTXVM_TRACE_TS=0` (read ONCE at
+        # trace creation) covers byte-stability needs (fixtured drops,
+        # determinism pins). Tail stamps mint at the turn's render snapshot
+        # time, so repeated finish() flushes re-derive the SAME stamps — the
+        # idempotency law below holds under default-on (RR-R4TS2, node mirror).
+        self._ts_enabled: bool = os.environ.get("CTXVM_TRACE_TS") != "0"
+        self._turn_stamps: List[Optional[str]] = []
         # session.open is emitted at tracer creation (first event in the log).
         # RFC-0.1 R0 (D4 approved; D8 = emitter version switch first): every
         # trace this build emits declares schemaVersion "0.1" — the version
@@ -138,7 +148,19 @@ class Tracer:
             "schemaVersion": "0.1",
         })
 
+    def _stamp(self) -> str:
+        """RFC-3339 UTC, millisecond precision — exactly the v0.1 schema's ts
+        pattern (§R4). Mirror of the node tracer's ``Date#toISOString()``."""
+        now = datetime.now(timezone.utc)
+        return now.strftime("%Y-%m-%dT%H:%M:%S") + f".{now.microsecond // 1000:03d}Z"
+
     def _push(self, event: Dict[str, Any]) -> None:
+        # RFC-0.1 §R4: ts rides LAST on every event — the canonical v0.1 wire
+        # order the rust writer minted (events-v0-1.jsonl: …, providerUsage, ts).
+        # Assignment order lands it after the body keys. Optional per the §R4
+        # law — under the opt-out the key is absent, never null.
+        if self._ts_enabled:
+            event["ts"] = self._stamp()
         self._events.append(event)
 
     def _emit_fault(self, page: Dict[str, Any], source: FaultSource,
@@ -243,11 +265,17 @@ class Tracer:
             resident_at_turn += page["tokens"]
             page["revealedAtPrev"] = page["revealed"]
 
+        # §R4-ts: the turn's tail facts (turn.render + this call.meta snapshot)
+        # mint ONE timestamp at snapshot time — finish() flushes re-derive
+        # these exact bytes (node mirror: the same `now` for both).
+        now: Optional[str] = self._stamp() if self._ts_enabled else None
+        self._turn_stamps.append(now)
         self._pending_meta.append({
             "turn": self._turn,
             "hit": hit,
             "residentAtTurn": resident_at_turn,
             "latencyMs": input.get("latencyMs"),
+            "ts": now,
         })
 
     def scan(self, input: Dict[str, Any]) -> None:
@@ -299,6 +327,11 @@ class Tracer:
             }
             if self._init.budget_tokens > 0:
                 tr["headroom"] = self._init.budget_tokens - resident
+            # §R4-ts: cached from snapshot time — repeated flushes stay
+            # byte-stable (idempotency law). Turn index aligns with render order.
+            stamp = self._turn_stamps[t]
+            if stamp is not None:
+                tr["ts"] = stamp
             tail.append(tr)
 
         for m in self._pending_meta:
@@ -314,6 +347,11 @@ class Tracer:
             }
             if m.get("latencyMs") is not None:
                 meta["latencyMs"] = m["latencyMs"]
+            # §R4-ts rides LAST (the wire slot where providerUsage would ride
+            # first if this port's hook surface ever gains a usage source —
+            # the §R3 per-lane omission law; see 09-plugin-parity.md §2).
+            if m.get("ts") is not None:
+                meta["ts"] = m["ts"]
             tail.append(meta)
 
         events = list(self._events) + tail
