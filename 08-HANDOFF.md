@@ -470,6 +470,14 @@ as their own cards) → `ts` policy per D9 (default-ON, `CTXVM_TRACE_TS=0` opt-o
 W10 node build/metadata → umpire cross-repo tail (needs owner coordination — dirty
 worktree) → W8 ($25, preregistered) → D3-c exporter promotion (with drift guard) →
 W12 Steps 2+ (post-W8).
+**Owner decisions D8–D11 recorded (2026-10-31, `reports/RR-DECISIONS-20261031.md`):**
+D8 emitter split (version switch first — landed above as `7aa6972`) · D9 `ts`
+default-ON with the `CTXVM_TRACE_TS=0` per-trace opt-out (implemented with a lane's
+ts card) · D10 `productVersion: "0.1"` bump at the first v0.1 drop + hub regen ·
+D11 the three `ctxvm <ctxvm@local>`-signed pushed commits (`36cec7c`, `f0f2710`,
+`d21bcb7`) are RECORDED, rewritten never — root cause a transient local git
+identity override (removed, verified absent; global config was always law-correct);
+standing law now explicit: future mis-signed commits are recorded, never force-pushed.
 
 ## §1. Workspace map
 
