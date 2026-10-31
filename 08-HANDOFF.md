@@ -654,6 +654,13 @@ external/prior-art claim written into a repo doc must carry its locator (URL / a
 repo path) at first mention. Unverified → mark `UNVERIFIED-<date>`, never cite as fact.
 Web-verify before the white paper or any published prose repeats a claim.
 
+**Commit attribution (law, confirmed by the owner 2026-10-31):** every commit in this repo
+is authored `kapitaali <teppo@kapitaali.com>`. The global `~/.gitconfig` already resolves
+to it, so a plain `git commit` is correct — reach for `git -c user.name/user.email` ONLY
+if an override is suspected. Any commit signed otherwise is a mis-signing: record it in the
+books and never rewrite it (D11; three 2026-10-30 commits `36cec7c`/`f0f2710`/`d21bcb7`
+are the recorded case). Pushing stays the owner's act in every card.
+
 **If blocked or confused:** write the report with status `BLOCKED` + exact error text, then
 still print the summary. A failed task documented well is a completed task's equal.
 
