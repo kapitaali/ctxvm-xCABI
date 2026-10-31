@@ -36,3 +36,16 @@ same session, before this record was filed; the answers themselves came first).
   Hub listing exists.
 - **Donation policy unchanged:** all donations → compute + development; spend
   recorded in reports (address validated + public in README).
+
+---
+
+## 3. D12 — appended the same day, after `RR-W2B1-20261031.md` landed (`5567d86`)
+
+The W2b card left one deliberate non-decision on record (§6 of its report). The
+owner answered it the same day; recorded here to keep all D-numbered decisions in
+one ledger.
+
+| ID | Question (source) | Owner answer | Consequence |
+|---|---|---|---|
+| D12 | Upgrade `cacheEstimate.estHitTokens`/`estMissTokens` from the page-table estimate to provider truth (cache-read/uncached split, `providerReported` → true) now that a lane carries provider receipts? (`RR-W2B1-20261031.md` §6) | **Defer to W8 (recommended option)** | est* remain the tracer page-model estimate on every lane for now; the provider's own receipt keeps riding the separate `providerUsage` fact (RFC-0.1 §R3). The upgrade decision moves **into the W8 capture design** (the D5 price-cap work), where the receipt-bearing capture is written; W3's `usdPer1mCachedRead` arithmetic and W6's `gen_ai.usage.cache_read` OTel gate (fires only on `providerReported`) are priced against est* until then. The canon mock's tracer-vs-provider disagreement (tracer 4 hit tokens at turn 2, provider 0 cached) stays visible and legal inside the frozen fixture. |
+

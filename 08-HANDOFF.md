@@ -486,6 +486,23 @@ cacheEstimate upgrade question (or skip) → `ts` emission cards (D9 policy: def
 `CTXVM_TRACE_TS=0` opt-out), per lane → W10 node build/metadata → umpire
 cross-repo tail (owner coordination — dirty worktree) → W8 ($25, preregistered) →
 D3-c exporter promotion (with drift guard) → W12 Steps 2+ (post-W8).
+**D12 SETTLED (2026-10-31, this books commit):** the cacheEstimate upgrade question
+(RR-W2B1 §6) is answered — **defer to W8** (recommended option taken): est* keep
+their page-table semantics everywhere, the provider receipt rides the separate
+`providerUsage` fact only, and the est→truth decision moves into the W8 capture
+design (W3 price arithmetic + W6 OTel cache_read gate priced there). Recorded in
+`reports/RR-DECISIONS-20261031.md` §3; the question is stamped RESOLVED in
+RR-W2B1 §6.
+**Push status:** `5567d86` (W2b card 1) AND this books commit are committed,
+law-signed, UNPUSHED — one owner push command lands both; the Actions run for the
+stack gets witnessed on landing (echo; the card's run id is then cited in the
+next books pass, per the established echo law).
+**Next frontier 3 (D12 settled; status 2026-10-31):** owner push → witness →
+`ts` emission cards (D9 policy: default-ON, `CTXVM_TRACE_TS=0` opt-out), per
+lane, node lane first → W10 node build/metadata (owner-cleared, no publish/tag)
+→ umpire cross-repo tail (owner coordination — dirty worktree) → W8 ($25,
+preregistered; D12's est* decision is made there) → D3-c exporter promotion
+(with drift guard) → W12 Steps 2+ (post-W8).
 **Owner decisions D8–D11 recorded (2026-10-31, `reports/RR-DECISIONS-20261031.md`):**
 D8 emitter split (version switch first — landed above as `7aa6972`) · D9 `ts`
 default-ON with the `CTXVM_TRACE_TS=0` per-trace opt-out (implemented with a lane's
