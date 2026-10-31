@@ -19,6 +19,9 @@ vm.render(messages)                          // emits turn.render
 
 // After the turn: scan model output for identifiers → record faults
 vm.observe(modelOutputText)                  // source: identifier_scan
+
+// After a model step completes: the provider's own usage receipt (RFC-0.1 §R3)
+vm.noteUsage({ inputTokens: 10, outputTokens: 5, cachedInputTokens: 0 })
 ```
 
 No behavior change. The pager never touches anything — it mirrors. Adoption is a config step.
@@ -47,6 +50,14 @@ ctxvm export --odps ./session.jsonl   # dataproduct.yaml + llms.txt (telemetry �
 
 - Binding layer: napi-rs over `ctxvm-core`. Parser/renderer in Rust; JS sees the API above.
 - Tracer NEVER mutates `messages`; it derives and logs only.
+- `vm.noteUsage()` (W2b, RFC-0.1 §R3): the receipt attaches to exactly its turn's
+  `call.meta` (the turn whose snapshot was most recently buffered); facts before
+  any render are claimed by the next one. Intake is all-or-nothing — integers ≥ 0
+  for `inputTokens`/`outputTokens` (required) and `cachedInputTokens` (present
+  only when the provider itself reported a cache read, zero counts);
+  absent/invalid intake is **omitted** at the wire, never null/float-coerced.
+  `cacheEstimate` stays the page-table estimate — upgrading `estHit/estMiss` to
+  provider truth (and flipping `providerReported`) is its own decisive card.
 - `vm.page()` accepts raw string or structured chunks; tokenizer pluggable
   (tiktoken default; HF behind feature flag).
 - Errors are events too: a dangling pin, unclaimed fault, or divergent replay is logged,

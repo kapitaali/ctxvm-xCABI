@@ -288,8 +288,9 @@ metric; pinned `prices.json` v1 (nulls never substituted); counts
 `7a4f499` with Actions run `40845029026` green 4/4 (schema/hub/rust/ts) —
 the W3 commit solo on top of the `2a39ddc` batch (whose run `40843322867`
 was green 4/4; the rust job's 7 steps include the new tiktoken-feature
-gate). Current counts `ts 13 + 58 + 45` / `python 87 + 44 + 8` (hermes +3 from W4b B1
-and +4 from W4b B2, 2026-10-30; was `80 + 44 + 8` through 2026-10-29).
+gate). Current counts `ts 16 + 58 + 45` / `python 87 + 44 + 8` (hermes +3 from W4b B1
+and +4 from W4b B2, 2026-10-30; node +3 from the W2b tracer usage API, 2026-10-31;
+was `80 + 44 + 8` through 2026-10-29).
 **W4 audit LANDED** (2026-10-29, `reports/RR-W4-20261029.md` — docs-anchored:
 `packages/hermes/OBSERVABILITY.md` records the verified contract, the measured
 hook cost and the four findings; the load-bearing one is **F1: `identifier_scan`
@@ -470,6 +471,21 @@ as their own cards) → `ts` policy per D9 (default-ON, `CTXVM_TRACE_TS=0` opt-o
 W10 node build/metadata → umpire cross-repo tail (needs owner coordination — dirty
 worktree) → W8 ($25, preregistered) → D3-c exporter promotion (with drift guard) →
 W12 Steps 2+ (post-W8).
+**W2b CARD 1 LANDED (2026-10-31, `reports/RR-W2B1-20261031.md`):** provider-usage
+emission wired — the reference tracer gains `noteUsage` (strict all-or-nothing
+intake; orphan-slot claim) and the ai-sdk tap relays each `finish-step` receipt into
+its own turn's `call.meta`; opencode and hermes are source-audited **no source**
+(their hook terrains carry no usage facts) so per-lane omission is the R3 law there;
+the canon trace fixture regen is a 3-line diff (one `providerUsage` per call.meta),
+replay clean, v0.1-validator clean — CI now exercises a providerUsage-carrying
+fixture. `cacheEstimate` untouched: the est→provider-truth upgrade (and flipping
+`providerReported`) is an OPEN owner question with W3/W6 consequences (report §6).
+Counts: `ts 16 + 58 + 45` (node +3).
+**Next frontier 2 (W2b-1 landed; status 2026-10-31):** owner answer on the
+cacheEstimate upgrade question (or skip) → `ts` emission cards (D9 policy: default-ON,
+`CTXVM_TRACE_TS=0` opt-out), per lane → W10 node build/metadata → umpire
+cross-repo tail (owner coordination — dirty worktree) → W8 ($25, preregistered) →
+D3-c exporter promotion (with drift guard) → W12 Steps 2+ (post-W8).
 **Owner decisions D8–D11 recorded (2026-10-31, `reports/RR-DECISIONS-20261031.md`):**
 D8 emitter split (version switch first — landed above as `7aa6972`) · D9 `ts`
 default-ON with the `CTXVM_TRACE_TS=0` per-trace opt-out (implemented with a lane's

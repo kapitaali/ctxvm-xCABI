@@ -47,6 +47,15 @@ negotiation), so the `session.open` row above now includes it. The shipped drops
 table was audited from (`corpus/m1`–`m5`) stay v0 era: frozen goldens, never
 regenerated. Both parity tests pin the new key set; drift lands in the same card on
 BOTH sides.
+**RFC-0.1 §R3 note (2026-10-31, RR-RFC01E2/W2b):** the `@ctxvm/node` reference tracer
+gains `noteUsage` — the ai-sdk lane additionally emits optional
+`call.meta.providerUsage` AFTER `cacheEstimate` (canonical rust-writer order) when the
+stream's `finish-step` carries the provider receipt. The two KIT ports emit it only
+when their hook surfaces gain a usage source: opencode's terrain is
+`session.context`/`tool.execute.before`/`tool.execute.after` (no usage facts —
+audited by the recorded driver fixture) and hermes's is tool hooks + `pre_llm_call`
+history (no usage facts). Per-lane omission (`providerUsage` optional in the v0.1
+schema) keeps the key signatures above valid for both ports.
 
 The common tracer substrate (`@ctxvm/node`, mirrored as `packages/hermes/src/plugin.py`)
 makes this fall out by construction; `spec/rfc-0/validate_schema.py` + the replay engine keep

@@ -49,6 +49,12 @@ interface WindowPart {
   preliminary?: unknown;
   /** App-layer text-delta payload (provider layer calls it `delta`). */
   text?: unknown;
+  /** Per-step provider receipt (`finish-step` in ai 7.0.154, RFC-0.1 §R3). */
+  usage?: {
+    inputTokens?: unknown;
+    outputTokens?: unknown;
+    inputTokenDetails?: { cacheReadTokens?: unknown } | null;
+  } | null;
 }
 
 /**
@@ -131,6 +137,24 @@ export async function* ctxvmTap<TPart extends object>(
           witness(
             `finish-step step=${counts.tapStepEnds} renders=${counts.middlewareRenders} agree=${counts.agree() ? "True" : "False"}`,
           );
+          // W2b: relay the provider's own receipt to the turn it belongs to
+          // (RFC-0.1 §R3). Pass-through law untouched — the shell part yields
+          // to the app exactly as it arrived; the tracer gets a copy of the
+          // numeric facts. Absent/invalid shapes → omitted, with a witness
+          // line so the omission is observable, never silent.
+          const u = p.usage;
+          const details = u?.inputTokenDetails ?? null;
+          const cached = details && typeof details.cacheReadTokens === "number" ? details.cacheReadTokens : undefined;
+          if (u && typeof u.inputTokens === "number" && typeof u.outputTokens === "number") {
+            vm.noteUsage({
+              inputTokens: u.inputTokens,
+              outputTokens: u.outputTokens,
+              ...(cached !== undefined ? { cachedInputTokens: cached } : {}),
+            });
+            witness(`finish-step usage wired in=${u.inputTokens} out=${u.outputTokens}${cached !== undefined ? ` cached=${cached}` : ""}`);
+          } else {
+            witness("finish-step usage absent/invalid — providerUsage omitted (RFC-0 law)");
+          }
           break;
         default:
           break; // unknown kinds pass through unmapped (mirror law)

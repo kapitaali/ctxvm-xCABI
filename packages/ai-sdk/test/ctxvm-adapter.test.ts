@@ -58,11 +58,12 @@ interface Recorder {
   recalls: { tool: string; args: unknown }[];
   scans: string[];
   renders: number;
+  usages: { inputTokens: number; outputTokens: number; cachedInputTokens?: number }[];
   finished: boolean;
 }
 
 function recorder(sameTracer = new Map<string, Recorder>()): Tracer & { record: Recorder } {
-  const rec: Recorder = { pages: [], recalls: [], scans: [], renders: 0, finished: false };
+  const rec: Recorder = { pages: [], recalls: [], scans: [], renders: 0, usages: [], finished: false };
   return {
     record: rec,
     page(input: { tool?: string; args?: Json; content: unknown }) {
@@ -77,6 +78,9 @@ function recorder(sameTracer = new Map<string, Recorder>()): Tracer & { record: 
     },
     scan(input: { text: string }) {
       rec.scans.push(input.text);
+    },
+    noteUsage(input: { inputTokens: number; outputTokens: number; cachedInputTokens?: number }) {
+      rec.usages.push(input); // mirrors the tracer intake: the stand-in records what real code would wire
     },
     pin() {},
     unpin() {},
@@ -193,6 +197,14 @@ test("tap mapping (recording tracer): the canonical echo/thrash fixture maps exa
   assert.equal(counts.tapStepEnds, 3);
   assert.equal(stats.steps, 3);
   assert.equal(counts.agree(), true);
+
+  // W2b glue: the canonical parts' 3 finish-step receipts relay into the
+  // tracer interface exactly (10/5/cached 0 each — the provider's own facts).
+  assert.deepEqual(vm.record.usages, [
+    { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0 },
+    { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0 },
+    { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0 },
+  ]);
 });
 
 test("tap mapping: preliminary tool-results are NOT pages (B0 erratum 2)", async () => {
@@ -270,6 +282,21 @@ test("integration: the committed fixture replays through a REAL tracer byte-iden
       "0.1",
       "session.open must declare schemaVersion \"0.1\" (RFC-0.1 R0)",
     );
+    // W2b: the recorded parts' finish-step usage receipts (10/5/cached 0, all
+    // three steps) must land on their own turns' call.meta — the faucet is the
+    // provider's own account, not an estimate.
+    const metas = replayed
+      .split("\n")
+      .filter((l) => l.includes("\"providerUsage\""))
+      .map((l) => {
+        const m = JSON.parse(l) as { turn: number; providerUsage: object };
+        return { turn: m.turn, providerUsage: m.providerUsage };
+      });
+    assert.deepEqual(metas, [
+      { turn: 0, providerUsage: { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0 } },
+      { turn: 1, providerUsage: { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0 } },
+      { turn: 2, providerUsage: { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0 } },
+    ]);
     assert.equal(replayed, committed, "recorded orderings must replay deterministically");
 
     const metaPath = finished[0]!.metaPath!;

@@ -95,6 +95,72 @@ test("event types + field order match the RFC-0 §6 payload shapes", () => {
   );
 });
 
+test("providerUsage rides exactly its turn's call.meta (RFC-0.1 R3 / W2b)", () => {
+  // W2b wiring: usage observed at a step (ai-sdk `finish-step` timing) attaches
+  // to THAT turn's buffered call.meta snapshot — no leaking to neighbouring turns.
+  const vm = createTrace(INIT);
+  vm.page({ ref: "file:a.ts", kind: "file", content: "A" });
+  vm.render(); // turn 0 — no usage fact (estimated lane)
+  vm.render({ latencyMs: 100 });
+  vm.noteUsage({ inputTokens: 10, outputTokens: 5, cachedInputTokens: 0 }); // oscillator for turn 1
+  vm.render(); // turn 2 — usage fact again turns off by itself
+  const { events } = vm.finish();
+  const metas = of(events, "call.meta");
+  assert.equal(metas.length, 3);
+  assert.equal("providerUsage" in metas[0], false, "turn 0 had no reported provider fact");
+  assert.deepEqual((metas[1] as { providerUsage?: object }).providerUsage, {
+    inputTokens: 10,
+    outputTokens: 5,
+    cachedInputTokens: 0,
+  });
+  assert.equal("providerUsage" in metas[2], false, "usage does not leak to later turns");
+  // Cache position in the wire: the canonical order (rust writer minted) is
+  // cacheEstimate, latencyMs, providerUsage.
+  assert.deepEqual(Object.keys(metas[1]), ["type", "turn", "provider", "cacheEstimate", "latencyMs", "providerUsage"]);
+  // The estimate block stays the honest page-table estimate: providerReported is
+  // the v0 flag for provider-derived est figures, and that upgrade remains an
+  // open question (RR-RFC01E2) — the fact rides separately.
+  assert.equal((metas[1].cacheEstimate as { providerReported: boolean }).providerReported, false);
+});
+
+test("noteUsage refuses non-integer/invalid shapes — omitted never coerced (float law)", () => {
+  const vm = createTrace(INIT);
+  vm.page({ ref: "file:a.ts", kind: "file", content: "A" });
+  vm.render();
+  const bad: (object | null)[] = [
+    { inputTokens: 10.5, outputTokens: 5 }, // float-encoded token count
+    { inputTokens: -1, outputTokens: 5 }, // negative
+    { inputTokens: Number.NaN, outputTokens: 5 }, // NaN
+    { outputTokens: 5 }, // missing input
+    { inputTokens: 10 }, // missing output
+    { inputTokens: 10, outputTokens: 5, cachedInputTokens: 1.25 }, // only cached rejected
+  ];
+  for (const b of bad) vm.noteUsage(b as never);
+  vm.render();
+  const { events } = vm.finish();
+  assert.equal(of(events, "call.meta").length, 2);
+  assert.equal(
+    of(events, "call.meta").filter((e) => "providerUsage" in e).length,
+    0,
+    "no invalid intake may reach the wire — omission, never null/float",
+  );
+});
+
+test("usage observed before any render is claimed by the next render (orphan slot)", () => {
+  // A stream wrapper could hand usage before the matching transformParams runs;
+  // the fact must not be lost. The orphan is claimed exactly once.
+  const vm = createTrace(INIT);
+  vm.noteUsage({ inputTokens: 7, outputTokens: 3 });
+  vm.render();
+  vm.render();
+  const metas = of(vm.finish().events, "call.meta");
+  assert.deepEqual((metas[0] as { providerUsage?: object }).providerUsage, {
+    inputTokens: 7,
+    outputTokens: 3,
+  });
+  assert.equal("providerUsage" in metas[1], false, "the orphan is not double-applied");
+});
+
 test("resident render sums match declared pages", () => {
   const { events, stats } = runHealthy();
   const tr0 = of(events, "turn.render")[0];

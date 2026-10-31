@@ -102,7 +102,40 @@ export interface Tracer {
   scan(input: ScanInput): void;
   pin(input: PinInput): void;
   unpin(input: PinInput): void;
+  /**
+   * Attach the provider's own usage receipt (RFC-0.1 R3) to a turn's `call.meta`.
+   * W2b: the ai-sdk tap relays each step's `finish-step` usage; the fact rides
+   * the exact turn it was billed on. Omitted when the provider did not report —
+   * never null, never coerced (float law: integers only, all-or-nothing).
+   */
+  noteUsage(input: ProviderUsageInput): void;
   finish(): FinishedTrace;
+}
+
+/** Provider-reported usage shape (RFC-0.1 §R3 validator law in mirror form). */
+export interface ProviderUsageInput {
+  inputTokens: number;
+  outputTokens: number;
+  /** Present only when the provider itself reported a cache-read receipt. */
+  cachedInputTokens?: number;
+}
+
+/** RFC-0.1 §R3 strict intake: integers ≥ 0, both required fields present
+ * (cached optional). Invalid intake returns null → the fact is omitted at the
+ * wire, never null-coerced and never float-encoded (the schema would reject it). */
+function providerUsageOf(
+  input: ProviderUsageInput,
+): { inputTokens: number; outputTokens: number; cachedInputTokens?: number } | null {
+  const isTok = (n: unknown): n is number => typeof n === "number" && Number.isSafeInteger(n) && n >= 0;
+  if (!isTok(input.inputTokens) || !isTok(input.outputTokens)) return null;
+  if (input.cachedInputTokens !== undefined && !isTok(input.cachedInputTokens)) return null;
+  const out: { inputTokens: number; outputTokens: number; cachedInputTokens?: number } = {
+    inputTokens: input.inputTokens,
+    outputTokens: input.outputTokens,
+  };
+  if (input.cachedInputTokens !== undefined)
+    out.cachedInputTokens = input.cachedInputTokens; // a reported 0 is a fact, not an absence
+  return out;
 }
 
 /** Kind inference for convenience callers (error results are callers' responsibility, T6 §2). */
@@ -132,7 +165,10 @@ export function createTrace(init: TraceInit): Tracer {
   /** Every declared page key (ref|hash → tokens) — the derived-composition table. */
   const allDeclared = new Map<string, number>();
   /** Per-turn `call.meta` snapshots — flushed at finish() in turn order (see render). */
-  const pendingMeta: { turn: number; hit: number; residentAtTurn: number; latencyMs?: number }[] = [];
+  type PendingMeta = { turn: number; hit: number; residentAtTurn: number; latencyMs?: number; providerUsage?: { inputTokens: number; outputTokens: number; cachedInputTokens?: number } };
+  const pendingMeta: PendingMeta[] = [];
+  /** A usage fact handed in before its turn is buffered — claimed by the next render, exactly once. */
+  let orphanUsage: PendingMeta["providerUsage"] = undefined;
 
   /**
    * RFC-0 §6 payload field ORDER is the spec table order; object insertion order carries
@@ -245,7 +281,10 @@ export function createTrace(init: TraceInit): Tracer {
         residentAtTurn += p.tokens;
         p.revealedAtPrev = p.revealed;
       }
-      pendingMeta.push({ turn, hit, residentAtTurn, latencyMs: input.latencyMs });
+      // W2b: a usage role opened before its turn is buffered rides THIS turn.
+      const orphan = orphanUsage;
+      orphanUsage = undefined;
+      pendingMeta.push({ turn, hit, residentAtTurn, latencyMs: input.latencyMs, providerUsage: orphan });
     },
 
     scan(input) {
@@ -266,6 +305,19 @@ export function createTrace(init: TraceInit): Tracer {
       const p = declared.get(input.ref);
       if (p === undefined) return;
       push({ type: "page.unpin", page: { logicalRef: p.logicalRef, contentHash: p.contentHash }, reason: input.reason });
+    },
+
+    noteUsage(input: ProviderUsageInput) {
+      // All-or-nothing validation upstream (R3 law): invalid intake is omitted,
+      // never coerced. Attaches to the newest buffered turn snapshot; a fact
+      // arriving before any render is claimed by the next one (orphan slot).
+      const shaped = providerUsageOf(input);
+      if (shaped === null) return;
+      if (pendingMeta.length > 0) {
+        pendingMeta[pendingMeta.length - 1].providerUsage = shaped;
+      } else {
+        orphanUsage = shaped;
+      }
     },
 
     finish() {
@@ -306,6 +358,11 @@ export function createTrace(init: TraceInit): Tracer {
           },
         };
         if (m.latencyMs !== undefined) meta.latencyMs = m.latencyMs;
+        // RFC-0.1 §R3: providerUsage rides after cacheEstimate/latencyMs — the
+        // canonical v0.1 wire order the rust writer minted. cacheEstimate's
+        // providerReported stays false: the upgrade of est* to provider truth
+        // is its own decisive card (open question, RR-RFC01E2).
+        if (m.providerUsage !== undefined) meta.providerUsage = m.providerUsage;
         tail.push(meta);
       }
       const merged = [...events, ...tail];
