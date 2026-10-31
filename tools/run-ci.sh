@@ -90,15 +90,7 @@ venvs/odps/bin/python spec/rfc-0.1/validate_schema_v0_1.py rust/crates/ctxvm-con
 ( cd corpus/m7 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd corpus/m8 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd rust && . "$HOME/.cargo/env" 2>/dev/null || true; cargo build --release ) >/dev/null
-EXPORT_TMP="$(mktemp -d)"
-rust/target/release/export corpus/m3/hermes-echo-synthetic.jsonl --turn 2 \
-  --output "$EXPORT_TMP/handoff" --odps >/dev/null 2>&1
-zstd -q -d -f "$EXPORT_TMP/handoff/trace-2.jsonl.zst" -o "$EXPORT_TMP/handoff/trace-2.jsonl"
-rust/target/release/replay "$EXPORT_TMP/handoff/trace-2.jsonl" --turn 2 >/dev/null
-rust/target/release/diff corpus/m3/hermes-echo-synthetic.jsonl "$EXPORT_TMP/handoff/trace-2.jsonl" >/dev/null
-rust/target/release/replay corpus/m4/hermes-live-session-01.jsonl >/dev/null
-( cd "$EXPORT_TMP/handoff" && sha256sum -c checksums.sha256 ) >/dev/null
-rm -rf "$EXPORT_TMP"
+bash tools/export-roundtrip.sh
 log "schema + export round-trip gate green"
 
 # 4) hub parity

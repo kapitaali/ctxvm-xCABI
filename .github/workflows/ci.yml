@@ -48,6 +48,8 @@ jobs:
       - name: "@ctxvm/node install + build (W10: the publishable artifact)"
         run: npm ci --no-audit --no-fund
         working-directory: packages/node
+      - name: "T21 export round-trip (slice → replay → diff → checksums; run-ci gate 3)"
+        run: bash tools/export-roundtrip.sh
       - name: "src-vs-dist parity (a behaviour-changing build fails here)"
         run: bash tools/check-node-build.sh
       - name: "@ctxvm/opencode tests"
@@ -97,6 +99,12 @@ jobs:
           corpus/m3/hermes-thrash-synthetic.jsonl
           corpus/m4/hermes-live-session-01.jsonl
           corpus/m5/opencode-live-session-01.jsonl
+          corpus/m6/opencode-pause-session-a.jsonl
+          corpus/m6/opencode-resume-session-b.jsonl
+          corpus/m7/hermes-pause-session-a.jsonl
+          corpus/m7/hermes-resume-session-b.jsonl
+          corpus/m8/live-echo.jsonl
+          corpus/m8/live-thrash.jsonl
       - name: rfc-0.1 schema validator (additive)
         run: python spec/rfc-0.1/validate_schema_v0_1.py rust/crates/ctxvm-conformance/vectors/events-v0-1.jsonl packages/hermes/fixtures/hermes-live-echo-synthetic.jsonl packages/ai-sdk/fixtures/echo-thrash.trace.jsonl
       - name: corpus drop checksums (M1 seed)
@@ -114,6 +122,15 @@ jobs:
       - name: corpus drop checksums (M5 OpenCode live)
         run: sha256sum -c checksums.sha256
         working-directory: corpus/m5
+      - name: corpus drop checksums (M6 UC1 pause/resume)
+        run: sha256sum -c checksums.sha256
+        working-directory: corpus/m6
+      - name: corpus drop checksums (M7 Hermes pause/resume)
+        run: sha256sum -c checksums.sha256
+        working-directory: corpus/m7
+      - name: corpus drop checksums (M8 Vercel AI SDK)
+        run: sha256sum -c checksums.sha256
+        working-directory: corpus/m8
 
   hub:
     runs-on: ubuntu-latest
