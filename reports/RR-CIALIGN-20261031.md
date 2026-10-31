@@ -91,3 +91,19 @@ printer.
   drift automatically, at the cost of a nested runner and doubled wall time.
 - Should `run-ci.sh` gain a `--verify-mirror` mode that diffs the workflow's `run:` commands
   against its own, so the two cannot silently diverge again?
+
+## Addendum (same day) — portability fix found by reusing the tool
+
+The rehearsal tool was carried to umpire, which has no `venvs/` at all. It assumed a python
+with PyYAML existed (`venvs/odps` here, `sys.executable` as fallback), and neither repo's
+default python imports `yaml`. The tool now bootstraps its own parser venv when both
+candidates fail, so it works in any repo that has a workflow:
+
+```
+$ python3 -c "import yaml"        # ModuleNotFoundError on the default interpreter
+$ python3 tools/ci-rehearsal.py   # creates a throwaway venv, pip install pyyaml, parses, deletes it
+```
+
+Same lesson as the drift itself: a tool that depends on a developer's local state is not a
+check. The rehearsal is only worth its red-before if it runs where the workflow runs — from a
+clean clone, with no assumptions about what the host already has.

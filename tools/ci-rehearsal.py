@@ -54,7 +54,27 @@ def load_jobs():
         if data.returncode != 0:
             continue
         return json.loads(data.stdout)["jobs"]
-    sys.exit("ci-rehearsal: no python with PyYAML found (run tools/setup-env.sh)")
+    # Neither candidate has PyYAML: bootstrap one in a throwaway venv. The tool must work
+    # in a repo with no venvs/ at all (umpire), not just here.
+    bootstrap = Path(tempfile.mkdtemp(prefix="ctxvm-ci-rehearsal-parse-"))
+    try:
+        venv.create(bootstrap / "v", with_pip=True)
+        py = bootstrap / "v" / "bin" / "python"
+        install = subprocess.run([str(py), "-m", "pip", "install", "--quiet", "pyyaml"],
+                                 capture_output=True, text=True)
+        if install.returncode != 0:
+            sys.exit(f"ci-rehearsal: could not install pyyaml: {install.stderr.strip()[:200]}")
+        data = subprocess.run(
+            [str(py), "-c",
+             "import yaml, json, sys; print(json.dumps(yaml.safe_load(open(sys.argv[1]))))",
+             str(WORKFLOW)],
+            capture_output=True, text=True,
+        )
+        if data.returncode != 0:
+            sys.exit(f"ci-rehearsal: workflow did not parse: {data.stderr.strip()[:200]}")
+        return json.loads(data.stdout)["jobs"]
+    finally:
+        shutil.rmtree(bootstrap, ignore_errors=True)
 
 
 def run(cmd, cwd, env):
