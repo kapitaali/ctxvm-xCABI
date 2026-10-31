@@ -69,7 +69,10 @@ log "ts suites green (13 + 58 + 45 tests); python suites green (87 + 44 + 8 test
 # 3) schema + corpus integrity + the T21 export round-trip
 log "gate 3/4: schema validator + corpus checksums + export round-trip"
 venvs/odps/bin/python spec/rfc-0/validate_schema.py "${FIXTURES[@]}"
-venvs/odps/bin/python spec/rfc-0.1/validate_schema_v0_1.py rust/crates/ctxvm-conformance/vectors/events-v0-1.jsonl
+# RFC-0.1 gate: the hand-built vector + the two EMITTER-produced committed
+# artifacts (hermes live-echo fixture, ai-sdk echo-thrash trace) — proof that
+# the v0.1 emission surface validates, not just the hand-built vector (RR-RFC01E1).
+venvs/odps/bin/python spec/rfc-0.1/validate_schema_v0_1.py rust/crates/ctxvm-conformance/vectors/events-v0-1.jsonl packages/hermes/fixtures/hermes-live-echo-synthetic.jsonl packages/ai-sdk/fixtures/echo-thrash.trace.jsonl
 ( cd corpus/m1 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd corpus/m2 && sha256sum -c checksums.sha256 ) >/dev/null
 ( cd corpus/m3 && sha256sum -c checksums.sha256 ) >/dev/null

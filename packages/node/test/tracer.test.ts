@@ -67,9 +67,11 @@ test("finish() idempotent (T17.7 parity): tail computed per call, never appended
 test("event types + field order match the RFC-0 §6 payload shapes", () => {
   const { events } = runHealthy();
   assert.equal((events[0] as List[number]).type, "session.open");
+  // RFC-0.1 §R0 extends the session.open shape: schemaVersion rides directly
+  // after tokenizerId (the canonical v0.1 wire order the rust writer minted).
   assert.equal(
     Object.keys(events[0]).join(","),
-    "type,agentId,model,provider,budgetTokens,tokenizerId",
+    "type,agentId,model,provider,budgetTokens,tokenizerId,schemaVersion",
   );
   const declare = of(events, "page.declare")[0];
   assert.equal(Object.keys(declare.page as object).join(","), "id,kind,tokens"); // spec table order
@@ -201,8 +203,12 @@ test("contentHash form is sha256:<8 hex>; canonicalJson sorts keys recursively",
 
 test("session.open is the first line; JSONL is newline-terminated; every line parses", () => {
   const { jsonl } = runHealthy();
-  const first = JSON.parse(jsonl.split("\n")[0] as string) as { type: string };
+  const first = JSON.parse(jsonl.split("\n")[0] as string) as { type: string; schemaVersion?: string };
   assert.equal(first.type, "session.open");
+  // RFC-0.1 R0 (recording/RR-RFC01-20261030): the emitter negotiates the version.
+  // schemaVersion "0.1" on session.open turns the trace into a v0.1 trace; this
+  // assertion is the standing pin that the tracer really emits it.
+  assert.equal(first.schemaVersion, "0.1");
   assert.ok(jsonl.endsWith("\n"));
   for (const line of jsonl.trim().split("\n")) JSON.parse(line);
 });

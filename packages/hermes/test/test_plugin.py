@@ -54,9 +54,12 @@ class TracerTests(unittest.TestCase):
         trace = self.run_healthy()
         lines = [json.loads(l) for l in trace.jsonl.strip().split("\n")]
         self.assertEqual(lines[0]["type"], "session.open")
+        # RFC-0.1 §R0 extends the session.open shape: schemaVersion rides
+        # directly after tokenizerId (the canonical v0.1 wire order the rust
+        # writer minted) — same card as the opencode mirror and the parity doc.
         self.assertEqual(
             list(lines[0].keys()),
-            ["type", "agentId", "model", "provider", "budgetTokens", "tokenizerId"],
+            ["type", "agentId", "model", "provider", "budgetTokens", "tokenizerId", "schemaVersion"],
         )
         declares = [e for e in lines if e["type"] == "page.declare"]
         self.assertEqual(list(declares[0]["page"].keys()), ["id", "kind", "tokens"])
@@ -603,8 +606,10 @@ class LiveAdapterTests(unittest.TestCase):
 
 # --- KIT-1: canonical wire-format parity (09-plugin-parity.md §2/§3) ----------
 
+# RFC-0.1 (RR-RFC01E1): session.open gains `schemaVersion` — updated on BOTH
+# sides in the same card, together with the contract doc table (2026-10-31).
 CANONICAL_EVENT_KEYS = {
-    "session.open": ["agentId", "budgetTokens", "model", "provider", "tokenizerId", "type"],
+    "session.open": ["agentId", "budgetTokens", "model", "provider", "schemaVersion", "tokenizerId", "type"],
     "page.declare": ["page", "type"],
     "page.fault": ["page", "source", "turn", "type"],
     "page.render": ["mode", "page", "turn", "type"],

@@ -1,6 +1,11 @@
-/** T9 fixture generator: recorded echo-session hook payloads → xCABI JSONL (committed). */
+/** T9 fixture generator: recorded echo-session hook payloads → xCABI JSONL (committed).
+ *  RR-RFC01E1: the committed `opencode-echo.jsonl` is a corpus/m1 drop source
+ *  (checksums.sha256) and a sealed-v0 byte artifact — this driver REFUSES to
+ *  overwrite it (`--force` overrides). Running this driver after the RFC-0.1
+ *  emitter switch would otherwise silently rewrite the fixture as a v0.1 trace
+ *  while gate 3 keeps validating it under the sealed v0 schema. */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,6 +14,15 @@ import { loadEchoFixture, replayHooks } from "./replay-registry.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 mkdirSync(join(here, "..", "fixtures"), { recursive: true });
+
+const FROZEN = join(here, "..", "fixtures", "opencode-echo.jsonl");
+if (existsSync(FROZEN) && !process.argv.includes("--force")) {
+  console.error(
+    "opencode-echo.jsonl is a corpus/m1 drop source (checksums.sha256) — " +
+      "regenerating would break frozen provenance and the sealed-v0 gate; pass --force to override",
+  );
+  process.exit(3);
+}
 
 const events = loadEchoFixture();
 const frozen = JSON.stringify(events); // mirror-contract tripwire: the replay must not mutate payloads

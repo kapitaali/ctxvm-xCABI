@@ -150,6 +150,11 @@ export function createTrace(init: TraceInit): Tracer {
     provider: init.provider,
     budgetTokens: init.budgetTokens,
     tokenizerId,
+    // RFC-0.1 R0 (D4 approved; D8 = emitter version switch first): every trace
+    // this build emits declares schemaVersion "0.1" — the version boundary.
+    // Traces BEFORE this line (frozen corpus drops m1–m8, package fixtures)
+    // stay v0: they are committed golden bytes, never regenerated.
+    schemaVersion: "0.1",
   });
 
   const emitFault = (p: Page, source: FaultSource, latencyMs: number | undefined): void => {

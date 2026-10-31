@@ -11,6 +11,9 @@
  * `@ctxvm/node` tracer and asserts the finished trace is byte-identical to the
  * committed `fixtures/echo-thrash.trace.jsonl` — the recorded orderings replay
  * deterministically (mirror-mode law: same parts in → same trace out).
+ * Provenance (RR-RFC01E1): the TRACE fixture was regenerated 2026-10-31 through
+ * the RFC-0.1 emitter (schemaVersion "0.1" on session.open — exactly one line
+ * changed); the PARTS fixture is the frozen recorded provenance and was not.
  *
  * Mirror law is asserted byte-level: middleware `transformParams` returns the
  * SAME params object; the tap yields every part untouched (deep equality).
@@ -38,7 +41,7 @@ const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
 const PARTS_FIXTURE = join(REPO_ROOT, "packages/ai-sdk/fixtures/echo-thrash.parts.json");
 const TRACE_FIXTURE = join(REPO_ROOT, "packages/ai-sdk/fixtures/echo-thrash.trace.jsonl");
 const VENV_PYTHON = join(REPO_ROOT, "venvs/odps/bin/python");
-const SCHEMA_VALIDATOR = join(REPO_ROOT, "spec/rfc-0/validate_schema.py");
+const V01_VALIDATOR = join(REPO_ROOT, "spec/rfc-0.1/validate_schema_v0_1.py");
 
 function freshTmp(label: string): string {
   // Test isolation (m7 gate-2 regression, RR-UM7CAPTURE): quarantine leaked
@@ -261,6 +264,12 @@ test("integration: the committed fixture replays through a REAL tracer byte-iden
     assert.equal(finished.length, 1);
     const replayed = finished[0]!.trace.jsonl;
     const committed = readFileSync(TRACE_FIXTURE, "utf8");
+    // RFC-0.1 R0: the adapter lane negotiates the version on session.open.
+    assert.equal(
+      (JSON.parse(replayed.split("\n")[0] as string) as { schemaVersion?: string }).schemaVersion,
+      "0.1",
+      "session.open must declare schemaVersion \"0.1\" (RFC-0.1 R0)",
+    );
     assert.equal(replayed, committed, "recorded orderings must replay deterministically");
 
     const metaPath = finished[0]!.metaPath!;
@@ -294,14 +303,19 @@ test("unarmed capture: finishAll is an empty no-op with no files", async () => {
   }
 });
 
-test("schema conformance: the committed fixture trace passes the RFC-0 validator", () => {
+test("schema conformance: the committed fixture trace passes the RFC-0.1 validator", () => {
   // gate-2 shape: run the validator ONLY when the workspace venv exists —
   // their published CI gate 2 has no venvs (schema job rebuilds them).
+  // Since the RR-RFC01E1 version switch, the regenerated trace fixture is a
+  // v0.1 trace (schemaVersion on session.open; the sealed v0 validator would
+  // REJECT that unknown field, which is the R0 boundary working) — so the
+  // fixture's standing validator is RFC-0.1. The v0 corpus fixtures keep
+  // their sealed-v0 gate in run-ci gate 3.
   if (!statSafe(VENV_PYTHON)) return;
-  const res = spawnSync(VENV_PYTHON, [SCHEMA_VALIDATOR, TRACE_FIXTURE], { encoding: "utf8", timeout: 120000 });
+  const res = spawnSync(VENV_PYTHON, [V01_VALIDATOR, TRACE_FIXTURE], { encoding: "utf8", timeout: 120000 });
   if (res.error || res.status === undefined) assert.fail(`validator spawn failed: ${res.error}`);
   assert.equal(res.status, 0, res.stdout + res.stderr);
-  assert.match(res.stdout, /SCHEMA CONFORMANCE: PASS/);
+  assert.match(res.stdout, /OK: all checks passed/);
 });
 
 function statSafe(path: string): boolean {

@@ -34,12 +34,19 @@ Empirical audit over all three live drops (KIT-1 audit script output, 2026-10-25
 
 | type | keys — identical in all three drops |
 |---|---|
-| `session.open` | `agentId, budgetTokens, model, provider, tokenizerId, type` |
+| `session.open` | `agentId, budgetTokens, model, provider, schemaVersion, tokenizerId, type` |
 | `page.declare` | `page, type` |
 | `page.fault` | `page, source, turn, type` |
 | `page.render` | `mode, page, turn, type` |
 | `turn.render` | `evictedTokens, headroom, residentTokens, turn, type` |
 | `call.meta` | `cacheEstimate, provider, turn, type` |
+
+**RFC-0.1 boundary (2026-10-31, RR-RFC01E1):** from the emitter-version-switch card on,
+new emissions carry `schemaVersion: "0.1"` on `session.open` (RFC-0.1 §R0 — the version
+negotiation), so the `session.open` row above now includes it. The shipped drops this
+table was audited from (`corpus/m1`–`m5`) stay v0 era: frozen goldens, never
+regenerated. Both parity tests pin the new key set; drift lands in the same card on
+BOTH sides.
 
 The common tracer substrate (`@ctxvm/node`, mirrored as `packages/hermes/src/plugin.py`)
 makes this fall out by construction; `spec/rfc-0/validate_schema.py` + the replay engine keep

@@ -123,7 +123,11 @@ class Tracer:
         self._fault_count = 0
         self._all_declared: Dict[str, int] = {}  # ref|hash → tokens
         self._pending_meta: List[Dict[str, Any]] = []
-        # session.open is emitted at tracer creation (first event in the log)
+        # session.open is emitted at tracer creation (first event in the log).
+        # RFC-0.1 R0 (D4 approved; D8 = emitter version switch first): every
+        # trace this build emits declares schemaVersion "0.1" — the version
+        # boundary. Shipped corpus drops (m1–m8) and the frozen package
+        # fixtures stay v0: committed golden bytes, never regenerated.
         self._push({
             "type": "session.open",
             "agentId": init.agent_id,
@@ -131,6 +135,7 @@ class Tracer:
             "provider": init.provider,
             "budgetTokens": init.budget_tokens,
             "tokenizerId": init.tokenizer_id,
+            "schemaVersion": "0.1",
         })
 
     def _push(self, event: Dict[str, Any]) -> None:

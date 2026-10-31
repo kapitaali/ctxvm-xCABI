@@ -9,9 +9,11 @@ import { test } from "node:test";
 import { createCtxvmPlugin } from "../src/plugin.ts";
 import { loadEchoFixture, replayHooks } from "./replay-registry.ts";
 
-/** 09-plugin-parity.md §2: canonical per-type key signature (compare as sets). */
+/** 09-plugin-parity.md §2: canonical per-type key signature (compare as sets).
+ * RFC-0.1 (RR-RFC01E1): session.open gains `schemaVersion` — updated on BOTH
+ * sides in the same card, together with the contract doc table (2026-10-31). */
 const CANONICAL_EVENT_KEYS: Record<string, string[]> = {
-  "session.open": ["agentId", "budgetTokens", "model", "provider", "tokenizerId", "type"],
+  "session.open": ["agentId", "budgetTokens", "model", "provider", "schemaVersion", "tokenizerId", "type"],
   "page.declare": ["page", "type"],
   "page.fault": ["page", "source", "turn", "type"],
   "page.render": ["mode", "page", "turn", "type"],

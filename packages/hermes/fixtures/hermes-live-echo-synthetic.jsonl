@@ -1,4 +1,4 @@
-{"type": "session.open", "agentId": "hermes", "model": "unknown/unknown", "provider": "unknown", "budgetTokens": 200000, "tokenizerId": "apx4-char"}
+{"type": "session.open", "agentId": "hermes", "model": "unknown/unknown", "provider": "unknown", "budgetTokens": 200000, "tokenizerId": "apx4-char", "schemaVersion": "0.1"}
 {"type": "page.declare", "page": {"id": {"logicalRef": "tool:read_file({\"path\":\"notes/alpha.md\"})", "contentHash": "sha256:18b4e2bf"}, "kind": "tool_result", "tokens": 7}}
 {"type": "page.fault", "turn": 0, "page": {"logicalRef": "tool:read_file({\"path\":\"notes/alpha.md\"})", "contentHash": "sha256:18b4e2bf"}, "source": "identifier_scan"}
 {"type": "page.render", "turn": 0, "page": {"logicalRef": "tool:read_file({\"path\":\"notes/alpha.md\"})", "contentHash": "sha256:18b4e2bf"}, "mode": "full"}
