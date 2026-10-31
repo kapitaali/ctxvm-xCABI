@@ -6,7 +6,8 @@
 # jsonschema 4.26.0 + open-data-products==0.4.0 (venvs/odps), node 26, rust stable.
 # Gates:
 #   1. rust — cargo test (workspace rust/)
-#   2. typescript — packages/node + packages/opencode test suites
+#   2. typescript — packages/node + packages/opencode test suites; node build +
+#      src-vs-dist byte parity (W10 — the publishable artifact)
 #   3. schema — rfc-0 validator over spec vectors + every committed fixture,
 #      including the corpus/m1 drop, then corpus checksum verification
 #   4. hub — root manifest ODPS validate + regen via their SDK + byte-identity
@@ -58,6 +59,10 @@ log "release binaries green (UC2/UC1 golden parity)"
 # 2) typescript + python
 log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode + @ctxvm/ai-sdk; python — @ctxvm/hermes + @ctxvm/py binding"
 ( cd packages/node && node --test test/ ) >/dev/null
+# W10 build: the source suite above proves the in-repo story; these two prove the
+# PUBLISHABLE artifact. Mirrors ci.yml's ts job step for step.
+( cd packages/node && npm ci --no-audit --no-fund ) >/dev/null
+bash tools/check-node-build.sh
 ( cd packages/opencode && node --test test/ ) >/dev/null
 ( cd packages/ai-sdk && node --test test/ ) >/dev/null
 ( cd packages/hermes && python -m pytest test/ -q ) >/dev/null

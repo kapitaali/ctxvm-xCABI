@@ -40,9 +40,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "26"
-      - name: "@ctxvm/node tests"
+          cache: npm
+          cache-dependency-path: packages/node/package-lock.json
+      - name: "@ctxvm/node tests (sources, type stripping — no build needed)"
         run: node --test test/
         working-directory: packages/node
+      - name: "@ctxvm/node install + build (W10: the publishable artifact)"
+        run: npm ci --no-audit --no-fund
+        working-directory: packages/node
+      - name: "src-vs-dist parity (a behaviour-changing build fails here)"
+        run: bash tools/check-node-build.sh
       - name: "@ctxvm/opencode tests"
         run: node --test test/
         working-directory: packages/opencode

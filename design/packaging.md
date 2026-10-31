@@ -316,10 +316,14 @@ behaviour fails there rather than in a user's session.
 
 Disclosed limits of this update:
 
-- **CI does not build it.** `ci.yml`'s ts job installs nothing and runs `node --test` on the
-  sources; wiring `npm ci && npm run build` would make the suite depend on a network install
-  and a committed lockfile. That decision is deliberately left open — `package-lock.json` is
-  committed so `npm ci` is reproducible the day it is wired.
+- **CI builds it (option 2, wired the same day).** `ci.yml`'s ts job now runs
+  `npm ci && npm run build` and then the parity gate, after the source suite — so the
+  publishable artifact is rebuilt and proven on every push, while the tests still exercise
+  the type-stripped sources. `tools/run-ci.sh` mirrors the steps exactly. (The earlier
+  caution here described this as a posture change; that was overstated — the ts job already
+  ran `pip install pytest`, so it was never network-free.) The Actions run itself has not
+  been executed locally; the workflow was parsed and every step exercised through the local
+  mirror.
 - **`engines` is unchanged (`>=22.6`).** With a compiled tarball the floor could drop, but
   no older Node was available to verify it, and an unverified floor is a claim this repo
   does not get to make.
