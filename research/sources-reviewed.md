@@ -90,12 +90,17 @@ confusion came from, but our citations should say `Mason (Pichay)`.
 what `RESEARCH-PLAN.md` recorded. Anyone auditing against the abstract will find a mismatch — so
 state the body figure and note the abstract divergence rather than quoting either silently.
 
-## Pending cleanups this register surfaced
+## Cleanups this register surfaced — done 2026-10-31
 
-Neither is done yet; both are writing, not engineering:
+1. **Attribution.** "Pichay" is the system; the author is Tony Mason. `white-paper.md` and
+   `index.md` now introduce him at first mention ("Source: Mason, arXiv:2603.09023; the system is
+   named Pichay"), the §2.1 heading reads "Mason's Pichay", the 84.4× measurement is attributed to
+   Mason, and Reference 1 names the system. `token-savings-strategies.md` still uses "Pichay" as
+   shorthand — it is an internal note and its first mention now points at the register.
+2. **The corpus-size divergence.** The same sentence that cites the 4.45 billion body figure now
+   records that the abstract says 4.45 million and that the paper cites the body.
 
-1. **Attribution.** `white-paper.md` (13 occurrences), `index.md`, and `token-savings-strategies.md`
-   say "Pichay" where the author is Mason. Fixing it means editing two deliverable sources and
-   rebuilding the PDF.
-2. **The corpus-size divergence.** Wherever 4.45 billion appears, the body-vs-abstract note should
-   travel with it.
+Rebuilding the PDF exposed a third defect, which is fixed in `research/white-paper/build-pdf.sh`:
+the documented build command could not have produced the committed PDF. WeasyPrint does not read
+Markdown; passing a `.md` file renders it as plain text. The script does Markdown → HTML (UTF-8) →
+WeasyPrint, and the README now says so.

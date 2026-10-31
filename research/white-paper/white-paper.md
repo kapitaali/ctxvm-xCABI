@@ -30,8 +30,8 @@ This is the pre-SQL state of agent memory. The mechanism works. The shared layer
 
 Measured data shows the scale of the problem:
 
-- Across 857 production sessions and 4.45 billion effective input tokens, 21.8% of tokens are structural waste. The waste breaks down as: unused tool schemas 11.0%, duplicated content 2.2%, stale tool results 8.7%. Stale results are reprocessed at a median amplification of 84.4×. (Source: Pichay, arXiv 2603.09023, verified from primary source.)
-- Pichay reduces context size from 5,038 KB to 339 KB (93% reduction) over 681 production turns, with a fault rate of 0.0254% across 1.4 million simulated evictions. (Source: arXiv 2603.09023, verified.)
+- Across 857 production sessions and 4.45 billion effective input tokens, 21.8% of tokens are structural waste. The waste breaks down as: unused tool schemas 11.0%, duplicated content 2.2%, stale tool results 8.7%. Stale results are reprocessed at a median amplification of 84.4×. (Source: Mason, arXiv:2603.09023; the system is named Pichay. Verified from the primary source, whose body states 4.45 billion effective input tokens while its abstract states 4.45 million — this paper cites the body.)
+- Pichay reduces context size from 5,038 KB to 339 KB (93% reduction) over 681 production turns, with a fault rate of 0.0254% across 1.4 million simulated evictions. (Source: Mason, arXiv:2603.09023, verified.)
 
 Waste costs money and latency. Every resident token is recomputed every turn. Tokens the model never reads still consume prompt cost and attention budget.
 
@@ -52,7 +52,7 @@ Operating systems solved this problem decades ago. Virtual memory gives a progra
 
 Researchers now apply the same ideas to LLM context. The following prior work is verified.
 
-### 2.1 Pichay — demand paging for LLM context (verified)
+### 2.1 Mason's Pichay — demand paging for LLM context (verified)
 
 Pichay is a transparent proxy between a client and an inference API. It treats the context window as L1 cache. It evicts stale content, leaves a retrieval handle, detects a page fault when the model re-requests evicted content, and pins working-set pages from fault history.
 
@@ -114,7 +114,7 @@ The plan defines three pillars. Each addresses a gap in current agent-context pr
 
 **Pillar 1 — xCABI, a portable trace standard.** Every agent system keeps a private mutation log. None is cross-harness replayable, diffable, or conformance-testable. xCABI ("eXchangeable Context ABI") fills that gap. It defines a deterministic log of pages, renders, evictions, and faults. A consumer reconstructs any turn without knowing which harness produced the trace.
 
-**Pillar 2 — Lazy handles at the tool boundary.** Current systems intercept waste after tools return bytes. xCABI returns typed page handles instead of payloads. This fixes re-mention amplification before waste enters the stream. Pichay measured stale results reprocessed at a median amplification of 84.4× (verified from arXiv 2603.09023, Section 1). ctxvm does not implement paging control in v0. It builds the measurement surface that makes paging control measurable later.
+**Pillar 2 — Lazy handles at the tool boundary.** Current systems intercept waste after tools return bytes. xCABI returns typed page handles instead of payloads. This fixes re-mention amplification before waste enters the stream. Mason measured stale results reprocessed at a median amplification of 84.4× (verified from arXiv 2603.09023, Section 1). ctxvm does not implement paging control in v0. It builds the measurement surface that makes paging control measurable later.
 
 **Pillar 3 — The measure: corpus, simulator, conformance, leaderboard.** Learned paging controllers (e.g. Neural Paging, arXiv 2603.02228) lack a public trace corpus, replay simulator, or benchmark. ctxvm provides all four: a trace corpus in ODPS 4.1 packaging, a metric simulator, a conformance validator, and a policy leaderboard scraped from manifest KPIs.
 
@@ -486,7 +486,7 @@ The field does not need another private pager. It needs a gauge, a dyno, and a S
 
 ## References
 
-1. Mason, T. "The Missing Memory Hierarchy: Demand Paging for LLM Context Windows." arXiv:2603.09023 [cs.OS], March 2026. https://arxiv.org/html/2603.09023 — verified from primary source.
+1. Mason, T. "The Missing Memory Hierarchy: Demand Paging for LLM Context Windows." arXiv:2603.09023 [cs.OS], March 2026. https://arxiv.org/html/2603.09023 — the system is named Pichay; verified from primary source.
 2. Chen, L. and Liu, Q. "Neural Paging: Learning Context Management Policies for Turing-Complete Agents." arXiv:2603.02228 [cs.LG], February 2026. https://arxiv.org/html/2603.02228 — verified from primary source.
 3. Kidwai, Y. A. "Virtual Context: Unbounded Context for LLM Agents via OS-Style Memory Management." virtual-context.com/paper/ — verified from primary source.
 4. Packer, C. et al. "MemGPT: towards LLMs as operating systems." arXiv:2310.08560, 2023. — source of the "virtual context management" term; led to Letta.

@@ -15,7 +15,8 @@ ctxvm observes context usage but never acts on it; umpire records decisions but 
 
 ## 2. The Core Insight: Inverted Economics
 
-The single most important finding from demand-paging research on LLM context (Pichay, 2026):
+The single most important finding from demand-paging research on LLM context (Mason, 2026 — the
+system is named Pichay; attribution settled in `research/sources-reviewed.md`):
 
 > In hardware VM, keeping a page resident costs nothing until touched. In an LLM, every resident token is recomputed through attention on **every turn** — whether or not it is referenced. Keeping is expensive; faulting is cheap.
 
@@ -35,7 +36,7 @@ This is why FIFO — the worst policy in classical VM — works best for agents.
 | Completion rate improvement | 71.0% → 91.6% |
 | Token reduction | ~63% |
 
-Source: Pichay, "The Missing Memory Hierarchy: Demand Paging for LLM Context" (arXiv 2603.09023v1, 2026).
+Source: Tony Mason, "The Missing Memory Hierarchy: Demand Paging for LLM Context" (system: Pichay; arXiv 2603.09023v1, 2026).
 
 ---
 
