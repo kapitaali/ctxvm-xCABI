@@ -27,3 +27,6 @@ research/white-paper/_build/
 
 # Capture-task artifacts written when tools/w5-owner-run runs from the repo root.
 /notes/
+
+# build output (npm package emit; never commit — rebuilt by `npm run build`/prepack)
+dist/

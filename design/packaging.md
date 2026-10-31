@@ -281,3 +281,47 @@ the binding repo-only until the PyO3 binding lands.
   §6.2/§6.3 proposals need owner clearance.
 - No hub/llms.txt/manifest edits (W11 scope rule: W10 owns packaging, but the
   hub itself stays frozen until an outside trace exists).
+
+## 9. Resolution update (2026-10-31) — the npm hard blocker is cleared
+
+§1's `@ctxvm/node` row and §6.2 recorded the hard blocker: `exports` pointed at
+`./src/index.ts` and Node refuses TypeScript under `node_modules`, so the package could not
+be installed from a registry. The build half is now implemented (owner-cleared lane,
+"prepare only" still applies — **nothing is published or tagged**).
+
+| what | how |
+|---|---|
+| emit config | NEW `packages/node/tsconfig.build.json` extends the typecheck config with `noEmit:false`, `declaration`, `outDir:dist`, `rootDir:src`, `allowImportingTsExtensions`, `rewriteRelativeImportExtensions` |
+| `exports` | `{ "types": "./dist/index.d.ts", "import": "./dist/index.js" }` |
+| tarball | `files: ["dist", "README.md"]` + a committed `packages/node/LICENSE` copy (root LICENSE is outside the package dir, so npm cannot include it) |
+| scripts | `build` (tsc -p tsconfig.build.json) and `prepack` (build before pack/publish) |
+| devDeps | `typescript@^7.0.2`, `@types/node@^22` — dev only, so the "zero runtime dependencies" claim still holds |
+| in-repo story | unchanged: `tsconfig.json` stays `noEmit`, `npm test` runs the `.ts` sources through type stripping, `dist/` is gitignored |
+
+Measured, not asserted:
+
+```
+$ npm run build                      → dist/{index,tracer,ident}.{js,d.ts}
+$ npm pack --dry-run                 → 9 files, 13.9 kB, includes LICENSE + README + dist
+$ bash tools/check-node-build.sh     → OK — 16 events byte-identical, dist imports
+                                       resolve without type stripping
+```
+
+`rewriteRelativeImportExtensions` is what makes the emit runnable: the sources import
+`./tracer.ts`, and the emitted JS must say `./tracer.js` or plain Node cannot resolve it.
+The parity script replays one full trace (3 pages, 3 turns, an identifier scan, 4 model
+calls) through both the sources and `dist/` under the D9 ts opt-out and requires
+byte-identical JSONL, plus agreement on `canonicalJson`/`contentHash`. A build that changes
+behaviour fails there rather than in a user's session.
+
+Disclosed limits of this update:
+
+- **CI does not build it.** `ci.yml`'s ts job installs nothing and runs `node --test` on the
+  sources; wiring `npm ci && npm run build` would make the suite depend on a network install
+  and a committed lockfile. That decision is deliberately left open — `package-lock.json` is
+  committed so `npm ci` is reproducible the day it is wired.
+- **`engines` is unchanged (`>=22.6`).** With a compiled tarball the floor could drop, but
+  no older Node was available to verify it, and an unverified floor is a claim this repo
+  does not get to make.
+- **A LICENSE copy can drift.** `tools/run-ci.sh` gate 2 now runs `cmp -s
+  LICENSE packages/node/LICENSE` so it cannot.

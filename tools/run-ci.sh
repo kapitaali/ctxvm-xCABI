@@ -62,6 +62,9 @@ log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode + @ctxvm/ai-sdk; pyt
 ( cd packages/ai-sdk && node --test test/ ) >/dev/null
 ( cd packages/hermes && python -m pytest test/ -q ) >/dev/null
 ( cd packages/py && python -m pytest test/ -q ) >/dev/null
+# W10 node build: the package ships a copy of the root LICENSE so `npm pack` carries it.
+# The copy must never drift from the single source of truth.
+cmp -s LICENSE packages/node/LICENSE || { echo "packages/node/LICENSE drifted from LICENSE" >&2; exit 1; }
 log "gate 2b: benchmarks/metrics — 07 reference suite + policy simulator"
 ( venvs/odps/bin/python -m pytest benchmarks/metrics -q ) >/dev/null
 log "ts suites green (20 + 58 + 45 tests); python suites green (91 + 44 + 8 tests)"

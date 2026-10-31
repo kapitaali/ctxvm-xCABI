@@ -16,8 +16,9 @@ const ARGS_LIMIT = 120;
 export function canonicalJson(value: Json): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
-  const sorted = Object.keys(value).sort();
-  const body = sorted.map((k) => `${JSON.stringify(k)}:${canonicalJson(value[k])}`).join(",");
+  const obj = value as { readonly [k: string]: Json };
+  const sorted = Object.keys(obj).sort();
+  const body = sorted.map((k) => `${JSON.stringify(k)}:${canonicalJson(obj[k])}`).join(",");
   return `{${body}}`;
 }
 

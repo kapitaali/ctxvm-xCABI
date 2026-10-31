@@ -11,6 +11,26 @@ Zero runtime dependencies. Requires **Node ≥ 22.6** — the TS sources run
 directly via type stripping (`erasableSyntaxOnly`: no enums/namespaces); no
 build step is needed in-repo.
 
+## Build (packaging only)
+
+`npm run build` emits `dist/` (JS + `.d.ts`) through `tsconfig.build.json`. It
+exists for the published tarball only: Node refuses TypeScript under
+`node_modules`, so `exports` points at `dist/`, and `prepack` builds it. In-repo
+development keeps importing `src/*.ts` — `tsconfig.json` stays typecheck-only
+(`noEmit`), and `dist/` is gitignored.
+
+```sh
+npm i                 # devDependencies: typescript + @types/node
+npm run build         # → dist/
+npm pack --dry-run    # the tarball: dist/ + README + LICENSE + package.json
+bash ../../tools/check-node-build.sh   # src-vs-dist byte parity (the real gate)
+npm run test          # still runs the sources, no build required
+```
+
+`tools/check-node-build.sh` is what makes this honest: it replays one trace
+through both the type-stripped sources and the emitted `dist/`, and requires the
+JSONL to be byte-identical. A build that changes behaviour fails there.
+
 ## Quick start
 
 ```ts
