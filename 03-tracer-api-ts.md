@@ -58,6 +58,14 @@ ctxvm export --odps ./session.jsonl   # dataproduct.yaml + llms.txt (telemetry �
   absent/invalid intake is **omitted** at the wire, never null/float-coerced.
   `cacheEstimate` stays the page-table estimate — upgrading `estHit/estMiss` to
   provider truth (and flipping `providerReported`) is its own decisive card.
+- `ts` (RFC-0.1 §R4, RR-R4TS1-20261031): every event carries `ts` by default —
+  RFC 3339 UTC, millisecond precision (`Date#toISOString`), riding LAST on the
+  line (the canonical v0.1 wire order). Events mint stamps when they happen:
+  front-stream events at emit time, tail facts (`turn.render`, `call.meta`) at
+  their turn's snapshot time, so repeated `finish()` flushes re-derive the same
+  bytes (the T17.7 idempotency law holds under default-ON). The per-trace
+  opt-out `CTXVM_TRACE_TS=0` restores full byte-stability — the named
+  mechanism for byte-exact fixtures, determinism pins, and drop minting.
 - `vm.page()` accepts raw string or structured chunks; tokenizer pluggable
   (tiktoken default; HF behind feature flag).
 - Errors are events too: a dangling pin, unclaimed fault, or divergent replay is logged,

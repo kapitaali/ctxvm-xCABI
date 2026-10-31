@@ -288,9 +288,9 @@ metric; pinned `prices.json` v1 (nulls never substituted); counts
 `7a4f499` with Actions run `40845029026` green 4/4 (schema/hub/rust/ts) —
 the W3 commit solo on top of the `2a39ddc` batch (whose run `40843322867`
 was green 4/4; the rust job's 7 steps include the new tiktoken-feature
-gate). Current counts `ts 16 + 58 + 45` / `python 87 + 44 + 8` (hermes +3 from W4b B1
-and +4 from W4b B2, 2026-10-30; node +3 from the W2b tracer usage API, 2026-10-31;
-was `80 + 44 + 8` through 2026-10-29).
+gate). Current counts `ts 18 + 58 + 45` / `python 87 + 44 + 8` (hermes +3 from W4b B1
+and +4 from W4b B2, 2026-10-30; node +3 from the W2b tracer usage API and +2 from
+the R4-ts card, 2026-10-31; was `80 + 44 + 8` through 2026-10-29).
 **W4 audit LANDED** (2026-10-29, `reports/RR-W4-20261029.md` — docs-anchored:
 `packages/hermes/OBSERVABILITY.md` records the verified contract, the measured
 hook cost and the four findings; the load-bearing one is **F1: `identifier_scan`
@@ -503,6 +503,20 @@ lane, node lane first → W10 node build/metadata (owner-cleared, no publish/tag
 → umpire cross-repo tail (owner coordination — dirty worktree) → W8 ($25,
 preregistered; D12's est* decision is made there) → D3-c exporter promotion
 (with drift guard) → W12 Steps 2+ (post-W8).
+**R4-ts CARD LANDED (2026-10-31, `reports/RR-R4TS1-20261031.md`):** per-event `ts`
+on the node lane — RFC-0.1 §R4 + D9 default-ON with the `CTXVM_TRACE_TS=0` per-trace
+opt-out; opencode + ai-sdk inherit through `@ctxvm/node` (the whole TS mono-tree in
+one card); tail facts mint-and-cache their stamps at turn close so repeated
+`finish()` flushes stay byte-idempotent UNDER default-on; the three byte-compare
+pins run under the named opt-out; the canon ai-sdk fixture stays byte-identical
+(= the ts-less v0.1 golden); opencode meta-parity table + both doc anchors extended;
+hermes stamps in its own per-lane card. Counts: `ts 18 + 58 + 45` (node +2).
+**Next frontier 4 (R4-ts-1 landed; status 2026-10-31):** hermes python-port ts card
+(per-lane law — same `CTXVM_TRACE_TS` env + turn-close caching semantics) →
+`page.declare` `turn`/`latencyMs` (R5 + R4 halves) cards → W10 node build/metadata
+(owner-cleared, no publish/tag) → umpire cross-repo tail (owner coordination —
+dirty worktree) → W8 ($25, preregistered; D12's est* decision made there) →
+D3-c exporter promotion → W12 Steps 2+ (post-W8).
 **Owner decisions D8–D11 recorded (2026-10-31, `reports/RR-DECISIONS-20261031.md`):**
 D8 emitter split (version switch first — landed above as `7aa6972`) · D9 `ts`
 default-ON with the `CTXVM_TRACE_TS=0` per-trace opt-out (implemented with a lane's

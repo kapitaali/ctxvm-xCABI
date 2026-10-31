@@ -13,12 +13,16 @@ import { loadEchoFixture, replayHooks } from "./replay-registry.ts";
  * RFC-0.1 (RR-RFC01E1): session.open gains `schemaVersion` — updated on BOTH
  * sides in the same card, together with the contract doc table (2026-10-31). */
 const CANONICAL_EVENT_KEYS: Record<string, string[]> = {
-  "session.open": ["agentId", "budgetTokens", "model", "provider", "schemaVersion", "tokenizerId", "type"],
-  "page.declare": ["page", "type"],
-  "page.fault": ["page", "source", "turn", "type"],
-  "page.render": ["mode", "page", "turn", "type"],
-  "turn.render": ["evictedTokens", "headroom", "residentTokens", "turn", "type"],
-  "call.meta": ["cacheEstimate", "provider", "turn", "type"],
+  // R4-ts (RFC-0.1 §R4, D9 policy, RR-TS1-20261031): ts rides on every event of
+  // the node-inherited lanes (default ON, CTXVM_TRACE_TS=0 opt-out). Optional.
+  "session.open": ["agentId", "budgetTokens", "model", "provider", "schemaVersion", "tokenizerId", "ts", "type"],
+  "page.declare": ["page", "ts", "type"],
+  "page.fault": ["page", "source", "turn", "ts", "type"],
+  "page.render": ["mode", "page", "turn", "ts", "type"],
+  "turn.render": ["evictedTokens", "headroom", "residentTokens", "turn", "ts", "type"],
+  "call.meta": ["cacheEstimate", "provider", "turn", "ts", "type"],
+  // hermes key-signature equality is a per-port assertion: hermes's own ts card
+  // (per-lane law D8/D9, RR-W2B1 §R3-note precedent) updates its table then.
 };
 
 test("every emitted event type matches the canonical key signature (09-plugin-parity.md §2)", () => {

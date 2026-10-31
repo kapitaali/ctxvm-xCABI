@@ -239,6 +239,10 @@ test("integration: the committed fixture replays through a REAL tracer byte-iden
   try {
     process.env.CTXVM_TRACE_DIR = tmp;
     process.env.CTXVM_TRACE_NAME = "replay-echo";
+    // D9 (RFC-0.1 §R4-ts): this pin compares REPLAYED bytes against the frozen
+    // canon fixture — a byte-stability need, so the whole capture runs under
+    // the named per-trace opt-out. Fresh captures stamp ts by default.
+    process.env.CTXVM_TRACE_TS = "0";
     const capture = createCtxvmCapture({
       agentId: "ctxvm-ai-sdk",
       model: "ctxvm-mock/echo-model",
@@ -308,6 +312,7 @@ test("integration: the committed fixture replays through a REAL tracer byte-iden
   } finally {
     delete process.env.CTXVM_TRACE_DIR;
     delete process.env.CTXVM_TRACE_NAME;
+    delete process.env.CTXVM_TRACE_TS; // D9 opt-out ran only for this capture
     rmSync(tmp, { recursive: true, force: true });
   }
 });

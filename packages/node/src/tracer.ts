@@ -164,8 +164,22 @@ export function createTrace(init: TraceInit): Tracer {
   let faultCount = 0;
   /** Every declared page key (ref|hash → tokens) — the derived-composition table. */
   const allDeclared = new Map<string, number>();
+  /** RFC-0.1 §R4 (D9 policy): every event gains `ts` — RFC 3339 UTC ms. Default
+   * ON; the per-trace opt-out `CTXVM_TRACE_TS=0` covers byte-stability needs
+   * (canon-derived fixtures, determinism pins, drop minting). Stamps are minted
+   * at the moment the event happens: front-stream events in push(), tail facts
+   * (turn.render + call.meta) at their turn's render() snapshot time — so
+   * repeated finish() flushes re-derive the SAME stamps (idempotency law). */
+  const tsEnabled: boolean = process.env.CTXVM_TRACE_TS !== "0";
+  const stamp = (): string => new Date().toISOString();
+  /**
+   * RFC-0.1 §R4: the canonical v0.1 wire order the rust writer minted puts `ts`
+   * LAST on every line (events-v0-1.jsonl: …, providerUsage, ts). Optional per
+   * the §R4 law — under the opt-out the key is simply absent, never null.
+   */
+  const turnStamps: (string | undefined)[] = [];
   /** Per-turn `call.meta` snapshots — flushed at finish() in turn order (see render). */
-  type PendingMeta = { turn: number; hit: number; residentAtTurn: number; latencyMs?: number; providerUsage?: { inputTokens: number; outputTokens: number; cachedInputTokens?: number } };
+  type PendingMeta = { turn: number; hit: number; residentAtTurn: number; latencyMs?: number; providerUsage?: { inputTokens: number; outputTokens: number; cachedInputTokens?: number }; ts?: string };
   const pendingMeta: PendingMeta[] = [];
   /** A usage fact handed in before its turn is buffered — claimed by the next render, exactly once. */
   let orphanUsage: PendingMeta["providerUsage"] = undefined;
@@ -176,6 +190,7 @@ export function createTrace(init: TraceInit): Tracer {
    * ("optional fields are omitted when unknown — never `null`", RFC-0 preamble).
    */
   const push = (e: object): void => {
+    if (tsEnabled) (e as { ts?: string }).ts = stamp(); // R4-ts: rides LAST (assignment order)
     events.push(e);
   };
 
@@ -284,7 +299,11 @@ export function createTrace(init: TraceInit): Tracer {
       // W2b: a usage role opened before its turn is buffered rides THIS turn.
       const orphan = orphanUsage;
       orphanUsage = undefined;
-      pendingMeta.push({ turn, hit, residentAtTurn, latencyMs: input.latencyMs, providerUsage: orphan });
+      // R4-ts: the turn's tail facts mint their timestamp at snapshot time;
+      // finish() flushes re-derive these exact stamps (idempotency law).
+      const now = tsEnabled ? stamp() : undefined;
+      turnStamps.push(now);
+      pendingMeta.push({ turn, hit, residentAtTurn, latencyMs: input.latencyMs, providerUsage: orphan, ts: now });
     },
 
     scan(input) {
@@ -344,6 +363,8 @@ export function createTrace(init: TraceInit): Tracer {
           evictedTokens: 0,
         };
         if (init.budgetTokens > 0) tr.headroom = init.budgetTokens - resident;
+        // R4-ts: cached from snapshot time — repeated flushes stay byte-stable.
+        if (turnStamps[t] !== undefined) tr.ts = turnStamps[t];
         tail.push(tr);
       }
       for (const m of pendingMeta) {
@@ -363,6 +384,8 @@ export function createTrace(init: TraceInit): Tracer {
         // providerReported stays false: the upgrade of est* to provider truth
         // is its own decisive card (open question, RR-RFC01E2).
         if (m.providerUsage !== undefined) meta.providerUsage = m.providerUsage;
+        // R4-ts rides LAST (after providerUsage) — canonical v0.1 wire order.
+        if (m.ts !== undefined) meta.ts = m.ts;
         tail.push(meta);
       }
       const merged = [...events, ...tail];

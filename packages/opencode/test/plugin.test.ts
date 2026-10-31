@@ -78,7 +78,16 @@ test("mirror purity: replay never mutates recorded payloads", () => {
 });
 
 test("determinism: two replayed sessions are byte-identical", () => {
-  assert.equal(runOnce().jsonl, runOnce().jsonl);
+  // D9: ts default-ON stamps each trace's own wall-clock; the per-trace
+  // opt-out is the named byte-stability mechanism.
+  const prev = process.env.CTXVM_TRACE_TS;
+  process.env.CTXVM_TRACE_TS = "0";
+  try {
+    assert.equal(runOnce().jsonl, runOnce().jsonl);
+  } finally {
+    if (prev === undefined) delete process.env.CTXVM_TRACE_TS;
+    else process.env.CTXVM_TRACE_TS = prev;
+  }
 });
 
 test("contentToPageBody: text items verbatim, non-text items as type markers", () => {

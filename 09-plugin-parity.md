@@ -57,6 +57,17 @@ audited by the recorded driver fixture) and hermes's is tool hooks + `pre_llm_ca
 history (no usage facts). Per-lane omission (`providerUsage` optional in the v0.1
 schema) keeps the key signatures above valid for both ports.
 
+**RFC-0.1 §R4 note (2026-10-31, RR-R4TS1):** the node-inherited lanes (opencode + ai-sdk)
+gain per-event `ts` — RFC 3339 UTC ms, riding LAST on every line, default ON with the
+per-trace opt-out `CTXVM_TRACE_TS=0` (D9; §R4 keeps the field optional). The audit-table
+corpus above (m1–m5, plus every fixtured drop) is FROZEN pre-§R4 goldens — the
+"identical in all three drops" claim describes those captured bytes and stays true. The
+hermes python port stamps `ts` in its own per-lane card (D8/D9 per-lane law; the same
+precedent as the §R3 note): until then `providerUsage`/`ts` are per-port optional and both
+ports' key signatures remain valid; the one-card-both-emitters rule (§6) parses as "one
+card owns one ADOPTION step" — the schema itself landed complete with RFC-0.1. The
+opencode meta-parity table's ts row comment carries the pointer to the hermes card.
+
 The common tracer substrate (`@ctxvm/node`, mirrored as `packages/hermes/src/plugin.py`)
 makes this fall out by construction; `spec/rfc-0/validate_schema.py` + the replay engine keep
 it. **Rule:** a new event type or field enters the wire ONLY via an RFC-0 revision, and the

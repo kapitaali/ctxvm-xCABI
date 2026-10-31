@@ -71,8 +71,11 @@ test("event types + field order match the RFC-0 §6 payload shapes", () => {
   // after tokenizerId (the canonical v0.1 wire order the rust writer minted).
   assert.equal(
     Object.keys(events[0]).join(","),
-    "type,agentId,model,provider,budgetTokens,tokenizerId,schemaVersion",
+    "type,agentId,model,provider,budgetTokens,tokenizerId,schemaVersion,ts",
   );
+  // RFC-0.1 §R4 extension (R4-ts card): ts rides LAST on session.open — the
+  // canonical v0.1 wire order the rust writer minted (events-v0-1.jsonl line 1).
+  assert.match(events[0].ts as string, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
   const declare = of(events, "page.declare")[0];
   assert.equal(Object.keys(declare.page as object).join(","), "id,kind,tokens"); // spec table order
   const tr = of(events, "turn.render");
@@ -115,8 +118,8 @@ test("providerUsage rides exactly its turn's call.meta (RFC-0.1 R3 / W2b)", () =
   });
   assert.equal("providerUsage" in metas[2], false, "usage does not leak to later turns");
   // Cache position in the wire: the canonical order (rust writer minted) is
-  // cacheEstimate, latencyMs, providerUsage.
-  assert.deepEqual(Object.keys(metas[1]), ["type", "turn", "provider", "cacheEstimate", "latencyMs", "providerUsage"]);
+  // cacheEstimate, latencyMs, providerUsage, ts (R4-ts rides LAST).
+  assert.deepEqual(Object.keys(metas[1]), ["type", "turn", "provider", "cacheEstimate", "latencyMs", "providerUsage", "ts"]);
   // The estimate block stays the honest page-table estimate: providerReported is
   // the v0 flag for provider-derived est figures, and that upgrade remains an
   // open question (RR-RFC01E2) — the fact rides separately.
@@ -159,6 +162,39 @@ test("usage observed before any render is claimed by the next render (orphan slo
     outputTokens: 3,
   });
   assert.equal("providerUsage" in metas[1], false, "the orphan is not double-applied");
+});
+
+test("ts rides LAST on every event, RFC 3339 UTC ms (RFC-0.1 §R4 / D9 default-ON)", () => {
+  const { events } = runHealthy();
+  // The v0.1 schema's ts pattern, mirrored (RFC 3339 UTC, millisecond precision).
+  const TS = /^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)\.[0-9]{3}Z$/;
+  for (const e of events) {
+    const keys = Object.keys(e);
+    assert.equal(keys[keys.length - 1], "ts", `ts must ride LAST on ${(e as { type: string }).type}`);
+    assert.match((e as { ts: string }).ts, TS, `ts pattern on ${(e as { type: string }).type}`);
+  }
+  // RFC 3339 UTC strings sort lexicographically in time order — the stream's
+  // mints (live AND cached tail snapshots) must be time-monotonic.
+  const stamps = events.map((e) => (e as { ts: string }).ts);
+  assert.deepEqual([...stamps].sort(), stamps, "ts monotonic across the stream (live pushes + cached tail flushes)");
+});
+
+test("CTXVM_TRACE_TS=0 opts the whole trace out of ts — byte-stability restored (D9)", () => {
+  const prev = process.env.CTXVM_TRACE_TS;
+  process.env.CTXVM_TRACE_TS = "0";
+  try {
+    const first = runHealthy();
+    const again = runHealthy();
+    for (const t of [first, again]) {
+      for (const e of t.events) {
+        assert.equal("ts" in e, false, `no ts under the opt-out on ${(e as { type: string }).type}`);
+      }
+    }
+    assert.equal(again.jsonl, first.jsonl, "the opt-out is the named byte-stability mechanism");
+  } finally {
+    if (prev === undefined) delete process.env.CTXVM_TRACE_TS;
+    else process.env.CTXVM_TRACE_TS = prev;
+  }
 });
 
 test("resident render sums match declared pages", () => {
@@ -259,7 +295,17 @@ test("identifier_scan is deduped per page per source (T3 v0 touch proxy)", () =>
 });
 
 test("determinism: identical sessions → byte-identical JSONL", () => {
-  assert.equal(runHealthy().jsonl, runHealthy().jsonl);
+  // D9: with ts default-ON each trace stamps its own wall-clock mints; the
+  // per-trace opt-out is the named byte-stability mechanism, so the
+  // determinism law runs under it.
+  const prev = process.env.CTXVM_TRACE_TS;
+  process.env.CTXVM_TRACE_TS = "0";
+  try {
+    assert.equal(runHealthy().jsonl, runHealthy().jsonl);
+  } finally {
+    if (prev === undefined) delete process.env.CTXVM_TRACE_TS;
+    else process.env.CTXVM_TRACE_TS = prev;
+  }
 });
 
 test("contentHash form is sha256:<8 hex>; canonicalJson sorts keys recursively", () => {
