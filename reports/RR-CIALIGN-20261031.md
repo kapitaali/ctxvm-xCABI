@@ -107,3 +107,26 @@ $ python3 tools/ci-rehearsal.py   # creates a throwaway venv, pip install pyyaml
 Same lesson as the drift itself: a tool that depends on a developer's local state is not a
 check. The rehearsal is only worth its red-before if it runs where the workflow runs — from a
 clean clone, with no assumptions about what the host already has.
+
+## Addendum 2 (same day) — the first real run
+
+The workflow ran on GitHub: **run 41240870951** on `31bd84f`, four jobs, all success, 34 s
+(20:51:46Z → 20:52:20Z). The steps this card added executed for the first time there, not
+merely appeared:
+
+```
+ts     ✓ 07 @ctxvm/node install + build (W10: the publishable artifact)
+       ✓ 08 T21 export round-trip (slice → replay → diff → checksums)
+       ✓ 09 src-vs-dist parity (a behaviour-changing build fails here)
+schema ✓ 12 corpus drop checksums (M6 UC1 pause/resume)
+       ✓ 13 corpus drop checksums (M7 Hermes pause/resume)
+       ✓ 14 corpus drop checksums (M8 Vercel AI SDK)
+       ✓ 05 rfc-0 schema validator (24 fixtures)
+```
+
+Limit of that evidence, stated plainly: step conclusions say each step RAN and returned 0.
+They do not show the numbers inside it. The job-log endpoint returns 403 unauthenticated and
+`gh` is not installed on the workstation, so the runner's `16 events byte-identical` line
+could not be read from outside — the numbers come from the local rehearsal, which produced the
+same ones. The rehearsal also proved (red-before) that the parity step fails when the build
+breaks, so a green step is not a vacuous one.
