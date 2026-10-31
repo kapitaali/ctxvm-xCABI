@@ -73,6 +73,21 @@ def file_ref(path: str) -> str:
     return f"file:{path}"
 
 
+def declare_latency_ms(value: Any) -> Optional[int]:
+    """RFC-0.1 §R4 strict intake for `page.declare.latencyMs` (R5-turn card).
+
+    Mirrors the node `declareLatencyOf` / `providerUsageOf` law: whole
+    milliseconds >= 0 only. `bool` is excluded explicitly because bool IS an int
+    in Python — `True` must never become 1 ms. Anything else is an ABSENCE (the
+    key is omitted), never null and never float-coerced.
+    """
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int) and value >= 0:
+        return value
+    return None
+
+
 def identity_tokens(logical_ref: str) -> List[str]:
     """Identity candidates a page exposes to identifier_scan: ref fragments, longest first."""
     body = logical_ref.split(":", 1)[1] if ":" in logical_ref else logical_ref
@@ -190,6 +205,25 @@ class Tracer:
         })
         page["revealed"] = True
 
+    def _declare_page(self, ref: str, hash_val: str, kind: str, tokens: int,
+                      latency_ms: Optional[int]) -> None:
+        """RFC-0.1 §R5 + §R4 (R5-turn card): `page.declare` carries the tracer's
+        turn counter AT DECLARATION TIME; declarations made before the first
+        render carry -1 and stamp as 0 (the RFC-0 §5 convention `_emit_fault`
+        already uses). `latencyMs` rides between `turn` and `ts` only when the
+        caller supplied a valid one — `ts` lands LAST via `_push`.
+        """
+        t = self._turn if self._turn >= 0 else 0
+        event: Dict[str, Any] = {
+            "type": "page.declare",
+            "page": {"id": {"logicalRef": ref, "contentHash": hash_val}, "kind": kind,
+                     "tokens": tokens},
+            "turn": t,
+        }
+        if latency_ms is not None:
+            event["latencyMs"] = latency_ms
+        self._push(event)
+
     def page(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Declare a page from tool result content. Returns {logicalRef, contentHash, tokens}."""
         content = input["content"]
@@ -200,6 +234,7 @@ class Tracer:
         tokens = input.get("tokens") or approx4(content_str)
         kind = input.get("kind") or ("image_ref" if isinstance(content, str)
                                      and content_str.startswith("http") else "tool_result")
+        latency_ms = declare_latency_ms(input.get("latencyMs"))
 
         existing = self._declared.get(ref)
         if existing is None:
@@ -214,11 +249,7 @@ class Tracer:
             }
             self._declared[ref] = page
             self._all_declared[f"{ref}|{hash_val}"] = tokens
-            self._push({
-                "type": "page.declare",
-                "page": {"id": {"logicalRef": ref, "contentHash": hash_val}, "kind": kind,
-                         "tokens": tokens},
-            })
+            self._declare_page(ref, hash_val, kind, tokens, latency_ms)
             self._pending_recall.discard(ref)
             return {"logicalRef": ref, "contentHash": hash_val, "tokens": tokens}
 
@@ -233,11 +264,7 @@ class Tracer:
             existing["revealed"] = False
             existing["revealedAtPrev"] = False
             self._all_declared[f"{ref}|{hash_val}"] = tokens
-            self._push({
-                "type": "page.declare",
-                "page": {"id": {"logicalRef": ref, "contentHash": hash_val}, "kind": kind,
-                         "tokens": tokens},
-            })
+            self._declare_page(ref, hash_val, kind, tokens, latency_ms)
             self._pending_recall.discard(ref)
         return {"logicalRef": ref, "contentHash": existing["tokens"] and existing["contentHash"]
                 or hash_val, "tokens": existing["tokens"]}

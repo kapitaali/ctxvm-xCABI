@@ -53,6 +53,14 @@ export interface PageInput {
   content: Json | string;
   /** Override the `apx4-char` estimate when a real tokenizer is wired. */
   tokens?: number;
+  /**
+   * RFC-0.1 §R4 (R5-turn card): the page's own acquisition latency in whole
+   * milliseconds — ACCEPTED-BUT-UNEMITTED. The declared turn (below) is always
+   * stamped; this slot exists so a harness that measures a tool call can hand
+   * the fact in, and it is emitted only when it is a safe integer ≥ 0. Absent
+   * or invalid ⇒ the key is omitted, never null/float-coerced.
+   */
+  latencyMs?: number;
 }
 
 export interface RecallInput {
@@ -225,6 +233,38 @@ export function createTrace(init: TraceInit): Tracer {
     push(e);
   };
 
+  /**
+   * RFC-0.1 §R5 + §R4 (R5-turn card): every `page.declare` carries the tracer's
+   * turn counter AT DECLARATION TIME. Declarations made before the first render
+   * carry the pre-first-render counter (-1) and stamp as 0 — the standing RFC-0
+   * §5 convention `page.fault` already uses. `latencyMs` rides between `turn`
+   * and `ts` when (and only when) the caller supplied a valid one, so the wire
+   * order is type,page,turn,latencyMs?,ts (`ts` lands LAST via push).
+   */
+  const declarePage = (
+    ref: string,
+    hash: string,
+    kind: PageKind,
+    tokens: number,
+    latencyMs: number | undefined,
+  ): void => {
+    const t = turn < 0 ? 0 : turn;
+    const e: Record<string, unknown> = {
+      type: "page.declare",
+      page: { id: { logicalRef: ref, contentHash: hash }, kind, tokens },
+      turn: t,
+    };
+    if (latencyMs !== undefined) e.latencyMs = latencyMs;
+    push(e);
+  };
+
+  /** RFC-0.1 §R4 strict intake (mirrors providerUsageOf / noteUsage): whole
+   * milliseconds ≥ 0 only. Anything else is an ABSENCE, not a zero. */
+  const declareLatencyOf = (input: PageInput): number | undefined =>
+    typeof input.latencyMs === "number" && Number.isSafeInteger(input.latencyMs) && input.latencyMs >= 0
+      ? input.latencyMs
+      : undefined;
+
   const reveal = (p: Page, t: number): void => {
     push({ type: "page.render", turn: t, page: { logicalRef: p.logicalRef, contentHash: p.contentHash }, mode: "full" });
     p.revealed = true;
@@ -237,6 +277,7 @@ export function createTrace(init: TraceInit): Tracer {
       const ref = input.ref ?? toolRef(input.server, input.tool ?? "unknown", input.args ?? null);
       const tokens = input.tokens ?? approx4(content);
       const kind = input.kind ?? inferKind(content);
+      const declareLatency = declareLatencyOf(input);
 
       const existing = declared.get(ref);
       if (existing === undefined) {
@@ -251,7 +292,7 @@ export function createTrace(init: TraceInit): Tracer {
         };
         declared.set(ref, p);
         allDeclared.set(`${ref}|${hash}`, tokens);
-        push({ type: "page.declare", page: { id: { logicalRef: ref, contentHash: hash }, kind, tokens } });
+        declarePage(ref, hash, kind, tokens, declareLatency);
         // A page can only be a double fetch if it pre-existed; a first call's own landing
         // is not waste (T6 §4 hash-before-count honesty).
         pendingRecall.delete(ref);
@@ -269,7 +310,7 @@ export function createTrace(init: TraceInit): Tracer {
         existing.revealed = false;
         existing.revealedAtPrev = false;
         allDeclared.set(`${ref}|${hash}`, tokens); // fresh fetch ⇒ a second page key (ref, hash-v2)
-        push({ type: "page.declare", page: { id: { logicalRef: ref, contentHash: hash }, kind, tokens } });
+        declarePage(ref, hash, kind, tokens, declareLatency);
         pendingRecall.delete(ref);
       }
       return { logicalRef: ref, contentHash: hash, tokens: existing.tokens };

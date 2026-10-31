@@ -78,6 +78,10 @@ test("event types + field order match the RFC-0 §6 payload shapes", () => {
   assert.match(events[0].ts as string, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
   const declare = of(events, "page.declare")[0];
   assert.equal(Object.keys(declare.page as object).join(","), "id,kind,tokens"); // spec table order
+  // RFC-0.1 §R5 + §R4 (R5-turn card): the declaration turn sits directly after
+  // the page object and `latencyMs` (when a caller supplied a valid one) rides
+  // between turn and ts. runHealthy supplies none ⇒ type,page,turn,ts.
+  assert.equal(Object.keys(declare).join(","), "type,page,turn,ts");
   const tr = of(events, "turn.render");
   assert.deepEqual(tr.map((e) => e.turn), [0, 1, 2, 3]);
   assert.equal(tr[0].evictedTokens, 0); // mirror: nothing evicted
@@ -96,6 +100,52 @@ test("event types + field order match the RFC-0 §6 payload shapes", () => {
     order.lastIndexOf("turn.render") < order.indexOf("call.meta"),
     "turn.render facts flush before call.meta facts",
   );
+});
+
+test("page.declare carries its declaration turn (RFC-0.1 R5 / R5-turn card)", () => {
+  // The stamped turn is the tracer's counter AT DECLARATION TIME. Declarations
+  // made before the first render carry the pre-first-render counter (-1) and
+  // stamp as 0 — the standing RFC-0 §5 convention page.fault already uses
+  // ("t = turn < 0 ? 0 : turn"). The reveal bookkeeping is unchanged: a page
+  // still gets its page.render at the NEXT render.
+  const vm = createTrace(INIT);
+  vm.page({ ref: "file:pre.ts", kind: "file", content: "P" }); // counter -1 → stamps 0
+  vm.render(); // turn 0 — reveals the pre page
+  vm.render(); // turn 1
+  vm.page({ ref: "file:mid.ts", kind: "file", content: "M" }); // counter 1 → stamps 1
+  vm.page({ ref: "file:mid2.ts", kind: "file", content: "M2" }); // same turn, second declare
+  vm.render(); // turn 2 — reveals both mid pages
+  const events = vm.finish().events;
+  assert.deepEqual(of(events, "page.declare").map((e) => e.turn), [0, 1, 1]);
+  // Reveal law untouched: each page still renders full at the boundary AFTER it.
+  const renders = of(events, "page.render");
+  assert.deepEqual(renders.map((e) => `${String(e.turn)}:${String((e.page as Record<string, unknown>).logicalRef)}`), [
+    "0:file:pre.ts",
+    "2:file:mid.ts",
+    "2:file:mid2.ts",
+  ]);
+});
+
+test("page.declare latencyMs: valid accepted, absent/invalid omitted (RFC-0.1 R4)", () => {
+  // Strict intake, mirroring noteUsage (W2b) and the RFC-0 preamble's omit-when-
+  // unknown law: a finite safe integer >= 0 is emitted; anything else is an
+  // ABSENCE and the key is omitted — never null, never coerced, never a float.
+  const vm = createTrace(INIT);
+  vm.page({ ref: "file:a.ts", kind: "file", content: "A" }); // absent
+  vm.page({ ref: "file:b.ts", kind: "file", content: "B", latencyMs: 0 }); // 0 is a fact
+  vm.page({ ref: "file:c.ts", kind: "file", content: "C", latencyMs: 12 }); // valid
+  vm.page({ ref: "file:d.ts", kind: "file", content: "D", latencyMs: 1.5 }); // float
+  vm.page({ ref: "file:e.ts", kind: "file", content: "E", latencyMs: -3 }); // negative
+  vm.page({ ref: "file:f.ts", kind: "file", content: "F", latencyMs: Number.NaN }); // not a number
+  const declares = of(vm.finish().events, "page.declare");
+  assert.deepEqual(declares.map((e) => e.latencyMs), [undefined, 0, 12, undefined, undefined, undefined]);
+  for (const e of declares) {
+    if (e.latencyMs !== undefined) {
+      assert.ok(typeof e.latencyMs === "number" && Number.isSafeInteger(e.latencyMs) && e.latencyMs >= 0);
+    }
+  }
+  // Wire order when present: the field rides between turn and ts.
+  assert.equal(Object.keys(declares[2] as object).join(","), "type,page,turn,latencyMs,ts");
 });
 
 test("providerUsage rides exactly its turn's call.meta (RFC-0.1 R3 / W2b)", () => {

@@ -69,6 +69,23 @@ tables gained `ts` in their own cards; the one-card-both-emitters rule (§6) par
 "one card owns one ADOPTION step" — the schema itself landed complete with RFC-0.1. The
 opencode table's ts row comment carries the lane pointers.
 
+**RFC-0.1 §R5 + §R4 note (2026-10-31, RR-R5TURN):** `page.declare` now carries `turn`
+(§R5 — the tracer's counter AT DECLARATION TIME; pre-first-render declarations stamp as
+0, the RFC-0 §5 convention `page.fault` already uses) and accepts `latencyMs` (§R4's
+`page.declare` half) as an ACCEPTED-BUT-UNEMITTED slot. Wire order: `type, page, turn,
+latencyMs?, ts` — `turn` always, `latencyMs` only when a caller supplied a whole number
+of milliseconds ≥ 0 (strict intake: absent/invalid ⇒ omitted, never null, never float;
+`bool` excluded on the python side because bool IS an int there). Reveal bookkeeping is
+unchanged — a page still renders full at the boundary AFTER its declaration, so a
+declaration turn and its render turn can differ by more than one.
+**Why latencyMs is unemitted:** neither KIT terrain carries a timing fact — opencode's
+hooks are `session.context`/`tool.execute.before`/`tool.execute.after`, hermes's are tool
+pairs + `pre_llm_call` history (audited in RR-W2B1 §1). The key signatures below stay
+TRUE to the wire: both parity tables gained `turn` and NOT `latencyMs` (the
+providerUsage precedent — an optional field enters the table when a fixture exercises
+it). Both emitters landed in ONE card, which is this file's own §6 rule shape ("both
+emitters, the validator, this table, and both parity tests in the same commit").
+
 The common tracer substrate (`@ctxvm/node`, mirrored as `packages/hermes/src/plugin.py`)
 makes this fall out by construction; `spec/rfc-0/validate_schema.py` + the replay engine keep
 it. **Rule:** a new event type or field enters the wire ONLY via an RFC-0 revision, and the

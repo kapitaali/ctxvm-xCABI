@@ -288,9 +288,11 @@ metric; pinned `prices.json` v1 (nulls never substituted); counts
 `7a4f499` with Actions run `40845029026` green 4/4 (schema/hub/rust/ts) —
 the W3 commit solo on top of the `2a39ddc` batch (whose run `40843322867`
 was green 4/4; the rust job's 7 steps include the new tiktoken-feature
-gate). Current counts `ts 18 + 58 + 45` / `python 89 + 44 + 8` (hermes +3 from W4b B1
-and +4 from W4b B2, 2026-10-30, +2 more from its R4-ts card, 2026-10-31; node +3 from
-the W2b tracer usage API +2 from the node R4-ts card, 2026-10-31; was `80 + 44 + 8`
+gate). Current counts `ts 20 + 58 + 45` / `python 91 + 44 + 8` (hermes +3 from W4b B1
+and +4 from W4b B2, 2026-10-30, +2 more from its R4-ts card and +2 from the R5/R4
+`page.declare` card, 2026-10-31; node +3 from
+the W2b tracer usage API +2 from the node R4-ts card +2 from the R5/R4 card, 2026-10-31;
+was `80 + 44 + 8`
 through 2026-10-29).
 **W4 audit LANDED** (2026-10-29, `reports/RR-W4-20261029.md` — docs-anchored:
 `packages/hermes/OBSERVABILITY.md` records the verified contract, the measured
@@ -540,6 +542,34 @@ D11 the three `ctxvm <ctxvm@local>`-signed pushed commits (`36cec7c`, `f0f2710`,
 `d21bcb7`) are RECORDED, rewritten never — root cause a transient local git
 identity override (removed, verified absent; global config was always law-correct);
 standing law now explicit: future mis-signed commits are recorded, never force-pushed.
+
+**R5/R4 `page.declare` CARD LANDED (2026-10-31, `reports/RR-R5TURN-20261031.md`):**
+`page.declare` now carries `turn` (RFC-0.1 §R5 — the tracer's counter AT DECLARATION
+TIME, pre-first-render −1 stamping as 0 per the RFC-0 §5 convention `page.fault`
+already uses) and accepts `latencyMs` (§R4's emit half) — BOTH emitters in ONE card:
+node `declarePage()` choke point over both push sites + `declareLatencyOf()` strict
+intake (safe integer ≥ 0, `0` is a fact, absent/invalid ⇒ key omitted), hermes
+`_declare_page()` + `declare_latency_ms()` mirror with `bool` excluded (bool IS int in
+Python). Wire order `type,page,turn,latencyMs?,ts`. Reveal bookkeeping UNCHANGED — a
+declaration turn and its render turn can differ by more than one, now pinned on both
+ports. **`latencyMs` is accepted-but-unemitted: no lane has the fact** (opencode
+`session.context`/`tool.execute.*`, hermes tool pairs + `pre_llm_call` history —
+RR-W2B1 §1 audit), so both parity tables gained `turn` and NOT `latencyMs` (the pin
+deep-equals the observed key set; the providerUsage precedent, documented in both
+tables). Fixtures: ai-sdk canon regen = EXACTLY one line (the single declare gains
+`"turn":0`), hermes live-echo regen = 3 declares gain turn 0/1/2 with all 20 `ts`
+values REminted (disclosed, not pinned) and the m3 corridor printing SKIPPED.
+Disclosed drafting error: the first node turn pin expected turn 1 right after the
+first render — the counter law is 0 (the first `render()` advances it to 0); caught by
+the implementation run, pin corrected and extended to pin the reveal turn. Counts
+`ts 20 + 58 + 45` / `python 91 + 44 + 8`; ALL GATES GREEN; sealed + frozen untouched.
+**Next frontier 6 (R5/R4 landed; status 2026-10-31):** RFC-0.1 emission is now
+COMPLETE on the wire (R0 version, R1 typed source, R3 usage, R4 ts + declare
+latency slot, R5 declare turn) — remaining work is the emitter-side feed for
+`latencyMs` only if a lane ever measures a hook latency → W10 node build/metadata
+(owner-cleared, no publish/tag) → umpire cross-repo tail (owner coordination — dirty
+worktree) → W8 ($25, preregistered; D12's est* decision made there) → D3-c exporter
+promotion (with drift guard) → W12 Steps 2+ (post-W8).
 
 ## §1. Workspace map
 

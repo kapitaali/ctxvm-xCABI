@@ -68,5 +68,15 @@ ctxvm export --odps ./session.jsonl   # dataproduct.yaml + llms.txt (telemetry �
   mechanism for byte-exact fixtures, determinism pins, and drop minting.
 - `vm.page()` accepts raw string or structured chunks; tokenizer pluggable
   (tiktoken default; HF behind feature flag).
+- `page.declare` carries `turn` (RFC-0.1 §R5, RR-R5TURN-20261031): the tracer's
+  turn counter AT DECLARATION TIME, and declarations made before the first
+  render stamp as turn 0 — the standing RFC-0 §5 convention `page.fault` already
+  uses (`t = turn < 0 ? 0 : turn`). The reveal law is unchanged: the page still
+  gets its `page.render` at the boundary AFTER it. `latencyMs` (§R4's
+  `page.declare` half) is an ACCEPTED-BUT-UNEMITTED slot: pass a whole number of
+  milliseconds ≥ 0 and it rides between `turn` and `ts`; anything else is an
+  ABSENCE and the key is omitted (never null, never float — the same strict
+  intake `noteUsage` uses). No shipped lane measures a hook latency today, so
+  real captures carry `turn` only.
 - Errors are events too: a dangling pin, unclaimed fault, or divergent replay is logged,
   never thrown — telemetry-first means the tracer can't harm the host agent.

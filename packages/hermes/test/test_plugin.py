@@ -67,6 +67,10 @@ class TracerTests(unittest.TestCase):
         self.assertRegex(lines[0]["ts"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
         declares = [e for e in lines if e["type"] == "page.declare"]
         self.assertEqual(list(declares[0]["page"].keys()), ["id", "kind", "tokens"])
+        # RFC-0.1 §R5 + §R4 (R5-turn card): the declaration turn sits directly
+        # after the page object and latencyMs (when supplied) rides between turn
+        # and ts. The healthy run supplies none ⇒ type,page,turn,ts.
+        self.assertEqual(list(declares[0].keys()), ["type", "page", "turn", "ts"])
         turns = [e for e in lines if e["type"] == "turn.render"]
         self.assertEqual([e["turn"] for e in turns], [0, 1, 2, 3])
         self.assertEqual(turns[0]["evictedTokens"], 0)
@@ -83,6 +87,48 @@ class TracerTests(unittest.TestCase):
         last_tr = max(i for i, e in enumerate(lines) if e["type"] == "turn.render")
         first_cm = min(i for i, e in enumerate(lines) if e["type"] == "call.meta")
         self.assertLess(last_tr, first_cm)
+
+    def test_page_declare_carries_its_declaration_turn_rfc01_r5(self):
+        """The stamped turn is the counter AT DECLARATION TIME; declarations made
+        before the first render carry -1 and stamp as 0 (RFC-0 §5 convention —
+        the same law page.fault uses). Reveal bookkeeping unchanged."""
+        vm = Tracer(TRACE_INIT)
+        vm.page({"ref": "file:pre.py", "kind": "file", "content": "P"})  # counter -1 → stamps 0
+        vm.render()  # turn 0 — reveals the pre page
+        vm.render()  # turn 1
+        vm.page({"ref": "file:mid.py", "kind": "file", "content": "M"})  # counter 1 → stamps 1
+        vm.page({"ref": "file:mid2.py", "kind": "file", "content": "M2"})  # same turn, second declare
+        vm.render()  # turn 2 — reveals both mid pages
+        events = [json.loads(l) for l in vm.finish().jsonl.strip().split("\n")]
+        declares = [e for e in events if e["type"] == "page.declare"]
+        self.assertEqual([e["turn"] for e in declares], [0, 1, 1])
+        renders = [e for e in events if e["type"] == "page.render"]
+        self.assertEqual([(e["turn"], e["page"]["logicalRef"]) for e in renders],
+                         [(0, "file:pre.py"), (2, "file:mid.py"), (2, "file:mid2.py")])
+
+    def test_page_declare_latency_ms_intake_law_rfc01_r4(self):
+        """Strict intake mirroring noteUsage: a finite integer >= 0 is emitted;
+        anything else is an ABSENCE and the key is omitted — never null, never
+        coerced, never a float. bool is excluded because bool IS an int in
+        Python (True must not become 1 ms)."""
+        vm = Tracer(TRACE_INIT)
+        vm.page({"ref": "file:a.py", "kind": "file", "content": "A"})  # absent
+        vm.page({"ref": "file:b.py", "kind": "file", "content": "B", "latencyMs": 0})  # 0 is a fact
+        vm.page({"ref": "file:c.py", "kind": "file", "content": "C", "latencyMs": 12})  # valid
+        vm.page({"ref": "file:d.py", "kind": "file", "content": "D", "latencyMs": 1.5})  # float
+        vm.page({"ref": "file:e.py", "kind": "file", "content": "E", "latencyMs": -3})  # negative
+        vm.page({"ref": "file:f.py", "kind": "file", "content": "F", "latencyMs": True})  # bool
+        vm.page({"ref": "file:g.py", "kind": "file", "content": "G", "latencyMs": "12"})  # str
+        events = [json.loads(l) for l in vm.finish().jsonl.strip().split("\n")]
+        declares = [e for e in events if e["type"] == "page.declare"]
+        self.assertEqual([e.get("latencyMs") for e in declares], [None, 0, 12, None, None, None, None])
+        for e in declares:
+            if "latencyMs" in e:
+                self.assertIsInstance(e["latencyMs"], int)
+                self.assertNotIsInstance(e["latencyMs"], bool)
+                self.assertGreaterEqual(e["latencyMs"], 0)
+        # Wire order when present: the field rides between turn and ts.
+        self.assertEqual(list(declares[2].keys()), ["type", "page", "turn", "latencyMs", "ts"])
 
     def test_finish_idempotent_tail_regenerates(self):
         """T17.7 law pinned BOTH sides this card (mirrors the node tracer test).
@@ -662,7 +708,12 @@ class LiveAdapterTests(unittest.TestCase):
 # node mirror's opencode table already carrying its lane's ts in RR-R4TS1).
 CANONICAL_EVENT_KEYS = {
     "session.open": ["agentId", "budgetTokens", "model", "provider", "schemaVersion", "tokenizerId", "ts", "type"],
-    "page.declare": ["page", "ts", "type"],
+    # page.declare (R5-turn card, RFC-0.1 §R5 + §R4): `turn` always rides
+    # (declaration turn, pre-first-render -1 stamps as 0); `latencyMs` is an
+    # ACCEPTED-BUT-UNEMITTED slot — no lane surface feeds it yet, so the table
+    # stays true to the wire (the noteUsage/providerUsage precedent: optional
+    # fields enter the table when a fixture actually exercises them).
+    "page.declare": ["page", "ts", "turn", "type"],
     "page.fault": ["page", "source", "turn", "ts", "type"],
     "page.render": ["mode", "page", "turn", "ts", "type"],
     "turn.render": ["evictedTokens", "headroom", "residentTokens", "turn", "ts", "type"],

@@ -16,7 +16,12 @@ const CANONICAL_EVENT_KEYS: Record<string, string[]> = {
   // R4-ts (RFC-0.1 §R4, D9 policy, RR-TS1-20261031): ts rides on every event of
   // the node-inherited lanes (default ON, CTXVM_TRACE_TS=0 opt-out). Optional.
   "session.open": ["agentId", "budgetTokens", "model", "provider", "schemaVersion", "tokenizerId", "ts", "type"],
-  "page.declare": ["page", "ts", "type"],
+  // R5/R4 (RFC-0.1 §R5 + §R4, R5-turn card): page.declare carries `turn`
+  // always (declaration turn; pre-first-render -1 stamps as 0). `latencyMs` is
+  // an ACCEPTED-BUT-UNEMITTED slot — this lane's hook terrain carries no timing
+  // facts, so the table stays true to the wire (the providerUsage precedent:
+  // optional fields enter the table when the fixture exercises them).
+  "page.declare": ["page", "ts", "turn", "type"],
   "page.fault": ["page", "source", "turn", "ts", "type"],
   "page.render": ["mode", "page", "turn", "ts", "type"],
   "turn.render": ["evictedTokens", "headroom", "residentTokens", "turn", "ts", "type"],
