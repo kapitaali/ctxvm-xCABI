@@ -399,12 +399,19 @@ def infer_kind(content: Json) -> PageKind:
 
 # Hermes knows the model/provider of the running session; the tracer should not have to
 # be told through env vars. These are the keys seen across Hermes hook payload versions.
-_IDENTITY_KEYS = (("model", ("model", "model_name", "model_id")),
-                  ("provider", ("provider", "provider_name")))
+_IDENTITY_KEYS = (("model", ("model", "model_name", "model_id", "modelID")),
+                  ("provider", ("provider", "provider_name", "provider_id", "providerID")))
+# opencode's hook carries `model: {id, providerID, variant}`; assume nothing about nesting.
+_IDENTITY_NESTED = (("model", ("id", "modelID", "model")),
+                    ("provider", ("providerID", "provider_id", "provider")))
 
 
 def identity_from_payload(payload: Dict[str, Any]) -> Optional[Dict[str, str]]:
-    """Extract {model, provider} from a hook payload when the host provides them."""
+    """Extract {model, provider} from a hook payload when the host provides them.
+
+    Flat keys first, then the nested `model` object shape the opencode surface uses.
+    Anything the host does not send stays unset and falls back to env at the call site.
+    """
     found: Dict[str, str] = {}
     for field, keys in _IDENTITY_KEYS:
         for key in keys:
@@ -412,6 +419,16 @@ def identity_from_payload(payload: Dict[str, Any]) -> Optional[Dict[str, str]]:
             if isinstance(value, str) and value.strip():
                 found[field] = value.strip()
                 break
+    nested = payload.get("model")
+    if isinstance(nested, dict):
+        for field, keys in _IDENTITY_NESTED:
+            if field in found:
+                continue
+            for key in keys:
+                value = nested.get(key)
+                if isinstance(value, str) and value.strip():
+                    found[field] = value.strip()
+                    break
     return found or None
 
 

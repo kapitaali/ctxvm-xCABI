@@ -580,6 +580,11 @@ class LiveAdapterTests(unittest.TestCase):
         ident = identity_from_payload({"model": "vendor/model-a", "provider": "vendor"})
         self.assertEqual(ident, {"model": "vendor/model-a", "provider": "vendor"})
         self.assertIsNone(identity_from_payload({}))
+        # nested shape (opencode-style): model: {id, providerID}
+        nested = identity_from_payload({"model": {"id": "vendor/model-b", "providerID": "vendor"}})
+        self.assertEqual(nested, {"model": "vendor/model-b", "provider": "vendor"})
+        # provider-only spellings
+        self.assertEqual(identity_from_payload({"provider_id": "p2"}), {"provider": "p2"})
         vm = create_ctxvm_plugin({"agentId": "hermes", "model": "unknown/unknown",
                                   "provider": "unknown", "budgetTokens": 1000})
         vm.on_session_start({"session_id": "s-identity", "model": "vendor/model-a",

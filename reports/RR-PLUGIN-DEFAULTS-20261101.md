@@ -74,3 +74,35 @@ implement, so the next adapter cannot drift.
 - Default-ON means session content on disk by default. `0700` and the documented opt-out are the
   mitigations shipped here; a retention/size cap is **not** implemented and is the obvious next
   hardening item before this is offered to anyone else.
+
+---
+
+## Addendum (2026-11-01, after a real default-ON capture)
+
+The first capture with the new defaults — no env vars anywhere, gateway restarted, capture ON by
+default — wrote `ctxvm-dev.jsonl` (1,530 bytes) at session end and again on `/ctxvm-trace stop`,
+same byte count both times:
+
+```
+6 events · session.open + page.declare ×3 + turn.render + call.meta
+model: deepseek/deepseek-v4.1-flash-1017      ← from the hook payload, not env
+provider: unknown                              ← the payload did not carry it
+3 pages, all tool_result, 268 tokens, 1 turn, 0 faults, 0 evictions
+touch_ratio 0.000 → waste 1.000 (degenerate at one turn) · replay exit 0
+pluginVersion 0.3.0 · dir mode 0700
+```
+
+**Confirmed working:** default-ON with no environment, `~`-free absolute paths, `0700`, and
+identity-from-payload for `model` — proof that the env-ritual is no longer needed, since the
+gateway process had zero `CTXVM_*` variables.
+
+**Confirmed still open:** `provider` is `unknown`. The payload carries `model` as a string but no
+provider key under any spelling the adapter knows. Two honest remedies, neither taken here:
+ask the host to include it (upstream), or set `CTXVM_PROVIDER` in the gateway's systemd
+environment (the very ritual this card removed). `identity_from_payload` was broadened to accept
+`provider_id` / `providerID` and a nested `model: {id, providerID}` object, so if a future payload
+shape carries it, the trace will pick it up without another card.
+
+**Also confirmed:** `session_start` never fires in this build — zero occurrences across every
+witness log today. The tracer is created lazily by `pre_llm_call`, which is why capture works
+anyway; the visible cost is that any identity the host only sends at session start is lost.
