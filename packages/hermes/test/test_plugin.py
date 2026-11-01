@@ -666,6 +666,64 @@ class LiveAdapterTests(unittest.TestCase):
         out = ctx.handler("")
         self.assertIn("Usage:", out)
 
+    def test_write_through_persists_partial_and_flush_clears_it(self):
+        """A crash must cost at most N events: write-through persists a partial snapshot."""
+        _clear_env_for_tests()
+        tmp = tempfile.mkdtemp(prefix="ctxvm-wt-")
+        os.environ["CTXVM_TRACE_DIR"] = tmp
+        os.environ["CTXVM_TRACE_NAME"] = "wt"
+        os.environ["CTXVM_TRACE_WRITETHROUGH_EVERY"] = "1"
+        cbs, cmds = {}, {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                cbs[name] = cb
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+        register(FakeCtx())
+        self.assertIn("post_tool_call", cbs)
+        cbs["post_tool_call"](
+            session_id="s1", tool="read", args={}, status="ok",
+            result={"content": [{"type": "text", "text": "hello"}]},
+        )
+        partials = list(Path(tmp).glob("*.partial.jsonl"))
+        self.assertEqual(len(partials), 1, "write-through must persist a partial snapshot")
+
+        out = cmds["ctxvm-trace"]("stop")
+        self.assertIn("1 trace(s) flushed", out)
+        self.assertEqual(list(Path(tmp).glob("*.partial.jsonl")), [])
+        self.assertTrue((Path(tmp) / "wt.jsonl").exists())
+        self.assertTrue((Path(tmp) / "wt.meta.json").exists())
+
+    def test_retention_prunes_beyond_budget_and_keeps_the_written_file(self):
+        """Default-ON capture is bounded: oldest captures are deleted, the newest is not."""
+        import live as live_mod
+        tmp = tempfile.mkdtemp(prefix="ctxvm-retain-")
+        for i in range(5):
+            p = Path(tmp, f"cap{i}.jsonl")
+            m = Path(tmp, f"cap{i}.meta.json")
+            p.write_text("{}\n")
+            m.write_text("{}\n")
+            os.utime(p, (1000 + i, 1000 + i))
+            os.utime(m, (1000 + i, 1000 + i))
+        os.environ["CTXVM_TRACE_RETAIN_MAX"] = "2"
+        os.environ["CTXVM_TRACE_RETAIN_DAYS"] = "9999"
+        deleted = live_mod._prune_traces(tmp, keep="cap0.jsonl")
+        remaining = sorted(p.name for p in Path(tmp).glob("*.jsonl"))
+        self.assertIn("cap0.jsonl", remaining, "the file just written must never be pruned")
+        self.assertLessEqual(len(remaining), 3)  # budget 2 + the kept file
+        self.assertNotIn("cap1.jsonl", remaining)
+        self.assertGreater(deleted, 0)
+        for key in ("CTXVM_TRACE_RETAIN_MAX", "CTXVM_TRACE_RETAIN_DAYS"):
+            os.environ.pop(key, None)
+
     def test_adapter_maps_hooks_and_flushes_trace_on_cleanup(self):
         _clear_env_for_tests()
         tmpdir = tempfile.mkdtemp(prefix="ctxvm-hermes-test-")

@@ -22,7 +22,7 @@
  * metadata is affected; the mapping reads `sessionID` + `messages`, whose shapes match.
  */
 
-import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -101,6 +101,16 @@ export function resolveTraceDir(raw: string | undefined): string | null {
   if (!trimmed) return null; // explicit opt-out
   const expanded = trimmed.startsWith("~/") ? join(homedir(), trimmed.slice(2)) : trimmed;
   return isAbsolute(expanded) ? expanded : resolve(expanded);
+}
+
+/** Write-through + retention — parity with the hermes adapter (09-plugin-parity.md §5.1). */
+function envFlag(name: string, dflt = "1"): boolean {
+  return !["0", "off", "false", "no"].includes((process.env[name] ?? dflt).trim().toLowerCase());
+}
+
+function envInt(name: string, dflt: number): number {
+  const raw = Number(process.env[name] ?? dflt);
+  return Number.isFinite(raw) && raw > 0 ? Math.trunc(raw) : dflt;
 }
 
 export default {
@@ -283,7 +293,89 @@ export default {
         writeMeta(sessionID, trace.stats, file);
         stats.sessions.push(sessionID);
       }
+      // A complete capture supersedes its partial snapshot, then the directory is
+      // bounded so default-ON capture cannot grow without bound.
+      try {
+        for (const name of readdirSync(traceDir)) {
+          if (name.endsWith(".partial.jsonl") || name.endsWith(".partial.meta.json")) {
+            try {
+              unlinkSync(join(traceDir, name));
+            } catch {
+              /* best effort */
+            }
+          }
+        }
+      } catch {
+        /* dir may not exist yet */
+      }
+      pruneTraces(traceDir, base ? `${base}.jsonl` : undefined);
       return flushed;
+    };
+
+    const partialWritten = { fires: 0 };
+
+    /**
+     * Persist a partial snapshot so a crash costs at most N units of activity.
+     * Hermes counts tracer EVENTS (its adapter can see them); the opencode plugin
+     * hides its tracer event list behind `finishAll()`, so this adapter counts hook
+     * FIRES instead — same env var, same default, documented in 09-plugin-parity §5.1.
+     */
+    const maybeWriteThrough = (): void => {
+      if (!envFlag("CTXVM_TRACE_WRITETHROUGH")) return;
+      partialWritten.fires += 1;
+      if (partialWritten.fires < envInt("CTXVM_TRACE_WRITETHROUGH_EVERY", 10)) return;
+      const base = process.env.CTXVM_TRACE_NAME;
+      for (const { sessionID, trace } of vm.finishAll()) {
+        const file = base || sessionID;
+        try {
+          writeFileSync(join(traceDir, `${file}.partial.jsonl`), trace.jsonl);
+          writeMeta(sessionID, trace.stats, `${file}.partial`);
+          wit(`write-through after ${partialWritten.fires} hook fires (partial)`);
+        } catch {
+          /* never break capture */
+        }
+      }
+      partialWritten.fires = 0;
+    };
+
+    /** Delete captures beyond CTXVM_TRACE_RETAIN_MAX / _DAYS; never the one just written. */
+    const pruneTraces = (dir: string, keep?: string): number => {
+      const maxFiles = envInt("CTXVM_TRACE_RETAIN_MAX", 200);
+      const retainDays = envInt("CTXVM_TRACE_RETAIN_DAYS", 30);
+      let deleted = 0;
+      let names: string[] = [];
+      try {
+        names = readdirSync(dir).filter((n) => n.endsWith(".jsonl") && !n.endsWith(".partial.jsonl"));
+      } catch {
+        return 0;
+      }
+      const rows = names.map((n) => {
+        const p = join(dir, n);
+        let mtime = 0;
+        try {
+          mtime = statSync(p).mtimeMs;
+        } catch {
+          /* skip */
+        }
+        return { n, mtime };
+      });
+      rows.sort((a, b) => b.mtime - a.mtime);
+      rows.forEach((row, idx) => {
+        if (keep && row.n === keep) return;
+        const tooMany = idx >= maxFiles;
+        const tooOld = Date.now() - row.mtime > retainDays * 86400_000;
+        if (!(tooMany || tooOld)) return;
+        for (const victim of [row.n, row.n.replace(/\.jsonl$/, ".meta.json")]) {
+          try {
+            unlinkSync(join(dir, victim));
+            deleted += 1;
+          } catch {
+            /* best effort */
+          }
+        }
+      });
+      if (deleted) wit(`retention deleted=${deleted} files (max=${maxFiles}, days=${retainDays})`);
+      return deleted;
     };
 
     /** The hermes `/ctxvm-handoff` output rendering — one rendering law. */
@@ -368,6 +460,7 @@ export default {
         stats.before += 1;
         wit(`before session=${input?.sessionID ?? "?"} tool=${input?.tool ?? "?"}`);
         vm.onToolExecuteBefore(input);
+        maybeWriteThrough();
       }),
     );
     regs.push(
@@ -377,6 +470,7 @@ export default {
         else stats.errored += 1;
         wit(`after session=${input?.sessionID ?? "?"} tool=${input?.tool ?? "?"} status=${input?.status ?? "?"}`);
         vm.onToolExecuteAfter(input);
+        maybeWriteThrough();
       }),
     );
 

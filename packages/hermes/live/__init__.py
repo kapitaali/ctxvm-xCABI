@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set
@@ -163,6 +164,99 @@ def _flush_base() -> Optional[str]:
     `base || sessionID`: slash-command name first, env second, else None."""
     state = _state()
     return state.get("trace_name") or os.environ.get("CTXVM_TRACE_NAME")
+
+
+# --- write-through + retention (2026-11-01) ---------------------------------
+# Default-ON capture has two obligations: a crash must not lose the session, and
+# the directory must not grow without bound. Write-through persists a partial
+# snapshot every N events; retention prunes old captures at flush time.
+
+def _env_flag(name: str, default: str = "1") -> bool:
+    return os.environ.get(name, default).strip().lower() not in {"0", "off", "false", "no"}
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        value = int(os.environ.get(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+    return value if value > 0 else default
+
+
+def _partial_paths(trace_dir: str, file: str):
+    return (Path(trace_dir, f"{file}.partial.jsonl"), Path(trace_dir, f"{file}.partial.meta.json"))
+
+
+def _maybe_write_through(vm: Any, stats: Dict[str, int]) -> None:
+    """Persist a partial snapshot when enough new events have accrued."""
+    if vm is None or not _env_flag("CTXVM_TRACE_WRITETHROUGH"):
+        return
+    trace_dir = _active_trace_dir()
+    if not trace_dir:
+        return
+    state = _state()
+    events = sum(len(getattr(t, "_events", [])) for t in getattr(vm, "_tracers", {}).values())
+    if events - int(state.get("last_written_events") or 0) < _env_int("CTXVM_TRACE_WRITETHROUGH_EVERY", 10):
+        return
+    _ensure_trace_dir(trace_dir)
+    base = _flush_base()
+    written = 0
+    for record in vm.finish_all():
+        session_id = record["sessionID"]
+        trace = record["trace"]
+        file = base or session_id
+        jsonl_path, meta_path = _partial_paths(trace_dir, file)
+        jsonl_path.write_text(trace.jsonl, encoding="utf-8")
+        meta_path.write_text(
+            json.dumps(_canon_meta(session_id, stats, trace.stats,
+                                   resume_from=state.get("resume_from"),
+                                   identity=_tracer_identity(vm.tracer_for(session_id))),
+                       indent=2) + "\n",
+            encoding="utf-8",
+        )
+        written += 1
+    state["last_written_events"] = events
+    if written:
+        _witness(f"write-through events={events} traces={written} (partial)")
+
+
+def _prune_traces(trace_dir: str, keep: Optional[str] = None) -> int:
+    """Delete old captures beyond the retention budget; never the one just written.
+
+    CTXVM_TRACE_RETAIN_MAX (default 200 files) and CTXVM_TRACE_RETAIN_DAYS
+    (default 30) bound a directory that is on by default.
+    """
+    max_files = _env_int("CTXVM_TRACE_RETAIN_MAX", 200)
+    retain_days = _env_int("CTXVM_TRACE_RETAIN_DAYS", 30)
+    try:
+        captures = sorted(Path(trace_dir).glob("*.jsonl"),
+                          key=lambda p: p.stat().st_mtime, reverse=True)
+    except OSError:
+        return 0
+    deleted = 0
+    now = time.time()
+    for idx, path in enumerate(captures):
+        if keep and path.name == keep:
+            continue
+        if path.name.endswith(".partial.jsonl"):
+            continue
+        too_many = idx >= max_files
+        try:
+            too_old = (now - path.stat().st_mtime) > retain_days * 86400
+        except OSError:
+            continue
+        if not (too_many or too_old):
+            continue
+        meta = path.with_name(path.name[: -len(".jsonl")] + ".meta.json")
+        for victim in (path, meta):
+            try:
+                victim.unlink()
+                deleted += 1
+            except OSError:
+                pass
+    if deleted:
+        _witness(f"retention deleted={deleted} files (max={max_files}, days={retain_days})")
+    return deleted
 
 
 def _tracer_identity(tracer: Any) -> Optional[Dict[str, str]]:
@@ -309,6 +403,7 @@ def _state() -> Dict[str, Any]:
                 "skipped_untraced": 0,
             },
             "register_calls": 0,
+            "last_written_events": 0,
         }
         setattr(sys, _STATE_ATTR, state)
     return state
@@ -488,6 +583,17 @@ def register(ctx) -> None:
                     + "\n",
                     encoding="utf-8",
                 )
+        # A complete capture supersedes its partial snapshot, and the directory is
+        # pruned so default-ON capture cannot grow without bound.
+        if trace_dir:
+            partial_jsonl = list(Path(trace_dir).glob("*.partial.jsonl"))
+            for path in partial_jsonl:
+                for victim in (path, path.with_name(path.name[: -len(".jsonl")] + ".meta.json")):
+                    try:
+                        victim.unlink()
+                    except OSError:
+                        pass
+            _prune_traces(trace_dir, keep=f"{_flush_base()}.jsonl" if _flush_base() else None)
         # UC stubs flush (no-op for current stubs; real UCs write artefacts)
         for uc in _enabled_stubs(features):
             uc.flush()
@@ -531,6 +637,7 @@ def register(ctx) -> None:
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_post_tool_call(kwargs)
+            _maybe_write_through(vm, stats)
         elif TRACE_FEATURE in features:
             stats["skipped_untraced"] += 1
         for uc in _enabled_stubs(features):
@@ -543,6 +650,7 @@ def register(ctx) -> None:
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_pre_llm_call(kwargs)
+            _maybe_write_through(vm, stats)
         elif TRACE_FEATURE in features:
             stats["skipped_untraced"] += 1
         for uc in _enabled_stubs(features):

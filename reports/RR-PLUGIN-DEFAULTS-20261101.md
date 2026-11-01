@@ -106,3 +106,35 @@ shape carries it, the trace will pick it up without another card.
 **Also confirmed:** `session_start` never fires in this build — zero occurrences across every
 witness log today. The tracer is created lazily by `pre_llm_call`, which is why capture works
 anyway; the visible cost is that any identity the host only sends at session start is lost.
+
+---
+
+## Addendum 2 (2026-11-01) — the price of default-ON: write-through and retention
+
+The first capture proved default-ON works. It also showed what default-ON costs: the capture is
+written **once**, at the end, so a crash loses the session; and nothing bounds the directory, so an
+always-on tracer grows without limit. Both are now addressed in the same card, in both adapters.
+
+**Write-through.** While the session runs, the adapter persists `<file>.partial.jsonl` and
+`.partial.meta.json` every `CTXVM_TRACE_WRITETHROUGH_EVERY` units of activity (default 10,
+`CTXVM_TRACE_WRITETHROUGH=0` disables). A complete flush deletes the partial **before** writing the
+final pair, so a partial can never be mistaken for a capture and a crash still leaves a readable
+prefix.
+
+The cadence unit differs by adapter and is documented rather than hidden: hermes can see its
+tracer's event list and counts **events**; the opencode plugin hides that list behind
+`finishAll()`, so its adapter counts **hook fires**. Same variable, same default, one stated caveat
+in `09-plugin-parity.md` §5.1.
+
+**Retention.** At flush time, complete captures beyond `CTXVM_TRACE_RETAIN_MAX` (default 200 files)
+or older than `CTXVM_TRACE_RETAIN_DAYS` (default 30) are deleted oldest-first, never the file just
+written, with a witness line recording the count. `0700` still applies to the directory.
+
+**Verification.** Hermes suite 95 → **97** (write-through persists a partial and the flush clears it;
+retention prunes beyond budget and keeps the written file). Opencode suite 59 → **60** (partial
+written on the first hook fire, gone after cleanup, complete capture present). Counts trued up in
+`run-ci.sh`; `ALL GATES GREEN`.
+
+**Still not done.** Retention is age/count based, not size based: a corpus of enormous captures
+under the file cap still occupies whatever it occupies. A byte budget (`CTXVM_TRACE_RETAIN_BYTES`)
+is the obvious next increment and is deliberately not claimed here.

@@ -278,6 +278,21 @@ the resolved absolute dir **and its source** (slash command / env / default / di
 were captured between start and stop`, which is the sentence that would have saved the
 2026-11-01 diagnosis.
 
+**Write-through and retention (same card).** Default-ON carries two obligations: a crash must cost
+at most a bounded amount of work, and the directory must not grow without bound.
+
+| Env | Default | Behaviour |
+|---|---|---|
+| `CTXVM_TRACE_WRITETHROUGH` | `1` (on) | persist `<file>.partial.jsonl` + `.partial.meta.json` while the session runs |
+| `CTXVM_TRACE_WRITETHROUGH_EVERY` | `10` | cadence: hermes counts tracer **events**, opencode counts **hook fires** (its plugin hides the event list behind `finishAll()`) |
+| `CTXVM_TRACE_RETAIN_MAX` | `200` | maximum complete captures kept in the dir |
+| `CTXVM_TRACE_RETAIN_DAYS` | `30` | age limit for complete captures |
+
+A complete flush deletes the partial before writing the final pair, so a partial can never be
+mistaken for a capture; retention prunes oldest-first and **never** deletes the file just written.
+Both are witnessed (`write-through events=… (partial)`, `retention deleted=… files …`), so the
+directory's history is as diagnosable as its contents.
+
 Session identity (`model`, `provider` in `session.open` and `.meta.json`) now comes from the
 host payload when the host supplies it (`identity_from_payload`: `model` / `model_name` /
 `model_id`, `provider` / `provider_name`), falling back to `CTXVM_MODEL` / `CTXVM_PROVIDER`.

@@ -62,6 +62,34 @@ test("trace dir expands ~ and defaults to the XDG state dir", () => {
   assert.equal(resolveTraceDir(""), null);
 });
 
+test("write-through persists a partial snapshot and cleanup clears it", async () => {
+  clearEnv();
+  const dir = mkdtempSync(join(tmpdir(), "ctxvm-wt-"));
+  process.env.CTXVM_TRACE_DIR = dir;
+  process.env.CTXVM_TRACE_NAME = "wt";
+  process.env.CTXVM_TRACE_WRITETHROUGH_EVERY = "1";
+
+  let beforeCb: (input: unknown) => void = () => {};
+  const ctx = {
+    session: { hook: async () => ({ dispose() {} }) },
+    tool: {
+      hook: async (name: string, cb: (input: unknown) => void) => {
+        if (name === "execute.before") beforeCb = cb;
+        return { dispose() {} };
+      },
+    },
+  };
+  const cleanup = await live.setup(ctx as never);
+  beforeCb({ sessionID: "ses_wt", tool: "read", input: { path: "notes.txt" } });
+
+  const partials = readdirSync(dir).filter((n) => n.endsWith(".partial.jsonl"));
+  assert.equal(partials.length, 1, "write-through must persist a partial snapshot");
+
+  await cleanup?.();
+  assert.equal(readdirSync(dir).filter((n) => n.endsWith(".partial.jsonl")).length, 0);
+  assert.ok(existsSync(join(dir, "wt.jsonl")), "the complete capture must exist after cleanup");
+});
+
 test("live adapter maps the three hooks and flushes a trace on cleanup", async () => {
   clearEnv();
   const dir = mkdtempSync(join(tmpdir(), "ctxvm-live-"));
