@@ -60,7 +60,7 @@ if _hermes_src is None and (_plugin_dir / "plugin.py").is_file():
 if _hermes_src and _hermes_src not in sys.path:
     sys.path.insert(0, _hermes_src)
 
-from plugin import create_ctxvm_plugin  # noqa: E402
+from plugin import create_ctxvm_plugin, identity_from_payload  # noqa: E402
 from uc_registry import (
     TRACE_FEATURE,
     UC1_FEATURE,
@@ -77,7 +77,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.2.0"
+PLUGIN_VERSION = "0.3.0"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -89,6 +89,59 @@ def _rfc3339_z(dt: datetime) -> str:
     return dt.isoformat().replace("+00:00", "Z")
 
 
+# --- trace-dir resolution (adoption fixes, 2026-11-01) -----------------------
+# Three defects made capture look broken: `~` was not expanded (a literal "~"
+# directory appeared under the process cwd), the default was OFF (so an
+# unconfigured harness wrote nothing), and `stop` said "flushed" whether or not
+# anything was written. All three are fixed here, and mirrored in
+# packages/opencode/live/ctxvm.ts (09-plugin-parity.md §5).
+
+def _default_trace_dir() -> str:
+    """State dir used when CTXVM_TRACE_DIR is unset: capture is ON by default."""
+    base = os.environ.get("XDG_STATE_HOME") or os.path.join(os.path.expanduser("~"), ".local", "state")
+    return os.path.join(base, "ctxvm", "traces")
+
+
+def _resolve_trace_dir(raw: Optional[str]) -> Optional[str]:
+    """Normalise a trace-dir input to an absolute path, or None to disable.
+
+    ``CTXVM_TRACE=0|off|false|no`` disables outright; an empty string disables;
+    a path is expanded (``~`` and ``$VAR``) and resolved; ``None`` (unset) yields
+    the default state dir so an unconfigured harness still records.
+    """
+    if os.environ.get("CTXVM_TRACE", "").strip().lower() in {"0", "off", "false", "no"}:
+        return None
+    if raw is None:
+        return _default_trace_dir()
+    raw = raw.strip()
+    if not raw:
+        return None
+    return str(Path(os.path.expandvars(os.path.expanduser(raw))).resolve())
+
+
+def _ensure_trace_dir(trace_dir: str) -> None:
+    """Create the trace dir 0700 — session content lives in here."""
+    Path(trace_dir).mkdir(parents=True, exist_ok=True)
+    try:
+        os.chmod(trace_dir, 0o700)
+    except OSError:
+        pass
+
+
+def _trace_dir_source() -> str:
+    """Where the active dir came from, for `/ctxvm-trace status`."""
+    state = _state()
+    if state["trace_dir"] == "":
+        return "disabled in this process (/ctxvm-trace stop)"
+    if state["trace_dir"]:
+        return "slash command"
+    if os.environ.get("CTXVM_TRACE_DIR") is not None:
+        return "env CTXVM_TRACE_DIR"
+    if os.environ.get("CTXVM_TRACE", "").strip().lower() in {"0", "off", "false", "no"}:
+        return "env CTXVM_TRACE=0"
+    return "default (set CTXVM_TRACE=0 to disable)"
+
+
 def _witness(msg: str) -> None:
     """Best-effort diagnostic witness (09-plugin-parity.md §5): append one
     timestamped line to hooks-witness.log in the active trace dir so a missing
@@ -98,7 +151,7 @@ def _witness(msg: str) -> None:
         trace_dir = _active_trace_dir()
         if not trace_dir:
             return
-        Path(trace_dir).mkdir(parents=True, exist_ok=True)
+        _ensure_trace_dir(trace_dir)
         with open(Path(trace_dir, "hooks-witness.log"), "a", encoding="utf-8") as fh:
             fh.write(f"{_rfc3339_z(datetime.now(timezone.utc))} {msg}\n")
     except Exception:
@@ -112,9 +165,18 @@ def _flush_base() -> Optional[str]:
     return state.get("trace_name") or os.environ.get("CTXVM_TRACE_NAME")
 
 
+def _tracer_identity(tracer: Any) -> Optional[Dict[str, str]]:
+    """{model, provider} as the tracer stamped them into session.open."""
+    init = getattr(tracer, "_init", None)
+    if init is None:
+        return None
+    return {"model": getattr(init, "model", None), "provider": getattr(init, "provider", None)}
+
+
 def _canon_meta(
     session_id: str, hook_stats: Dict[str, int], trace_stats: Any,
     resume_from: Optional[Dict[str, Any]] = None,
+    identity: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """Canonical .meta.json sidecar (09-plugin-parity.md §3). Both writers route
     through this; the package parity tests assert the exact key sets.
@@ -127,8 +189,8 @@ def _canon_meta(
         "harness": "hermes-python-plugin",
         "harnessVersion": os.environ.get("CTXVM_HERMES_VERSION"),
         "pluginVersion": PLUGIN_VERSION,
-        "model": os.environ.get("CTXVM_MODEL"),
-        "provider": os.environ.get("CTXVM_PROVIDER"),
+        "model": (identity or {}).get("model") or os.environ.get("CTXVM_MODEL"),
+        "provider": (identity or {}).get("provider") or os.environ.get("CTXVM_PROVIDER"),
         "budgetTokens": _budget_from_env(),
         "capturedAt": _rfc3339_z(datetime.now(timezone.utc)),
         "hookStats": {
@@ -227,7 +289,7 @@ def _state() -> Dict[str, Any]:
     state = getattr(sys, _STATE_ATTR, None)
     if state is None:
         state = {
-            "trace_dir": os.environ.get("CTXVM_TRACE_DIR"),
+            "trace_dir": _resolve_trace_dir(os.environ.get("CTXVM_TRACE_DIR")),
             "trace_name": os.environ.get("CTXVM_TRACE_NAME"),
             "features": parse_features(os.environ.get("CTXVM_FEATURES")),
             "plugin": None,
@@ -254,14 +316,16 @@ def _state() -> Dict[str, Any]:
 
 def _traced() -> bool:
     """True when a trace dir is active (env or slash-command set)."""
-    state = _state()
-    return bool(state["trace_dir"] or os.environ.get("CTXVM_TRACE_DIR"))
+    return bool(_active_trace_dir())
 
 
 def _active_trace_dir() -> Optional[str]:
     """Active trace dir: slash-command value wins, env is the fallback."""
     state = _state()
-    return state["trace_dir"] or os.environ.get("CTXVM_TRACE_DIR")
+    value = state["trace_dir"]
+    if value == "":  # explicitly stopped in this process; do not fall back to env
+        return None
+    return value or _resolve_trace_dir(os.environ.get("CTXVM_TRACE_DIR"))
 
 
 def _features() -> Set[str]:
@@ -374,7 +438,7 @@ def register(ctx) -> None:
         trace_dir = _active_trace_dir()
         if not trace_dir:
             return
-        Path(trace_dir).mkdir(parents=True, exist_ok=True)
+        _ensure_trace_dir(trace_dir)
         trace = tracer.finish()
         file = _flush_base() or session_id
         jsonl_path = Path(trace_dir) / f"{file}.jsonl"
@@ -386,6 +450,7 @@ def register(ctx) -> None:
                 _canon_meta(
                     session_id, stats, trace.stats,
                     resume_from=state.get("resume_from"),
+                    identity=_tracer_identity(tracer),
                 ),
                 indent=2,
             )
@@ -393,13 +458,14 @@ def register(ctx) -> None:
             encoding="utf-8",
         )
 
-    def _flush_traces() -> None:
-        """Write all finished tracers to the active trace dir, one file per session."""
+    def _flush_traces() -> int:
+        """Write all finished tracers to the active trace dir; return how many."""
         features = _features()
         vm = _ensure_plugin()
         trace_dir = _active_trace_dir()
+        written = 0
         if vm is not None and trace_dir:
-            Path(trace_dir).mkdir(parents=True, exist_ok=True)
+            _ensure_trace_dir(trace_dir)
             base = _flush_base()
             for record in vm.finish_all():
                 session_id = record["sessionID"]
@@ -408,12 +474,14 @@ def register(ctx) -> None:
                 Path(trace_dir, f"{file}.jsonl").write_text(
                     trace.jsonl, encoding="utf-8"
                 )
+                written += 1
                 _witness(f"flush {file}.jsonl bytes={len(trace.jsonl)} session={session_id}")
                 Path(trace_dir, f"{file}.meta.json").write_text(
                     json.dumps(
                         _canon_meta(
                             session_id, stats, trace.stats,
                             resume_from=state.get("resume_from"),
+                            identity=_tracer_identity(vm.tracer_for(session_id)),
                         ),
                         indent=2,
                     )
@@ -423,12 +491,13 @@ def register(ctx) -> None:
         # UC stubs flush (no-op for current stubs; real UCs write artefacts)
         for uc in _enabled_stubs(features):
             uc.flush()
+        return written
 
     # --- Hook handlers ------------------------------------------------------
 
     def on_session_start(**kwargs: Any) -> None:
         stats["session_starts"] += 1
-        _witness("session_start")
+        _witness(f"session_start identity={identity_from_payload(kwargs)}")
         features = _features()
         vm = _ensure_plugin()
         if vm is not None:
@@ -510,7 +579,10 @@ def register(ctx) -> None:
         if sub == "start":
             if len(argv) < 2:
                 return "Usage: /ctxvm-trace start <dir> [name]"
-            state["trace_dir"] = argv[1]
+            resolved = _resolve_trace_dir(argv[1])
+            if not resolved:
+                return "ctxvm-trace: refusing an empty/disabled dir — pass a path"
+            state["trace_dir"] = resolved
             if len(argv) > 2:
                 state["trace_name"] = argv[2]
             # Fresh plugin so a new dir never inherits another dir's tracers.
@@ -522,10 +594,15 @@ def register(ctx) -> None:
 
         if sub == "stop":
             _witness("trace stop -> flush all tracers")
-            _flush_traces()
-            state["trace_dir"] = None
+            written = _flush_traces()
+            state["trace_dir"] = ""   # sentinel: disabled in this process
             state["plugin"] = None
-            return "ctxvm-trace: tracing stopped, traces flushed."
+            if written:
+                return f"ctxvm-trace: tracing stopped, {written} trace(s) flushed."
+            return (
+                "ctxvm-trace: tracing stopped, 0 traces written — no events were captured "
+                "between start and stop. Run at least one tool call while tracing is on."
+            )
 
         if sub == "status":
             plugin = state["plugin"]
@@ -541,7 +618,8 @@ def register(ctx) -> None:
                 detail = "tracers=[" + "; ".join(rows) + "]" if rows else "tracers=[]"
             return (
                 f"ctxvm-trace: enabled={_traced()}, "
-                f"dir={_active_trace_dir() or '<none>'}, "
+                f"dir={_active_trace_dir() or '<none>'} "
+                f"(source: {_trace_dir_source()}), "
                 f"name={state['trace_name'] or '<session-id>'}, "
                 f"version={PLUGIN_VERSION}, "
                 f"register_calls={state['register_calls']}, "

@@ -397,6 +397,24 @@ def infer_kind(content: Json) -> PageKind:
     return "image_ref" if s.startswith("http") else "tool_result"
 
 
+# Hermes knows the model/provider of the running session; the tracer should not have to
+# be told through env vars. These are the keys seen across Hermes hook payload versions.
+_IDENTITY_KEYS = (("model", ("model", "model_name", "model_id")),
+                  ("provider", ("provider", "provider_name")))
+
+
+def identity_from_payload(payload: Dict[str, Any]) -> Optional[Dict[str, str]]:
+    """Extract {model, provider} from a hook payload when the host provides them."""
+    found: Dict[str, str] = {}
+    for field, keys in _IDENTITY_KEYS:
+        for key in keys:
+            value = payload.get(key)
+            if isinstance(value, str) and value.strip():
+                found[field] = value.strip()
+                break
+    return found or None
+
+
 class CtxvmPlugin:
     """Per-session tracer manager for Hermes. Mirrors @ctxvm/opencode createCtxvmPlugin."""
 
@@ -404,11 +422,21 @@ class CtxvmPlugin:
         self._init = init
         self._tracers: Dict[str, Tracer] = {}
 
-    def _vm_for(self, session_id: str) -> Tracer:
+    def _vm_for(self, session_id: str, identity: Optional[Dict[str, str]] = None) -> Tracer:
+        """Tracer for a session; `identity` overrides the process-level model/provider."""
         existing = self._tracers.get(session_id)
         if existing is not None:
             return existing
-        created = Tracer(self._init)
+        init = self._init
+        if identity:
+            init = TraceInit(
+                agent_id=init.agent_id,
+                model=identity.get("model") or init.model,
+                provider=identity.get("provider") or init.provider,
+                budget_tokens=init.budget_tokens,
+                tokenizer_id=init.tokenizer_id,
+            )
+        created = Tracer(init)
         self._tracers[session_id] = created
         return created
 
@@ -417,7 +445,7 @@ class CtxvmPlugin:
     def on_session_start(self, payload: Dict[str, Any]) -> None:
         """on_session_start hook: creates a per-session tracer (session.open emitted at creation)."""
         session_id = payload.get("session_id", "")
-        self._vm_for(session_id)
+        self._vm_for(session_id, identity_from_payload(payload))
 
     def on_pre_tool_call(self, payload: Dict[str, Any]) -> None:
         """pre_tool_call hook: recall({tool, args})."""
@@ -453,7 +481,7 @@ class CtxvmPlugin:
     def on_pre_llm_call(self, payload: Dict[str, Any]) -> None:
         """pre_llm_call hook: scan conversation history for identifiers, then render turn boundary."""
         session_id = payload.get("session_id", "")
-        vm = self._vm_for(session_id)
+        vm = self._vm_for(session_id, identity_from_payload(payload))
         history = payload.get("conversation_history") or []
         text = self._transcript_texts(history)
         vm.scan({"text": text, "latencyMs": payload.get("latencyMs")})

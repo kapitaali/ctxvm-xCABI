@@ -23,7 +23,8 @@
  */
 
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { homedir } from "node:os";
+import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createCtxvmPlugin, type CtxvmPlugin } from "../src/plugin.ts";
@@ -80,17 +81,39 @@ function budgetFromEnv(): number {
   return Number.isFinite(raw) && raw > 0 ? raw : 200000;
 }
 
+/**
+ * Trace-dir resolution — parity with `packages/hermes/live/__init__.py`
+ * (`_resolve_trace_dir`, 09-plugin-parity.md §5). Three defects fixed 2026-11-01:
+ * `~` was not expanded (a literal "~" dir appeared under cwd), capture was OFF
+ * unless the env var was set, and there was no documented opt-out.
+ */
+const OFF_VALUES = ["0", "off", "false", "no"];
+
+export function defaultTraceDir(): string {
+  const base = (process.env.XDG_STATE_HOME ?? "").trim() || join(homedir(), ".local", "state");
+  return join(base, "ctxvm", "traces");
+}
+
+export function resolveTraceDir(raw: string | undefined): string | null {
+  if (OFF_VALUES.includes((process.env.CTXVM_TRACE ?? "").trim().toLowerCase())) return null;
+  if (raw === undefined) return defaultTraceDir(); // ON by default
+  const trimmed = raw.trim();
+  if (!trimmed) return null; // explicit opt-out
+  const expanded = trimmed.startsWith("~/") ? join(homedir(), trimmed.slice(2)) : trimmed;
+  return isAbsolute(expanded) ? expanded : resolve(expanded);
+}
+
 export default {
   id: "ctxvm-live",
   async setup(ctx: LiveContext) {
-    const traceDir = process.env.CTXVM_TRACE_DIR;
+    const traceDir = resolveTraceDir(process.env.CTXVM_TRACE_DIR);
     if (!traceDir) return;
 
     // 2026-10-25 diagnostic witness: hooks are silent by design, so a missing
     // flush was previously undiagnosable (TUI-quit loss incident of 2026-10-25).
     // Every hook fire and every flush attempt is now appended to
     // hooks-witness.log. The witness must NEVER break capture — best effort.
-    mkdirSync(traceDir, { recursive: true });
+    mkdirSync(traceDir, { recursive: true, mode: 0o700 });
     const witnessLog = join(traceDir, "hooks-witness.log");
     const wit = (msg: string) => {
       try {

@@ -4,11 +4,11 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
-import live from "../live/ctxvm.ts";
+import live, { defaultTraceDir, resolveTraceDir } from "../live/ctxvm.ts";
 import { rustBinDir } from "../src/uc1-handoff.ts";
 
 const ENV_KEYS = [
@@ -30,7 +30,7 @@ function clearEnv(): void {
   for (const key of ENV_KEYS) delete process.env[key];
 }
 
-test("live adapter is inert without CTXVM_TRACE_DIR", async () => {
+test("live adapter is inert only when tracing is explicitly disabled", async () => {
   clearEnv();
   const ctx = {
     session: {
@@ -44,7 +44,22 @@ test("live adapter is inert without CTXVM_TRACE_DIR", async () => {
       },
     },
   };
+  // Parity with the hermes adapter (2026-11-01): capture is ON by default, so the
+  // old "inert without CTXVM_TRACE_DIR" contract is retired. Explicit opt-out only.
+  process.env.CTXVM_TRACE = "0";
   assert.equal(await live.setup(ctx as never), undefined);
+  delete process.env.CTXVM_TRACE;
+});
+
+test("trace dir expands ~ and defaults to the XDG state dir", () => {
+  clearEnv();
+  assert.equal(resolveTraceDir(undefined), defaultTraceDir());
+  const tilde = resolveTraceDir("~/ctxvm-tilde");
+  assert.ok(tilde !== null && isAbsolute(tilde) && !tilde.includes("/~"));
+  process.env.CTXVM_TRACE = "off";
+  assert.equal(resolveTraceDir("/tmp/x"), null);
+  delete process.env.CTXVM_TRACE;
+  assert.equal(resolveTraceDir(""), null);
 });
 
 test("live adapter maps the three hooks and flushes a trace on cleanup", async () => {

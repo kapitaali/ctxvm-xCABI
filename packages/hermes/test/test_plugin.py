@@ -8,6 +8,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 # Make packages/hermes/src and packages/hermes importable
@@ -536,11 +537,57 @@ class LiveAdapterTests(unittest.TestCase):
         # cleanup is registered as a lambda inside register(), so __name__ is "<lambda>"
         self.assertIn(("unload", "<lambda>"), calls)
 
-    def test_adapter_does_not_create_plugin_without_trace_dir(self):
-        """Verify no tracer plugin is created when CTXVM_TRACE_DIR is unset."""
+    # --- adoption contract (2026-11-01): ON by default, `~` expanded, honest stop ---
+
+    def test_trace_dir_defaults_to_state_dir_when_unset(self):
+        """Capture is ON out of the box: unset env resolves to the XDG state dir."""
+        _clear_env_for_tests()
+        import live as live_mod
+        with mock.patch.dict(os.environ, {"XDG_STATE_HOME": "/tmp/xdg-test"}, clear=False):
+            self.assertEqual(live_mod._resolve_trace_dir(None), "/tmp/xdg-test/ctxvm/traces")
+        self.assertTrue(live_mod._traced())
+
+    def test_tilde_is_expanded_and_never_literal(self):
+        """`~` in a trace dir must expand; a literal '~' dir was the 2026-11-01 bug."""
+        _clear_env_for_tests()
+        import live as live_mod
+        resolved = live_mod._resolve_trace_dir("~/ctxvm-tilde-test")
+        self.assertTrue(os.path.isabs(resolved))
+        self.assertNotIn("/~", resolved)
+        self.assertEqual(resolved, os.path.join(os.path.expanduser("~"), "ctxvm-tilde-test"))
+
+    def test_opt_out_env_and_empty_string_disable(self):
+        """Two documented ways to switch capture off."""
+        _clear_env_for_tests()
+        import live as live_mod
+        with mock.patch.dict(os.environ, {"CTXVM_TRACE": "0"}, clear=False):
+            self.assertIsNone(live_mod._resolve_trace_dir("/tmp/whatever"))
+        _clear_env_for_tests()
+        self.assertIsNone(live_mod._resolve_trace_dir(""))
+
+    def test_adapter_creates_plugin_by_default_and_honours_opt_out(self):
+        """Replaces the old default-OFF contract: a plugin exists unless disabled."""
         _clear_env_for_tests()
         from live import _make_plugin
-        self.assertIsNone(_make_plugin())
+        self.assertIsNotNone(_make_plugin())
+        _clear_env_for_tests()
+        with mock.patch.dict(os.environ, {"CTXVM_TRACE": "0"}, clear=False):
+            self.assertIsNone(_make_plugin())
+
+    def test_identity_from_payload_stamps_session_open(self):
+        """Hermes knows the model; the tracer uses it instead of env placeholders."""
+        from plugin import create_ctxvm_plugin, identity_from_payload
+        ident = identity_from_payload({"model": "vendor/model-a", "provider": "vendor"})
+        self.assertEqual(ident, {"model": "vendor/model-a", "provider": "vendor"})
+        self.assertIsNone(identity_from_payload({}))
+        vm = create_ctxvm_plugin({"agentId": "hermes", "model": "unknown/unknown",
+                                  "provider": "unknown", "budgetTokens": 1000})
+        vm.on_session_start({"session_id": "s-identity", "model": "vendor/model-a",
+                             "provider": "vendor"})
+        tracer = vm.tracer_for("s-identity")
+        opened = [e for e in tracer._events if e.get("type") == "session.open"][0]
+        self.assertEqual(opened["model"], "vendor/model-a")
+        self.assertEqual(opened["provider"], "vendor")
 
     def test_slash_command_start_then_stop(self):
         """Slash command /ctxvm-trace start|stop enables/disables tracing at runtime."""
@@ -567,10 +614,11 @@ class LiveAdapterTests(unittest.TestCase):
         self.assertEqual(len(handlers), 1)
         handle = handlers[0]
 
-        # Initially no trace dir
+        # Tracing is ON by default (adoption contract): before `start`, the dir is the
+        # resolved default, not None. `start` then switches it to the explicit path.
         import live as live_mod
-        self.assertFalse(live_mod._traced())
-        self.assertIsNone(live_mod._active_trace_dir())
+        self.assertTrue(live_mod._traced())
+        self.assertEqual(live_mod._active_trace_dir(), live_mod._resolve_trace_dir(None))
 
         # Start tracing via slash command
         out = handle(f"start {tmpdir} slash-session")
@@ -583,13 +631,12 @@ class LiveAdapterTests(unittest.TestCase):
         self.assertIn("enabled=True", out)
         self.assertIn(tmpdir, out)
 
-        # Stop tracing
+        # Stop tracing — no session activity, so the message must say ZERO, not "flushed"
         out = handle("stop")
         self.assertIn("stopped", out)
+        self.assertIn("0 traces written", out)
         self.assertFalse(live_mod._traced())
-
-        # Stop without any session activity: finish_all() returns [] so no files.
-        # That's expected — flush only writes when tracers exist.
+        self.assertIsNone(live_mod._active_trace_dir())
 
     def test_slash_command_unknown_subcommand(self):
         """Unknown /ctxvm-trace subcommand returns usage."""
