@@ -278,6 +278,14 @@ the resolved absolute dir **and its source** (slash command / env / default / di
 were captured between start and stop`, which is the sentence that would have saved the
 2026-11-01 diagnosis.
 
+**Static prefix (`turn.render.prefix`, W13).** Hermes exposes `pre_api_request`, whose payload
+carries the counters the host already paid to compute: `tool_count`, `message_count`,
+`request_char_count`, `system_prompt`, and its own `approx_input_tokens`. The adapter records them
+on the turn's render row. The OpenCode adapter cannot see the request, so it emits
+`{"source": "unknown"}` — a stated absence, never a zero. Field parity is enforced by
+`packages/opencode/test/meta-parity.test.ts`; the schema rejects a prefix with no `source`, an
+invented source, and a negative count.
+
 **Write-through and retention (same card).** Default-ON carries two obligations: a crash must cost
 at most a bounded amount of work, and the directory must not grow without bound.
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ctxvm.dev/schemas/x-cabi-0.1.json",
-  "title": "xCABI-0.1 \u2014 Context Budget Accounting Interface (RFC-0.1 addendum)",
+  "title": "xCABI-0.1 — Context Budget Accounting Interface (RFC-0.1 addendum)",
   "description": "An xCABI-0.1 trace is a JSONL file: one event object per line. This schema validates each line independently (the array form is a convenience for test vectors).",
   "type": "object",
   "$defs": {
@@ -118,6 +118,59 @@
         "semantic",
         "intentional_rerun"
       ]
+    },
+    "prefixCost": {
+      "type": "object",
+      "description": "RFC-0.1 W13: static per-turn cost that is billed whether or not any page is touched. All counters are optional so an adapter that cannot see the request reports `source: \"unknown\"` instead of a zero.",
+      "properties": {
+        "toolSchemas": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "messageCount": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "requestChars": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "systemPromptBytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "approxInputTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "measured",
+            "estimated",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -341,6 +394,9 @@
         },
         "ts": {
           "$ref": "#/$defs/ts"
+        },
+        "prefix": {
+          "$ref": "#/$defs/prefixCost"
         }
       },
       "required": [

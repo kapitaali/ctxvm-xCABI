@@ -38,6 +38,18 @@ Every event gains an optional `ts` (RFC 3339 UTC, millisecond precision).
 
 `page.declare` gains an optional `turn` (integer >= 0).
 
+## R6 — turn.render prefix (W13)
+
+`turn.render` gains an optional `prefix` object describing the static cost the request pays on
+every turn: `{ toolSchemas?, messageCount?, requestChars?, systemPromptBytes?, approxInputTokens?,
+source }`. Every counter is optional; `source` is required and is one of `measured`, `estimated`,
+`unknown`. `approxInputTokens` is the harness's own estimate and is never billed tokens.
+
+Why: arXiv:2610.22732v1 §2.2 measures 23 tool schemas loaded on every turn while no repository
+calls more than 7, and tool pruning alone recovers 13.2–17.7% of cost. A ledger that models only
+pages that get touched cannot see that cost. `source: "unknown"` is a first-class answer: an
+adapter that cannot see its request must not report a zero it did not measure.
+
 ## Compatibility
 
 v0 traces replay byte-identical. v0 validators reject v0.1-only lines (the

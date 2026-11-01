@@ -28,6 +28,20 @@ import {
 export type PageKind = "file" | "tool_result" | "summary" | "image_ref";
 export type FaultSource = "tool_recall" | "identifier_scan" | "explicit_api" | "semantic";
 
+/**
+ * RFC-0.1 W13: the static cost billed on every turn whether or not any page is touched.
+ * Every counter is optional so a harness that cannot see its request reports
+ * `source: "unknown"` instead of a zero it did not measure.
+ */
+export interface PrefixCost {
+  toolSchemas?: number;
+  messageCount?: number;
+  requestChars?: number;
+  systemPromptBytes?: number;
+  approxInputTokens?: number;
+  source: "measured" | "estimated" | "unknown";
+}
+
 export interface TraceInit {
   /** Stable across sessions of the same agent class (RFC-0 `agentId: S`). */
   agentId: string;
@@ -106,6 +120,18 @@ export interface Tracer {
   recall(input: RecallInput): void;
   /** Turn boundary: reveals newly declared pages; turn-level facts flush at finish(). */
   render(input?: RenderInput): void;
+  /**
+   * RFC-0.1 W13: record the static per-turn cost (tool schemas, prefix bytes).
+   * Harnesses that cannot see the request simply never call this; the render row
+   * then carries `source: "unknown"`.
+   */
+  onApiRequest(payload: {
+    tool_count?: number;
+    message_count?: number;
+    request_char_count?: number;
+    approx_input_tokens?: number;
+    system_prompt?: string;
+  }): void;
   /** `identifier_scan` over produced model text (deduped per page per source, T3 v0). */
   scan(input: ScanInput): void;
   pin(input: PinInput): void;
@@ -186,6 +212,8 @@ export function createTrace(init: TraceInit): Tracer {
    * the §R4 law — under the opt-out the key is simply absent, never null.
    */
   const turnStamps: (string | undefined)[] = [];
+  // W13: prefix snapshots keyed by turn; last attempt of a turn wins.
+  const turnPrefixes = new Map<number, PrefixCost>();
   /** Per-turn `call.meta` snapshots — flushed at finish() in turn order (see render). */
   type PendingMeta = { turn: number; hit: number; residentAtTurn: number; latencyMs?: number; providerUsage?: { inputTokens: number; outputTokens: number; cachedInputTokens?: number }; ts?: string };
   const pendingMeta: PendingMeta[] = [];
@@ -380,6 +408,26 @@ export function createTrace(init: TraceInit): Tracer {
       }
     },
 
+    onApiRequest(payload) {
+      const atTurn = turn >= 0 ? turn : 0;
+      const snapshot: PrefixCost = { source: "unknown" };
+      const has = (v: unknown): v is number =>
+        typeof v === "number" && Number.isFinite(v) && v >= 0;
+      if (has(payload.tool_count)) snapshot.toolSchemas = Math.trunc(payload.tool_count);
+      if (has(payload.message_count)) snapshot.messageCount = Math.trunc(payload.message_count);
+      if (has(payload.request_char_count)) snapshot.requestChars = Math.trunc(payload.request_char_count);
+      if (has(payload.approx_input_tokens))
+        snapshot.approxInputTokens = Math.trunc(payload.approx_input_tokens);
+      if (typeof payload.system_prompt === "string" && payload.system_prompt.length > 0)
+        snapshot.systemPromptBytes = Buffer.byteLength(payload.system_prompt, "utf8");
+      if (snapshot.toolSchemas !== undefined || snapshot.messageCount !== undefined ||
+          snapshot.requestChars !== undefined || snapshot.approxInputTokens !== undefined ||
+          snapshot.systemPromptBytes !== undefined) {
+        snapshot.source = "measured";
+      }
+      turnPrefixes.set(atTurn, snapshot);
+    },
+
     finish() {
       // Derived-composition arithmetic (RFC-0 replay's static analysis): every declared
       // page key is resident at every turn in v0 — there is no evict path, and
@@ -405,6 +453,10 @@ export function createTrace(init: TraceInit): Tracer {
         };
         if (init.budgetTokens > 0) tr.headroom = init.budgetTokens - resident;
         // R4-ts: cached from snapshot time — repeated flushes stay byte-stable.
+        // W13: the render row carries the static cost. A harness with no request
+        // visibility says "unknown" — absence of a measurement, never a zero.
+        // Assigned BEFORE ts: ts must ride last on every event (R4 key order).
+        tr.prefix = turnPrefixes.get(t) ?? { source: "unknown" };
         if (turnStamps[t] !== undefined) tr.ts = turnStamps[t];
         tail.push(tr);
       }

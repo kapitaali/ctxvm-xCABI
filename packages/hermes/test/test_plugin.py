@@ -531,8 +531,9 @@ class LiveAdapterTests(unittest.TestCase):
         register(FakeCtx())
         # Hooks are always registered (gating is lazy per-call); the key invariant
         # is that no plugin instance is created and no traces are written.
-        self.assertEqual(len(calls), 7)  # 5 hooks + 1 command (ctxvm-trace) + 1 unload
+        self.assertEqual(len(calls), 8)  # 6 hooks + 1 command (ctxvm-trace) + 1 unload
         self.assertIn(("hook", "on_session_start"), calls)
+        self.assertIn(("hook", "pre_api_request"), calls)
         self.assertIn(("command", "ctxvm-trace"), calls)
         # cleanup is registered as a lambda inside register(), so __name__ is "<lambda>"
         self.assertIn(("unload", "<lambda>"), calls)
@@ -665,6 +666,37 @@ class LiveAdapterTests(unittest.TestCase):
 
         out = ctx.handler("")
         self.assertIn("Usage:", out)
+
+    def test_pre_api_request_bills_the_static_prefix(self):
+        """W13: the prefix cost comes from the host's own counters, per turn."""
+        init = TraceInit(agent_id="ctxvm-dev", model="m", provider="p", budget_tokens=0)
+        tr = Tracer(init)
+        tr.scan({"text": "hello world", "latencyMs": None})
+        tr.render()
+        tr.on_pre_api_request({
+            "tool_count": 23, "message_count": 4, "request_char_count": 8192,
+            "approx_input_tokens": 2048, "system_prompt": "You are a careful agent.",
+        })
+        renders = [json.loads(line) for line in tr.finish().jsonl.splitlines()
+                   if '"turn.render"' in line]
+        prefix = renders[-1].get("prefix")
+        self.assertIsNotNone(prefix, "pre_api_request must populate the render prefix")
+        self.assertEqual(prefix["toolSchemas"], 23)
+        self.assertEqual(prefix["messageCount"], 4)
+        self.assertEqual(prefix["requestChars"], 8192)
+        self.assertEqual(prefix["approxInputTokens"], 2048)
+        self.assertEqual(prefix["systemPromptBytes"], len("You are a careful agent.".encode()))
+        self.assertEqual(prefix["source"], "measured")
+
+        # An adapter that cannot see the request says unknown — never zero.
+        tr2 = Tracer(TraceInit(agent_id="ctxvm-dev", model="m", provider="p", budget_tokens=0))
+        tr2.scan({"text": "hi", "latencyMs": None})
+        tr2.render()
+        tr2.on_pre_api_request({"session_id": "s"})
+        renders = [json.loads(line) for line in tr2.finish().jsonl.splitlines()
+                   if '"turn.render"' in line]
+        self.assertEqual(renders[-1]["prefix"], {"source": "unknown"},
+                         "unmeasurable counters must be absent, not zero")
 
     def test_write_through_persists_partial_and_flush_clears_it(self):
         """A crash must cost at most N events: write-through persists a partial snapshot."""
@@ -848,7 +880,8 @@ CANONICAL_EVENT_KEYS = {
     "page.declare": ["page", "ts", "turn", "type"],
     "page.fault": ["page", "source", "turn", "ts", "type"],
     "page.render": ["mode", "page", "turn", "ts", "type"],
-    "turn.render": ["evictedTokens", "headroom", "residentTokens", "turn", "ts", "type"],
+    # W13: `prefix` always rides (source "unknown" when the adapter cannot see the request).
+    "turn.render": ["evictedTokens", "headroom", "prefix", "residentTokens", "turn", "ts", "type"],
     "call.meta": ["cacheEstimate", "provider", "turn", "ts", "type"],
 }
 CANONICAL_META_KEYS = [

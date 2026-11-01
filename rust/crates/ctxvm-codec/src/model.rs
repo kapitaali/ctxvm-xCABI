@@ -91,6 +91,35 @@ pub struct CacheEstimate {
     pub provider_reported: bool,
 }
 
+/// RFC-0.1 W13: the static cost billed on every turn whether or not anything touches it.
+///
+/// Motivation (arXiv:2610.22732v1 §2.2): 23 tool schemas load on every turn, no repository
+/// calls more than 7. A ledger that models only touched pages cannot see the largest
+/// measured source of removable cost. Every field is optional because a harness that does
+/// not expose its request cannot honestly report zero; `source` says how the numbers were
+/// obtained, and `unknown` is a first-class answer.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PrefixCost {
+    /// Loaded tool schemas for this call (host counter, e.g. `len(agent.tools)`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_schemas: Option<u64>,
+    /// Messages in the request (host counter).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message_count: Option<u64>,
+    /// Characters in the whole request (host counter).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub request_chars: Option<u64>,
+    /// Bytes of the system/instruction prefix (host counter, when passed to the hook).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub system_prompt_bytes: Option<u64>,
+    /// The host's own estimate of input tokens. An ESTIMATE, never billed tokens.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub approx_input_tokens: Option<u64>,
+    /// "measured" (host counters) or "unknown" (the adapter cannot see the request).
+    pub source: String,
+}
+
 /// The nine xCABI v0 event verbs + RFC-0.1 additive fields.
 ///
 /// Wire shape: one JSON object per JSONL line, internally tagged by the `\"type\"` key,
@@ -187,6 +216,9 @@ pub enum Event {
         evicted_tokens: u64,
         #[serde(skip_serializing_if = "Option::is_none")]
         headroom: Option<u64>,
+        /// RFC-0.1 W13: static per-turn cost (tool schemas, prefix bytes).
+        #[serde(skip_serializing_if = "Option::is_none")]
+        prefix: Option<PrefixCost>,
         /// RFC-0.1 R4: optional capture clock.
         #[serde(skip_serializing_if = "Option::is_none")]
         ts: Option<String>,
@@ -267,6 +299,14 @@ pub fn check_version(events: &[Event]) -> Result<(), String> {
     });
     if has_provider_usage && version != Some("0.1") {
         return Err("providerUsage requires schemaVersion \"0.1\"".to_string());
+    }
+    // prefix (W13) requires v0.1.
+    let has_prefix = events.iter().any(|e| match e {
+        Event::TurnRender { prefix: Some(_), .. } => true,
+        _ => false,
+    });
+    if has_prefix && version != Some("0.1") {
+        return Err("prefix requires schemaVersion \"0.1\"".to_string());
     }
     // turn on page.declare requires v0.1.
     let has_declare_turn = events.iter().any(|e| match e {

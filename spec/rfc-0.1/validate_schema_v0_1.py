@@ -39,6 +39,12 @@ NEGATIVES = [
     {"type": "page.declare", "page": {"id": {"logicalRef": "x", "contentHash": "h"}, "kind": "file", "tokens": 1}, "turn": -1},
     # unknown schemaVersion
     {"type": "session.open", "agentId": "a", "model": "m", "provider": "p", "budgetTokens": 1, "tokenizerId": "t", "schemaVersion": "0.2"},
+    # prefix without a source (W13: provenance is required, counts are optional)
+    {"type": "turn.render", "turn": 0, "residentTokens": 1, "evictedTokens": 0, "prefix": {"toolSchemas": 23}},
+    # prefix with an invented source
+    {"type": "turn.render", "turn": 0, "residentTokens": 1, "evictedTokens": 0, "prefix": {"toolSchemas": 23, "source": "billed"}},
+    # negative count inside prefix
+    {"type": "turn.render", "turn": 0, "residentTokens": 1, "evictedTokens": 0, "prefix": {"toolSchemas": -1, "source": "measured"}},
     # null providerUsage (must be omitted, never null)
     {"type": "call.meta", "turn": 0, "provider": "p", "cacheEstimate": {"estHitTokens": 0, "estMissTokens": 0, "providerReported": False}, "providerUsage": None},
 ]
@@ -93,6 +99,7 @@ def main():
         {"type": "call.meta", "turn": 0, "provider": "p", "cacheEstimate": {"estHitTokens": 0, "estMissTokens": 0, "providerReported": False}, "providerUsage": {"inputTokens": 1, "outputTokens": 2}},
         {"type": "session.open", "agentId": "a", "model": "m", "provider": "p", "budgetTokens": 1, "tokenizerId": "t", "schemaVersion": "0.1"},
         {"type": "page.declare", "page": {"id": {"logicalRef": "x", "contentHash": "h"}, "kind": "file", "tokens": 1}, "turn": 1},
+        {"type": "turn.render", "turn": 0, "residentTokens": 1, "evictedTokens": 0, "prefix": {"toolSchemas": 23, "source": "measured"}},
     ]
     for neg in v0_1_only:
         try:

@@ -148,6 +148,11 @@ class Tracer:
         # idempotency law below holds under default-on (RR-R4TS2, node mirror).
         self._ts_enabled: bool = os.environ.get("CTXVM_TRACE_TS") != "0"
         self._turn_stamps: List[Optional[str]] = []
+        # W13: static per-turn cost, keyed by turn. Last attempt of a turn wins.
+        self._turn_prefixes: Dict[int, Dict[str, Any]] = {}
+        # W13: static per-turn cost, keyed by turn. Set by pre_api_request (last
+        # attempt of a turn wins); absent means the adapter could not see the request.
+        self._turn_prefixes: Dict[int, Dict[str, Any]] = {}
         # session.open is emitted at tracer creation (first event in the log).
         # RFC-0.1 R0 (D4 approved; D8 = emitter version switch first): every
         # trace this build emits declares schemaVersion "0.1" — the version
@@ -335,6 +340,36 @@ class Tracer:
             "reason": input["reason"],
         })
 
+    def on_pre_api_request(self, payload: Dict[str, Any]) -> None:
+        """Record the static cost this request pays every turn (W13).
+
+        arXiv:2610.22732v1 §2.2: 23 tool schemas load on every turn and no repository
+        calls more than 7, so the prefix — not touched pages — is the largest measured
+        source of removable cost. The host counts it for us: tool_count, message_count,
+        request_char_count, the system prompt it passes, and its own approximate
+        input-token estimate (labelled an estimate by its name).
+
+        Every counter is optional. A harness that cannot see its request records
+        ``source: "unknown"`` — never a zero, because a zero would be a measurement we
+        did not make.
+        """
+        turn = self._turn if self._turn >= 0 else 0
+        snapshot: Dict[str, Any] = {}
+        for out_key, in_key in (
+            ("toolSchemas", "tool_count"),
+            ("messageCount", "message_count"),
+            ("requestChars", "request_char_count"),
+            ("approxInputTokens", "approx_input_tokens"),
+        ):
+            value = payload.get(in_key)
+            if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+                snapshot[out_key] = value
+        system_prompt = payload.get("system_prompt")
+        if isinstance(system_prompt, str) and system_prompt:
+            snapshot["systemPromptBytes"] = len(system_prompt.encode("utf-8"))
+        snapshot["source"] = "measured" if len(snapshot) > 0 else "unknown"
+        self._turn_prefixes[turn] = snapshot
+
     def finish(self) -> FinishedTrace:
         """Flush: turn.render × (turn+1) then call.meta × len(pending_meta).
 
@@ -356,6 +391,10 @@ class Tracer:
                 tr["headroom"] = self._init.budget_tokens - resident
             # §R4-ts: cached from snapshot time — repeated flushes stay
             # byte-stable (idempotency law). Turn index aligns with render order.
+            # W13: parity with the TS tracer — every render carries the prefix record,
+            # and a turn the adapter could not observe says "unknown", never zero.
+            # Set BEFORE ts: `ts` must ride last on every event (R4 key order).
+            tr["prefix"] = self._turn_prefixes.get(t) or {"source": "unknown"}
             stamp = self._turn_stamps[t]
             if stamp is not None:
                 tr["ts"] = stamp
@@ -494,6 +533,12 @@ class CtxvmPlugin:
             "args": payload.get("args"),
             "content": body,
         })
+
+    def on_pre_api_request(self, payload: Dict[str, Any]) -> None:
+        """pre_api_request hook: hand the static-cost snapshot to the session's tracer."""
+        session_id = payload.get("session_id", "")
+        vm = self._vm_for(session_id, identity_from_payload(payload))
+        vm.on_pre_api_request(payload)
 
     def on_pre_llm_call(self, payload: Dict[str, Any]) -> None:
         """pre_llm_call hook: scan conversation history for identifiers, then render turn boundary."""

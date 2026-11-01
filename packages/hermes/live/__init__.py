@@ -1010,7 +1010,18 @@ def register(ctx) -> None:
     ctx.register_hook("on_session_start", on_session_start)
     ctx.register_hook("pre_tool_call", on_pre_tool_call)
     ctx.register_hook("post_tool_call", on_post_tool_call)
+    def on_pre_api_request(**kwargs: Any) -> None:
+        """W13: the request the model is about to receive — static cost, per turn."""
+        stats["events_seen"] = stats.get("events_seen", 0) + 1
+        if not _traced():
+            return
+        vm = _ensure_plugin()
+        if vm is not None:
+            vm.on_pre_api_request(kwargs)
+            _maybe_write_through(vm, stats)
+
     ctx.register_hook("pre_llm_call", on_pre_llm_call)
+    ctx.register_hook("pre_api_request", on_pre_api_request)
     ctx.register_hook("on_session_end", on_session_end)
 
     # Register slash command for runtime start/stop/status

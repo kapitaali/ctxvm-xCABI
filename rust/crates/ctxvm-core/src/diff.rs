@@ -237,7 +237,7 @@ mod tests {
     }
 
     fn turn_render(turn: u64, tokens: u64) -> Event {
-        Event::TurnRender { turn, resident_tokens: tokens, evicted_tokens: 0, headroom: None, ts: None }
+        Event::TurnRender { turn, resident_tokens: tokens, evicted_tokens: 0, headroom: None, ts: None, prefix: None }
     }
 
     fn call_meta(turn: u64) -> Event {

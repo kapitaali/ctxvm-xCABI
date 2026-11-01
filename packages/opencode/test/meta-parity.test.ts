@@ -24,7 +24,7 @@ const CANONICAL_EVENT_KEYS: Record<string, string[]> = {
   "page.declare": ["page", "ts", "turn", "type"],
   "page.fault": ["page", "source", "turn", "ts", "type"],
   "page.render": ["mode", "page", "turn", "ts", "type"],
-  "turn.render": ["evictedTokens", "headroom", "residentTokens", "turn", "ts", "type"],
+  "turn.render": ["evictedTokens", "headroom", "prefix", "residentTokens", "turn", "ts", "type"],
   "call.meta": ["cacheEstimate", "provider", "turn", "ts", "type"],
   // hermes key-signature equality is a per-port assertion: hermes's own ts card
   // (per-lane law D8/D9, RR-W2B1 §R3-note precedent) updates its table then.

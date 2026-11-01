@@ -62,7 +62,7 @@ const FIELD_ALLOWLIST: &[(&str, &[&str])] = &[
     ("page.fault", &["turn", "page", "source", "latencyMs", "ts"]),
     ("page.pin", &["page", "reason", "ts"]),
     ("page.unpin", &["page", "reason", "ts"]),
-    ("turn.render", &["turn", "residentTokens", "evictedTokens", "headroom", "ts"]),
+    ("turn.render", &["turn", "residentTokens", "evictedTokens", "headroom", "ts", "prefix"]),
     ("call.meta", &["turn", "provider", "cacheEstimate", "latencyMs", "providerUsage", "ts"]),
 ];
 
@@ -184,7 +184,7 @@ mod tests {
                 ts: None,
             },
             Event::PageRender { turn: 1, page: page(), mode: RenderMode::Stub, ts: None },
-            Event::TurnRender { turn: 1, resident_tokens: 47_800, evicted_tokens: 82, headroom: Some(64_000), ts: None },
+            Event::TurnRender { turn: 1, resident_tokens: 47_800, evicted_tokens: 82, headroom: Some(64_000), ts: None, prefix: None },
             Event::PageFault { turn: 2, page: page(), source: FaultSource::ToolRecall, latency_ms: Some(180), ts: None },
             Event::PagePin { page: page(), reason: "explicit_api: harness re-materialized the page".into(), ts: None },
             Event::PageUnpin { page: page(), reason: "budget headroom restored".into(), ts: None },
@@ -229,7 +229,7 @@ mod tests {
             }
         }
         for headroom in [None, Some(0), Some(u64::MAX)] {
-            let e = Event::TurnRender { turn: 0, resident_tokens: 1, evicted_tokens: 0, headroom, ts: None };
+            let e = Event::TurnRender { turn: 0, resident_tokens: 1, evicted_tokens: 0, headroom, ts: None, prefix: None };
             let line = to_line(&e);
             assert_eq!(parse_line(&line).unwrap(), e);
             assert_eq!(to_line(&parse_line(&line).unwrap()), line);
@@ -321,7 +321,8 @@ mod tests {
 #[cfg(test)]
 mod rfc01_tests {
     use super::*;
-    use crate::{CacheEstimate, Event, FaultSource, PageId, ProviderUsage};
+    use crate::{CacheEstimate, Event, FaultSource, PageId, PrefixCost, ProviderUsage};
+    use crate::model::check_version;
 
     #[test]
     fn intentional_rerun_round_trips() {
@@ -359,4 +360,57 @@ mod rfc01_tests {
         assert!(line.contains("\"providerUsage\":{\"inputTokens\":7,\"outputTokens\":3}"), "{line}");
         assert_eq!(parse_line(&line).unwrap(), with);
     }
+    #[test]
+    fn w13_prefix_cost_roundtrips_and_is_version_gated() {
+        let ev = Event::TurnRender {
+            turn: 0,
+            resident_tokens: 268,
+            evicted_tokens: 0,
+            headroom: None,
+            ts: None,
+            prefix: Some(PrefixCost {
+                tool_schemas: Some(23),
+                message_count: Some(4),
+                request_chars: Some(8192),
+                system_prompt_bytes: Some(3120),
+                approx_input_tokens: Some(2048),
+                source: "measured".into(),
+            }),
+        };
+        let line = to_line(&ev);
+        assert_eq!(ev, parse_line(&line).unwrap(), "prefix must survive a JSONL round trip");
+        assert!(line.contains("\"toolSchemas\":23"));
+        assert!(line.contains("\"source\":\"measured\""));
+
+        // v0.1-only: a v0 trace carrying a prefix is invalid, never guessed at.
+        let v0 = vec![
+            Event::SessionOpen {
+                agent_id: "demo-agent".into(),
+                model: "openai/gpt-5".into(),
+                provider: "openai".into(),
+                budget_tokens: 120_000,
+                tokenizer_id: "tiktoken-o200k_base".into(),
+                schema_version: None,
+                ts: None,
+            },
+            ev,
+        ];
+        let err = check_version(&v0).unwrap_err();
+        assert!(err.contains("prefix requires schemaVersion"), "got: {err}");
+
+        let mut v01 = v0;
+        if let Event::SessionOpen { schema_version, .. } = &mut v01[0] {
+            *schema_version = Some("0.1".into());
+        }
+        check_version(&v01).unwrap();
+
+        // An adapter that cannot see the request says so instead of reporting zero.
+        let unknown = PrefixCost { tool_schemas: None, message_count: None, request_chars: None,
+            system_prompt_bytes: None, approx_input_tokens: None, source: "unknown".into() };
+        let line = to_line(&Event::TurnRender { turn: 0, resident_tokens: 1, evicted_tokens: 0,
+            headroom: None, ts: None, prefix: Some(unknown) });
+        assert!(!line.contains("toolSchemas"), "unknown must omit the count, never coerce it to 0");
+        assert!(line.contains("\"source\":\"unknown\""));
+    }
+
 }

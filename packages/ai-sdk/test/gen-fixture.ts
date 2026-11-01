@@ -45,6 +45,10 @@ import { tmpdir } from "node:os";
 // comes from the in-memory FinishedTrace, not the tmp files.
 process.env.CTXVM_TRACE_DIR = mkdtempSync(join(tmpdir(), "ctxvm-ai-sdk-gen-"));
 process.env.CTXVM_TRACE_NAME = "echo-thrash";
+// D9 byte-stability: the canon must be ts-free, because the replay pin in
+// ctxvm-adapter.test.ts runs under CTXVM_TRACE_TS=0 and compares bytes. The
+// env wipe above deletes this var too, so it is set back AFTER the wipe.
+process.env.CTXVM_TRACE_TS = "0";
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

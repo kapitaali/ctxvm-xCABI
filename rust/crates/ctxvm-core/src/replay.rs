@@ -158,8 +158,8 @@ mod tests {
                 PageId { logical_ref: "a".into(), content_hash: "h-a".into() },
                 100,
             ),
-            Event::TurnRender { turn: 0, resident_tokens: 100, evicted_tokens: 0, headroom: None, ts: None },
-            Event::TurnRender { turn: 1, resident_tokens: 200, evicted_tokens: 0, headroom: None, ts: None },
+            Event::TurnRender { turn: 0, resident_tokens: 100, evicted_tokens: 0, headroom: None, ts: None, prefix: None },
+            Event::TurnRender { turn: 1, resident_tokens: 200, evicted_tokens: 0, headroom: None, ts: None, prefix: None },
             Event::CallMeta {
                 turn: 1,
                 provider: "p".into(),
@@ -189,8 +189,8 @@ mod tests {
                 PageId { logical_ref: "a".into(), content_hash: "h-a".into() },
                 100,
             ),
-            Event::TurnRender { turn: 0, resident_tokens: 100, evicted_tokens: 0, headroom: None, ts: None },
-            Event::TurnRender { turn: 1, resident_tokens: 200, evicted_tokens: 0, headroom: None, ts: None },
+            Event::TurnRender { turn: 0, resident_tokens: 100, evicted_tokens: 0, headroom: None, ts: None, prefix: None },
+            Event::TurnRender { turn: 1, resident_tokens: 200, evicted_tokens: 0, headroom: None, ts: None, prefix: None },
         ]
     }
 
@@ -226,7 +226,7 @@ mod tests {
                 latency_ms: None,
                 ts: None,
             },
-            Event::TurnRender { turn: 1, resident_tokens: 100, evicted_tokens: 0, headroom: None, ts: None },
+            Event::TurnRender { turn: 1, resident_tokens: 100, evicted_tokens: 0, headroom: None, ts: None, prefix: None },
         ];
         let report = replay_turn(&trace, 1);
         assert!(report.divergences.is_empty());

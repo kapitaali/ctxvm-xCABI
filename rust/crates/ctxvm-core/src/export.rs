@@ -306,7 +306,7 @@ mod tests {
     }
 
     fn turn_render(turn: u64, tokens: u64) -> Event {
-        Event::TurnRender { turn, resident_tokens: tokens, evicted_tokens: 0, headroom: None, ts: None }
+        Event::TurnRender { turn, resident_tokens: tokens, evicted_tokens: 0, headroom: None, ts: None, prefix: None }
     }
 
     fn call_meta(turn: u64) -> Event {
@@ -523,7 +523,7 @@ mod tests {
         // A recorded fact that the derived schedule cannot reproduce stays
         // dirty inside the slice — the DQ gate IS the replay gate.
         let mut src = flush_tail_stream();
-        src.push(Event::TurnRender { turn: 4, resident_tokens: 999, evicted_tokens: 0, headroom: None, ts: None });
+        src.push(Event::TurnRender { turn: 4, resident_tokens: 999, evicted_tokens: 0, headroom: None, ts: None, prefix: None });
         let snapshot = build_handoff_snapshot(&src, 4);
         assert!(!snapshot.replay_determinism());
         assert!(snapshot.replay.divergences.iter().any(|d| matches!(
