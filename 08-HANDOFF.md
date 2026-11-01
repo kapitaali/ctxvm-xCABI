@@ -644,6 +644,16 @@ ratifies): est* keep page-table semantics; the hermes port gains the
 registered (08.1 §4): mkdtemp workspaces + automated zero-match credential scan before
 ANY ship + provenance per m8 shape + publish default hashes/counts; a corpus drop stays
 a separate owner gate (W5 precedent). ALL GATES GREEN, counts unchanged.
+**DAY CLOSE 2026-11-01 — `reports/RR-DAY-20261101.md`.** Six commits across both lanes:
+research lane `27f1e68` (white-paper cleanup — attribution corrected to Mason, the abstract-vs-body
+token figure stated, and `research/white-paper/build-pdf.sh` because the documented command could
+never have produced the committed PDF; 15 pp / 93 KB / zero mojibake / 12 sections / 8 references);
+coordinator lane `849dc1e` (W8 prereg frozen), `14d7c38` (CI-2: ts red classified runner-locked, the
+step now records its environment; next run green), `d726533` (naming evidence), `e132de7` (engines
+floor verified), `547b594` (npm scope mechanics). State: `HEAD 547b594`, 3 unpushed (coordinator),
+tree clean, ALL GATES GREEN. Open: W8 owner ratification + implementation GO, CI-2 runner-locked until
+a recurrence yields logs, the sibling repo's W9 transfer run queued on owner GO (CPU only), and the
+owner calls on the W9 KPI targets / D2 / D3-c + W12 order.
 **Next frontier 8 (W8 prereg landed; status 2026-11-01):** owner ratifies the freeze +
 names the model/price row + climbs the implementation-card gate (ctxvm context-engine
 plugin + hermes `post_api_request` usage wiring + `tools/dq-secret-scan.py` + frozen
