@@ -665,6 +665,21 @@ step 6 self-records `os-release`/`node --version`/`npm --version` inside the ste
 owner-side dispositive: re-run failed jobs on `41286052160` (transient ⇒ green
 with the new env lines on record) or paste the step-6 tail so the mirror can be
 fixed precisely.
+**CI-2 OUTCOME (same day):** run `41290419904` @ `14d7c38` (my CI-2 push)
+**completed success** — identical content green hours after the red; the
+failure stays classified runner-locked (not reproducible anywhere reachable
+from this machine), the env-echo stays in the workflow for any future red,
+and no owner log is needed to close it.
+**D6/W10 NAMING EVIDENCE (2026-11-01, `reports/RR-NAMING-20261101.md`):** registry
+availabilities observed read-only — `ctxvm`/`xcabi` FREE on npm-unscoped/PyPI/crates
+(the crates API 403s without its required UA header; observed then retried) and the
+planned crate names free; `umpire` TAKEN on all three (none an agent project — cosmetic
+collision, a standalone distribution needs a distinguishing identity); `@ctxvm/*`
+scoped 404s are NOT decidable (no pre-reservation; the scope belongs to the first
+publish under it — a publication-ordering fact for D6) and the PyPI reserved-names
+caveat stands. The web/domain collision pass could not run (the search integration
+errored this session) ⇒ stands UNVERIFIED-2026-11-01. Evidence only: D6 stays the
+owner's decision.
 
 ## §1. Workspace map
 
