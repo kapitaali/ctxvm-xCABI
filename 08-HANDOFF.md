@@ -654,6 +654,15 @@ floor verified), `547b594` (npm scope mechanics). State: `HEAD 547b594`, 3 unpus
 tree clean, ALL GATES GREEN. Open: W8 owner ratification + implementation GO, CI-2 runner-locked until
 a recurrence yields logs, the sibling repo's W9 transfer run queued on owner GO (CPU only), and the
 owner calls on the W9 KPI targets / D2 / D3-c + W12 order.
+**PLUGIN-DEFAULTS (2026-11-01, `reports/RR-PLUGIN-DEFAULTS-20261101.md`):** capture now works
+without a manual — `~` expanded (it used to land in a literal `~` dir), ON by default into
+`${XDG_STATE_HOME:-~/.local/state}/ctxvm/traces` at 0700 with a documented opt-out
+(`CTXVM_TRACE=0` / empty dir), a `stop` that reports `N trace(s) flushed` or `0 traces written`,
+and model/provider read from the hook payload instead of env. First default-ON capture (gateway
+with ZERO `CTXVM_*` vars): 1,530 bytes, 6 events, `model` correct, `provider` unknown (payload
+gap), `session_start` never fires in this build (tracer is created lazily by `pre_llm_call`).
+Tests 91→95 hermes, 58→59 opencode; counts trued up; ALL GATES GREEN. Open on this thread:
+write-through flushing (a crash loses the session) and a retention cap — the price of default-ON.
 **Next frontier 8 (W8 prereg landed; status 2026-11-01):** owner ratifies the freeze +
 names the model/price row + climbs the implementation-card gate (ctxvm context-engine
 plugin + hermes `post_api_request` usage wiring + `tools/dq-secret-scan.py` + frozen
