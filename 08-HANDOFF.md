@@ -651,6 +651,20 @@ task texts/checkers) → owner-run W8 capture (D5 language) → the W8 analysis 
 the M0 table (result reopens D5+D7 per the D5 text) → D3-c exporter promotion (with
 drift guard) → W12 Steps 2+ (post-W8) → W9 umpire-quality items (the CROSS-MACHINE
 determinism check; the W10 riders) as parallel follow-ups.
+**CI-2 (2026-11-01, `reports/RR-CIDIAG-20261101.md`):** the W8-prereg push run
+`41286052160` @ `849dc1e` failed the ts job ONLY (step 6, `node --test test/`,
+"Process completed with exit code 1", no test name in annotations; logs admin-gated)
+while the local mirror was green — and the step passes on every nearby environment:
+this host v26.10.0, the latest release v26.13.0, docker `ubuntu:26.04` AND
+`ubuntu:26.10` (all 20/20 on a pristine clone). The run's annotations carry the
+`ubuntu-latest` → Ubuntu 26 migration notice (`actions/runner-images#14748`),
+so the red is classified RUNNER-LOCKED, unresolved; nothing in the packages is
+environment-sensitive (no `process.env` except `CTXVM_TRACE_TS`). Landed: ci.yml
+step 6 self-records `os-release`/`node --version`/`npm --version` inside the step
+(exit code still owned by `node --test`); rehearsal green after the edit. The
+owner-side dispositive: re-run failed jobs on `41286052160` (transient ⇒ green
+with the new env lines on record) or paste the step-6 tail so the mirror can be
+fixed precisely.
 
 ## §1. Workspace map
 

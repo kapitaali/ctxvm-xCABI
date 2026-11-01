@@ -43,7 +43,14 @@ jobs:
           cache: npm
           cache-dependency-path: packages/node/package-lock.json
       - name: "@ctxvm/node tests (sources, type stripping — no build needed)"
-        run: node --test test/
+        run: |
+          # CI-2 diagnose: a run can fail on a migrated runner image with no
+          # assertion in the local mirror — the environment is then part of the
+          # record, printed INSIDE the step (exit code stays the tests').
+          head -1 /etc/os-release
+          node --version
+          npm --version
+          node --test test/
         working-directory: packages/node
       - name: "@ctxvm/node install + build (W10: the publishable artifact)"
         run: npm ci --no-audit --no-fund
