@@ -663,6 +663,27 @@ with ZERO `CTXVM_*` vars): 1,530 bytes, 6 events, `model` correct, `provider` un
 gap), `session_start` never fires in this build (tracer is created lazily by `pre_llm_call`).
 Tests 91→95 hermes, 58→59 opencode; counts trued up; ALL GATES GREEN. Open on this thread:
 write-through flushing (a crash loses the session) and a retention cap — the price of default-ON.
+**PLUGIN-DEFAULTS addenda (same day):** both debts are paid. Write-through persists a partial
+snapshot every N units of activity (per EVENT in hermes, per HOOK FIRE in opencode — the TS plugin
+hides its event list, and the divergence is stated in `09-plugin-parity.md` §5.1); a complete flush
+deletes the partial before writing the final pair. Retention prunes oldest-first on count (200),
+age (30 d) and bytes (512 MiB), never the file just written. Not claimed: sidecars and the witness
+log do not count, and pruning runs at flush time only. Plugin 0.4.0.
+
+**W13 (2026-11-01, `reports/RR-W13-20261101.md`):** `turn.render` gains an optional `prefix` —
+`toolSchemas`, `messageCount`, `requestChars`, `systemPromptBytes`, `approxInputTokens`, and a
+REQUIRED `source` (measured/estimated/unknown). Filled from hermes' `pre_api_request`
+(`agent/turn_api_request.py:60-79`: tool_count, message_count, request_char_count, system_prompt,
+approx_input_tokens); opencode honest-reports `unknown`. Version-gated, allowlisted in the strict
+codec, three validator negatives + v0 boundary case, conformance vector updated. rust 66→67,
+hermes 98→99. Why: arXiv:2610.22732v1 removes 13.2–17.7% of cost by pruning tool schemas that are
+billed every turn — a cost class our ledger could not see, and the reason our one real capture
+reported a degenerate waste of 1.000. **NOT claimed: no live trace yet (gateway restart needed for
+`prefix.toolSchemas > 0`), and nothing here reduces cost — it makes cost measurable.** The same
+payload carries `provider`, so the `provider: unknown` gap is now a small card, not a redesign.
+
+**Prompt:** `08.1-UPDATE-PROMPT.md` gained W13–W16 (prefix, environment key, side-effect class,
+causal edges) plus a §9 line that forbids claiming a token saving we have not measured.
 **Next frontier 8 (W8 prereg landed; status 2026-11-01):** owner ratifies the freeze +
 names the model/price row + climbs the implementation-card gate (ctxvm context-engine
 plugin + hermes `post_api_request` usage wiring + `tools/dq-secret-scan.py` + frozen
