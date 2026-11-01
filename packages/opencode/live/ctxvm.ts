@@ -342,6 +342,7 @@ export default {
     const pruneTraces = (dir: string, keep?: string): number => {
       const maxFiles = envInt("CTXVM_TRACE_RETAIN_MAX", 200);
       const retainDays = envInt("CTXVM_TRACE_RETAIN_DAYS", 30);
+      const maxBytes = envInt("CTXVM_TRACE_RETAIN_BYTES", 512 * 1024 * 1024);
       let deleted = 0;
       let names: string[] = [];
       try {
@@ -352,19 +353,30 @@ export default {
       const rows = names.map((n) => {
         const p = join(dir, n);
         let mtime = 0;
+        let size = 0;
         try {
-          mtime = statSync(p).mtimeMs;
+          const st = statSync(p);
+          mtime = st.mtimeMs;
+          size = st.size;
         } catch {
           /* skip */
         }
-        return { n, mtime };
+        return { n, mtime, size };
       });
       rows.sort((a, b) => b.mtime - a.mtime);
+      let keptBytes = 0;
       rows.forEach((row, idx) => {
-        if (keep && row.n === keep) return;
+        if (keep && row.n === keep) {
+          keptBytes += row.size; // the file just written always counts against the budget
+          return;
+        }
         const tooMany = idx >= maxFiles;
         const tooOld = Date.now() - row.mtime > retainDays * 86400_000;
-        if (!(tooMany || tooOld)) return;
+        const tooBig = keptBytes + row.size > maxBytes;
+        if (!(tooMany || tooOld || tooBig)) {
+          keptBytes += row.size;
+          return;
+        }
         for (const victim of [row.n, row.n.replace(/\.jsonl$/, ".meta.json")]) {
           try {
             unlinkSync(join(dir, victim));
@@ -374,7 +386,8 @@ export default {
           }
         }
       });
-      if (deleted) wit(`retention deleted=${deleted} files (max=${maxFiles}, days=${retainDays})`);
+      if (deleted)
+        wit(`retention deleted=${deleted} files (max=${maxFiles}, days=${retainDays}, bytes=${maxBytes})`);
       return deleted;
     };
 

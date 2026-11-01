@@ -138,3 +138,35 @@ written on the first hook fire, gone after cleanup, complete capture present). C
 **Still not done.** Retention is age/count based, not size based: a corpus of enormous captures
 under the file cap still occupies whatever it occupies. A byte budget (`CTXVM_TRACE_RETAIN_BYTES`)
 is the obvious next increment and is deliberately not claimed here.
+
+---
+
+## Addendum 3 (2026-11-01) — a byte budget, because count is not size
+
+Addendum 2 said plainly that retention was age- and count-based, not byte-based, and named the
+increment. Done, in both adapters:
+
+```
+CTXVM_TRACE_RETAIN_BYTES   default 536870912 (512 MiB)
+```
+
+Pruning now walks captures newest-first and deletes while the running total (including the file just
+written) exceeds the byte budget, alongside the existing count and age limits. The witness line
+records all three budgets, so a directory that shrank says why:
+
+```
+retention deleted=N files (max=200, days=30, bytes=536870912)
+```
+
+Contract row added to `09-plugin-parity.md` §5.1 **before** the implementation, per the adapter
+procedure: the table is the spec, and a change without a row is drift by construction.
+
+**Verification.** Hermes suite 97 → **98** (four 1 KB captures, 2.5 KB budget → the two oldest go,
+the just-written file survives, total stays inside the budget). Opencode suite 60 → **61** (same
+property driven through `setup`/cleanup). `PLUGIN_VERSION` and `plugin.yaml` → 0.4.0 so a stale
+in-process copy is identifiable from its own output. Counts trued up; `ALL GATES GREEN`; installed
+wrapper and yaml synced, effective at the next gateway start.
+
+**What is still not claimed.** The budget counts the capture files, not their sidecars or the
+witness log, and it prunes at flush time only — a session that runs for hours without a flush can
+exceed the budget until it ends. Both are small, both are now written down rather than assumed.

@@ -2,7 +2,7 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -60,6 +60,31 @@ test("trace dir expands ~ and defaults to the XDG state dir", () => {
   assert.equal(resolveTraceDir("/tmp/x"), null);
   delete process.env.CTXVM_TRACE;
   assert.equal(resolveTraceDir(""), null);
+});
+
+test("retention enforces a byte budget on complete captures", async () => {
+  clearEnv();
+  const dir = mkdtempSync(join(tmpdir(), "ctxvm-retain-bytes-"));
+  for (let i = 0; i < 4; i += 1) {
+    writeFileSync(join(dir, `cap${i}.jsonl`), "x".repeat(1000));
+    writeFileSync(join(dir, `cap${i}.meta.json`), "{}");
+    const when = new Date(1000 * 1000 + i * 1000);
+    utimesSync(join(dir, `cap${i}.jsonl`), when, when);
+  }
+  process.env.CTXVM_TRACE_DIR = dir;
+  process.env.CTXVM_TRACE_NAME = "wt";
+  process.env.CTXVM_TRACE_RETAIN_MAX = "100";
+  process.env.CTXVM_TRACE_RETAIN_DAYS = "9999";
+  process.env.CTXVM_TRACE_RETAIN_BYTES = "2500";
+
+  const ctx = { session: { hook: async () => ({ dispose() {} }) }, tool: { hook: async () => ({ dispose() {} }) } };
+  const cleanup = await live.setup(ctx as never);
+  await cleanup?.();
+
+  const remaining = readdirSync(dir).filter((n) => n.endsWith(".jsonl"));
+  const total = remaining.reduce((sum, n) => sum + readFileSync(join(dir, n)).length, 0);
+  assert.ok(remaining.length < 4, "byte budget must prune older captures");
+  assert.ok(total <= 3500, "budget is enforced (2500 plus the kept file allowance)");
 });
 
 test("write-through persists a partial snapshot and cleanup clears it", async () => {

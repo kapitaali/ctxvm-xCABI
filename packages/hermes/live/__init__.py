@@ -78,7 +78,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.3.0"
+PLUGIN_VERSION = "0.4.0"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -228,24 +228,33 @@ def _prune_traces(trace_dir: str, keep: Optional[str] = None) -> int:
     """
     max_files = _env_int("CTXVM_TRACE_RETAIN_MAX", 200)
     retain_days = _env_int("CTXVM_TRACE_RETAIN_DAYS", 30)
+    max_bytes = _env_int("CTXVM_TRACE_RETAIN_BYTES", 512 * 1024 * 1024)
     try:
         captures = sorted(Path(trace_dir).glob("*.jsonl"),
                           key=lambda p: p.stat().st_mtime, reverse=True)
     except OSError:
         return 0
     deleted = 0
+    kept_bytes = 0
     now = time.time()
     for idx, path in enumerate(captures):
-        if keep and path.name == keep:
-            continue
         if path.name.endswith(".partial.jsonl"):
+            continue
+        try:
+            size = path.stat().st_size
+        except OSError:
+            continue
+        if keep and path.name == keep:
+            kept_bytes += size   # the file just written always counts against the budget
             continue
         too_many = idx >= max_files
         try:
             too_old = (now - path.stat().st_mtime) > retain_days * 86400
         except OSError:
             continue
-        if not (too_many or too_old):
+        too_big = (kept_bytes + size) > max_bytes
+        if not (too_many or too_old or too_big):
+            kept_bytes += size
             continue
         meta = path.with_name(path.name[: -len(".jsonl")] + ".meta.json")
         for victim in (path, meta):
@@ -255,7 +264,7 @@ def _prune_traces(trace_dir: str, keep: Optional[str] = None) -> int:
             except OSError:
                 pass
     if deleted:
-        _witness(f"retention deleted={deleted} files (max={max_files}, days={retain_days})")
+        _witness(f"retention deleted={deleted} files (max={max_files}, days={retain_days}, bytes={max_bytes})")
     return deleted
 
 

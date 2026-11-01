@@ -702,6 +702,28 @@ class LiveAdapterTests(unittest.TestCase):
         self.assertTrue((Path(tmp) / "wt.jsonl").exists())
         self.assertTrue((Path(tmp) / "wt.meta.json").exists())
 
+    def test_retention_enforces_a_byte_budget(self):
+        """Count alone cannot bound size: the byte budget prunes oldest-first too."""
+        import live as live_mod
+        tmp = tempfile.mkdtemp(prefix="ctxvm-retain-bytes-")
+        for i in range(4):
+            body = "x" * 1000
+            p = Path(tmp, f"cap{i}.jsonl")
+            p.write_text(body)
+            Path(tmp, f"cap{i}.meta.json").write_text("{}")
+            os.utime(p, (1000 + i, 1000 + i))
+        os.environ["CTXVM_TRACE_RETAIN_MAX"] = "100"
+        os.environ["CTXVM_TRACE_RETAIN_DAYS"] = "9999"
+        os.environ["CTXVM_TRACE_RETAIN_BYTES"] = "2500"   # room for two captures, not four
+        live_mod._prune_traces(tmp, keep="cap0.jsonl")
+        remaining = sorted(p.name for p in Path(tmp).glob("*.jsonl"))
+        total = sum(p.stat().st_size for p in Path(tmp).glob("*.jsonl"))
+        self.assertIn("cap0.jsonl", remaining, "the file just written must never be pruned")
+        self.assertLessEqual(total, 2500 + 1000, "budget is enforced (plus the kept file)")
+        self.assertNotIn("cap1.jsonl", remaining, "oldest captures go first")
+        for key in ("CTXVM_TRACE_RETAIN_MAX", "CTXVM_TRACE_RETAIN_DAYS", "CTXVM_TRACE_RETAIN_BYTES"):
+            os.environ.pop(key, None)
+
     def test_retention_prunes_beyond_budget_and_keeps_the_written_file(self):
         """Default-ON capture is bounded: oldest captures are deleted, the newest is not."""
         import live as live_mod

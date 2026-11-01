@@ -72,7 +72,7 @@ bash tools/check-node-build.sh
 cmp -s LICENSE packages/node/LICENSE || { echo "packages/node/LICENSE drifted from LICENSE" >&2; exit 1; }
 log "gate 2b: benchmarks/metrics — 07 reference suite + policy simulator"
 ( venvs/odps/bin/python -m pytest benchmarks/metrics -q ) >/dev/null
-log "ts suites green (20 + 60 + 45 tests); python suites green (97 + 44 + 8 tests)"
+log "ts suites green (20 + 61 + 45 tests); python suites green (98 + 44 + 8 tests)"
 
 # 3) schema + corpus integrity + the T21 export round-trip
 log "gate 3/4: schema validator + corpus checksums + export round-trip"

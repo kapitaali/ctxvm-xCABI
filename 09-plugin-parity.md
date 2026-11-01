@@ -287,6 +287,7 @@ at most a bounded amount of work, and the directory must not grow without bound.
 | `CTXVM_TRACE_WRITETHROUGH_EVERY` | `10` | cadence: hermes counts tracer **events**, opencode counts **hook fires** (its plugin hides the event list behind `finishAll()`) |
 | `CTXVM_TRACE_RETAIN_MAX` | `200` | maximum complete captures kept in the dir |
 | `CTXVM_TRACE_RETAIN_DAYS` | `30` | age limit for complete captures |
+| `CTXVM_TRACE_RETAIN_BYTES` | `536870912` (512 MiB) | byte budget for complete captures (count alone cannot bound size) |
 
 A complete flush deletes the partial before writing the final pair, so a partial can never be
 mistaken for a capture; retention prunes oldest-first and **never** deletes the file just written.
