@@ -104,3 +104,29 @@ Rebuilding the PDF exposed a third defect, which is fixed in `research/white-pap
 the documented build command could not have produced the committed PDF. WeasyPrint does not read
 Markdown; passing a `.md` file renders it as plain text. The script does Markdown → HTML (UTF-8) →
 WeasyPrint, and the README now says so.
+
+## Reviewed 2026-11-01
+
+| Date | Source | Type | Identifier | What it argues | What it means for ctxvm | Disposition |
+|---|---|---|---|---|---|---|
+| 2026-11-01 | "TokenEconomizer: Experience-Driven Black-Box Cost Control for Coding Agents" — Li, Xu, Singh, Chen, Inala, Siska, Tamersoy, Yu, Stoica, Galley, Gao | Primary paper, five agent-model settings, three seeds | arXiv:2610.22732v1, 15 Oct 2026, CC BY 4.0 | An external controller over a *sequence* of tasks in one repository cuts mean cache-aware cost 18.4–30.9% at comparable Pass@1, through three learned policies: inject operational micro-skills, prune persistently unused tools, intervene in failure loops. Cheaper in all 30 repository-setting cells (5.2–40.1%). Gains need ~6 tasks to appear | Confirms the thesis but not the mechanism: it wins **without any context virtualization** — tool pruning alone is −13.2/−17.7%, because 23 schemas load every turn and no repository uses more than 7 (16 never called). Its three signals are signals ctxvm already records (repeat, unused page, loop), yet our ledger has **no row for static schema/prefix cost**, so the biggest measured saving is invisible to us | ACT (schema gap) |
+| 2026-11-01 | "Accelerating Scientific Research with Gemini in the Real-World" (Co-Scientist) — Schmidgall et al. | Primary paper | arXiv:2608.26701, 27 Aug 2026, CC BY-NC-ND 4.0 | Execution-grounded multi-agent research: wet-lab loops, 450 double-blind reviews; reliability modules "reduce hallucination and plagiarism" | Cited by the X post below as the source of a "90% → 4%" fabrication figure. **The abstract states no such numbers.** Treat the post's figure as UNVERIFIED until the body is read | BACKGROUND (cited-by) |
+| 2026-11-01 | "ReasoningBank: Scaling Agent Self-Evolving with Reasoning Memory" — Ouyang et al. (Google) | Primary paper, ICLR 2026 | arXiv:2509.25140 (v2, 16 Mar 2026) | Distils generalizable reasoning strategies from self-judged successful and failed trajectories; retrieval beats storing raw trajectories or success-only routines | The distillation target the X post's §4 leans on. For us: it is the argument that raw traces are *not* the memory product — which is what the page table is for, and a warning that a page table without distilled strategy is only half the object | BACKGROUND |
+| 2026-11-01 | "Trace Engineering" thread — @marfinxx | Practitioner essay (marketing funnel) | x.com/marfinxx/status/2094016175617241109, 30 Aug 2026, ~208 likes | Agents are distributed non-deterministic state machines; separate log / trajectory / trace; event-sourced ledger with seeds; mocked replay vs live resumption; causal DAG localization; READ_ONLY vs MUTATING spans with a WAL; circuits on step-count MAD > 3.5 and token-entropy variance < 0.02 | A usable requirements list, not evidence: no measurements, thresholds asserted, cites a "90% → 4%" figure its cited paper's abstract does not contain, and ends with a Telegram "additional alpha" link. The parts ctxvm already has: event ledger, replay to turn N, resume with provenance, validator. The parts we lack: causal edges, side-effect classification + WAL, seed/sampling capture, schema-cost accounting | BACKGROUND |
+
+Short notes, because the columns compress the argument:
+
+- **2610.22732** is the one to engage seriously. Two things it does that we cannot currently
+  answer: (i) it reduces cost with **no paging at all**, so "ctxvm saves tokens" is not a claim we
+  can make from category membership; (ii) the saving it measures is mostly the **static per-turn
+  prefix** (tool schemas), which our ledger does not model — we track pages that are touched, not
+  bytes that are billed every turn. Its own limitation section names the experiment we are placed
+  to run: "our SWE-Bench streams consist of related but independent fixes rather than actual user
+  sessions… interactive coding workflows are a natural next test." Our capture now records exactly
+  those sessions, but per-session only — there is no repository/environment key joining them into a
+  stream, so the paper's unit of analysis is not yet ours.
+- **The X post** is worth mining for its 8 rules and 5 anti-patterns and worth nothing as evidence.
+  Two of its claims collide with facts we hold: "record the seed every time" — our live trace has
+  `provider: unknown` and no seed or sampling parameters at all; "status: OK does not mean correct"
+  — our own replay proves derivation determinism, never model-output determinism, which is the same
+  distinction stated more carefully in `RR-DET-20261101.md`.
