@@ -695,6 +695,22 @@ BELOW the pin (node 20 LTS observed green). `engines` UNCHANGED (publish-adjacen
 D6 discipline) — the lowering candidate is a publish-time package-metadata decision.
 Equality claim scoped to the observed trace shape; nothing below node 20 measured;
 one build, three consumers (no rebuild-on-each-node claim).
+**NPM SCOPE MECHANICS PINNED + one RR-NAMING finding corrected (2026-11-01,
+`reports/RR-SCOPEMECH-20261101.md`):** the naming card's `UNVERIFIED-2026-11-01`
+gates land. Pinned (three npm-doc fetches, the pages' footer edit dates recorded):
+a scope name is granted "when you sign up for an npm user account or create an
+organization" — the namespace claim act is ACCOUNT/ORG CREATION, not first
+publish (the naming card's "the scope belongs to the first publish under it" is
+corrected on this detail; its availability verdict and discipline are unchanged
+— creating the account IS the ownership act, so scoped availability is still
+not decidable anonymously); org creation is FREE under the "Unlimited public
+packages" plan and "Your organization name will also be your organization
+scope"; scoped packages are private by default — public visibility needs
+`npm publish --access public`. D6 implication refined: at publish time, create
+the free org/user named `ctxvm` promptly (owner action; nothing created or
+reserved by me). The LOG carries the same supersession; the W10 board row is
+deliberately untouched (its "npm scope `@ctxvm` UNVERIFIED (org page 403)"
+note stays exactly true).
 
 ## §1. Workspace map
 
