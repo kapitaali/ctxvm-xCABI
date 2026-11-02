@@ -78,7 +78,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.4.0"
+PLUGIN_VERSION = "0.4.1"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -452,14 +452,50 @@ def _enabled_stubs(features: Set[str]) -> list[UCModule]:
     return stubs
 
 
+def _identity_from_settings(ctx: Any) -> Dict[str, str]:
+    """Identity the HOST itself is configured with, from the plugin settings subtree
+    (hermes ``plugins.entries.<id>.settings.model`` / ``.provider`` — ``ctx.get_config``,
+    host-owned, readable at register(), before any hook fires).
+
+    Why: hermes v0.22.5 hook payloads do not carry provider at tracer-creation time —
+    ``pre_llm_call`` (turn prep, the first observed hook when ``on_session_start`` does
+    not fire) sends ``model``/``platform`` only (packages/hermes/HOOKS.md §1,
+    source-verified against the pinned runtime), while the ``provider`` value only
+    reaches the request-side ``pre_api_request``/``post_api_request`` payloads, after
+    the tracer already exists. Identity is stamped once (it rides ``session.open`` and
+    every ``call.meta``; write-through persists each event immediately, so a later
+    "fix provider" would produce a partial-file/final divergence) — the settings source
+    exists so a gateway CAN complete its identity before the first request instead of
+    the owner reaching for the env ritual.
+    """
+    out: Dict[str, str] = {}
+    try:
+        getter = getattr(ctx, "get_config", None)
+        if callable(getter):
+            for field in ("model", "provider"):
+                value = getter(field)
+                if isinstance(value, str) and value.strip():
+                    out[field] = value.strip()
+    except Exception:
+        pass  # fail-open: identity fragments must never raise into hook dispatch
+    return out
+
+
 def _make_plugin() -> Optional[Any]:
-    """Create a tracer plugin if tracing is enabled; None otherwise."""
+    """Create a tracer plugin if tracing is enabled; None otherwise.
+
+    Identity priority: hook payload (the plugin-level law) > host-owned plugin
+    settings (ctx_identity stashed at register) > CTXVM_* env > 'unknown'.
+    Settings outrank env because they are the running gateway's own declared
+    configuration, while env may be an artifact of an unrelated shell.
+    """
     if not _traced():
         return None
+    identity = _state().get("ctx_identity") or {}
     return create_ctxvm_plugin({
         "agentId": os.environ.get("CTXVM_AGENT_ID", "hermes"),
-        "model": os.environ.get("CTXVM_MODEL", "unknown/unknown"),
-        "provider": os.environ.get("CTXVM_PROVIDER", "unknown"),
+        "model": identity.get("model") or os.environ.get("CTXVM_MODEL", "unknown/unknown"),
+        "provider": identity.get("provider") or os.environ.get("CTXVM_PROVIDER", "unknown"),
         "budgetTokens": _budget_from_env(),
     })
 
@@ -468,7 +504,10 @@ def register(ctx) -> None:
     """Hermes plugin entry point. Hooks always registered; tracing gated lazily."""
     state = _state()
     state["register_calls"] += 1
+    state["ctx_identity"] = _identity_from_settings(ctx)
     _witness(f"init name={state.get('trace_name') or os.environ.get('CTXVM_TRACE_NAME') or '<session-id>'}")
+    if state["ctx_identity"]:
+        _witness(f"settings identity={state['ctx_identity']}")
     stats = state["stats"]
     features = _features()  # parsed once; UC modules read it via _enabled_stubs()
     state["ucs"] = {

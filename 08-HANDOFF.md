@@ -751,6 +751,29 @@ the free org/user named `ctxvm` promptly (owner action; nothing created or
 reserved by me). The LOG carries the same supersession; the W10 board row is
 deliberately untouched (its "npm scope `@ctxvm` UNVERIFIED (org page 403)"
 note stays exactly true).
+**PLUGIN IDENTITY AT CREATION (2026-11-02, `reports/RR-PLUGIN-ID-20261102.md`):**
+the default-ON lane's `provider: unknown` closed as far as hooks allow. Source-pinned
+gap: the turn-prep `pre_llm_call` payload carries `model`/`platform` but NO provider
+(`packages/hermes/HOOKS.md` §1, v0.22.5), and `provider` only reaches the
+`pre_api_request`/`post_api_request` payloads after the tracer exists — identity is
+stamped ONCE (it rides `session.open` + every `call.meta`; write-through persists per
+event), so the NO-BACKFILL law is now written into `09-plugin-parity.md` §5.1. Landed:
+the identity priority chain **payload > plugin settings > env > unknown** — the middle
+layer reads the host-owned plugin settings subtree (`ctx.get_config`,
+`plugins.entries.<id>.settings.model`/`.provider`) at register(), fail-open in every
+hostile ctx shape; `PLUGIN_VERSION`+manifest → 0.4.1; hermes suite 97→**101 pass**
+(2 new tests) in a CTXVM-clean shell, ALL GATES GREEN. Two install defects fixed by
+the §6 re-install DoD: the installed `plugin.py` was one refactor BEHIND (missing the
+whole W13 block — the previous sync updated the wrapper only; a restart would have
+no-op'd the W13 prefix silently) and the installed dir lacked a root `plugin.yaml`
+(loader contract, `plugins.py:7`); after the full re-sync (hashes equal) `hermes
+plugins doctor` passes (manifest 0.4.1, 6 hooks). The stale `live/` sub-copy inside
+the installed dir was left for an owner look. Live proof of the settings source and
+of the W13 prefix still ride the SAME owner-side act: a gateway restart.
+**PROCESS NOTE (books law):** this session's tool shell carries the full `CTXVM_*`
+capture family (`CTXVM_TRACE_TS=0` included); pytest swallowed that at import time
+and produced 4 phantom failures — gates must run in a CTXVM-clean shell
+(`env | grep ^CTXVM` first; unset, then `tools/run-ci.sh`).
 
 ## §1. Workspace map
 

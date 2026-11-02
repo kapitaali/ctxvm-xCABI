@@ -308,6 +308,24 @@ host payload when the host supplies it (`identity_from_payload`: `model` / `mode
 A captured trace therefore no longer reads `unknown/unknown` on a harness that knows its own
 model.
 
+**Priority chain (0.4.1): payload > plugin settings > env > `unknown`.** The middle layer is
+the host-owned plugin settings subtree (hermes
+`plugins.entries.<id>.settings.model` / `.provider`, read via `ctx.get_config` at register() —
+before any hook fires). It exists because hermes ~v0.22.5 does not send `provider` at
+tracer-creation time: the turn-prep `pre_llm_call` payload carries `model`/`platform` only
+(`packages/hermes/HOOKS.md` §1, source-verified) and `provider` only reaches the
+`pre_api_request`/`post_api_request` payloads, after the tracer already exists. A default-ON
+gateway with no `CTXVM_*` env can therefore complete its identity from its own declared
+settings without the owner reaching for an env var. (Upstream ask, preferred long-term: add
+`provider` to the `pre_llm_call` payload.)
+
+**Identity immutability law.** Identity is stamped once at tracer creation — it rides
+`session.open` and every `call.meta` on the wire, and write-through persists each event
+immediately, so a later "provider fix" on disk would produce a partial-file/final divergence.
+The adapters therefore never backfill identity: a session opened before the host revealed its
+provider keeps `"unknown"`. Lateness is observed, not erased — future identity facts ride
+the per-turn `call.meta` chain the same way usage does.
+
 Re-install note: the hermes plugin lives as a copy under `$HERMES_HOME/plugins/`; after
 adapter changes, re-install the updated copy (T17 recipe; `hermes plugins doctor --ci` to
 verify registration).

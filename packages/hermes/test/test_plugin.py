@@ -595,6 +595,70 @@ class LiveAdapterTests(unittest.TestCase):
         self.assertEqual(opened["model"], "vendor/model-a")
         self.assertEqual(opened["provider"], "vendor")
 
+    def test_settings_identity_fills_the_init_fallback(self):
+        """Host-owned plugin settings (ctx.get_config) complete the identity the
+        turn-prep payload cannot: pre_llm_call carries no provider (HOOKS.md §1,
+        source-verified against the pinned runtime), and identity is stamped once —
+        no backfill after write-through. The settings source is read at register(),
+        before any hook fires, and degrades fail-open in every hostile case."""
+        _clear_env_for_tests()
+        from live import _identity_from_settings
+
+        class SettingsCtx:
+            def get_config(self, key):
+                return {"model": "vendor/model-a",
+                        "provider": "vendor"}.get(key)
+
+        self.assertEqual(_identity_from_settings(SettingsCtx()),
+                         {"model": "vendor/model-a", "provider": "vendor"})
+        # fail-open: no get_config method at all
+        self.assertEqual(_identity_from_settings(object()), {})
+        self.assertEqual(_identity_from_settings(None), {})
+
+        class RaisingCtx:
+            def get_config(self, key):
+                raise RuntimeError("host exploded mid-config")
+
+        self.assertEqual(_identity_from_settings(RaisingCtx()), {})
+        # non-string or blank values are skipped, never minted
+        class BlankCtx:
+            def get_config(self, key):
+                return {"model": "   ", "provider": 42}.get(key)
+
+        self.assertEqual(_identity_from_settings(BlankCtx()), {})
+
+    def test_settings_outrank_env_and_payload_still_wins(self):
+        """Priority chain: payload > plugin settings > env > 'unknown'. Settings
+        beat env because they are the running gateway's declared configuration."""
+        _clear_env_for_tests()
+        os.environ["CTXVM_PROVIDER"] = "envprov"
+        os.environ["CTXVM_MODEL"] = "envvendor/envmodel"
+        try:
+            class SettingsCtx:
+                def register_hook(self, name, cb):
+                    return lambda: None
+
+                def on_unload(self, cb):
+                    return None
+
+                def register_command(self, name, handler, description=""):
+                    return None
+
+                def get_config(self, key):
+                    return {"model": "vendor/model-a",
+                            "provider": "settingsprov"}.get(key)
+
+            register(SettingsCtx())
+            from live import _make_plugin
+            pm = _make_plugin()
+            self.assertIsNotNone(pm)
+            self.assertEqual(pm._init.provider, "settingsprov")  # settings beat env
+            self.assertEqual(pm._init.model, "vendor/model-a")   # settings beat env
+            # the payload still outranks settings: covered (session.open model/provider)
+            # by test_identity_from_payload_stamps_session_open above.
+        finally:
+            _clear_env_for_tests()
+
     def test_slash_command_start_then_stop(self):
         """Slash command /ctxvm-trace start|stop enables/disables tracing at runtime."""
         _clear_env_for_tests()
