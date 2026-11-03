@@ -342,6 +342,25 @@ Re-install note: the hermes plugin lives as a copy under `$HERMES_HOME/plugins/`
 adapter changes, re-install the updated copy (T17 recipe; `hermes plugins doctor --ci` to
 verify registration).
 
+### 5.4 Slash-command surface — discoverable, with honest defaults (2026-11-03)
+
+Three commands are always registered; two more appear only when their feature is enabled:
+
+| Command | Behaviour |
+|---|---|
+| `/ctxvm-start [dir] [name]` | start capture. **No arguments is the normal case**: the dir is `CTXVM_TRACE_DIR` if set, else `${XDG_STATE_HOME:-~/.local/state}/ctxvm/traces` (0700), and the name is `CTXVM_TRACE_NAME` if set, else `<session-id>` |
+| `/ctxvm-trace start [dir] [name] \| stop \| status` | the same start, plus a truthful stop (reports `0 traces written` when nothing was captured) and a status that names the resolved dir **and its source** |
+| `/ctxvm-help [command\|environment]` | no argument lists every command; a command prints usage, what it changes and the defaults; `environment` prints every `CTXVM_*` variable this plugin reads with its current value and its fallback |
+| `/ctxvm-forensics ...` | only with `CTXVM_FEATURES=forensics`: replay, profile, diff, export, diagnose |
+| `/ctxvm-handoff [turn]`, `/ctxvm-resume <dir>` | only with `CTXVM_FEATURES=handoff`: pause with a packaged snapshot, and verified boot from one |
+
+Source labelling matters as much as the value: a dir that came from an argument says `slash command`,
+one from the environment says `env CTXVM_TRACE_DIR`, and one that fell through says `start (defaults)`.
+An operator who cannot tell those apart cannot debug a capture that went to the wrong place.
+
+`plugin.yaml` and `PLUGIN_VERSION` are asserted equal by a test, because a version bump that misses one
+file is a silent no-op — and `plugin.yaml` is what the host displays.
+
 ### 5.3 Environment identity (W14, 2026-11-01)
 
 | Lane | Source | Absent when |

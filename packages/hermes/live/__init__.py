@@ -79,7 +79,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.4.1"
+PLUGIN_VERSION = "0.7.0"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -135,10 +135,12 @@ def _trace_dir_source() -> str:
     state = _state()
     if state["trace_dir"] == "":
         return "disabled in this process (/ctxvm-trace stop)"
-    if state["trace_dir"]:
+    if state.get("trace_dir_cmd_started"):
         return "slash command"
     if os.environ.get("CTXVM_TRACE_DIR") is not None:
         return "env CTXVM_TRACE_DIR"
+    if state["trace_dir"]:
+        return "start (defaults)"
     if os.environ.get("CTXVM_TRACE", "").strip().lower() in {"0", "off", "false", "no"}:
         return "env CTXVM_TRACE=0"
     return "default (set CTXVM_TRACE=0 to disable)"
@@ -413,6 +415,9 @@ def _state() -> Dict[str, Any]:
             "features": parse_features(os.environ.get("CTXVM_FEATURES")),
             "plugin": None,
             "resume_from": None,  # B3: CTXVM_RESUME_FROM boot check result
+            # True only when /ctxvm-start or /ctxvm-trace start passed a directory;
+            # a no-argument start keeps the resolved default and says so.
+            "trace_dir_cmd_started": False,
             "stats": {
                 "session_starts": 0,
                 "pre_tool_calls": 0,
@@ -767,18 +772,30 @@ def register(ctx) -> None:
         sub = argv[0].lower()
 
         if sub == "start":
-            if len(argv) < 2:
-                return "Usage: /ctxvm-trace start <dir> [name]"
-            resolved = _resolve_trace_dir(argv[1])
+            # No argument is the normal case: the default state dir (or
+            # CTXVM_TRACE_DIR) already resolved at import. Passing a dir is the
+            # override, not the requirement.
+            raw_dir = argv[1] if len(argv) > 1 else None
+            if raw_dir is None:
+                # No argument: keep the directory already resolved for this process
+                # (env, or the default). After a stop the sentinel is empty, so
+                # fall back to re-resolving the default.
+                resolved = state["trace_dir"] or _resolve_trace_dir(None)
+            else:
+                resolved = _resolve_trace_dir(raw_dir)
             if not resolved:
                 return "ctxvm-trace: refusing an empty/disabled dir — pass a path"
             state["trace_dir"] = resolved
+            # A no-argument start records the resolved default; say so instead of
+            # calling it a command override.
+            state["trace_dir_cmd_started"] = raw_dir is not None
             if len(argv) > 2:
                 state["trace_name"] = argv[2]
             # Fresh plugin so a new dir never inherits another dir's tracers.
             state["plugin"] = None
             return (
-                f"ctxvm-trace: tracing enabled, dir={state['trace_dir']}, "
+                f"ctxvm-trace: tracing enabled, dir={state['trace_dir']} "
+                f"(source: {_trace_dir_source()}), "
                 f"name={state['trace_name'] or '<session-id>'}"
             )
 
@@ -821,6 +838,152 @@ def register(ctx) -> None:
             "Usage: /ctxvm-trace start <dir> [name] | stop | status"
         )
 
+
+    # ---------------------------------------------------------------------
+    # /ctxvm-help — one command earns its keep only if a user can find out
+    # what the others do without reading this file.
+    # ---------------------------------------------------------------------
+
+    HELP_TOPICS: Dict[str, Dict[str, str]] = {
+        "ctxvm-start": {
+            "usage": "/ctxvm-start [dir] [name]",
+            "summary": "Start tracing. No arguments uses the configured defaults.",
+            "detail": (
+                "Starts capture for this gateway process.\n"
+                "\n"
+                "With no arguments: the directory is CTXVM_TRACE_DIR when set, otherwise\n"
+                "  ${XDG_STATE_HOME:-~/.local/state}/ctxvm/traces (created 0700), and the\n"
+                "  file name is CTXVM_TRACE_NAME when set, otherwise <session-id>.\n"
+                "With a directory: that path wins, expanded (~ and $VARs) and resolved.\n"
+                "With a name too: the capture is written to <dir>/<name>.jsonl.\n"
+                "\n"
+                "Capture is already on by default; this command is for starting after a\n"
+                "stop, or redirecting output. /ctxvm-trace start does the same thing."
+            ),
+        },
+        "ctxvm-trace": {
+            "usage": "/ctxvm-trace start [dir] [name] | stop | status",
+            "summary": "Start, stop or inspect capture; status shows the resolved dir and its source.",
+            "detail": (
+                "start  — same as /ctxvm-start; a fresh tracer, so a new dir never inherits\n"
+                "         another dir's sessions.\n"
+                "stop   — flush every tracer, then disable capture in this process. The\n"
+                "         count is honest: '0 traces written' means nothing was captured\n"
+                "         between start and stop.\n"
+                "status — enabled, resolved directory and WHERE it came from (env, default,\n"
+                "         or a start argument), name, plugin version, per-session event and\n"
+                "         page counts."
+            ),
+        },
+        "ctxvm-forensics": {
+            "usage": "/ctxvm-forensics replay|profile|diff|export|diagnose <trace...>",
+            "summary": "Run the offline engine on a trace (only when CTXVM_FEATURES~forensics).",
+            "detail": (
+                "Spawns the Rust binaries on a trace file; nothing here touches the live\n"
+                "session.\n"
+                "  replay   — re-derive the page table and report divergences (exit 0 = none)\n"
+                "  profile  — per-page decision history, faults, per-turn residency\n"
+                "  diff     — compare two traces under the law-aware relation\n"
+                "  export   — write a slice/package of a trace\n"
+                "  diagnose — UC2 fault diagnosis for one turn\n"
+                "Enable with CTXVM_FEATURES=forensics (or handoff,forensics)."
+            ),
+        },
+        "ctxvm-handoff": {
+            "usage": "/ctxvm-handoff [turn]",
+            "summary": "Pause: flush, snapshot the era, and package a handoff (CTXVM_FEATURES~handoff).",
+            "detail": (
+                "Writes a snapshot directory (trace-N.jsonl.zst + checksums + manifest) that\n"
+                "/ctxvm-resume can verify later. Flush happens first, so the package is never\n"
+                "ahead of the trace. With a turn, packages at that turn boundary."
+            ),
+        },
+        "ctxvm-resume": {
+            "usage": "/ctxvm-resume <snapshot-dir>",
+            "summary": "Verified boot: check a paused snapshot and continue from it.",
+            "detail": (
+                "Verifies checksums byte-level, cross-checks the manifest sliceTurn, runs a\n"
+                "replay counterproof and reports the diff relation and projection. Any failure\n"
+                "returns verified=false with the reason — it never blocks the agent loop."
+            ),
+        },
+        "environment": {
+            "usage": "/ctxvm-help environment",
+            "summary": "Every CTXVM_* variable this plugin reads, with its value and default.",
+            "detail": (
+                "Prints each variable with what it currently holds, what the plugin falls back\n"
+                "to, and what it changes. Also shows the resolved trace directory and whether\n"
+                "capture is on, so a wrong setting is visible rather than inferred."
+            ),
+        },
+    }
+
+    # (name, default, what it does) — read from this module, not from memory.
+    ENV_TOPICS: List[tuple] = [
+        ("CTXVM_TRACE", "on", "0/off/false/no disables capture outright"),
+        ("CTXVM_TRACE_DIR", "<state>/ctxvm/traces", "capture directory; ~ and $VAR expand"),
+        ("CTXVM_TRACE_NAME", "<session-id>", "file stem for this capture"),
+        ("CTXVM_TRACE_TS", "on", "0 drops every ts (byte-stability only)"),
+        ("CTXVM_TRACE_WRITETHROUGH", "on", "persist a partial every N events"),
+        ("CTXVM_TRACE_WRITETHROUGH_EVERY", "10", "events between partial snapshots"),
+        ("CTXVM_TRACE_RETAIN_MAX", "200", "complete captures kept"),
+        ("CTXVM_TRACE_RETAIN_DAYS", "30", "age limit for complete captures"),
+        ("CTXVM_TRACE_RETAIN_BYTES", "536870912", "byte budget for complete captures"),
+        ("CTXVM_ENVIRONMENT_ID", "unset", "env-<12 hex>; hermes cannot derive it, so this is the only source"),
+        ("CTXVM_AGENT_ID", "hermes", "agentId on session.open"),
+        ("CTXVM_MODEL", "unknown/unknown", "fallback model when the host payload has none"),
+        ("CTXVM_PROVIDER", "unknown", "fallback provider when the host payload has none"),
+        ("CTXVM_BUDGET_TOKENS", "200000", "declared page budget (drives turn.render headroom)"),
+        ("CTXVM_FEATURES", "unset", "comma list: forensics, handoff"),
+        ("CTXVM_HANDOFF_DIR", "unset", "where /ctxvm-handoff packages"),
+        ("CTXVM_RESUME_FROM", "unset", "snapshot to verify at boot"),
+    ]
+
+    def _env_report() -> str:
+        def effective(name: str, default: str) -> str:
+            raw = os.environ.get(name)
+            if raw is None:
+                return f"unset -> {default}"
+            if raw.strip() == "":
+                return "empty -> disabled" if name in ("CTXVM_TRACE", "CTXVM_TRACE_DIR") else "empty -> default"
+            return raw
+
+        lines = [
+            "ctxvm environment (read once at import; a gateway restart is required after a change)",
+            f"  capture enabled: {_traced()}",
+            f"  trace dir:       {_active_trace_dir() or '<none>'} (source: {_trace_dir_source()})",
+            "",
+            "  variable                            value                       effect",
+        ]
+        for name, default, effect in ENV_TOPICS:
+            lines.append(f"  {name:<34}  {effective(name, default):<26}  {effect}")
+        return "\n".join(lines)
+
+    def _handle_help_cmd(raw_args: str) -> str:
+        argv = raw_args.strip().split()
+        if not argv:
+            lines = ["ctxvm — commands (details: /ctxvm-help <command>)", ""]
+            for name, topic in HELP_TOPICS.items():
+                lines.append(f"  {topic['usage']}")
+                lines.append(f"      {topic['summary']}")
+            return "\n".join(lines)
+
+        topic_key = argv[0].lower().lstrip("/")
+        if topic_key in ("env", "environment", "envvars", "vars"):
+            return _env_report()
+        topic = HELP_TOPICS.get(topic_key)
+        if topic is None:
+            known = ", ".join(HELP_TOPICS)
+            return f"ctxvm-help: no topic '{argv[0]}'\n  known: {known}"
+
+        head = f"{topic['usage']}\n\n{topic['summary']}\n\n{topic['detail']}"
+        if topic_key == "environment":
+            head += "\n\n" + _env_report()
+        return head
+
+    def _handle_start_cmd(raw_args: str) -> str:
+        """Start capture; arguments are optional overrides."""
+        return _handle_trace_cmd(("start " + raw_args).strip())
 
     def _handle_forensics_cmd(raw_args: str) -> str:
         """Handle /ctxvm-forensics <subcommand> [args...].
@@ -1102,6 +1265,18 @@ def register(ctx) -> None:
         "ctxvm-trace",
         _handle_trace_cmd,
         description="Start/stop/show ctxvm trace capture.",
+    )
+
+    ctx.register_command(
+        "ctxvm-help",
+        _handle_help_cmd,
+        description="ctxvm commands; /ctxvm-help <command> for detail, /ctxvm-help environment for settings.",
+    )
+
+    ctx.register_command(
+        "ctxvm-start",
+        _handle_start_cmd,
+        description="Start ctxvm capture with the configured defaults (optional dir/name override).",
     )
 
     # Register slash command for UC2 forensics: replay/profile/diff/export/diagnose

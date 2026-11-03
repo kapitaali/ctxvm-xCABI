@@ -531,7 +531,7 @@ class LiveAdapterTests(unittest.TestCase):
         register(FakeCtx())
         # Hooks are always registered (gating is lazy per-call); the key invariant
         # is that no plugin instance is created and no traces are written.
-        self.assertEqual(len(calls), 8)  # 6 hooks + 1 command (ctxvm-trace) + 1 unload
+        self.assertEqual(len(calls), 10)  # 6 hooks + 3 commands (trace/help/start) + 1 unload
         self.assertIn(("hook", "on_session_start"), calls)
         self.assertIn(("hook", "pre_api_request"), calls)
         self.assertIn(("command", "ctxvm-trace"), calls)
@@ -720,15 +720,19 @@ class LiveAdapterTests(unittest.TestCase):
                 return None
 
             def register_command(self, name, handler, description=""):
-                self.handler = handler
+                self.commands = getattr(self, "commands", {})
+                self.commands[name] = handler
                 return None
 
         ctx = FakeCtx()
         register(ctx)
-        out = ctx.handler("bogus")
+        # By name: three commands register now, and "the last one" is not the trace
+        # command any more.
+        trace = ctx.commands["ctxvm-trace"]
+        out = trace("bogus")
         self.assertIn("unknown subcommand", out.lower())
 
-        out = ctx.handler("")
+        out = trace("")
         self.assertIn("Usage:", out)
 
     def test_environment_id_is_opaque_and_rides_before_ts(self):
@@ -814,6 +818,116 @@ class LiveAdapterTests(unittest.TestCase):
                    if '"turn.render"' in line]
         self.assertEqual(renders[-1]["prefix"], {"source": "unknown"},
                          "unmeasurable counters must be absent, not zero")
+
+    def test_help_lists_commands_and_explains_one(self):
+        """/ctxvm-help finds the commands; /ctxvm-help <cmd> explains one."""
+        _clear_env_for_tests()
+        cmds = {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+        register(FakeCtx())
+        self.assertIn("ctxvm-help", cmds)
+        self.assertIn("ctxvm-start", cmds)
+
+        listing = cmds["ctxvm-help"]("")
+        for expected in ("/ctxvm-start", "/ctxvm-trace", "/ctxvm-forensics",
+                         "/ctxvm-handoff", "/ctxvm-resume", "environment"):
+            self.assertIn(expected, listing)
+
+        detail = cmds["ctxvm-help"]("ctxvm-trace")
+        self.assertIn("status", detail)
+        self.assertIn("stop", detail)
+
+        unknown = cmds["ctxvm-help"]("nope")
+        self.assertIn("no topic", unknown)
+        self.assertIn("ctxvm-trace", unknown)
+
+    def test_help_environment_prints_values_and_defaults(self):
+        """/ctxvm-help environment shows every variable with its value, not just names."""
+        _clear_env_for_tests()
+        tmp = tempfile.mkdtemp(prefix="ctxvm-env-")
+        os.environ["CTXVM_TRACE_DIR"] = tmp
+        os.environ["CTXVM_ENVIRONMENT_ID"] = "env-0a1b2c3d4e5f"
+        cmds = {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+        register(FakeCtx())
+        report = cmds["ctxvm-help"]("environment")
+        self.assertIn(tmp, report, "the resolved trace dir must be visible")
+        self.assertIn("env-0a1b2c3d4e5f", report, "a set id must show its value")
+        self.assertIn("CTXVM_TRACE_RETAIN_BYTES", report)
+        self.assertIn("536870912", report, "an unset variable shows its default")
+        self.assertIn("unset -> on", report)
+        # "env" is accepted as a short form of the topic.
+        self.assertIn(tmp, cmds["ctxvm-help"]("env"))
+
+    def test_start_without_arguments_uses_the_configured_defaults(self):
+        """/ctxvm-start takes no arguments; a directory is an override, not a requirement."""
+        _clear_env_for_tests()
+        tmp = tempfile.mkdtemp(prefix="ctxvm-start-")
+        os.environ["CTXVM_TRACE_DIR"] = tmp
+        cmds = {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+        register(FakeCtx())
+        started = cmds["ctxvm-start"]("")
+        self.assertIn("tracing enabled", started)
+        self.assertIn(tmp, started, "a no-argument start must keep the configured dir")
+        self.assertIn("env CTXVM_TRACE_DIR", started,
+                      "the source must name the env var, not the built-in default")
+
+        # With no env dir at all, the same command resolves the built-in default and
+        # says that it did. clear_env also drops the process state, so the default is
+        # re-resolved rather than inherited from the case above.
+        _clear_env_for_tests()
+        register(FakeCtx())
+        defaults = cmds["ctxvm-start"]("")
+        self.assertIn("start (defaults)", defaults)
+        self.assertIn("state/ctxvm/traces", defaults.replace(os.path.expanduser("~"), "~"))
+
+        other = tempfile.mkdtemp(prefix="ctxvm-start2-")
+        resumed = cmds["ctxvm-start"](other + " custom")
+        self.assertIn(other, resumed)
+        self.assertIn("custom", resumed)
+        self.assertIn("slash command", resumed)
+        os.environ.pop("CTXVM_TRACE_DIR", None)
+
+    def test_plugin_yaml_version_matches_the_constant(self):
+        """A version bump that misses one of the two files is a silent no-op."""
+        from live import PLUGIN_VERSION
+        yaml_text = (Path(__file__).resolve().parents[1] / "live" / "plugin.yaml").read_text()
+        self.assertIn(f"version: {PLUGIN_VERSION}", yaml_text,
+                      "plugin.yaml and PLUGIN_VERSION must agree")
 
     def test_adapter_tags_side_effect_class_at_registration(self):
         """W15: the class comes from the registration table, by name, never from content.
