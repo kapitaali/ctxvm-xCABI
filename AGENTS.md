@@ -24,7 +24,10 @@ It mirrors `.github/workflows/ci.yml` step for step (rust → typescript + pytho
 - `bash tools/check-node-build.sh` — builds `packages/node/dist` and proves it emits the same 16
   events as the sources.
 
-A red gate is never "pre-existing". Find out what changed.
+A red gate is never "pre-existing". Find out what changed. Since 2026-11-03 every step runs through
+`run_step`, so a red gate prints the failing step's name, the last 40 lines of its output, and the path
+of the kept log. If you ever see a bare exit code with no step name, you are running a stale copy of
+`tools/run-ci.sh`, not a mysterious failure.
 
 ## 3. Layout
 
