@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -496,6 +497,20 @@ def _identity_from_settings(ctx: Any) -> Dict[str, str]:
     return out
 
 
+# W14 (RFC-0.1 §R8): environment identity. Hermes does not disclose the session's
+# workspace — this plugin runs inside the gateway process, whose cwd is the
+# gateway's, not the project's — so the id is taken only from an explicit
+# registration value. Deriving it from a tool argument or a cwd would be
+# inference, which is the one thing the capture contract forbids.
+_ENVIRONMENT_ID_RE = re.compile(r"^env-[0-9a-f]{12}$")
+
+
+def _environment_id() -> Optional[str]:
+    """The opaque environment id, or None. A malformed value is dropped, never coerced."""
+    value = (os.environ.get("CTXVM_ENVIRONMENT_ID") or "").strip()
+    return value if _ENVIRONMENT_ID_RE.match(value) else None
+
+
 def _make_plugin() -> Optional[Any]:
     """Create a tracer plugin if tracing is enabled; None otherwise.
 
@@ -512,6 +527,7 @@ def _make_plugin() -> Optional[Any]:
         "model": identity.get("model") or os.environ.get("CTXVM_MODEL", "unknown/unknown"),
         "provider": identity.get("provider") or os.environ.get("CTXVM_PROVIDER", "unknown"),
         "budgetTokens": _budget_from_env(),
+        "environmentId": _environment_id(),
     })
 
 

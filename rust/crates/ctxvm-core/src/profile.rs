@@ -283,7 +283,7 @@ mod tests {
                 budget_tokens: 200_000,
                 tokenizer_id: "apx4-char".into(),
                 schema_version: None,
-                ts: None,
+                environment_id: None, ts: None,
             },
             declare("file:a", "h-a", 120),
             declare("tool:b", "h-b", 400),

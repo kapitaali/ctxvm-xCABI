@@ -21,7 +21,7 @@
  *   - `status !== "completed"` → no page (T6 §2). `execute.before` mirrors only.
  */
 
-import { createTrace, contentHash, type FinishedTrace, type Json, type TraceInit, type Tracer } from "../../node/src/index.ts";
+import { createTrace, contentHash, deriveEnvironmentId, type FinishedTrace, type Json, type TraceInit, type Tracer } from "../../node/src/index.ts";
 
 import type {
   HookEvent,
@@ -103,7 +103,9 @@ export function createCtxvmPlugin(init: PluginInit): CtxvmPlugin {
   const vmFor = (sessionID: string): Tracer => {
     const existing = tracers.get(sessionID);
     if (existing) return existing;
-    const created = createTrace(init);
+    // W14 (§R8): explicit wins; otherwise the plugin runs inside the project, so cwd
+    // IS the environment.
+    const created = createTrace({ ...init, environmentId: init.environmentId ?? deriveEnvironmentId(process.cwd()) });
     tracers.set(sessionID, created);
     return created;
   };

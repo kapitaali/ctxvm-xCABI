@@ -150,6 +150,12 @@ pub enum Event {
         /// RFC-0.1 R0: version boundary. Absent = v0. Present must be \"0.1\".
         #[serde(skip_serializing_if = "Option::is_none")]
         schema_version: Option<String>,
+        /// RFC-0.1 R8 (W14): opaque environment identity — `env-` + 12 hex of a
+        /// SHA-256 over either the credential-stripped git remote or the worktree
+        /// path. Never the raw string: a trace may not carry a path or a remote.
+        /// Absent when the harness does not disclose the workspace.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        environment_id: Option<String>,
         /// RFC-0.1 R4: optional capture clock (UTC RFC 3339).
         #[serde(skip_serializing_if = "Option::is_none")]
         ts: Option<String>,
@@ -329,6 +335,17 @@ pub fn check_version(events: &[Event]) -> Result<(), String> {
     });
     if has_declare_turn && version != Some("0.1") {
         return Err("page.declare.turn requires schemaVersion \"0.1\"".to_string());
+    }
+    // W14 §R8: environmentId requires v0.1.
+    let has_environment = events.iter().any(|e| match e {
+        Event::SessionOpen {
+            environment_id: Some(_),
+            ..
+        } => true,
+        _ => false,
+    });
+    if has_environment && version != Some("0.1") {
+        return Err("environmentId requires schemaVersion \"0.1\"".to_string());
     }
     // W15 §R7, rule 1: toolEffect requires v0.1 (the version boundary).
     let has_tool_effect = events.iter().any(|e| match e {

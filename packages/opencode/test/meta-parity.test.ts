@@ -15,7 +15,8 @@ import { loadEchoFixture, replayHooks } from "./replay-registry.ts";
 const CANONICAL_EVENT_KEYS: Record<string, string[]> = {
   // R4-ts (RFC-0.1 §R4, D9 policy, RR-TS1-20261031): ts rides on every event of
   // the node-inherited lanes (default ON, CTXVM_TRACE_TS=0 opt-out). Optional.
-  "session.open": ["agentId", "budgetTokens", "model", "provider", "schemaVersion", "tokenizerId", "ts", "type"],
+  // W14 (§R8): this lane derives an opaque environment id from the project cwd.
+  "session.open": ["agentId", "budgetTokens", "environmentId", "model", "provider", "schemaVersion", "tokenizerId", "ts", "type"],
   // R5/R4 (RFC-0.1 §R5 + §R4, R5-turn card): page.declare carries `turn`
   // always (declaration turn; pre-first-render -1 stamps as 0). `latencyMs` is
   // an ACCEPTED-BUT-UNEMITTED slot — this lane's hook terrain carries no timing

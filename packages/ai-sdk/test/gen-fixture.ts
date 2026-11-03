@@ -121,6 +121,8 @@ const capture = createCtxvmCapture({
   model: "ctxvm-mock/echo-model",
   provider: "ctxvm-mock",
   budgetTokens: 120000,
+  // W14: pinned so the committed canon stays machine-independent.
+  environmentId: "env-000000000000",
 });
 
 const result = streamText({

@@ -731,6 +731,59 @@ class LiveAdapterTests(unittest.TestCase):
         out = ctx.handler("")
         self.assertIn("Usage:", out)
 
+    def test_environment_id_is_opaque_and_rides_before_ts(self):
+        """W14: the environment id is a hash, never a path, and ts stays last."""
+        init = TraceInit(agent_id="a", model="m", provider="p", budget_tokens=0,
+                         environment_id="env-0a1b2c3d4e5f")
+        line = Tracer(init).finish().jsonl.splitlines()[0]
+        self.assertIn("environmentId", line)
+        self.assertLess(line.index("environmentId"), line.index('"ts"'),
+                        "environmentId must ride before ts (ts is last)")
+
+        # Absent by default — absence is "unknown", never an invented id.
+        plain = Tracer(TraceInit(agent_id="a", model="m", provider="p",
+                                 budget_tokens=0)).finish().jsonl.splitlines()[0]
+        self.assertNotIn("environmentId", plain)
+
+    def test_adapter_accepts_only_an_opaque_environment_id(self):
+        """W14: a malformed value is dropped, and a path can never reach the trace."""
+        _clear_env_for_tests()
+        tmp = tempfile.mkdtemp(prefix="ctxvm-w14-")
+        os.environ["CTXVM_TRACE_DIR"] = tmp
+        os.environ["CTXVM_TRACE_NAME"] = "env"
+        cbs, cmds = {}, {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                cbs[name] = cb
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+        os.environ["CTXVM_ENVIRONMENT_ID"] = "env-0a1b2c3d4e5f"
+        register(FakeCtx())
+        cbs["on_session_start"](session_id="s1")
+        cbs["pre_llm_call"](session_id="s1", conversation_history=[], model="m")
+        cmds["ctxvm-trace"]("stop")
+        opened = json.loads(Path(tmp, "env.jsonl").read_text(encoding="utf-8").splitlines()[0])
+        self.assertEqual(opened["environmentId"], "env-0a1b2c3d4e5f")
+
+        # A path (or any non-opaque value) is refused at the boundary: the adapter
+        # returns None, so the key is absent and no path can reach a trace.
+        import live as live_mod
+        os.environ["CTXVM_ENVIRONMENT_ID"] = "/home/someone/private-project"
+        self.assertIsNone(live_mod._environment_id(), "a path is not an opaque id")
+        os.environ["CTXVM_ENVIRONMENT_ID"] = "env-SHORT"
+        self.assertIsNone(live_mod._environment_id(), "a non-opaque id is refused")
+        os.environ["CTXVM_ENVIRONMENT_ID"] = "env-0a1b2c3d4e5f"
+        self.assertEqual(live_mod._environment_id(), "env-0a1b2c3d4e5f")
+        os.environ.pop("CTXVM_ENVIRONMENT_ID", None)
+
     def test_pre_api_request_bills_the_static_prefix(self):
         """W13: the prefix cost comes from the host's own counters, per turn."""
         init = TraceInit(agent_id="ctxvm-dev", model="m", provider="p", budget_tokens=0)
@@ -1002,7 +1055,12 @@ CANONICAL_EVENT_KEYS = {
 }
 # W15 (§R7): keys that may ride or be absent depending on whether an adapter
 # supplied a registration-time fact. A present value is still checked.
-OPTIONAL_EVENT_KEYS = {"page.declare": frozenset({"toolEffect"})}
+OPTIONAL_EVENT_KEYS = {
+    "page.declare": frozenset({"toolEffect"}),
+    # W14 (§R8): present only when the operator registered an opaque environment id
+    # (the hermes gateway does not disclose the session's workspace).
+    "session.open": frozenset({"environmentId"}),
+}
 
 CANONICAL_META_KEYS = [
     "budgetTokens", "capturedAt", "harness", "harnessVersion", "hookStats",
@@ -1066,8 +1124,12 @@ class CanonicalSidecarParity(unittest.TestCase):
                 f"unexpected keys on {t} — update 09-plugin-parity.md §2 AND the opencode mirror in the same card",
             )
             for key in set(event) & optional:
-                self.assertIn(event[key], ("READ_ONLY", "MUTATING"),
-                              f"{t}.{key} must be a registration-time class, got {event[key]!r}")
+                if key == "toolEffect":
+                    self.assertIn(event[key], ("READ_ONLY", "MUTATING"),
+                                  f"{t}.{key} must be a registration-time class, got {event[key]!r}")
+                elif key == "environmentId":
+                    self.assertRegex(str(event[key]), r"^env-[0-9a-f]{12}$",
+                                     f"{t}.{key} must be an opaque id, never a path")
         self.assertEqual(
             {e["type"] for e in events},
             set(CANONICAL_EVENT_KEYS),

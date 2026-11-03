@@ -475,7 +475,7 @@ mod rfc01_tests {
             budget_tokens: 1000,
             tokenizer_id: "t".into(),
             schema_version: schema_version.map(str::to_string),
-            ts: None,
+            environment_id: None, ts: None,
         }
     }
 

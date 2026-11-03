@@ -20,6 +20,7 @@ export {
   canonicalJson,
   contentHash,
   createTrace,
+  deriveEnvironmentId,
   fileRef,
   imageRef,
   inferKind,

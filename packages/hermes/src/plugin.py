@@ -130,12 +130,16 @@ FaultSource = str  # "tool_recall" | "identifier_scan" | "explicit_api" | "seman
 
 class TraceInit:
     def __init__(self, agent_id: str, model: str, provider: str,
-                 budget_tokens: int, tokenizer_id: str = "apx4-char"):
+                 budget_tokens: int, tokenizer_id: str = "apx4-char",
+                 environment_id: Optional[str] = None):
         self.agent_id = agent_id
         self.model = model
         self.provider = provider
         self.budget_tokens = budget_tokens
         self.tokenizer_id = tokenizer_id
+        # RFC-0.1 R8 (W14): an OPAQUE environment id (`env-` + 12 hex). The caller
+        # derives it; this core never sees a path or a remote name.
+        self.environment_id = environment_id
 
 
 class FinishedTrace:
@@ -177,7 +181,7 @@ class Tracer:
         # trace this build emits declares schemaVersion "0.1" — the version
         # boundary. Shipped corpus drops (m1–m8) and the frozen package
         # fixtures stay v0: committed golden bytes, never regenerated.
-        self._push({
+        opened: Dict[str, Any] = {
             "type": "session.open",
             "agentId": init.agent_id,
             "model": init.model,
@@ -185,7 +189,12 @@ class Tracer:
             "budgetTokens": init.budget_tokens,
             "tokenizerId": init.tokenizer_id,
             "schemaVersion": "0.1",
-        })
+        }
+        # RFC-0.1 R8 (W14): the opaque environment id rides before ts, which
+        # _push appends last.
+        if init.environment_id:
+            opened["environmentId"] = init.environment_id
+        self._push(opened)
 
     def _stamp(self) -> str:
         """RFC-3339 UTC, millisecond precision — exactly the v0.1 schema's ts
@@ -682,12 +691,13 @@ def items_to_body(items: list) -> str:
 
 
 def create_ctxvm_plugin(init: Dict[str, Any]) -> CtxvmPlugin:
-    """Factory: create_ctxvm_plugin({agentId, model, provider, budgetTokens, tokenizerId?})."""
+    """Factory: create_ctxvm_plugin({agentId, model, provider, budgetTokens, tokenizerId?, environmentId?})."""
     trace_init = TraceInit(
         agent_id=init["agentId"],
         model=init["model"],
         provider=init["provider"],
         budget_tokens=init["budgetTokens"],
         tokenizer_id=init.get("tokenizerId", "apx4-char"),
+        environment_id=init.get("environmentId"),
     )
     return CtxvmPlugin(trace_init)

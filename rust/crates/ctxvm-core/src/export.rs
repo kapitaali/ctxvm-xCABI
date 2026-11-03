@@ -253,7 +253,7 @@ mod tests {
             budget_tokens: 120000,
             tokenizer_id: "apx4-char".into(),
             schema_version: None,
-            ts: None,
+            environment_id: None, ts: None,
         }
     }
 

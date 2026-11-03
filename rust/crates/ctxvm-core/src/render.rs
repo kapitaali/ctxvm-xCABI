@@ -292,7 +292,7 @@ mod tests {
                 budget_tokens: 120_000,
                 tokenizer_id: "t".into(),
                 schema_version: None,
-                ts: None,
+                environment_id: None, ts: None,
             },
             declare_file("file:auth.ts", "h-a", 1000),
             Event::PageDeclare {

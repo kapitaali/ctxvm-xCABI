@@ -248,6 +248,8 @@ test("integration: the committed fixture replays through a REAL tracer byte-iden
       model: "ctxvm-mock/echo-model",
       provider: "ctxvm-mock",
       budgetTokens: 120000,
+      // W14: pinned so the byte comparison does not depend on the machine.
+      environmentId: "env-000000000000",
     });
 
     // Replay the recorded orderings with the same middleware/tap interleaving
@@ -325,6 +327,8 @@ test("unarmed capture: finishAll is an empty no-op with no files", async () => {
       model: "ctxvm-mock/echo-model",
       provider: "ctxvm-mock",
       budgetTokens: 120000,
+      // W14: pinned so the byte comparison does not depend on the machine.
+      environmentId: "env-000000000000",
     });
     assert.deepEqual(capture.finishAll(), []);
     // No sidecar, no jsonl, no witness log — the env dir was never touched.

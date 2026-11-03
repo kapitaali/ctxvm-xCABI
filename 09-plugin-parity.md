@@ -34,7 +34,7 @@ Empirical audit over all three live drops (KIT-1 audit script output, 2026-10-25
 
 | type | keys — identical in all three drops |
 |---|---|
-| `session.open` | `agentId, budgetTokens, model, provider, schemaVersion, tokenizerId, type` |
+| `session.open` | `agentId, budgetTokens, model, provider, schemaVersion, tokenizerId, type` (+ optional `environmentId` R8) |
 | `page.declare` | `page, type` (+ `turn` R5, + optional `toolEffect` R7) |
 | `page.fault` | `page, source, turn, type` |
 | `page.render` | `mode, page, turn, type` |
@@ -47,6 +47,12 @@ negotiation), so the `session.open` row above now includes it. The shipped drops
 table was audited from (`corpus/m1`–`m5`) stay v0 era: frozen goldens, never
 regenerated. Both parity tests pin the new key set; drift lands in the same card on
 BOTH sides.
+**RFC-0.1 §R8 note (2026-11-01, W14):** `session.open` gains an OPTIONAL `environmentId`
+(`env-` + 12 hex). opencode and ai-sdk derive it from the project directory (git remote first,
+worktree path otherwise); the hermes gateway does **not** disclose the session's workspace — its cwd
+is the gateway's — so that lane emits it only from an explicit `CTXVM_ENVIRONMENT_ID`, and omits the
+key otherwise. A malformed value is dropped at the boundary, never coerced: no path may reach a
+trace. Fixtures that pin bytes pin a fixed id (`env-000000000000`).
 **RFC-0.1 §R7 note (2026-11-01, W15):** `page.declare` gains an OPTIONAL `toolEffect`
 (`READ_ONLY` | `MUTATING`) between `latencyMs` and `ts`, tagged at tool REGISTRATION
 by the adapter and never inferred from model text or result content. Every adapter
@@ -335,6 +341,21 @@ the per-turn `call.meta` chain the same way usage does.
 Re-install note: the hermes plugin lives as a copy under `$HERMES_HOME/plugins/`; after
 adapter changes, re-install the updated copy (T17 recipe; `hermes plugins doctor --ci` to
 verify registration).
+
+### 5.3 Environment identity (W14, 2026-11-01)
+
+| Lane | Source | Absent when |
+|---|---|---|
+| opencode | `deriveEnvironmentId(process.cwd())` — remote first, worktree path otherwise | never (the plugin runs in the project) |
+| ai-sdk | same, unless the caller passes one | never (same reason) |
+| hermes | explicit `CTXVM_ENVIRONMENT_ID` only | the operator did not register one |
+
+Hermes is the exception on purpose. The plugin executes inside the gateway process, so `cwd` is the
+gateway's working directory, not the session's project; hashing it would produce one fake
+environment shared by every session — a measured-looking number that means nothing. The host exposes
+no workspace fact in any hook payload audited so far (`on_session_start`, `pre_tool_call`,
+`post_tool_call`, `pre_llm_call`, `pre_api_request`, `on_session_end`), so the honest answer is
+absence.
 
 ### 5.2 Side-effect classification — the registration table (W15, 2026-11-01)
 

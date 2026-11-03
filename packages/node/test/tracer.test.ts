@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { canonicalJson, contentHash, toolRef } from "../src/ident.ts";
-import { createTrace, type FinishedTrace } from "../src/tracer.ts";
+import { createTrace, deriveEnvironmentId, type FinishedTrace } from "../src/tracer.ts";
 
 const INIT = {
   agentId: "opencode",
@@ -373,4 +373,25 @@ test("session.open is the first line; JSONL is newline-terminated; every line pa
   assert.equal(first.schemaVersion, "0.1");
   assert.ok(jsonl.endsWith("\n"));
   for (const line of jsonl.trim().split("\n")) JSON.parse(line);
+});
+
+test("W14 deriveEnvironmentId is opaque, stable, and never leaks the path", () => {
+  // Injected runner: no git here, so the path basis is used.
+  const noGit = () => null;
+  const a = deriveEnvironmentId("/home/someone/private-project", noGit);
+  const b = deriveEnvironmentId("/home/someone/private-project", noGit);
+  const c = deriveEnvironmentId("/home/other/secret", noGit);
+
+  assert.equal(a, b, "same directory must give the same id");
+  assert.notEqual(a, c, "different directories must differ");
+  assert.match(a, /^env-[0-9a-f]{12}$/);
+  assert.ok(!a.includes("someone") && !a.includes("private"), "the id must not carry the path");
+
+  // A remote wins over the path, and credentials are stripped before hashing.
+  const withRemote = (cmd: string) =>
+    cmd === "git" ? "https://user:tok@git.example.com/Org/Repo.git\n" : null;
+  const r1 = deriveEnvironmentId("/anywhere", withRemote);
+  const r2 = deriveEnvironmentId("/elsewhere", withRemote);
+  assert.equal(r1, r2, "one remote, one environment, wherever it is cloned");
+  assert.match(r1, /^env-[0-9a-f]{12}$/);
 });

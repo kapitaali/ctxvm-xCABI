@@ -214,6 +214,11 @@
         "schemaVersion": {
           "const": "0.1"
         },
+        "environmentId": {
+          "type": "string",
+          "pattern": "^env-[0-9a-f]{12}$",
+          "description": "RFC-0.1 R8 (W14): opaque environment identity, env- plus 12 hex of a SHA-256 over the credential-stripped git remote or the worktree path. Never a raw path or remote; absent when the harness does not disclose the workspace."
+        },
         "ts": {
           "$ref": "#/$defs/ts"
         }

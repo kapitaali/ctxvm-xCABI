@@ -13,6 +13,9 @@
  * derived composition, not against a mid-stream view.
  */
 
+import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
+
 import {
   approx4,
   canonicalJson,
@@ -60,6 +63,11 @@ export interface TraceInit {
   budgetTokens: number;
   /** Declared-token unit id; default `apx4-char` (see `approx4`). */
   tokenizerId?: string;
+  /**
+   * RFC-0.1 R8 (W14): opaque environment identity (`env-` + 12 hex from
+   * `deriveEnvironmentId`). Never a path or a remote; omit when unknown.
+   */
+  environmentId?: string;
 }
 
 export interface PageInput {
@@ -207,6 +215,54 @@ function toolEffectOf(value: unknown): ToolEffect | undefined {
   throw new Error(`toolEffect must be READ_ONLY or MUTATING (registration-time tag), got ${JSON.stringify(value)}`);
 }
 
+/**
+ * W14 / RFC-0.1 §R8: derive an opaque environment id for a working directory.
+ *
+ * The hash covers either the credential-stripped git remote (so every clone of one
+ * repository shares an id) or the absolute worktree path (so a non-git project still
+ * gets a stable one). Only `env-` plus 12 hex reaches the trace — a path or a remote
+ * name never does. Deterministic: same directory, same id, across processes.
+ */
+export function deriveEnvironmentId(dir: string, run?: (cmd: string, args: string[]) => string | null): string {
+  const exec = run ?? defaultRun(dir);
+  let basis = "";
+  const remote = exec("git", ["-C", dir, "config", "--get", "remote.origin.url"]);
+  if (remote !== null && remote.trim() !== "") {
+    basis = `remote:${normalizeRemote(remote)}`;
+  } else {
+    const top = exec("git", ["-C", dir, "rev-parse", "--show-toplevel"]);
+    basis = `path:${(top ?? dir).trim()}`;
+  }
+  const digest = createHash("sha256").update(basis, "utf8").digest("hex");
+  return `env-${digest.slice(0, 12)}`;
+}
+
+/** Strip credentials and a trailing `.git`; lowercase the host, keep the path's case. */
+function normalizeRemote(url: string): string {
+  let value = url.trim().replace(/\.git$/, "");
+  const at = value.indexOf("@");
+  const scheme = value.indexOf("://");
+  if (scheme >= 0) {
+    const slash = value.indexOf("/", scheme + 3);
+    value = `${value.slice(0, scheme + 3)}${slash >= 0 ? value.slice(slash) : ""}`;
+  } else if (at >= 0) {
+    // scp-style `git@host:org/repo`
+    value = value.slice(at + 1).replace(":", "/");
+  }
+  return value.toLowerCase();
+}
+
+function defaultRun(dir: string): (cmd: string, args: string[]) => string | null {
+  return (cmd, args) => {
+    try {
+      const out = spawnSync(cmd, args, { encoding: "utf8", timeout: 2000 });
+      return out.status === 0 ? out.stdout : null;
+    } catch {
+      return null;
+    }
+  };
+}
+
 export function createTrace(init: TraceInit): Tracer {
   const events: object[] = [];
   const tokenizerId = init.tokenizerId ?? "apx4-char";
@@ -261,6 +317,7 @@ export function createTrace(init: TraceInit): Tracer {
     // Traces BEFORE this line (frozen corpus drops m1–m8, package fixtures)
     // stay v0: they are committed golden bytes, never regenerated.
     schemaVersion: "0.1",
+    ...(init.environmentId !== undefined ? { environmentId: init.environmentId } : {}),
   });
 
   const emitFault = (p: Page, source: FaultSource, latencyMs: number | undefined): void => {

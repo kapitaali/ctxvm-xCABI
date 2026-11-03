@@ -45,6 +45,9 @@ NEGATIVES = [
     {"type": "turn.render", "turn": 0, "residentTokens": 1, "evictedTokens": 0, "prefix": {"toolSchemas": 23, "source": "billed"}},
     # negative count inside prefix
     {"type": "turn.render", "turn": 0, "residentTokens": 1, "evictedTokens": 0, "prefix": {"toolSchemas": -1, "source": "measured"}},
+    # W14: environmentId is opaque — a path, a remote name or a short id is not one
+    {"type": "session.open", "agentId": "a", "model": "m", "provider": "p", "budgetTokens": 1, "tokenizerId": "t", "schemaVersion": "0.1", "environmentId": "/home/someone/project"},
+    {"type": "session.open", "agentId": "a", "model": "m", "provider": "p", "budgetTokens": 1, "tokenizerId": "t", "schemaVersion": "0.1", "environmentId": "env-SHORT"},
     # W15: toolEffect must be one of the two wire classes, never lowercase prose
     {"type": "page.declare", "page": {"id": {"logicalRef": "x", "contentHash": "h"}, "kind": "tool_result", "tokens": 1}, "turn": 0, "toolEffect": "read_only"},
     # W15: null is not absence — the key is omitted when a tool is unclassified
@@ -113,6 +116,7 @@ def main():
         {"type": "page.declare", "page": {"id": {"logicalRef": "x", "contentHash": "h"}, "kind": "file", "tokens": 1}, "turn": 1},
         {"type": "turn.render", "turn": 0, "residentTokens": 1, "evictedTokens": 0, "prefix": {"toolSchemas": 23, "source": "measured"}},
         {"type": "page.declare", "page": {"id": {"logicalRef": "x", "contentHash": "h"}, "kind": "tool_result", "tokens": 1}, "turn": 0, "toolEffect": "MUTATING"},
+        {"type": "session.open", "agentId": "a", "model": "m", "provider": "p", "budgetTokens": 1, "tokenizerId": "t", "schemaVersion": "0.1", "environmentId": "env-0a1b2c3d4e5f"},
     ]
     for neg in v0_1_only:
         try:

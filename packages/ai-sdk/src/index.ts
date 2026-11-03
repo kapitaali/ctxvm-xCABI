@@ -28,7 +28,7 @@
  * witness and tracers are never created. Mirror mode opens no control path.
  */
 
-import { createTrace, type FinishedTrace, type TraceInit, type Tracer } from "../../node/src/index.ts";
+import { createTrace, deriveEnvironmentId, type FinishedTrace, type TraceInit, type Tracer } from "../../node/src/index.ts";
 import { TurnAgreement } from "./contract.ts";
 import { witnessLine, writeCapture } from "./flush.ts";
 import { ctxvmMiddleware } from "./middleware.ts";
@@ -168,6 +168,9 @@ export function createCtxvmCapture(init: CtxvmCaptureInit): CtxvmCapture {
       model: init.model,
       provider: init.provider,
       budgetTokens: init.budgetTokens,
+      // W14 (§R8): an explicit id wins (fixtures pin one); otherwise this library
+      // runs in the caller's process, so cwd IS the project.
+      environmentId: init.environmentId ?? deriveEnvironmentId(process.cwd()),
     });
     tracers.set(key, created);
     return created;

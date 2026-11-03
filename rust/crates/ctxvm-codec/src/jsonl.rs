@@ -55,7 +55,10 @@ impl From<serde_json::Error> for CodecError {
 /// the conformance suite fails if a line carrying a valid tag trips its allowlist
 /// (i.e. the vector corpus exercises every declared field).
 const FIELD_ALLOWLIST: &[(&str, &[&str])] = &[
-    ("session.open", &["agentId", "model", "provider", "budgetTokens", "tokenizerId", "schemaVersion", "ts"]),
+    (
+        "session.open",
+        &["agentId", "model", "provider", "budgetTokens", "tokenizerId", "schemaVersion", "environmentId", "ts"],
+    ),
     ("page.declare", &["page", "turn", "latencyMs", "toolEffect", "ts"]),
     ("page.render", &["turn", "page", "mode", "ts"]),
     ("page.evict", &["turn", "page", "stubText", "ts"]),
@@ -166,7 +169,7 @@ mod tests {
                 budget_tokens: 120_000,
                 tokenizer_id: "tiktoken-o200k_base".into(),
                 schema_version: None,
-                ts: None,
+                environment_id: None, ts: None,
             },
             Event::PageDeclare {
                 page: PageRef { id: page(), kind: PageKind::ToolResult, tokens: 8200 },
@@ -400,7 +403,7 @@ mod rfc01_tests {
                 budget_tokens: 120_000,
                 tokenizer_id: "tiktoken-o200k_base".into(),
                 schema_version: None,
-                ts: None,
+                environment_id: None, ts: None,
             },
             ev,
         ];
@@ -457,7 +460,7 @@ mod rfc01_tests {
                 budget_tokens: 120_000,
                 tokenizer_id: "tiktoken-o200k_base".into(),
                 schema_version: None,
-                ts: None,
+                environment_id: None, ts: None,
             },
             Event::PageDeclare {
                 page: PageRef { id: page(), kind: PageKind::ToolResult, tokens: 19 },
@@ -486,7 +489,7 @@ mod rfc01_tests {
                 budget_tokens: 120_000,
                 tokenizer_id: "tiktoken-o200k_base".into(),
                 schema_version: Some("0.1".into()),
-                ts: None,
+                environment_id: None, ts: None,
             },
             // a file page is not a tool call — the class is invalid on it.
             Event::PageDeclare {

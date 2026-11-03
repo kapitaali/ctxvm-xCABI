@@ -69,6 +69,28 @@ so it is cited as a design argument, not as evidence.
 Audit only: this revision adds no write-ahead log, no dry-run execution, and no safety property. A
 `MUTATING` page records what the tool *can* do, not what this call *did*.
 
+## R8 — session.open.environmentId (W14)
+
+`session.open` gains an optional `environmentId`: a string matching `^env-[0-9a-f]{12}$`, being
+`env-` plus the first 12 hex characters of a SHA-256 over either
+
+- `remote:<credential-stripped, normalized git remote>` when the directory is a clone with an
+  origin, or
+- `path:<absolute worktree path>` otherwise.
+
+Only the digest reaches the trace. A path, a remote name, a branch name or a host name never does:
+the id is opaque by construction, so one repository has one id across machines and clones while the
+trace reveals nothing about where it lives. Branch is deliberately excluded — branch names change
+per task and can carry a client's identity.
+
+Why: arXiv:2610.22732v1's unit of analysis is a task **stream in an environment**, and its gains
+only appear by roughly the sixth task; a ledger with per-session identity alone cannot express that
+stream. Ordering is already available (`ts`, R4), so grouping by `environmentId` and sorting by `ts`
+is the stream view.
+
+Absence means unknown, never a guess: an adapter that cannot see the workspace omits the key, and a
+consumer must not synthesize one. Valid only under `schemaVersion "0.1"`.
+
 ## Compatibility
 
 v0 traces replay byte-identical. v0 validators reject v0.1-only lines (the
