@@ -23,6 +23,10 @@ pub const EXPECTED_TAGS: [&str; 9] = [
 /// module docs). Since UC1-B1 the bins are thin mains that drive these.
 pub mod cli;
 
+/// `ctxvm stream` — sessions grouped by environment (W14 §R8). The view that makes
+/// `environmentId` worth carrying: cross-session repetition, ordered by start time.
+pub mod stream;
+
 #[cfg(test)]
 mod tests {
     use super::*;

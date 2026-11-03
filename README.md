@@ -49,11 +49,15 @@ cargo build --release
 # the synthetic thrash demo: evictions, faults, per-turn residency
 ./rust/target/release/replay corpus/m1/session-thrashing.jsonl    # exit 0 = no replay divergence
 ./rust/target/release/profile corpus/m1/session-thrashing.jsonl  # per-page/turn profile
+./rust/target/release/stream ~/.local/state/ctxvm/traces          # sessions grouped by environment
 ```
 
 `profile` prints every page's decision history, faults and the per-turn residency for any
-RFC-0 trace. `cargo install --path rust/crates/ctxvm-conformance` puts all five binaries
-(`replay`, `profile`, `diff`, `export`, `tokens`) on `PATH`.
+RFC-0 trace. `stream` groups trace files by `environmentId` (W14) and orders them by start
+time, which is the only way the cross-session questions become observable: how many
+declarations repeat across sessions of one repository, and how many a render never showed.
+`cargo install --path rust/crates/ctxvm-conformance` puts all six binaries (`replay`,
+`profile`, `diff`, `export`, `tokens`, `stream`) on `PATH`.
 
 **Wrap an agent.** Nothing is captured unless a trace directory is set.
 
@@ -106,7 +110,7 @@ measured, and the docs say so where it matters.
 
 | track | state |
 |---|---|
-| **engine (M0)** | `rust/` — codec (strict JSONL, byte-identical vectors) + page table + deterministic renderer + replay/profile/diff/export CLIs · **59 tests** (60 with `--features tiktoken`), 0 warnings |
+| **engine (M0)** | `rust/` — codec (strict JSONL, byte-identical vectors) + page table + deterministic renderer + replay/profile/diff/export/stream CLIs · **72 tests** (73 with `--features tiktoken`), 0 warnings |
 | **standard (RFC-0)** | `spec/rfc-0/` — normative semantics + strict JSON Schema; conformance **PASS (682 checks)** over 27 fixtures, 17 of them corpus traces |
 | **measurement** | `corpus/m1`–`m8` (17 traces: seed, live OpenCode, Hermes, resume pairs, AI-SDK) each with `provenance.json` + `checksums.sha256` · `benchmarks/metrics/` reference impl (44 tests) + eviction-policy simulator · ODPS manifest `productVersion 0.8.0` validated by SDK 0.4.0 |
 | **instrumentation** | `packages/node` (13 tests) · `packages/opencode` live v2 plugin (58) · `packages/hermes` plugin (80) · `packages/ai-sdk` middleware/tap (45) · `packages/py` binding (8) |
@@ -187,8 +191,8 @@ Curated details live in [`00-README.md`](00-README.md) (file index + locked-deci
 
 ## For agents
 
-Read [`08-HANDOFF.md`](08-HANDOFF.md) §0–§4 before doing anything: it is the single source
-of truth for the task board and reporting protocol. Integrity rule: every external claim
+Read [`AGENTS.md`](AGENTS.md) first for the rules that a green test does not protect, then
+[`08-HANDOFF.md`](08-HANDOFF.md) §0–§4 for the task board and reporting protocol. Integrity rule: every external claim
 carries its locator at first mention; unverified claims are marked, never stated as fact.
 
 ## License
