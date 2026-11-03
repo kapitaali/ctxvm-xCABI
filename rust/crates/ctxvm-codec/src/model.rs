@@ -58,6 +58,16 @@ pub enum FaultSource {
     IntentionalRerun,
 }
 
+/// Tool side-effect class per W15 (RFC-0.1 §R7): tagged at tool REGISTRATION
+/// by the harness adapter, never inferred from model text or result content.
+/// Everything outside the registration table is `Mutating` — fail safe.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ToolEffect {
+    ReadOnly,
+    Mutating,
+}
+
 /// Provider-reported usage for `call.meta` (RFC-0.1 R3). Omittable; omitted
 /// when the provider did not report (never null).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -154,6 +164,10 @@ pub enum Event {
         /// RFC-0.1 R4: optional declare latency.
         #[serde(skip_serializing_if = "Option::is_none")]
         latency_ms: Option<u64>,
+        /// RFC-0.1 R7 (W15): side-effect class of the tool call that produced
+        /// this result. Requires v0.1 and `kind == "tool_result"` (check_version).
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tool_effect: Option<ToolEffect>,
         /// RFC-0.1 R4: optional capture clock.
         #[serde(skip_serializing_if = "Option::is_none")]
         ts: Option<String>,
@@ -315,6 +329,30 @@ pub fn check_version(events: &[Event]) -> Result<(), String> {
     });
     if has_declare_turn && version != Some("0.1") {
         return Err("page.declare.turn requires schemaVersion \"0.1\"".to_string());
+    }
+    // W15 §R7, rule 1: toolEffect requires v0.1 (the version boundary).
+    let has_tool_effect = events.iter().any(|e| match e {
+        Event::PageDeclare {
+            tool_effect: Some(_),
+            ..
+        } => true,
+        _ => false,
+    });
+    if has_tool_effect && version != Some("0.1") {
+        return Err("toolEffect requires schemaVersion \"0.1\"".to_string());
+    }
+    // W15 §R7, rule 2: the class belongs to a tool CALL, so it is valid only on a
+    // tool_result page. Files, summaries and image refs are not tool calls.
+    let bad_kind = events.iter().any(|e| match e {
+        Event::PageDeclare {
+            tool_effect: Some(_),
+            page,
+            ..
+        } => page.kind != PageKind::ToolResult,
+        _ => false,
+    });
+    if bad_kind {
+        return Err("toolEffect requires kind tool_result".to_string());
     }
     // ts on any event requires v0.1.
     let has_ts = events.iter().any(|e| match e {

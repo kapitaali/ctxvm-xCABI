@@ -220,6 +220,7 @@ mod tests {
                 tokens,
             },
             latency_ms: None,
+            tool_effect: None,
             ts: None,
             turn: None,
         }
@@ -335,6 +336,7 @@ mod tests {
                     tokens: 1,
                 },
                 latency_ms: None,
+            tool_effect: None,
                 ts: None,
                 turn: None,
             },

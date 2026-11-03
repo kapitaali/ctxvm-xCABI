@@ -119,6 +119,14 @@
         "intentional_rerun"
       ]
     },
+    "toolEffect": {
+      "type": "string",
+      "enum": [
+        "READ_ONLY",
+        "MUTATING"
+      ],
+      "description": "RFC-0.1 W15: side-effect class of the tool call that produced this tool_result page, tagged at registration by the harness adapter — never inferred from model text or result content. Everything outside the registration table is MUTATING (fail safe). Invalid on any other page kind."
+    },
     "prefixCost": {
       "type": "object",
       "description": "RFC-0.1 W13: static per-turn cost that is billed whether or not any page is touched. All counters are optional so an adapter that cannot see the request reports `source: \"unknown\"` instead of a zero.",
@@ -234,6 +242,9 @@
         "latencyMs": {
           "type": "integer",
           "minimum": 0
+        },
+        "toolEffect": {
+          "$ref": "#/$defs/toolEffect"
         },
         "ts": {
           "$ref": "#/$defs/ts"

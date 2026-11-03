@@ -50,6 +50,25 @@ calls more than 7, and tool pruning alone recovers 13.2–17.7% of cost. A ledge
 pages that get touched cannot see that cost. `source: "unknown"` is a first-class answer: an
 adapter that cannot see its request must not report a zero it did not measure.
 
+## R7 — page.declare.toolEffect (W15)
+
+`page.declare` gains an optional `toolEffect` (`READ_ONLY` | `MUTATING`) between `latencyMs` and
+`ts`. The class is tagged at tool **registration** by the harness adapter — never inferred from tool
+arguments, model text or result content — and it is valid only on pages with
+`kind == "tool_result"`, because the class belongs to the tool call that produced the page.
+
+Three laws: registration-owned, name-only, fail-safe. An unregistered tool is `MUTATING`; an absent
+key means the adapter could not tell, and a consumer must treat absence the same way. `source`-free:
+the key is omitted, never null.
+
+Why: the Trace Engineering thread (@marfinxx, 30 Aug 2026) states the rule and the reason — "a model
+that hallucinates an imaginary database schema with perfect JSON syntax returns `status: OK`", so a
+status code cannot stand in for a side-effect class. That source is an unmeasured practitioner essay,
+so it is cited as a design argument, not as evidence.
+
+Audit only: this revision adds no write-ahead log, no dry-run execution, and no safety property. A
+`MUTATING` page records what the tool *can* do, not what this call *did*.
+
 ## Compatibility
 
 v0 traces replay byte-identical. v0 validators reject v0.1-only lines (the

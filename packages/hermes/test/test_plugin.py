@@ -762,6 +762,54 @@ class LiveAdapterTests(unittest.TestCase):
         self.assertEqual(renders[-1]["prefix"], {"source": "unknown"},
                          "unmeasurable counters must be absent, not zero")
 
+    def test_adapter_tags_side_effect_class_at_registration(self):
+        """W15: the class comes from the registration table, by name, never from content.
+
+        A keys-only parity test passes while every page is MUTATING — this asserts the
+        VALUE, which is the only thing that makes the field worth recording.
+        """
+        _clear_env_for_tests()
+        tmp = tempfile.mkdtemp(prefix="ctxvm-w15-")
+        os.environ["CTXVM_TRACE_DIR"] = tmp
+        os.environ["CTXVM_TRACE_NAME"] = "w15"
+        cbs, cmds = {}, {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                cbs[name] = cb
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+        register(FakeCtx())
+        cbs["on_session_start"](session_id="s1")
+        cbs["pre_llm_call"](session_id="s1", conversation_history=[], model="m")
+        expected = {"read_file": "READ_ONLY", "search_files": "READ_ONLY",
+                    "terminal": "MUTATING", "read": "MUTATING"}
+        for tool in expected:
+            cbs["post_tool_call"](session_id="s1", tool=tool, args={"x": tool},
+                                  status="ok",
+                                  result={"content": [{"type": "text", "text": f"body of {tool}"}]})
+        cmds["ctxvm-trace"]("stop")
+
+        events = [json.loads(line) for line in
+                  Path(tmp, "w15.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+        declares = {e["page"]["id"]["logicalRef"]: e for e in events if e["type"] == "page.declare"}
+        self.assertEqual(len(declares), 4)
+        for tool, want in expected.items():
+            ref = next(r for r in declares if f"tool:{tool}(" in r)
+            self.assertEqual(declares[ref].get("toolEffect"), want,
+                             f"{tool} must classify as {want} — the class is registration-owned")
+
+        # The class is a function of the NAME: identical content, different names.
+        kinds = {e["page"]["id"]["logicalRef"]: e["page"]["kind"] for e in declares.values()}
+        self.assertTrue(all(k == "tool_result" for k in kinds.values()))
+
     def test_write_through_persists_partial_and_flush_clears_it(self):
         """A crash must cost at most N events: write-through persists a partial snapshot."""
         _clear_env_for_tests()
@@ -941,6 +989,10 @@ CANONICAL_EVENT_KEYS = {
     # ACCEPTED-BUT-UNEMITTED slot — no lane surface feeds it yet, so the table
     # stays true to the wire (the noteUsage/providerUsage precedent: optional
     # fields enter the table when a fixture actually exercises them).
+    # W15 (§R7): `toolEffect` is OPTIONAL on page.declare — the live adapter tags
+    # every tool_result at registration time, while a direct tracer call (this
+    # fixture) passes no class and the key stays absent. Both shapes are legal;
+    # the value assertion lives in test_adapter_tags_side_effect_class.
     "page.declare": ["page", "ts", "turn", "type"],
     "page.fault": ["page", "source", "turn", "ts", "type"],
     "page.render": ["mode", "page", "turn", "ts", "type"],
@@ -948,6 +1000,10 @@ CANONICAL_EVENT_KEYS = {
     "turn.render": ["evictedTokens", "headroom", "prefix", "residentTokens", "turn", "ts", "type"],
     "call.meta": ["cacheEstimate", "provider", "turn", "ts", "type"],
 }
+# W15 (§R7): keys that may ride or be absent depending on whether an adapter
+# supplied a registration-time fact. A present value is still checked.
+OPTIONAL_EVENT_KEYS = {"page.declare": frozenset({"toolEffect"})}
+
 CANONICAL_META_KEYS = [
     "budgetTokens", "capturedAt", "harness", "harnessVersion", "hookStats",
     "model", "pluginVersion", "provider", "resumeFrom", "sessionID", "traceStats",
@@ -1000,11 +1056,18 @@ class CanonicalSidecarParity(unittest.TestCase):
         for event in events:
             t = event["type"]
             self.assertIn(t, CANONICAL_EVENT_KEYS, f"type outside the canonical table: {t}")
-            self.assertEqual(
-                sorted(event),
-                sorted(CANONICAL_EVENT_KEYS[t]),
+            optional = OPTIONAL_EVENT_KEYS.get(t, frozenset())
+            self.assertTrue(
+                set(event) - optional >= set(CANONICAL_EVENT_KEYS[t]),
                 f"canonical key drift for {t} — update 09-plugin-parity.md §2 AND the opencode mirror in the same card",
             )
+            self.assertTrue(
+                set(event) - optional <= set(CANONICAL_EVENT_KEYS[t]),
+                f"unexpected keys on {t} — update 09-plugin-parity.md §2 AND the opencode mirror in the same card",
+            )
+            for key in set(event) & optional:
+                self.assertIn(event[key], ("READ_ONLY", "MUTATING"),
+                              f"{t}.{key} must be a registration-time class, got {event[key]!r}")
         self.assertEqual(
             {e["type"] for e in events},
             set(CANONICAL_EVENT_KEYS),

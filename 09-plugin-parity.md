@@ -35,7 +35,7 @@ Empirical audit over all three live drops (KIT-1 audit script output, 2026-10-25
 | type | keys — identical in all three drops |
 |---|---|
 | `session.open` | `agentId, budgetTokens, model, provider, schemaVersion, tokenizerId, type` |
-| `page.declare` | `page, type` |
+| `page.declare` | `page, type` (+ `turn` R5, + optional `toolEffect` R7) |
 | `page.fault` | `page, source, turn, type` |
 | `page.render` | `mode, page, turn, type` |
 | `turn.render` | `evictedTokens, headroom, residentTokens, turn, type` |
@@ -47,6 +47,12 @@ negotiation), so the `session.open` row above now includes it. The shipped drops
 table was audited from (`corpus/m1`–`m5`) stay v0 era: frozen goldens, never
 regenerated. Both parity tests pin the new key set; drift lands in the same card on
 BOTH sides.
+**RFC-0.1 §R7 note (2026-11-01, W15):** `page.declare` gains an OPTIONAL `toolEffect`
+(`READ_ONLY` | `MUTATING`) between `latencyMs` and `ts`, tagged at tool REGISTRATION
+by the adapter and never inferred from model text or result content. Every adapter
+tags every tool_result it declares, so both lanes emit it; the key stays absent when
+a direct tracer call supplies no class, and the parity tests treat it as an optional
+key whose VALUE must be one of the two wire strings. `ts` remains last.
 **RFC-0.1 §R3 note (2026-10-31, RR-RFC01E2/W2b):** the `@ctxvm/node` reference tracer
 gains `noteUsage` — the ai-sdk lane additionally emits optional
 `call.meta.providerUsage` AFTER `cacheEstimate` (canonical rust-writer order) when the
@@ -329,6 +335,27 @@ the per-turn `call.meta` chain the same way usage does.
 Re-install note: the hermes plugin lives as a copy under `$HERMES_HOME/plugins/`; after
 adapter changes, re-install the updated copy (T17 recipe; `hermes plugins doctor --ci` to
 verify registration).
+
+### 5.2 Side-effect classification — the registration table (W15, 2026-11-01)
+
+The class is a property of the tool NAME at registration. It is never inferred from arguments,
+model text or result content, two calls to one name share one class, and **an unregistered name is
+`MUTATING`** — an unknown tool is assumed to have written something.
+
+| Adapter | Table | Source of the default |
+|---|---|---|
+| hermes | `{read_file, search_files}` | the host's own read/search bucket (`model_tools.py:615`, `_READ_SEARCH_TOOLS` in the install) |
+| opencode | `{read, glob, grep, list, webfetch}` | that harness's documented read tools |
+| ai-sdk | same as opencode | the middleware lane sees names only |
+
+`CTXVM_READONLY_TOOLS` (comma-separated) **extends** the table for any lane. It is never required:
+classification works with zero environment set, because default-on with no `CTXVM_*` is the property
+the capture contract already established. An extension entry is an owner statement, not an inference.
+
+Consequence to state rather than hide: the hermes table covers two tools out of a wide catalog, so a
+real session reads mostly `MUTATING`. That is the fail-safe working, and until the host publishes a
+broader read bucket the field is coarse. Audit only — there is no write-ahead log, no dry-run, and
+nothing here prevents a mutating call or makes replaying one safe.
 
 ## 6. DoD rule for every future card that touches a plugin's wire behavior
 

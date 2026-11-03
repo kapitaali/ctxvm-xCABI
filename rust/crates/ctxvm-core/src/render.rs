@@ -246,6 +246,7 @@ mod tests {
                 tokens,
             },
             latency_ms: None,
+            tool_effect: None,
             ts: None,
             turn: None,
         }
@@ -304,6 +305,7 @@ mod tests {
                     tokens: 400,
                 },
                 latency_ms: None,
+            tool_effect: None,
                 ts: None,
                 turn: None,
             },
@@ -314,6 +316,7 @@ mod tests {
                     tokens: 60,
                 },
                 latency_ms: None,
+            tool_effect: None,
                 ts: None,
                 turn: None,
             },

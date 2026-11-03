@@ -88,6 +88,25 @@ def declare_latency_ms(value: Any) -> Optional[int]:
     return None
 
 
+def tool_effect_of(value: Any) -> Optional[str]:
+    """W15 (RFC-0.1 §R7) strict intake for `page.declare.toolEffect`.
+
+    The class is decided at tool REGISTRATION by the harness adapter and handed
+    in verbatim; the core classifies nothing and never infers from model text
+    or result content. `None` (unclassified) passes through as an ABSENCE —
+    the key is omitted, never null, and a consumer treats an unclassified
+    tool_result as MUTATING (fail safe). Any other value is a caller bug and
+    fails hard at the boundary: a typo must not silently become either class.
+    """
+    if value is None:
+        return None
+    if value in ("READ_ONLY", "MUTATING"):
+        return value
+    raise RuntimeError(
+        f"toolEffect must be READ_ONLY or MUTATING (registration-time tag), got {value!r}"
+    )
+
+
 def identity_tokens(logical_ref: str) -> List[str]:
     """Identity candidates a page exposes to identifier_scan: ref fragments, longest first."""
     body = logical_ref.split(":", 1)[1] if ":" in logical_ref else logical_ref
@@ -211,12 +230,15 @@ class Tracer:
         page["revealed"] = True
 
     def _declare_page(self, ref: str, hash_val: str, kind: str, tokens: int,
-                      latency_ms: Optional[int]) -> None:
+                      latency_ms: Optional[int], tool_effect: Optional[str] = None) -> None:
         """RFC-0.1 §R5 + §R4 (R5-turn card): `page.declare` carries the tracer's
         turn counter AT DECLARATION TIME; declarations made before the first
         render carry -1 and stamp as 0 (the RFC-0 §5 convention `_emit_fault`
         already uses). `latencyMs` rides between `turn` and `ts` only when the
-        caller supplied a valid one — `ts` lands LAST via `_push`.
+        caller supplied a valid one. W15 (§R7): when a harness adapter supplies
+        a registration-time class, `toolEffect` rides between `latencyMs` and
+        `ts`; the core NEVER classifies — absence is present as absence.
+        `ts` lands LAST via `_push`.
         """
         t = self._turn if self._turn >= 0 else 0
         event: Dict[str, Any] = {
@@ -227,6 +249,8 @@ class Tracer:
         }
         if latency_ms is not None:
             event["latencyMs"] = latency_ms
+        if tool_effect is not None:
+            event["toolEffect"] = tool_effect
         self._push(event)
 
     def page(self, input: Dict[str, Any]) -> Dict[str, Any]:
@@ -240,6 +264,7 @@ class Tracer:
         kind = input.get("kind") or ("image_ref" if isinstance(content, str)
                                      and content_str.startswith("http") else "tool_result")
         latency_ms = declare_latency_ms(input.get("latencyMs"))
+        tool_effect = tool_effect_of(input.get("toolEffect"))
 
         existing = self._declared.get(ref)
         if existing is None:
@@ -254,7 +279,7 @@ class Tracer:
             }
             self._declared[ref] = page
             self._all_declared[f"{ref}|{hash_val}"] = tokens
-            self._declare_page(ref, hash_val, kind, tokens, latency_ms)
+            self._declare_page(ref, hash_val, kind, tokens, latency_ms, tool_effect)
             self._pending_recall.discard(ref)
             return {"logicalRef": ref, "contentHash": hash_val, "tokens": tokens}
 
@@ -269,7 +294,7 @@ class Tracer:
             existing["revealed"] = False
             existing["revealedAtPrev"] = False
             self._all_declared[f"{ref}|{hash_val}"] = tokens
-            self._declare_page(ref, hash_val, kind, tokens, latency_ms)
+            self._declare_page(ref, hash_val, kind, tokens, latency_ms, tool_effect)
             self._pending_recall.discard(ref)
         return {"logicalRef": ref, "contentHash": existing["tokens"] and existing["contentHash"]
                 or hash_val, "tokens": existing["tokens"]}
@@ -532,6 +557,11 @@ class CtxvmPlugin:
             "tool": tool,
             "args": payload.get("args"),
             "content": body,
+            # W15 (§R7): the adapter stamps the registration-time class on the
+            # payload; the core carries it verbatim and classifies nothing.
+            # Unclassified payloads (creator scripts, older callers) keep the
+            # absence — consumers fail safe to MUTATING.
+            "toolEffect": payload.get("toolEffect"),
         })
 
     def on_pre_api_request(self, payload: Dict[str, Any]) -> None:

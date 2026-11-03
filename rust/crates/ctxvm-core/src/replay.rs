@@ -130,6 +130,7 @@ mod tests {
         Event::PageDeclare {
             page: PageRef { id, kind: PageKind::File, tokens },
             latency_ms: None,
+            tool_effect: None,
             ts: None,
             turn: None,
         }

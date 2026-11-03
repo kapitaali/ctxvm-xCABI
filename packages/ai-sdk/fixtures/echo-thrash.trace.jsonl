@@ -1,5 +1,5 @@
 {"type":"session.open","agentId":"ctxvm-ai-sdk","model":"ctxvm-mock/echo-model","provider":"ctxvm-mock","budgetTokens":120000,"tokenizerId":"apx4-char","schemaVersion":"0.1"}
-{"type":"page.declare","page":{"id":{"logicalRef":"tool:echo({\"message\":\"hello\"})","contentHash":"sha256:95240857"},"kind":"tool_result","tokens":4},"turn":0}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:echo({\"message\":\"hello\"})","contentHash":"sha256:95240857"},"kind":"tool_result","tokens":4},"turn":0,"toolEffect":"MUTATING"}
 {"type":"page.render","turn":1,"page":{"logicalRef":"tool:echo({\"message\":\"hello\"})","contentHash":"sha256:95240857"},"mode":"full"}
 {"type":"page.fault","turn":1,"page":{"logicalRef":"tool:echo({\"message\":\"hello\"})","contentHash":"sha256:95240857"},"source":"tool_recall"}
 {"type":"turn.render","turn":0,"residentTokens":4,"evictedTokens":0,"headroom":119996,"prefix":{"source":"unknown"}}

@@ -189,6 +189,22 @@ def live_message(role: str, text: str) -> dict:
     return {"role": role, "content": text}
 
 
+# W15 (RFC-0.1 §R7): the live-shape beats emulate the hermes ADAPTER path, and
+# hermes tags a side-effect class at tool registration — READ_ONLY for the
+# registry's read/search bucket (hermes-agent/model_tools.py:615
+# `_READ_SEARCH_TOOLS`), MUTATING for everything else (fail safe). Same table
+# as packages/hermes/live `_HERMES_READ_ONLY_TOOLS`. The frozen m3 legacy
+# sessions keep their byte-identical pre-W15 shape and are NOT tagged.
+_LIVE_READ_ONLY_TOOLS = frozenset({"read_file", "search_files"})
+
+
+def _tag_effect(payload):
+    """Stamp the registration-time side-effect class on a post-tool payload."""
+    payload["toolEffect"] = ("READ_ONLY" if payload.get("tool_name") in _LIVE_READ_ONLY_TOOLS
+                             else "MUTATING")
+    return payload
+
+
 def make_live_shape_trace():
     """The m3 echo beats, through the LIVE shapes (all-string content,
     `tool_name` hooks, `"ok"` status results as plain strings — the W5-observed
@@ -214,7 +230,9 @@ def make_live_shape_trace():
             if payload_type == "pre":
                 plugin.on_pre_tool_call(payload)
             else:
-                plugin.on_post_tool_call(payload)
+                # W15: tag the class first, like the live adapter does — the
+                # core receives an already-classified payload and forwards it.
+                plugin.on_post_tool_call(_tag_effect(payload))
         turn_history = [live_message(role, text) for role, text in history_lines]
         history.extend(turn_history)
         plugin.on_pre_llm_call({"session_id": sid, "conversation_history": turn_history})

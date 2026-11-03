@@ -71,6 +71,33 @@ export interface CtxvmPlugin {
   tracerFor(sessionID: string): Tracer;
 }
 
+/**
+ * W15 / RFC-0.1 §R7: registration-time tool classification.
+ *
+ * OpenCode exposes no host tool registry to a plugin, so registration happens in
+ * code, from this harness's own documented read tools, plus an owner extension via
+ * CTXVM_READONLY_TOOLS (comma-separated names) — an extension, never a requirement:
+ * classification works with zero environment set. Everything else is MUTATING, the
+ * fail-safe default. Classes derive from the tool NAME only, never model text or
+ * result content, and nothing here prevents a mutating call from running.
+ */
+const OPENCODE_READ_ONLY_TOOLS = new Set(["read", "glob", "grep", "list", "webfetch"]);
+
+function readOnlyTable(): Set<string> {
+  const table = new Set(OPENCODE_READ_ONLY_TOOLS);
+  for (const name of (process.env.CTXVM_READONLY_TOOLS ?? "").split(",")) {
+    const trimmed = name.trim();
+    if (trimmed) table.add(trimmed);
+  }
+  return table;
+}
+
+const READ_ONLY = readOnlyTable();
+
+function toolEffectOf(tool: string | undefined): "READ_ONLY" | "MUTATING" {
+  return tool !== undefined && READ_ONLY.has(tool) ? "READ_ONLY" : "MUTATING";
+}
+
 export function createCtxvmPlugin(init: PluginInit): CtxvmPlugin {
   const tracers = new Map<string, Tracer>();
   const vmFor = (sessionID: string): Tracer => {
@@ -101,7 +128,12 @@ export function createCtxvmPlugin(init: PluginInit): CtxvmPlugin {
       if (payload.status !== "completed") return; // errors are not pages (T6 §2)
       const body = contentToPageBody(payload.result.content);
       void contentHash(body); // identity is computed inside page(); kept explicit for parity with the T6 §2 doc
-      vmFor(payload.sessionID).page({ tool: payload.tool, args: payload.input as Json, content: body });
+      vmFor(payload.sessionID).page({
+        tool: payload.tool,
+        args: payload.input as Json,
+        content: body,
+        toolEffect: toolEffectOf(payload.tool),
+      });
       // result.metadata (incl. toolOutput.truncate marks) is call.meta material — parked
       // (design/mcp-shim.md §6); see README for the truncation-approximation note.
     },

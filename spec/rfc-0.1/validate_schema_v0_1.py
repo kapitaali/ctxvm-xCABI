@@ -45,6 +45,12 @@ NEGATIVES = [
     {"type": "turn.render", "turn": 0, "residentTokens": 1, "evictedTokens": 0, "prefix": {"toolSchemas": 23, "source": "billed"}},
     # negative count inside prefix
     {"type": "turn.render", "turn": 0, "residentTokens": 1, "evictedTokens": 0, "prefix": {"toolSchemas": -1, "source": "measured"}},
+    # W15: toolEffect must be one of the two wire classes, never lowercase prose
+    {"type": "page.declare", "page": {"id": {"logicalRef": "x", "contentHash": "h"}, "kind": "tool_result", "tokens": 1}, "turn": 0, "toolEffect": "read_only"},
+    # W15: null is not absence — the key is omitted when a tool is unclassified
+    {"type": "page.declare", "page": {"id": {"logicalRef": "x", "contentHash": "h"}, "kind": "tool_result", "tokens": 1}, "turn": 0, "toolEffect": None},
+    # W15: a class on a non-tool page (semantic gate below)
+    {"type": "page.declare", "page": {"id": {"logicalRef": "x", "contentHash": "h"}, "kind": "file", "tokens": 1}, "turn": 0, "toolEffect": "MUTATING"},
     # null providerUsage (must be omitted, never null)
     {"type": "call.meta", "turn": 0, "provider": "p", "cacheEstimate": {"estHitTokens": 0, "estMissTokens": 0, "providerReported": False}, "providerUsage": None},
 ]
@@ -53,6 +59,12 @@ NEGATIVES = [
 def validate_line(obj):
     # jsonschema validation against v0.1 schema
     jsonschema.validate(obj, SCHEMA)
+    # W15 §R7 semantic gate: a side-effect class is a property of the tool CALL
+    # that produced the page, so it is valid only on kind == "tool_result".
+    if obj.get("type") == "page.declare" and obj.get("toolEffect") is not None:
+        if ((obj.get("page") or {}).get("kind")) != "tool_result":
+            raise ValueError(f"toolEffect requires kind tool_result, got {obj['page'].get('kind')!r}")
+
     # semantic ts check (real calendar date)
     ts = None
     for k in ("ts",):
@@ -100,6 +112,7 @@ def main():
         {"type": "session.open", "agentId": "a", "model": "m", "provider": "p", "budgetTokens": 1, "tokenizerId": "t", "schemaVersion": "0.1"},
         {"type": "page.declare", "page": {"id": {"logicalRef": "x", "contentHash": "h"}, "kind": "file", "tokens": 1}, "turn": 1},
         {"type": "turn.render", "turn": 0, "residentTokens": 1, "evictedTokens": 0, "prefix": {"toolSchemas": 23, "source": "measured"}},
+        {"type": "page.declare", "page": {"id": {"logicalRef": "x", "contentHash": "h"}, "kind": "tool_result", "tokens": 1}, "turn": 0, "toolEffect": "MUTATING"},
     ]
     for neg in v0_1_only:
         try:

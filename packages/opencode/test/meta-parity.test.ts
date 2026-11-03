@@ -21,7 +21,10 @@ const CANONICAL_EVENT_KEYS: Record<string, string[]> = {
   // an ACCEPTED-BUT-UNEMITTED slot — this lane's hook terrain carries no timing
   // facts, so the table stays true to the wire (the providerUsage precedent:
   // optional fields enter the table when the fixture exercises them).
-  "page.declare": ["page", "ts", "turn", "type"],
+  // W15 (§R7): `toolEffect` rides between latencyMs and ts when the adapter
+  // classified the call at registration (this lane: always, MUTATING unless the
+  // name is in its read table). ts stays last.
+  "page.declare": ["page", "toolEffect", "ts", "turn", "type"],
   "page.fault": ["page", "source", "turn", "ts", "type"],
   "page.render": ["mode", "page", "turn", "ts", "type"],
   "turn.render": ["evictedTokens", "headroom", "prefix", "residentTokens", "turn", "ts", "type"],

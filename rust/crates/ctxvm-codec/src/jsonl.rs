@@ -56,7 +56,7 @@ impl From<serde_json::Error> for CodecError {
 /// (i.e. the vector corpus exercises every declared field).
 const FIELD_ALLOWLIST: &[(&str, &[&str])] = &[
     ("session.open", &["agentId", "model", "provider", "budgetTokens", "tokenizerId", "schemaVersion", "ts"]),
-    ("page.declare", &["page", "turn", "latencyMs", "ts"]),
+    ("page.declare", &["page", "turn", "latencyMs", "toolEffect", "ts"]),
     ("page.render", &["turn", "page", "mode", "ts"]),
     ("page.evict", &["turn", "page", "stubText", "ts"]),
     ("page.fault", &["turn", "page", "source", "latencyMs", "ts"]),
@@ -172,6 +172,7 @@ mod tests {
                 page: PageRef { id: page(), kind: PageKind::ToolResult, tokens: 8200 },
                 turn: None,
                 latency_ms: None,
+                tool_effect: None,
                 ts: None,
             },
             Event::PageRender { turn: 0, page: page(), mode: RenderMode::Full, ts: None },
@@ -321,8 +322,16 @@ mod tests {
 #[cfg(test)]
 mod rfc01_tests {
     use super::*;
-    use crate::{CacheEstimate, Event, FaultSource, PageId, PrefixCost, ProviderUsage};
+    use crate::{CacheEstimate, Event, FaultSource, PageId, PageKind, PageRef, PrefixCost, ProviderUsage, ToolEffect};
     use crate::model::check_version;
+
+    /// Same fixture identity as `tests::page()` (this module has its own scope).
+    fn page() -> PageId {
+        PageId {
+            logical_ref: "tool:read_file(path=\"src/auth/session.ts\")".into(),
+            content_hash: "sha256:9f2ac17d".into(),
+        }
+    }
 
     #[test]
     fn intentional_rerun_round_trips() {
@@ -411,6 +420,85 @@ mod rfc01_tests {
             headroom: None, ts: None, prefix: Some(unknown) });
         assert!(!line.contains("toolSchemas"), "unknown must omit the count, never coerce it to 0");
         assert!(line.contains("\"source\":\"unknown\""));
+    }
+
+    #[test]
+    fn w15_tool_effect_roundtrips_between_latency_and_ts() {
+        // W15 §R7: key order is type,page,turn,latencyMs?,toolEffect?,ts — ts
+        // still rides last; the class reflects the registration table, not the
+        // model text.
+        let decl = |tool_effect: Option<ToolEffect>| Event::PageDeclare {
+            page: PageRef { id: page(), kind: PageKind::ToolResult, tokens: 19 },
+            turn: Some(0),
+            latency_ms: Some(42),
+            tool_effect,
+            ts: Some("2026-10-29T15:16:58.120Z".into()),
+        };
+        let ev = decl(Some(ToolEffect::ReadOnly));
+        let line = to_line(&ev);
+        assert_eq!(ev, parse_line(&line).unwrap(), "toolEffect must survive a JSONL round trip");
+        let tool = line.find("\"toolEffect\"").expect("toolEffect emitted");
+        let latency = line.find("\"latencyMs\"").expect("latencyMs emitted");
+        let late_ts = line.find("\"ts\"").expect("ts emitted");
+        assert!(latency < tool && tool < late_ts, "order must be latencyMs, toolEffect, ts — got {line}");
+        assert!(line.contains("\"toolEffect\":\"READ_ONLY\""), "{line}");
+        // unclassified stays absent (the core never invents a class).
+        let bare_line = to_line(&decl(None));
+        assert_eq!(bare_line.find("\"toolEffect\""), None);
+    }
+
+    #[test]
+    fn w15_tool_effect_is_version_gated() {
+        let v0 = vec![
+            Event::SessionOpen {
+                agent_id: "demo-agent".into(),
+                model: "openai/gpt-5".into(),
+                provider: "openai".into(),
+                budget_tokens: 120_000,
+                tokenizer_id: "tiktoken-o200k_base".into(),
+                schema_version: None,
+                ts: None,
+            },
+            Event::PageDeclare {
+                page: PageRef { id: page(), kind: PageKind::ToolResult, tokens: 19 },
+                turn: None,
+                latency_ms: None,
+                tool_effect: Some(ToolEffect::Mutating),
+                ts: None,
+            },
+        ];
+        let err = check_version(&v0).unwrap_err();
+        assert!(err.contains("toolEffect requires schemaVersion"), "got: {err}");
+        let mut v01 = v0;
+        if let Event::SessionOpen { schema_version, .. } = &mut v01[0] {
+            *schema_version = Some("0.1".into());
+        }
+        check_version(&v01).unwrap();
+    }
+
+    #[test]
+    fn w15_tool_effect_requires_tool_result_kind() {
+        let v01_only = vec![
+            Event::SessionOpen {
+                agent_id: "demo-agent".into(),
+                model: "openai/gpt-5".into(),
+                provider: "openai".into(),
+                budget_tokens: 120_000,
+                tokenizer_id: "tiktoken-o200k_base".into(),
+                schema_version: Some("0.1".into()),
+                ts: None,
+            },
+            // a file page is not a tool call — the class is invalid on it.
+            Event::PageDeclare {
+                page: PageRef { id: page(), kind: PageKind::File, tokens: 19 },
+                turn: Some(0),
+                latency_ms: None,
+                tool_effect: Some(ToolEffect::Mutating),
+                ts: None,
+            },
+        ];
+        let err = check_version(&v01_only).unwrap_err();
+        assert!(err.contains("toolEffect requires kind tool_result"), "got: {err}");
     }
 
 }

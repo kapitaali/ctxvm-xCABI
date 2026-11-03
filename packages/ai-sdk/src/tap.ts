@@ -28,6 +28,26 @@ export interface TapStats {
   steps: number;
 }
 
+/**
+ * W15 / RFC-0.1 §R7: registration-time classification for the ai-sdk lane. The
+ * middleware sees tool names, not a registry, so the table is code plus the owner
+ * extension CTXVM_READONLY_TOOLS. Unregistered names are MUTATING (fail safe).
+ */
+const AI_SDK_READ_ONLY_TOOLS = new Set(["read", "glob", "grep", "list", "webfetch"]);
+
+const READ_ONLY_TOOLS = (() => {
+  const table = new Set(AI_SDK_READ_ONLY_TOOLS);
+  for (const name of (process.env.CTXVM_READONLY_TOOLS ?? "").split(",")) {
+    const trimmed = name.trim();
+    if (trimmed) table.add(trimmed);
+  }
+  return table;
+})();
+
+function toolEffectOf(tool: string): "READ_ONLY" | "MUTATING" {
+  return READ_ONLY_TOOLS.has(tool) ? "READ_ONLY" : "MUTATING";
+}
+
 export function newTapStats(): TapStats {
   return {
     toolCalls: 0,
@@ -107,7 +127,12 @@ export async function* ctxvmTap<TPart extends object>(
             break;
           }
           stats.toolResults += 1;
-          vm.page({ tool: str(p.toolName), args: p.input as Json, content: p.output as Json });
+          vm.page({
+            tool: str(p.toolName),
+            args: p.input as Json,
+            content: p.output as Json,
+            toolEffect: toolEffectOf(str(p.toolName)),
+          });
           witness(`tool-result tool=${str(p.toolName)} — page`);
           break;
         case "tool-error":

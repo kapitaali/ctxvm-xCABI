@@ -343,6 +343,21 @@ def _budget_from_env() -> int:
     return value if value > 0 else 200000
 
 
+# W15 (RFC-0.1 §R7): the side-effect class is decided at tool REGISTRATION and
+# is never inferred from model text or result content. The table mirrors
+# hermes-agent's own read/search bucket (hermes-agent/model_tools.py:615,
+# `_READ_SEARCH_TOOLS`) so a hermes capture reports registration-true classes.
+# Everything outside the table is MUTATING — the fail-safe default; the v0.1
+# consumer law treats an absent toolEffect the same way, so older producers
+# replay without a safety upgrade. Audit only: no WAL, no precondition check,
+# no claim that MUTATING tools are actually prevented from running.
+_HERMES_READ_ONLY_TOOLS: frozenset[str] = frozenset({"read_file", "search_files"})
+
+
+def _tool_effect(tool: Any) -> str:
+    return "READ_ONLY" if tool in _HERMES_READ_ONLY_TOOLS else "MUTATING"
+
+
 def _transcript_texts(history: Optional[list[dict[str, Any]]]) -> str:
     """All text entering the compose window this turn (user + assistant + tool summaries)."""
     parts: list[str] = []
@@ -681,6 +696,9 @@ def register(ctx) -> None:
             stats["errored"] += 1
         else:
             stats["completed"] += 1
+        # W15 (§R7): tag the class at registration time, on the payload the
+        # core receives; the core forwards it verbatim and classifies nothing.
+        kwargs["toolEffect"] = _tool_effect(kwargs.get("tool"))
         features = _features()
         vm = _ensure_plugin()
         if vm is not None:

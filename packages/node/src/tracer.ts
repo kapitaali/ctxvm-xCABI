@@ -29,6 +29,13 @@ export type PageKind = "file" | "tool_result" | "summary" | "image_ref";
 export type FaultSource = "tool_recall" | "identifier_scan" | "explicit_api" | "semantic";
 
 /**
+ * W15 / RFC-0.1 §R7: side-effect class tagged at tool REGISTRATION by the harness
+ * adapter. Never inferred from model text or result content; an unregistered tool
+ * is MUTATING (fail safe), and an absent class means the adapter could not tell.
+ */
+export type ToolEffect = "READ_ONLY" | "MUTATING";
+
+/**
  * RFC-0.1 W13: the static cost billed on every turn whether or not any page is touched.
  * Every counter is optional so a harness that cannot see its request reports
  * `source: "unknown"` instead of a zero it did not measure.
@@ -75,6 +82,8 @@ export interface PageInput {
    * or invalid ⇒ the key is omitted, never null/float-coerced.
    */
   latencyMs?: number;
+  /** W15 §R7: registration-time class supplied by the adapter, never inferred. */
+  toolEffect?: ToolEffect;
 }
 
 export interface RecallInput {
@@ -188,6 +197,16 @@ interface Page {
   identities: readonly string[];
 }
 
+/**
+ * W15 §R7 strict intake: the class is registration-owned, so a value outside the
+ * union is a caller bug — throw rather than coerce, or a typo becomes a policy.
+ */
+function toolEffectOf(value: unknown): ToolEffect | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (value === "READ_ONLY" || value === "MUTATING") return value;
+  throw new Error(`toolEffect must be READ_ONLY or MUTATING (registration-time tag), got ${JSON.stringify(value)}`);
+}
+
 export function createTrace(init: TraceInit): Tracer {
   const events: object[] = [];
   const tokenizerId = init.tokenizerId ?? "apx4-char";
@@ -275,6 +294,7 @@ export function createTrace(init: TraceInit): Tracer {
     kind: PageKind,
     tokens: number,
     latencyMs: number | undefined,
+    toolEffect: ToolEffect | undefined,
   ): void => {
     const t = turn < 0 ? 0 : turn;
     const e: Record<string, unknown> = {
@@ -283,6 +303,8 @@ export function createTrace(init: TraceInit): Tracer {
       turn: t,
     };
     if (latencyMs !== undefined) e.latencyMs = latencyMs;
+    // W15 §R7: the class rides between latencyMs and ts (ts must land last).
+    if (toolEffect !== undefined) e.toolEffect = toolEffect;
     push(e);
   };
 
@@ -306,6 +328,7 @@ export function createTrace(init: TraceInit): Tracer {
       const tokens = input.tokens ?? approx4(content);
       const kind = input.kind ?? inferKind(content);
       const declareLatency = declareLatencyOf(input);
+      const toolEffect = toolEffectOf(input.toolEffect);
 
       const existing = declared.get(ref);
       if (existing === undefined) {
@@ -320,7 +343,7 @@ export function createTrace(init: TraceInit): Tracer {
         };
         declared.set(ref, p);
         allDeclared.set(`${ref}|${hash}`, tokens);
-        declarePage(ref, hash, kind, tokens, declareLatency);
+        declarePage(ref, hash, kind, tokens, declareLatency, toolEffect);
         // A page can only be a double fetch if it pre-existed; a first call's own landing
         // is not waste (T6 §4 hash-before-count honesty).
         pendingRecall.delete(ref);
@@ -338,7 +361,7 @@ export function createTrace(init: TraceInit): Tracer {
         existing.revealed = false;
         existing.revealedAtPrev = false;
         allDeclared.set(`${ref}|${hash}`, tokens); // fresh fetch ⇒ a second page key (ref, hash-v2)
-        declarePage(ref, hash, kind, tokens, declareLatency);
+        declarePage(ref, hash, kind, tokens, declareLatency, toolEffect);
         pendingRecall.delete(ref);
       }
       return { logicalRef: ref, contentHash: hash, tokens: existing.tokens };

@@ -385,6 +385,7 @@ mod tests {
         Event::PageDeclare {
             page: PageRef { id: id.clone(), kind, tokens },
             latency_ms: None,
+            tool_effect: None,
             ts: None,
             turn: None,
         }
@@ -461,6 +462,7 @@ mod rfc01_tests {
             page: PageRef { id, kind: PageKind::File, tokens },
             turn: None,
             latency_ms: None,
+            tool_effect: None,
             ts: None,
         }
     }
