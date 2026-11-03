@@ -684,6 +684,20 @@ payload carries `provider`, so the `provider: unknown` gap is now a small card, 
 
 **Prompt:** `08.1-UPDATE-PROMPT.md` gained W13–W16 (prefix, environment key, side-effect class,
 causal edges) plus a §9 line that forbids claiming a token saving we have not measured.
+
+**DAY CLOSE 2026-11-03 — W15 finished on a handover, W14, W16 design, one flake.**
+W15 (`3efc250`): `page.declare.toolEffect` (READ_ONLY|MUTATING), registration-owned, name-only,
+fail-safe, valid only on tool_result; the draft's three defects fixed (fused docstring line blocking
+the Python gate, nested check_version, unstarted TS lane). W14 (`b6fb370`): `session.open.
+environmentId` = env- plus 12 hex over the credential-stripped remote or the worktree path — digest
+only, no path/remote/branch; opencode+ai-sdk derive from cwd, HERMES EMITS ONLY FROM AN EXPLICIT
+`CTXVM_ENVIRONMENT_ID` because the gateway process's cwd is not the session's workspace. W16
+(`3261df6`): design note only — a page/turn DAG is derivable at zero bytes, instance identity is
+not, and all three lanes already expose a per-call id. Flake (`3073532`): the gate went red on a
+docs-only commit and green on an immediate re-run of the same commit; recorded with the next step
+(capture the failing suite's stdout) rather than treated as fixed. Tests: rust 70, ts 21+61+45,
+python 104+44+8, validator OK, ALL GATES GREEN; plugin 0.6.0. **Live confirmation of prefix,
+toolEffect and the READ_ONLY:MUTATING split still needs a gateway restart.**
 **Next frontier 8 (W8 prereg landed; status 2026-11-01):** owner ratifies the freeze +
 names the model/price row + climbs the implementation-card gate (ctxvm context-engine
 plugin + hermes `post_api_request` usage wiring + `tools/dq-secret-scan.py` + frozen
