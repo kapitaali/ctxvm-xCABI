@@ -36,6 +36,7 @@ never mutates messages, never evicts, never throws on semantic conditions).
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -79,7 +80,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.7.0"
+PLUGIN_VERSION = "0.8.0"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -516,6 +517,105 @@ def _environment_id() -> Optional[str]:
     return value if _ENVIRONMENT_ID_RE.match(value) else None
 
 
+_GIT_REMOTE_CACHE: Dict[str, str] = {}
+
+
+def _normalize_remote(url: str) -> str:
+    """Canonical remote form: no scheme, no credentials, no port, no `.git`, lowercase.
+
+    `https://user:token@host/Org/Repo.git` and `git@host:Org/Repo.git` are the same
+    repository and must hash to the same id — that is the whole point of normalising.
+    An explicit port (`host:2222/path`) folds into the path; it is deterministic, and
+    the id is only ever compared with ids produced by the same rule.
+    """
+    value = url.strip()
+    if "://" in value:
+        value = value.split("://", 1)[1]
+    at = value.rfind("@")
+    if at >= 0:
+        value = value[at + 1 :]
+    value = value.replace(":", "/", 1)
+    if value.endswith(".git"):
+        value = value[: -len(".git")]
+    return value.lower()
+
+
+def _git_remote(cwd: str) -> str:
+    """`remote.origin.url` for a directory, cached and tightly bounded.
+
+    One subprocess per directory, not per event: this runs when a session's tracer is
+    created. A missing git, a non-repo, or a timeout all yield "" and the caller falls
+    back to the path basis.
+    """
+    if cwd in _GIT_REMOTE_CACHE:
+        return _GIT_REMOTE_CACHE[cwd]
+    remote = ""
+    try:
+        import shutil
+        import subprocess
+
+        if shutil.which("git"):
+            done = subprocess.run(
+                ["git", "-C", cwd, "config", "--get", "remote.origin.url"],
+                capture_output=True, text=True, timeout=1.5,
+            )
+            if done.returncode == 0:
+                remote = done.stdout.strip()
+    except (OSError, ValueError, subprocess.SubprocessError):  # type: ignore[name-defined]
+        remote = ""
+    _GIT_REMOTE_CACHE[cwd] = remote
+    return remote
+
+
+def _derive_environment_id(cwd: str) -> Optional[str]:
+    """W14 §R8 digest-only environment id for a workspace path.
+
+    `env-` + 12 hex of sha256 over `remote:<normalized remote>` when the directory is a
+    clone with an origin, else `path:<absolute path>`. Only the digest is emitted; the
+    path and the remote never reach the trace.
+    """
+    if not cwd:
+        return None
+    try:
+        resolved = str(Path(cwd).resolve())
+    except OSError:
+        return None
+    if not os.path.isdir(resolved):
+        return None
+    remote = _git_remote(resolved)
+    basis = f"remote:{_normalize_remote(remote)}" if remote else f"path:{resolved}"
+    digest = hashlib.sha256(basis.encode("utf-8")).hexdigest()
+    return f"env-{digest[:12]}"
+
+
+def _session_environment_id(session_id: str) -> Optional[str]:
+    """Per-session environment id: explicit registration wins, else the host's workspace.
+
+    Hermes exposes the calling session's recorded working directory to a plugin handle
+    (`ctx.session_cwd()` — hermes_cli/plugins.py:605, backed by hermes_cli/plugin_session.py
+    whose docstring says explicitly it is "never the gateway process's own cwd"). That is
+    a host-owned fact, so deriving from it is registration, not inference. An empty
+    string means the host records none, and then the key is absent.
+    """
+    explicit = _environment_id()
+    if explicit:
+        return explicit
+    cache = _state().setdefault("env_by_session", {})
+    if session_id in cache:
+        return cache[session_id]
+    derived: Optional[str] = None
+    ctx = _state().get("ctx")
+    getter = getattr(ctx, "session_cwd", None) if ctx is not None else None
+    if callable(getter):
+        try:
+            cwd = getter()
+        except Exception:  # fail-open: a hook must never raise into the host
+            cwd = ""
+        if isinstance(cwd, str):
+            derived = _derive_environment_id(cwd)
+    cache[session_id] = derived
+    return derived
+
 def _make_plugin() -> Optional[Any]:
     """Create a tracer plugin if tracing is enabled; None otherwise.
 
@@ -540,6 +640,8 @@ def register(ctx) -> None:
     """Hermes plugin entry point. Hooks always registered; tracing gated lazily."""
     state = _state()
     state["register_calls"] += 1
+    # The plugin handle is how the host exposes per-session facts (session_cwd), so keep it.
+    state["ctx"] = ctx
     state["ctx_identity"] = _identity_from_settings(ctx)
     _witness(f"init name={state.get('trace_name') or os.environ.get('CTXVM_TRACE_NAME') or '<session-id>'}")
     if state["ctx_identity"]:
@@ -685,7 +787,20 @@ def register(ctx) -> None:
 
     # --- Hook handlers ------------------------------------------------------
 
+    def _stamp_environment(kwargs: Dict[str, Any]) -> None:
+        """Attach the session's environment id to a hook payload, if one is derivable.
+
+        Every hook carries `session_id`, and `on_session_start` does not fire in every
+        build — so the stamp cannot live there alone; whichever hook creates the tracer
+        first must carry the key.
+        """
+        session_id = kwargs.get("session_id", "") or ""
+        environment = _session_environment_id(session_id)
+        if environment:
+            kwargs["environmentId"] = environment
+
     def on_session_start(**kwargs: Any) -> None:
+        _stamp_environment(kwargs)
         stats["session_starts"] += 1
         _witness(f"session_start identity={identity_from_payload(kwargs)}")
         features = _features()
@@ -698,6 +813,7 @@ def register(ctx) -> None:
             uc.on_session_start(kwargs)
 
     def on_pre_tool_call(**kwargs: Any) -> None:
+        _stamp_environment(kwargs)
         stats["pre_tool_calls"] += 1
         _witness(f"before tool={kwargs.get('tool')}")
         features = _features()
@@ -710,6 +826,7 @@ def register(ctx) -> None:
             uc.on_pre_tool_call(kwargs)
 
     def on_post_tool_call(**kwargs: Any) -> None:
+        _stamp_environment(kwargs)
         stats["post_tool_calls"] += 1
         status = kwargs.get("status")
         _witness(f"after tool={kwargs.get('tool')} status={status}")
@@ -731,6 +848,7 @@ def register(ctx) -> None:
             uc.on_post_tool_call(kwargs)
 
     def on_pre_llm_call(**kwargs: Any) -> None:
+        _stamp_environment(kwargs)
         stats["pre_llm_calls"] += 1
         _witness("pre_llm (context)")
         features = _features()
@@ -744,6 +862,7 @@ def register(ctx) -> None:
             uc.on_pre_llm_call(kwargs)
 
     def on_session_end(**kwargs: Any) -> None:
+        _stamp_environment(kwargs)
         stats["session_ends"] += 1
         _witness("session_end -> flush all tracers")
         features = _features()
@@ -1248,6 +1367,7 @@ def register(ctx) -> None:
     ctx.register_hook("post_tool_call", on_post_tool_call)
     def on_pre_api_request(**kwargs: Any) -> None:
         """W13: the request the model is about to receive — static cost, per turn."""
+        _stamp_environment(kwargs)
         stats["events_seen"] = stats.get("events_seen", 0) + 1
         if not _traced():
             return

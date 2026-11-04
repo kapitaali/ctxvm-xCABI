@@ -78,6 +78,19 @@ Audit only: this revision adds no write-ahead log, no dry-run execution, and no 
   origin, or
 - `path:<absolute worktree path>` otherwise.
 
+Normalization, so that one repository has one id whatever the transport:
+
+1. drop the scheme (`https://`, `ssh://`, …);
+2. drop userinfo (everything up to the last `@`);
+3. replace the first `:` with `/` (scp form `git@host:org/repo` → `host/org/repo`; an explicit port
+   folds into the path, deterministically);
+4. drop a trailing `.git`;
+5. lowercase.
+
+`https://user:token@host/Org/Repo.git` and `git@host:Org/Repo.git` therefore agree, which is the
+point of normalising. Both implementations must match: `_normalize_remote` (`packages/hermes/live`)
+and `normalizeRemote` (`packages/node/src/tracer.ts`).
+
 Only the digest reaches the trace. A path, a remote name, a branch name or a host name never does:
 the id is opaque by construction, so one repository has one id across machines and clones while the
 trace reveals nothing about where it lives. Branch is deliberately excluded — branch names change

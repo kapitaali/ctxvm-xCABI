@@ -367,14 +367,22 @@ file is a silent no-op — and `plugin.yaml` is what the host displays.
 |---|---|---|
 | opencode | `deriveEnvironmentId(process.cwd())` — remote first, worktree path otherwise | never (the plugin runs in the project) |
 | ai-sdk | same, unless the caller passes one | never (same reason) |
-| hermes | explicit `CTXVM_ENVIRONMENT_ID` only | the operator did not register one |
+| hermes | `ctx.session_cwd()` — the host's own recorded session workspace (`hermes_cli/plugins.py:605`, backed by `hermes_cli/plugin_session.py`, whose docstring says it is "never the gateway process's own cwd"). An explicit `CTXVM_ENVIRONMENT_ID` still wins. | the host records no workspace for the session |
 
-Hermes is the exception on purpose. The plugin executes inside the gateway process, so `cwd` is the
-gateway's working directory, not the session's project; hashing it would produce one fake
-environment shared by every session — a measured-looking number that means nothing. The host exposes
-no workspace fact in any hook payload audited so far (`on_session_start`, `pre_tool_call`,
-`post_tool_call`, `pre_llm_call`, `pre_api_request`, `on_session_end`), so the honest answer is
-absence.
+Hermes was the exception until 2026-11-04 and no longer is. The plugin still must not hash
+`os.getcwd()`: it executes inside the gateway process, whose working directory is the install root and
+is shared by every session. But the host does expose the session's own recorded workspace to a plugin
+handle — `ctx.session_cwd()`, documented as "never the gateway process's own cwd" — so the hermes lane
+derives the id from that, per session, and only reports absence when the host records none.
+
+What the host does **not** put in any hook payload is a workspace path (`on_session_start`,
+`pre_tool_call`, `post_tool_call`, `pre_llm_call`, `pre_api_request`, `on_session_end` were all
+audited). The value comes from the plugin handle, not the payload, which is why the adapter stamps it
+onto the payload itself before the tracer sees it.
+
+Both derivations must agree: `_normalize_remote` in the hermes adapter and `normalizeRemote` in the
+node tracer are the same rule (drop scheme, credentials, port and `.git`; lowercase). Checked:
+`/home/theb/Documents/ctxvm` → `env-2b4652ae9d98` from both.
 
 ### 5.2 Side-effect classification — the registration table (W15, 2026-11-01)
 

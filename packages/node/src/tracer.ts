@@ -237,18 +237,20 @@ export function deriveEnvironmentId(dir: string, run?: (cmd: string, args: strin
   return `env-${digest.slice(0, 12)}`;
 }
 
-/** Strip credentials and a trailing `.git`; lowercase the host, keep the path's case. */
+/**
+ * Canonical remote form: no scheme, no credentials, no port, no `.git`, lowercase.
+ * `https://user:token@host/Org/Repo.git` and `git@host:Org/Repo.git` are one
+ * repository and must hash to one id — that is the point of normalising. Mirrors
+ * the hermes adapter's `_normalize_remote` exactly; a mismatch would break the
+ * cross-lane guarantee that one repository has one environment id.
+ */
 function normalizeRemote(url: string): string {
-  let value = url.trim().replace(/\.git$/, "");
-  const at = value.indexOf("@");
-  const scheme = value.indexOf("://");
-  if (scheme >= 0) {
-    const slash = value.indexOf("/", scheme + 3);
-    value = `${value.slice(0, scheme + 3)}${slash >= 0 ? value.slice(slash) : ""}`;
-  } else if (at >= 0) {
-    // scp-style `git@host:org/repo`
-    value = value.slice(at + 1).replace(":", "/");
-  }
+  let value = url.trim();
+  if (value.includes("://")) value = value.split("://", 2)[1] ?? "";
+  const at = value.lastIndexOf("@");
+  if (at >= 0) value = value.slice(at + 1);
+  value = value.replace(":", "/");
+  value = value.replace(/\.git$/, "");
   return value.toLowerCase();
 }
 

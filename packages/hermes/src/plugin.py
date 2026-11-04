@@ -486,6 +486,9 @@ def identity_from_payload(payload: Dict[str, Any]) -> Optional[Dict[str, str]]:
     Anything the host does not send stays unset and falls back to env at the call site.
     """
     found: Dict[str, str] = {}
+    environment = payload.get("environmentId")
+    if isinstance(environment, str) and environment.strip():
+        found["environmentId"] = environment.strip()
     for field, keys in _IDENTITY_KEYS:
         for key in keys:
             value = payload.get(key)
@@ -525,6 +528,9 @@ class CtxvmPlugin:
                 provider=identity.get("provider") or init.provider,
                 budget_tokens=init.budget_tokens,
                 tokenizer_id=init.tokenizer_id,
+                # W14 §R8: per session, because one gateway process can host many
+                # workspaces; the process-level id is only the fallback.
+                environment_id=identity.get("environmentId") or init.environment_id,
             )
         created = Tracer(init)
         self._tracers[session_id] = created

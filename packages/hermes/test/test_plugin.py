@@ -735,6 +735,149 @@ class LiveAdapterTests(unittest.TestCase):
         out = trace("")
         self.assertIn("Usage:", out)
 
+    def test_environment_id_derives_from_the_hosts_session_workspace(self):
+        """W14: the hermes lane derives the id from ctx.session_cwd(), per session.
+
+        The host exposes the calling session's recorded working directory to a plugin
+        handle and says explicitly it is never the gateway's own cwd — so this is a
+        registration-time fact, not an inference.
+        """
+        def run(cwd, name):
+            """One isolated capture: fresh process state, given workspace, one turn."""
+            _clear_env_for_tests()
+            out_dir = tempfile.mkdtemp(prefix=f"ctxvm-env-{name}-")
+            os.environ["CTXVM_TRACE_DIR"] = out_dir
+            os.environ["CTXVM_TRACE_NAME"] = name
+            cmds, cbs = {}, {}
+
+            class FakeCtx:
+                def register_hook(self, hook, cb):
+                    cbs[hook] = cb
+                    return lambda: None
+
+                def on_unload(self, cb):
+                    return None
+
+                def register_command(self, command, handler, description=""):
+                    cmds[command] = handler
+                    return None
+
+                def session_cwd(self):
+                    return cwd
+
+            register(FakeCtx())
+            # session_start does not fire in every build: the first pre_llm_call
+            # must carry the id, because that is what creates the tracer.
+            cbs["pre_llm_call"](session_id=f"ses-{name}", conversation_history=[], model="m")
+            cmds["ctxvm-trace"]("stop")
+            return json.loads(Path(out_dir, f"{name}.jsonl").read_text(encoding="utf-8").splitlines()[0])
+
+        a = tempfile.mkdtemp(prefix="ctxvm-ws-a-")
+        b = tempfile.mkdtemp(prefix="ctxvm-ws-b-")
+
+        first = run(a, "one").get("environmentId")
+        self.assertIsNotNone(first, "the workspace must yield an environment id")
+        self.assertRegex(first, r"^env-[0-9a-f]{12}$")
+        self.assertNotIn(Path(a).name, first, "the id must not carry the path")
+
+        same = run(a, "two").get("environmentId")
+        self.assertEqual(same, first, "one workspace, one id")
+
+        other = run(b, "three").get("environmentId")
+        self.assertNotEqual(other, first, "different workspaces differ")
+
+    def test_environment_id_prefers_the_git_remote_over_the_path(self):
+        """Two clones of one repository share an id; the remote never appears in it."""
+        import shutil
+        import subprocess
+
+        if shutil.which("git") is None:
+            self.skipTest("git not available")
+        import live as live_mod
+
+        def clone(remote: str, extra: str) -> str:
+            d = tempfile.mkdtemp(prefix=f"ctxvm-clone-{extra}-")
+            subprocess.run(["git", "init", "-q", d], check=True)
+            subprocess.run(["git", "-C", d, "remote", "add", "origin", remote], check=True)
+            return d
+
+        one = clone("https://user:token@git.example.com/Org/Repo.git", "one")
+        two = clone("git@git.example.com:Org/Repo.git", "two")
+        three = clone("https://git.example.com/Org/Other.git", "three")
+
+        a = live_mod._derive_environment_id(one)
+        b = live_mod._derive_environment_id(two)
+        c = live_mod._derive_environment_id(three)
+        self.assertEqual(a, b, "one remote, one environment, whatever the transport")
+        self.assertNotEqual(a, c, "different repositories differ")
+        self.assertRegex(a, r"^env-[0-9a-f]{12}$")
+        self.assertNotIn("git.example.com", a, "the remote must not leak into the id")
+        self.assertNotIn("token", a, "credentials must not reach the id")
+
+    def test_environment_id_absent_when_the_host_records_no_workspace(self):
+        """No workspace, no key — absence is the honest answer, not a hash of nothing."""
+        _clear_env_for_tests()
+        tmpfile = tempfile.mkdtemp(prefix="ctxvm-envn-")
+        os.environ["CTXVM_TRACE_DIR"] = tmpfile
+        os.environ["CTXVM_TRACE_NAME"] = "nw"
+        cmds, cbs = {}, {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                cbs[name] = cb
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+            def session_cwd(self):
+                return ""
+
+        register(FakeCtx())
+        cbs["pre_llm_call"](session_id="s1", conversation_history=[], model="m")
+        cmds["ctxvm-trace"]("stop")
+        opened = json.loads(Path(tmpfile, "nw.jsonl").read_text(encoding="utf-8").splitlines()[0])
+        self.assertNotIn("environmentId", opened)
+        os.environ.pop("CTXVM_TRACE_DIR", None)
+        os.environ.pop("CTXVM_TRACE_NAME", None)
+
+    def test_explicit_environment_id_outranks_the_host_workspace(self):
+        """A registered id is a deliberate statement; the host value must not override it."""
+        _clear_env_for_tests()
+        tmpfile = tempfile.mkdtemp(prefix="ctxvm-enve-")
+        wd = tempfile.mkdtemp(prefix="ctxvm-envw-")
+        os.environ["CTXVM_TRACE_DIR"] = tmpfile
+        os.environ["CTXVM_TRACE_NAME"] = "ex"
+        os.environ["CTXVM_ENVIRONMENT_ID"] = "env-0a1b2c3d4e5f"
+        cmds, cbs = {}, {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                cbs[name] = cb
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+            def session_cwd(self):
+                return wd
+
+        register(FakeCtx())
+        cbs["pre_llm_call"](session_id="s1", conversation_history=[], model="m")
+        cmds["ctxvm-trace"]("stop")
+        opened = json.loads(Path(tmpfile, "ex.jsonl").read_text(encoding="utf-8").splitlines()[0])
+        self.assertEqual(opened.get("environmentId"), "env-0a1b2c3d4e5f")
+        for key in ("CTXVM_TRACE_DIR", "CTXVM_TRACE_NAME", "CTXVM_ENVIRONMENT_ID"):
+            os.environ.pop(key, None)
+
     def test_environment_id_is_opaque_and_rides_before_ts(self):
         """W14: the environment id is a hash, never a path, and ts stays last."""
         init = TraceInit(agent_id="a", model="m", provider="p", budget_tokens=0,
