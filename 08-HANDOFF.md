@@ -698,6 +698,26 @@ docs-only commit and green on an immediate re-run of the same commit; recorded w
 (capture the failing suite's stdout) rather than treated as fixed. Tests: rust 70, ts 21+61+45,
 python 104+44+8, validator OK, ALL GATES GREEN; plugin 0.6.0. **Live confirmation of prefix,
 toolEffect and the READ_ONLY:MUTATING split still needs a gateway restart.**
+
+**DAY OPEN 2026-11-04 — two cards landed, then the live wire facts started proving out.**
+Books correction (`6070b0c`): the 11-03 index above was committed at 12:46 and named only the
+four commits that existed then; the day ran to 15:35. Hermes environmentId (`2d6bff5`):
+SUPERSEDES the clause in the 11-03 close above that reads "HERMES EMITS ONLY FROM AN EXPLICIT
+`CTXVM_ENVIRONMENT_ID`" — the audit found the opposite: hooks run in the gateway process's own
+cwd (`plugin_session.py`), but the plugin handle exposes the session workspace
+(`ctx.session_cwd()`, plugins.py:605, documented "never the gateway process's own cwd"), so the
+hermes lane derives the digest-only id per session, cached, explicit env still wins, empty
+workspace still absent, and each TraceInit carries its own id (one gateway, several workspaces).
+Remote normalisation was fixed in BOTH lanes at once (https and ssh forms of one repository
+hashed differently); python and node now AGREE (env-2b4652ae9d98 for this repository).
+First real 0.7.0-import capture (13:00, `reports/RR-LIVE-20261104.md`): **W13 prefix rides a
+real turn.render measured (toolSchemas 21)** and **W15 toolEffect rides every completed
+tool_result (terminal fails safe to MUTATING)** — two of the three pending facts PROVEN.
+`provider "unknown"` stands as the no-backfill absence until the owner writes
+`plugins.entries.ctxvm-tracer.settings.provider`; `environmentId` rides the NEXT capture
+because the restart (gateway PID 23146, 13:03:38) postdates the 0.8.0 sync (12:57:19); old
+traces keep (unknown) by append-only. Tests: hermes 112 + 44 + 8, node 21; ALL GATES GREEN;
+plugin 0.8.0 (yaml pinned by test).
 **Next frontier 8 (W8 prereg landed; status 2026-11-01):** owner ratifies the freeze +
 names the model/price row + climbs the implementation-card gate (ctxvm context-engine
 plugin + hermes `post_api_request` usage wiring + `tools/dq-secret-scan.py` + frozen

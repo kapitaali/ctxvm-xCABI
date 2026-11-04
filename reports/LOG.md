@@ -2,6 +2,7 @@
 
 | Report | Task | One-line summary |
 |---|---|---|
+| RR-LIVE-20261104 | LIVE-PROOF | First real captures after the W15/W14-hermes cards prove two of the three pending facts: W13 prefix rides a real turn.render with source measured (toolSchemas 21, messageCount 834, requestChars 1628596, approxInputTokens 407149, systemPromptBytes 61489) and W15 toolEffect rides every completed tool_result declare (terminal lands MUTATING fail-safe; errored calls page nothing). Honest absences recorded, both locater-backed: provider "unknown" is the no-backfill law (owner clears it via plugins.entries.ctxvm-tracer.settings.provider), and environmentId rides the NEXT capture because this one ran on in-memory 0.7.0 (gateway restarted PID 23146 at 13:03:38, AFTER the 0.8.0 sync 12:57:19) — old traces keep (unknown) by append-only |
 | RR-T0-20261022 | T0 | Repo init'd (main@bba1f8f); idempotent `tools/setup-env.sh` builds venvs/odps (py3.14) + venvs/odcs (py3.12, datacontract-cli); both verify green on 1st and 2nd run |
 | RR-T1a-20261022 | T1a | BLOCKED-at-DoD: rust/ workspace scaffold written; rustup user-local install removed at user request (global toolchain expected); finish = `cd rust && cargo test` |
 | RR-T1a-20261022 (RESOLUTION) | T1a | DONE: user installed global cargo/rustc 1.99.1; `cargo test` 4/4 green; note: non-login shells need `. "$HOME/.cargo/env"` |
