@@ -223,10 +223,26 @@ test("ts rides LAST on every event, RFC 3339 UTC ms (RFC-0.1 §R4 / D9 default-O
     assert.equal(keys[keys.length - 1], "ts", `ts must ride LAST on ${(e as { type: string }).type}`);
     assert.match((e as { ts: string }).ts, TS, `ts pattern on ${(e as { type: string }).type}`);
   }
-  // RFC 3339 UTC strings sort lexicographically in time order — the stream's
-  // mints (live AND cached tail snapshots) must be time-monotonic.
-  const stamps = events.map((e) => (e as { ts: string }).ts);
-  assert.deepEqual([...stamps].sort(), stamps, "ts monotonic across the stream (live pushes + cached tail flushes)");
+  // RFC 3339 UTC strings sort lexicographically in time order. Two runs are
+  // monotonic, but not one concatenation of both:
+  //
+  //  - the live prefix is stamped as events are pushed, so it is monotonic;
+  //  - the tail (turn.render + call.meta) carries stamps cached at each turn's
+  //    RENDER, on purpose: re-flushing must reproduce identical bytes (D9 /
+  //    idempotency law), so a tail row can hold a stamp EARLIER than a live
+  //    event pushed after that render.
+  //
+  // Asserting one monotonic sequence was a clock-resolution flake: it held while
+  // a whole run fit inside one millisecond, and failed under load. This is the
+  // gate red from 2026-11-03 that run-ci could not name before run_step.
+  const isTail = (t: string): boolean => t === "turn.render" || t === "call.meta";
+  let split = events.length;
+  while (split > 0 && isTail((events[split - 1] as { type: string }).type)) split -= 1;
+  const live = events.slice(0, split).map((e) => (e as { ts: string }).ts);
+  const tail = events.slice(split).map((e) => (e as { ts: string }).ts);
+  assert.deepEqual([...live].sort(), live, "live pushes are time-monotonic");
+  assert.deepEqual([...tail].sort(), tail, "tail snapshots are time-monotonic");
+  assert.ok(tail.length > 0, "the fixture must exercise the tail");
 });
 
 test("CTXVM_TRACE_TS=0 opts the whole trace out of ts — byte-stability restored (D9)", () => {
