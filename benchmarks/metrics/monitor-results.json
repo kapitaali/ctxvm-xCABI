@@ -1,0 +1,399 @@
+{
+  "card": "W18",
+  "corpus": {
+    "glob": "corpus/m*/*.jsonl",
+    "label_basis": "Scenario labels only. Each drop's README and provenance.json state what the capture was for; 'pathology' marks the four traces whose own description is a thrashing pattern (repeated re-reads), 'benign' marks every other trace. These are NOT adjudicated safety labels: no trace in corpus/m1-m8 contains sabotage, deception or sandbagging, and none is scored as such.",
+    "negatives": 13,
+    "positives": 4,
+    "traces": 17
+  },
+  "rows": [
+    {
+      "events": 12,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": false,
+          "value": 0.3333
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0747
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.9978
+        }
+      },
+      "path": "corpus/m1/session-healthy.jsonl"
+    },
+    {
+      "events": 41,
+      "label": "pathology",
+      "monitors": {
+        "fault_density": {
+          "flagged": false,
+          "value": 0.3
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.2333
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.7742
+        }
+      },
+      "path": "corpus/m1/session-thrashing.jsonl"
+    },
+    {
+      "events": 17,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": false,
+          "value": 0.4
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0002
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.9268
+        }
+      },
+      "path": "corpus/m1/opencode-echo.jsonl"
+    },
+    {
+      "events": 16,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": false,
+          "value": 0.25
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0003
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.9044
+        }
+      },
+      "path": "corpus/m1/tracer-healthy.jsonl"
+    },
+    {
+      "events": 19,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": false,
+          "value": 0.5
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0006
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.9149
+        }
+      },
+      "path": "corpus/m1/tracer-recall.jsonl"
+    },
+    {
+      "events": 22,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": false,
+          "value": 0.5
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0007
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.9132
+        }
+      },
+      "path": "corpus/m2/live-echo.jsonl"
+    },
+    {
+      "events": 33,
+      "label": "pathology",
+      "monitors": {
+        "fault_density": {
+          "flagged": true,
+          "value": 1.6667
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0014
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.8333
+        }
+      },
+      "path": "corpus/m2/live-thrash.jsonl"
+    },
+    {
+      "events": 20,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": true,
+          "value": 0.6
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0002
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.9053
+        }
+      },
+      "path": "corpus/m3/hermes-echo-synthetic.jsonl"
+    },
+    {
+      "events": 26,
+      "label": "pathology",
+      "monitors": {
+        "fault_density": {
+          "flagged": true,
+          "value": 1.0
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0002
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.8
+        }
+      },
+      "path": "corpus/m3/hermes-thrash-synthetic.jsonl"
+    },
+    {
+      "events": 23,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": false,
+          "value": 0.5
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0628
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.9971
+        }
+      },
+      "path": "corpus/m4/hermes-live-session-01.jsonl"
+    },
+    {
+      "events": 80,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": true,
+          "value": 1.2143
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0103
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.9286
+        }
+      },
+      "path": "corpus/m5/opencode-live-session-01.jsonl"
+    },
+    {
+      "events": 32,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": true,
+          "value": 0.7143
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0013
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.8893
+        }
+      },
+      "path": "corpus/m6/opencode-pause-session-a.jsonl"
+    },
+    {
+      "events": 13,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": true,
+          "value": 0.6667
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0004
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.6667
+        }
+      },
+      "path": "corpus/m6/opencode-resume-session-b.jsonl"
+    },
+    {
+      "events": 32,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": false,
+          "value": 0.0
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.1742
+        },
+        "waste": {
+          "flagged": true,
+          "value": 1.0
+        }
+      },
+      "path": "corpus/m7/hermes-pause-session-a.jsonl"
+    },
+    {
+      "events": 37,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": false,
+          "value": 0.0
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.4007
+        },
+        "waste": {
+          "flagged": true,
+          "value": 1.0
+        }
+      },
+      "path": "corpus/m7/hermes-resume-session-b.jsonl"
+    },
+    {
+      "events": 31,
+      "label": "benign",
+      "monitors": {
+        "fault_density": {
+          "flagged": false,
+          "value": 0.4
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0007
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.9
+        }
+      },
+      "path": "corpus/m8/live-echo.jsonl"
+    },
+    {
+      "events": 22,
+      "label": "pathology",
+      "monitors": {
+        "fault_density": {
+          "flagged": false,
+          "value": 0.5
+        },
+        "token_pressure": {
+          "flagged": false,
+          "value": 0.0008
+        },
+        "waste": {
+          "flagged": true,
+          "value": 0.8333
+        }
+      },
+      "path": "corpus/m8/live-thrash.jsonl"
+    }
+  ],
+  "summary": {
+    "fault_density": {
+      "abstain": 0,
+      "fn": 2,
+      "fp": 4,
+      "fpr": 0.3077,
+      "fpr_ci95": [
+        0.1268,
+        0.5763
+      ],
+      "kind": "diagnostic",
+      "rule": "flag when mean faults per turn > 0.5",
+      "threshold": 0.5,
+      "tn": 9,
+      "tp": 2,
+      "tpr": 0.5,
+      "tpr_ci95": [
+        0.15,
+        0.85
+      ]
+    },
+    "token_pressure": {
+      "abstain": 0,
+      "fn": 4,
+      "fp": 0,
+      "fpr": 0.0,
+      "fpr_ci95": [
+        0.0,
+        0.2281
+      ],
+      "kind": "detector",
+      "rule": "flag when peak resident tokens > 90% of the declared budget",
+      "threshold": 0.9,
+      "tn": 13,
+      "tp": 0,
+      "tpr": 0.0,
+      "tpr_ci95": [
+        0.0,
+        0.4899
+      ]
+    },
+    "waste": {
+      "abstain": 0,
+      "fn": 0,
+      "fp": 13,
+      "fpr": 1.0,
+      "fpr_ci95": [
+        0.7719,
+        1.0
+      ],
+      "kind": "detector",
+      "rule": "flag when the unreferenced share of rendered tokens > 0.5",
+      "threshold": 0.5,
+      "tn": 0,
+      "tp": 4,
+      "tpr": 1.0,
+      "tpr_ci95": [
+        0.5101,
+        1.0
+      ]
+    }
+  },
+  "tier": 1,
+  "topology": "recorded traces only; no model calls; deterministic"
+}

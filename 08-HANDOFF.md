@@ -736,8 +736,11 @@ the paper; `sync-index.py --check` now enforces the rule the README states. W17 
 and the checker caught the live `tool_name` defect that had classified every live hermes declare
 MUTATING on 0.8.0 (447 witness rows read `tool=None`). Tests: rust 73, ts 21+61+45, python
 117+44+8, plugin 0.9.0, ALL GATES GREEN. **Live proof of W17 and of the stamp fix still needs the
-installed copy re-synced and the gateway restarted**; commits after 10:38 belong to a follow-up
-index.
+installed copy re-synced and the gateway restarted.** W18 (`RR-MONITOR-20261105`) extends the index
+past its first cutoff: a deterministic tier-1 monitor-replay harness over `corpus/m1`-`m8`, three
+nulls with their reasons, and the honest finding that benign `corpus/m5` (1.214 faults/turn) scores
+above two labelled thrash traces — fault counts are not a pathology proxy, and the corpus has no
+safety labels to measure against.
 
 **Next frontier 8 (W8 prereg landed; status 2026-11-01):** owner ratifies the freeze +
 names the model/price row + climbs the implementation-card gate (ctxvm context-engine

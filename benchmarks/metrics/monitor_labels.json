@@ -1,0 +1,91 @@
+{
+  "card": "W18",
+  "basis": "Scenario labels only. Each drop's README and provenance.json state what the capture was for; 'pathology' marks the four traces whose own description is a thrashing pattern (repeated re-reads), 'benign' marks every other trace. These are NOT adjudicated safety labels: no trace in corpus/m1-m8 contains sabotage, deception or sandbagging, and none is scored as such.",
+  "traces": [
+    {
+      "path": "corpus/m1/session-healthy.jsonl",
+      "label": "benign",
+      "basis": "m1 provenance: 'healthy' baseline fixture, 22-event reference vector"
+    },
+    {
+      "path": "corpus/m1/session-thrashing.jsonl",
+      "label": "pathology",
+      "basis": "m1 provenance: 'hand-built thrashing-pattern demo fixture ... used as the thrashing-pattern reference'"
+    },
+    {
+      "path": "corpus/m1/opencode-echo.jsonl",
+      "label": "benign",
+      "basis": "m1 drop: echo scenario (repeats a page, no thrash claim)"
+    },
+    {
+      "path": "corpus/m1/tracer-healthy.jsonl",
+      "label": "benign",
+      "basis": "m1 drop: healthy tracer fixture"
+    },
+    {
+      "path": "corpus/m1/tracer-recall.jsonl",
+      "label": "benign",
+      "basis": "m1 drop: tool-recall fault demo (pin/unpin), not a thrash scenario"
+    },
+    {
+      "path": "corpus/m2/live-echo.jsonl",
+      "label": "benign",
+      "basis": "m2 drop: live echo session on a real OpenCode loop"
+    },
+    {
+      "path": "corpus/m2/live-thrash.jsonl",
+      "label": "pathology",
+      "basis": "m2 drop: live thrash session (the drop's second capture)"
+    },
+    {
+      "path": "corpus/m3/hermes-echo-synthetic.jsonl",
+      "label": "benign",
+      "basis": "m3 drop: synthetic hermes echo session"
+    },
+    {
+      "path": "corpus/m3/hermes-thrash-synthetic.jsonl",
+      "label": "pathology",
+      "basis": "m3 drop: synthetic hermes thrash session"
+    },
+    {
+      "path": "corpus/m4/hermes-live-session-01.jsonl",
+      "label": "benign",
+      "basis": "m4 drop: first live hermes session; no thrash claim"
+    },
+    {
+      "path": "corpus/m5/opencode-live-session-01.jsonl",
+      "label": "benign",
+      "basis": "m5 drop: interactive self-capture, repository-hygiene card; no thrash claim"
+    },
+    {
+      "path": "corpus/m6/opencode-pause-session-a.jsonl",
+      "label": "benign",
+      "basis": "m6 drop: pause half of a pause/resume pair"
+    },
+    {
+      "path": "corpus/m6/opencode-resume-session-b.jsonl",
+      "label": "benign",
+      "basis": "m6 drop: resume half of a pause/resume pair"
+    },
+    {
+      "path": "corpus/m7/hermes-pause-session-a.jsonl",
+      "label": "benign",
+      "basis": "m7 drop: hermes pause half of a typed pause/resume pair"
+    },
+    {
+      "path": "corpus/m7/hermes-resume-session-b.jsonl",
+      "label": "benign",
+      "basis": "m7 drop: hermes resume half of a typed pause/resume pair"
+    },
+    {
+      "path": "corpus/m8/live-echo.jsonl",
+      "label": "benign",
+      "basis": "m8 drop: ai-sdk live echo capture"
+    },
+    {
+      "path": "corpus/m8/live-thrash.jsonl",
+      "label": "pathology",
+      "basis": "m8 drop: ai-sdk live thrash capture"
+    }
+  ]
+}
