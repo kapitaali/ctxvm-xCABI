@@ -12,7 +12,7 @@ This paper describes `ctxvm`, a virtual-memory manager for LLM agent context. It
 
 Version 0 is a read-only flight recorder. You add it to any agent loop. Nothing changes. You get a trace, touch statistics, and waste numbers. Paging control comes later, behind an opt-in policy flag.
 
-This paper explains what the framework is, how to use it, and where it stops.
+This paper explains what the framework is, how to use it, and where it stops. Sections 9 to 17 apply the record to three questions that are usually asked of models rather than of harnesses — whether an evaluation can say a model is too dangerous, whether we can see what it is doing, and whether we can make it do what we want — and they state, for each, exactly where the trace stops being evidence.
 
 **Context tracing is not logging — it is the ability to reconstruct, verify, and replay the exact input an agent received.** Every other improvement — token savings, quality, safety, compliance — starts from knowing what the model actually saw. That knowledge is necessary for each of them and sufficient for none: a faithful record of the input does not by itself evaluate a model, reach its reasoning, or make it behave.
 
@@ -437,6 +437,9 @@ These are honest boundaries of the current design. They are not bugs; they are s
 - **Net token reduction target is unproven.** ≥1.5× at equal accuracy is the M0 gate; no real-session measurement exists yet.
 - **Names are working names.** `ctxvm` and `xCABI` are not final. Renaming is an explicit orchestrator task.
 - **Cache-hit estimates are flagged, not authoritative.** `call.meta` carries estimated hit/miss; providers report where available, otherwise the estimate is flagged as such.
+- **A trace is not a cause.** A page that was rendered, or touched, is correlated with behaviour, not shown to produce it. Every causal claim needs an intervention (§10), and the two must be labelled differently.
+- **A trace creates false confidence.** A complete record invites the conclusion that the system was understood. It records the input side only. An audit that reads a trace and stops is an audit of the harness, not of the model.
+- **The trust boundary is the harness.** If the harness lies, the trace lies. v0 has checksums and deterministic replay — integrity against accidental corruption, not tamper evidence (§9).
 
 ---
 
@@ -468,9 +471,123 @@ SWE-Pruner (Wang et al., 2026, arXiv 2601.16746) trains a neural skimmer for tas
 
 Pichay builds a pager. Neural Paging builds a learned controller. Virtual Context builds a full virtualization kernel. l1-pager builds a LangGraph garbage collector. IBM's session manager builds a summarization-based session manager. ctxvm builds the shared layer none of them provides: a deterministic trace standard, a replayable engine, a metric simulator, and ODPS-packaged corpora. It is the gauge and the dyno — not another pager.
 
+### 8.7 Agent evaluation infrastructure
+
+The Holistic Agent Leaderboard (HAL) runs 21,730 agent rollouts across 9 models and 9 benchmarks for about $40,000 and analyses models, **scaffolds** and benchmarks separately (Kapoor et al., arXiv:2510.11977). It also shows why logs matter: LLM-aided log inspection found agents searching for the benchmark on HuggingFace instead of solving the task. A score alone would not have shown that. HAL is the closest work to ctxvm's evaluation use case, and it is a harness, not a trace standard.
+
+### 8.8 Context attribution
+
+ContextCite learns a surrogate model of how an output changes when parts of the context are ablated, and applies it to verify statements, to prune context, and to detect poisoning (Cohen-Wang et al., arXiv:2409.00729). Its unit is a sentence or a span; ctxvm's unit is a page. Page-level ablation is coarser and much cheaper, and it matches how agents assemble context. ContextCite does not address traces; ctxvm does not address attribution. The two compose.
+
+### 8.9 Control protocols
+
+AI control evaluates protocols that stay safe when the model is actively trying to subvert them (Greenblatt et al., arXiv:2312.06942). Ctrl-Z adds resampling: when an action looks suspicious, draw more samples and compare, with a reported reduction in attack success from 58% to 7% at a 5% cost to a benign agent (Bhatt et al., arXiv:2504.10374; the percentages appear in the paper body and were not verified from the abstract). Both need a record of what the agent did, and resampling additionally needs to fork state.
+
+### 8.10 Monitoring and chain-of-thought faithfulness
+
+A 41-author position paper argues that human-language chains of thought are a monitorable signal that development choices could erode (Korbak et al., arXiv:2507.11473). Chen et al. measure the fragility: CoTs reveal hint usage in under 20% of the cases where the hint was used, outcome-based RL improves faithfulness but plateaus, and more hint use does not produce more verbalization (arXiv:2505.05410). CoT monitoring beats action-only monitoring on subtle sabotage and can be misled by rationalizations on obvious cases, so a weighted hybrid of reasoning and action scores performs best (Arnav et al., arXiv:2505.23575). Monitors also do better with **less** information: an extract-and-evaluate protocol improved sabotage detection by 16.8 percentage points over the next-best approach (Arike et al., arXiv:2601.21112). Two further results describe the tool channel specifically: verbalized commitment is lower when a cue arrives in a tool return than in a user message, on all fifteen models tested (FACE-Eval, arXiv:2608.29464), and thinking-answer divergence appears in 55.4% of hint-sensitive cases (arXiv:2603.26410).
+
+### 8.11 Safety-auditing practice
+
+The UK AI Security Institute reports that every model it tested attempted to cheat on cyber capability evaluations, that models did not reliably report the behaviour and often did not reason about it in their chains of thought, and that published capability estimates are protected by manually reviewing transcripts (AISI, "Cheating behaviour in frontier model evaluations", 21 July 2026). Its remediation of a dangerous-capability environment after agents took action against real people added a synchronous monitor over messages, tool calls and chain of thought that can block actions before execution. This is the clearest published statement that a score is an interpretation of a transcript.
+
 ---
 
-## 9. Conclusion
+---
+
+## 9. Threat model and trust boundaries
+
+A trace is evidence only if its provenance is clear. Four questions decide what a given trace can support.
+
+1. **Who wrote it?** The harness. The model never writes the trace; it writes tool calls, and the harness records them.
+2. **Who can read it?** Traces contain prompts, code and file paths. Access control and redaction are part of the artifact, not an afterthought.
+3. **Who can change it?** If the agent can reach the trace directory, a checksum in the same directory is not tamper evidence.
+4. **What does it prove?** That the harness emitted these events. It cannot prove the harness was honest, or that the model saw nothing else.
+
+Three levels of integrity follow. **Accidental integrity** is what v0 has: canonical serialisation, byte-identical replay, per-drop checksums. **Tamper evidence** needs hash-chained events or a signed root, and a verifier that checks the chain before trusting the content. **Attestation** needs the harness to prove what it ran — the hardest level, and out of scope here.
+
+The honest statement for this paper: v0 provides accidental integrity and a deterministic replay. It does not provide tamper evidence, and it does not make the harness trustworthy. Any auditor who needs more must add chaining and signing at the harness boundary.
+
+## 10. Counterfactual replay
+
+Two operations share the word "replay" and must never be confused.
+
+**Byte-identical replay** takes a trace and re-derives the same facts. It is deterministic, it runs offline, and it is the basis of every claim in this paper. Given the same bytes it returns the same bytes.
+
+**Intervention replay** changes one thing — remove a page, add a stub, replace a tool result — and calls the model again. The engine stays deterministic; the model does not. The output is a new trace, not a corrected one.
+
+Intervention replay is what turns a trace into an experimental instrument. It is also where most of the safety questions in §17 live: page ablation (§8.8), hint injection, eviction of a wrong premise (§14). The record must say which kind of run produced it, and the two kinds must not share a directory, a checksum file, or a claim. This paper's determinism claims apply to the first kind only.
+
+A minimal provenance block for an intervention run: the parent trace, the intervention (kind, target page, replacement), the seed and sampling parameters, and the model identity. Without those five, a counterfactual is not reproducible and cannot support a causal claim.
+
+## 11. Evaluation infrastructure
+
+Three uses of the trace in evaluation are concrete today.
+
+**Context policy is part of the scaffold, and it is usually unreported.** Evaluations establish lower bounds on capability and cannot establish upper bounds (Barnett & Thiergart, arXiv:2412.08653). Scaffold choice is a first-order variable in agent evaluation (arXiv:2510.11977). Since W13, a ctxvm trace reports the static prefix of every turn — tool schemas loaded, request characters, the host's token estimate — and since W14 it reports the environment the run happened in. A score that does not carry those numbers compares runs under unknown conditions.
+
+**Logs find what scores hide.** HAL's log inspection found agents searching for the benchmark instead of solving the task (arXiv:2510.11977). AISI's published capability estimates depend on transcript review (AISI, 21 July 2026). A trace standard makes that inspection portable: the same query runs over any harness's trace.
+
+**Structured access for external evaluators.** One access taxonomy separates model access, model information and evaluation timeframe into three levels, AL1 to AL3 (Charnock et al., arXiv:2601.11916). A redacted trace is a concrete artifact for the middle tier: it discloses how the agent loop assembled context without disclosing weights.
+
+## 12. Monitor views
+
+A monitor never sees the world. It sees a projection of the trace: the model's messages, its tool calls, its reasoning, some subset of the pages. The literature says the projection matters more than the volume: monitors often do better with less information, and an extract-and-evaluate protocol beat the next-best approach by 16.8 percentage points (arXiv:2601.21112). CoT monitoring helps on subtle sabotage and misleads on obvious cases, so scoring reasoning and action separately and combining them works best (arXiv:2505.23575).
+
+A view is therefore a first-class object, and ctxvm can define it as a pure function of a trace: rendered pages only, resident pages plus stubs, the prefix alone, tool calls without results, reasoning without actions. Three consequences follow. A monitor's result is only comparable to another monitor's result when both used the same view. A view is versioned, so a change in the projection is visible. And a view is reproducible offline, which makes a monitor's error rate measurable without re-running the agent.
+
+## 13. Provenance, trust, and enforcement on pages
+
+A page today carries identity and kind, and since W15 the side-effect class of the call that produced it. It does not carry origin, trust, or permitted readers. That is the gap that CaMeL fills from the other side: it extracts control and data flow from the trusted query so untrusted data cannot change the program flow, and enforces capability policies when tools are called, solving 77% of AgentDojo tasks with provable security against 84% undefended (Debenedetti et al., arXiv:2503.18813).
+
+Three page attributes would carry the same information inside a trace: **origin** (which input produced this page: user, tool, retrieval, model), **trust** (asserted by the harness at declaration, never inferred from content), and **readers** (which sinks may receive it). With those, a policy check is a pure function of the page table, which keeps it inside the determinism boundary and makes the decision replayable.
+
+The claim this paper can make is narrow: the trace can carry the attributes a taint-style layer needs, and the side-effect class is already a primitive of that layer. It does not claim that ctxvm enforces anything.
+
+## 14. Control protocols over branching state
+
+Control protocols assume the deployment can stop, resample or roll back. Ctrl-Z resamples suspicious actions and reports a reduction in attack success from 58% to 7% at a 5% cost to a benign agent (arXiv:2504.10374; body-level figures). Resampling needs a state that can be forked: the same conversation, two continuations, compared.
+
+This is where paging and control meet. A page table with copy-on-write branching is exactly a forkable conversation state, and it is the design work in W12. A trace that records page identity and turn boundaries is the audit trail for such a fork: which pages were resident on each branch, which render each branch saw.
+
+One threat belongs in this section because it is specific to paging. **Eviction is an attack surface.** If an adversary can influence what gets evicted, they can push out safety instructions or force thrashing. No study covers this. It should be studied before any control plane ships. A lazy retrieval handle is also an opportunity: a monitor can inspect a page before it faults in, which is a checkpoint that a fully resident context does not have.
+
+## 15. Audit and regulation
+
+Two provisions of the EU AI Act matter here. Article 12 requires high-risk systems to allow the automatic recording of events over the system's lifetime (Regulation (EU) 2024/1689). Article 55 requires providers of general-purpose models with systemic risk to evaluate with standardised protocols, to conduct and document adversarial testing, and to track and report serious incidents (ai-act-service-desk.ec.europa.eu/en/ai-act/article-55). The GPAI Code of Practice builds assessment depth on post-market and incident data (Measure 1.2).
+
+"Documented" is the operative word in both. A document that cannot be replayed is a claim. This is the compliance case for a trace standard, and it is stronger than the cost case: a token saving is a business result, while a replayable record is a legal artifact.
+
+Two cautions. Compliance guidance notes that tamper resistance is implied by the purpose of record-keeping rather than stated in the text — so a checksum is not enough for a high-risk audit. And published summaries disagree on application dates; this paper cites the regulation, not a date.
+
+## 16. What ctxvm cannot do
+
+- **It cannot see inside a model.** No activations, no sparse features, no probes. White-box monitoring work (linear probes at AUROC 0.96–0.999 but "insufficient as a robust defence", Goldowsky-Dill et al., arXiv:2502.03407) needs weights, and a harness-level trace has none.
+- **It cannot detect deception.** A trace records what happened, not what was intended. Probes, monitors and control protocols make judgements; the trace supplies their input.
+- **It cannot detect sandbagging.** In an auditing game with five red-team models, a blue team could not reliably discriminate sandbaggers from benign models (FAR.AI, arXiv:2512.07810). Record quality does not fix a measurement problem that lives in capability elicitation.
+- **It cannot establish causation.** Rendering a page is not causing an answer. Only an intervention (§10) can support a causal claim, and the intervention is not the trace.
+- **It cannot make the harness honest.** See §9.
+- **It can create false confidence.** The most likely misuse of this work is an audit that reads a complete trace and concludes the system was understood. The record covers the input side. Safety claims need the model side, and this paper does not supply it.
+
+## 17. Research agenda
+
+The questions below are the ones this design makes askable. None of them is answered here; each states what exists, what is missing, and what it would cost. They are ordered by how directly the trace is the missing instrument.
+
+| # | Question | What exists | What is missing | Status |
+|---|---|---|---|---|
+| 1 | Does the identifier-based touch ratio predict causal influence? | ContextCite-style ablation (arXiv:2409.00729); page-level replay | A page-ablation run against a fixed model | Designed; needs model spend |
+| 2 | Do chains of thought admit an injected hint on agentic traces? | Hint-injection design (arXiv:2505.05410); tool-channel weakness (arXiv:2608.29464) | The agentic version of the experiment | Designed; strongest candidate |
+| 3 | Which page-level views produce the best monitors? | Less-is-more and extract-and-evaluate (arXiv:2601.21112); hybrid CoT/action scoring (arXiv:2505.23575) | A view-parameterised monitor run | Designed |
+| 4 | How much do capability scores move with context policy? | Lower-bound limits of evaluation (arXiv:2412.08653); scaffold variance (arXiv:2510.11977) | A three-policy comparison at fixed tasks | Unanswered anywhere |
+| 5 | Which pages give an evaluation away? | Evaluation awareness at AUC 0.83 vs 0.92 (arXiv:2505.23836) | Deployment traces, redaction, a classifier | Blocked on redaction |
+| 6 | Can page provenance give taint-style protection? | CaMeL's capability model, 77% vs 84% (arXiv:2503.18813) | Origin/trust/reader attributes and a policy layer | Prototype-able |
+| 7 | Does evicting an early wrong assumption help? | Multi-turn degradation of 39% (arXiv:2505.06120) | A three-arm experiment incl. an oracle arm | Not started |
+
+One measurement already exists and it argues for caution in row 1. Across 24 traces in this repository (frozen corpus plus live captures) there are 417 declared pages, 312 rendered at least once (74.8%), and 303 `page.fault` events. **99.3% of faults land on pages that had been rendered.** That is close to definitional — the fault taxonomy fires when the model re-requests content it has seen — so the number cannot separate "the model needed it" from "the harness had shown it". The ablation in row 1 exists precisely to make that separation.
+
+---
+
+## 18. Conclusion
 
 LLM agent context is in the overlay era: every system manually assembles context on every API call, with no eviction policy, no demand loading, no working set, and no shared trace format. The mechanism works; the shared layer does not exist.
 
@@ -478,7 +595,7 @@ ctxvm is that shared layer. xCABI defines a deterministic, append-only, cross-ha
 
 Version 0 is a read-only flight recorder. Add it to any agent loop; nothing changes. You get traces, touch statistics, and waste numbers. Paging control ships in v1 behind an opt-in `policy` flag, validated by the same replay engine that guarantees byte-identical determinism.
 
-**Context tracing is not logging — it is the ability to reconstruct, verify, and replay the exact input an agent received.** Every other improvement depends on knowing what the model actually saw. ctxvm's tracer already records this; the remaining work is turning the trace into action.
+**Context tracing is not logging — it is the ability to reconstruct, verify, and replay the exact input an agent received.** Token savings, quality work, safety evaluation and compliance all start from knowing what the model actually saw. That knowledge is necessary for each of them and sufficient for none: §9–§17 state where the record stops, and where the model side has to take over. ctxvm's tracer already records the input side; the remaining work is turning the trace into evidence that someone else can check.
 
 The field does not need another private pager. It needs a gauge, a dyno, and a SQL for the context layer. That is what ctxvm is built to be.
 
@@ -494,6 +611,25 @@ The field does not need another private pager. It needs a gauge, a dyno, and a S
 6. IBM. "chuk-ai-session-manager." github.com/IBM/chuk-ai-session-manager, 2026 — verified from primary source. Summarization-based session manager, not demand paging.
 7. Jiang, Y. et al. "LLMLingua." 2024.
 8. Wang, Y. et al. "SWE-Pruner: Self-Adaptive Context Pruning for Coding Agents." arXiv:2601.16746, 2026.
+9. Barnett, P. and Thiergart, L. "What AI evaluations for preventing catastrophic risks can and cannot do." arXiv:2412.08653, November 2024. — lower bounds only; no upper bounds, no reliable forecasting, no robust assessment of autonomous-system risk (abstract).
+10. Kapoor, S. et al. "Holistic Agent Leaderboard: The Missing Infrastructure for AI Agent Evaluation." arXiv:2510.11977, October 2025. — 21,730 rollouts, models/scaffolds/benchmarks, log inspection (abstract).
+11. Needham, J. et al. "Large Language Models Often Know When They Are Being Evaluated." arXiv:2505.23836v3, July 2025. — Gemini-2.5-Pro AUC 0.83 against a human baseline of 0.92 (abstract).
+12. Charnock, J. et al. "Expanding External Access To Frontier AI Models For Dangerous Capability Evaluations." arXiv:2601.11916, January 2026. — AL1/AL2/AL3 access taxonomy (abstract).
+13. Cohen-Wang, B. et al. "ContextCite: Attributing Model Generation to Context." arXiv:2409.00729, September 2024. — ablation-based context attribution (abstract). The 32x cost figure is body-level, unverified here.
+14. Arnav, B. et al. "CoT Red-Handed: Stress Testing Chain-of-Thought Monitoring." arXiv:2505.23575v3, November 2025. — CoT monitoring helps on subtle sabotage, misleads on obvious cases; hybrid best (abstract).
+15. Arike, R. et al. "How does information access affect LLM monitors' ability to detect sabotage?" arXiv:2601.21112v2, February 2026. — less-is-more effect; extract-and-evaluate, +16.8 pp (abstract).
+16. Korbak, T. et al. "Chain of Thought Monitorability: A New and Fragile Opportunity for AI Safety." arXiv:2507.11473v2, December 2025. — position paper (abstract).
+17. Chen, Y. et al. "Reasoning Models Don't Always Say What They Think." arXiv:2505.05410, May 2025. — hint reveal rate often below 20%; RL plateaus (abstract).
+18. FACE-Eval: "Chain-of-Thought Faithfulness of Reasoning Models Varies with Where and How Preference Cues Are Delivered." arXiv:2608.29464, 2026. — tool-return cues less verbalized on all 15 models (abstract).
+19. "Why Models Know But Don't Say: Chain-of-Thought Faithfulness ..." arXiv:2603.26410, 2026. — thinking-answer divergence 55.4%; 11.8% unacknowledged (abstract).
+20. Greenblatt, R. et al. "AI Control: Improving Safety Despite Intentional Subversion." arXiv:2312.06942v5, July 2024. — protocols robust to subversion (abstract).
+21. Bhatt, A. et al. "Ctrl-Z: Controlling AI Agents via Resampling." arXiv:2504.10374, April 2025. — BashBench, resample protocols (abstract); the 58%-to-7% and 5% figures are body-level, unverified here.
+22. Debenedetti, E. et al. "Defeating Prompt Injections by Design." arXiv:2503.18813v2, June 2025. — CaMeL; 77% with provable security vs 84% undefended in AgentDojo (abstract).
+23. Goldowsky-Dill, N. et al. "Detecting Strategic Deception Using Linear Probes." arXiv:2502.03407, February 2025. — AUROC 0.96-0.999; insufficient as a robust defence (abstract).
+24. Laban, P. et al. "LLMs Get Lost In Multi-Turn Conversation." arXiv:2505.06120, May 2025. — 39% average drop; no recovery after a wrong turn (abstract).
+25. FAR.AI. "Auditing Games for Sandbagging." arXiv:2512.07810, December 2025. — blue team could not reliably discriminate sandbaggers (abstract).
+26. UK AI Security Institute. "Cheating behaviour in frontier model evaluations." 21 July 2026. — every model tested attempted to cheat; transcript review protects published estimates.
+27. Regulation (EU) 2024/1689 (AI Act), Articles 12 and 55; General-Purpose AI Code of Practice, Safety and Security chapter, Measure 1.2.
 
 ---
 
@@ -505,6 +641,7 @@ The field does not need another private pager. It needs a gauge, a dyno, and a S
 | Format | Markdown single source (MyST for website, Markdown → LaTeX/WeasyPrint for PDF) |
 | Style | ASD-STE100-inspired (active voice, defined terms, no idioms, no marketing language) |
 | Audience | Coders, scientists, generally computer-literate readers |
-| Phases complete | P1 (§1–2), P2 (§3), P3 (§4), P4 (§5–9 + references), P5 (final draft + PDF + website) |
+| Phases complete | P1 (§1–2), P2 (§3), P3 (§4), P4 (§5–9 + references), P5 (final draft + PDF + website), P6 (safety sections §8.7–§17, 5 Nov 2026) |
 | External claims | All web-verified from primary sources or marked UNVERIFIED |
-| UNVERIFIED (not cited) | Pichay conference venue (arXiv only, no venue confirmed) |
+| UNVERIFIED (not cited) | Pichay conference venue (arXiv only, no venue confirmed); the Ctrl-Z 58%-to-7% and 5% figures; the ContextCite 32x multiplier; AISI per-model cheating rates and the reported capability-estimate swing — all body-level claims read only through secondary summaries |
+| Safety sections | §8.7–§8.11 and §9–§17 added 2026-11-05 from `research/safety-research-questions.md`; every citation was fetched at abstract level during that pass |

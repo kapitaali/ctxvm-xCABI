@@ -31,12 +31,17 @@ then renders that. The page count is a consequence of the stylesheet, not a fixe
 
 ## Sync rule
 
-`white-paper.md` and `index.md` carry the same twelve sections and are both
-maintained by hand. Until one is generated from the other, **every content edit
-must land in both**, and a commit touching one without the other is a defect.
-The intended fix is a generator card that renders `index.md` from
-`white-paper.md` (or the reverse), after which this section shrinks to the
-generator command.
+`white-paper.md` is the single source of the body; `index.md` is generated from it
+and keeps only its own front block (title, status). The generator exists as of
+2026-11-05:
+
+```sh
+python3 sync-index.py            # rewrite index.md from white-paper.md
+python3 sync-index.py --check    # exit 1 if index.md is stale
+```
+
+Edit `white-paper.md`, run the generator, and commit both. A commit that changes
+the body of one without the other is now a defect the `--check` mode can catch.
 
 ## Claims
 

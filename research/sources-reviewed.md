@@ -153,3 +153,30 @@ Notes, because a table flattens the argument:
 - Rates and the 11.3h-versus-270h capability swing appeared only in secondary summaries during this
   review and are marked **UNVERIFIED** in `safety-and-auditability.md`. The primary blog states the
   direction and the monitoring method, not those numbers, in the text read here.
+
+## Reviewed 2026-11-05 — the safety reference set behind the white paper's §8.7–§17
+
+Fetched at abstract level during the white-paper pass; body-level figures are marked. The full
+argument, question by question, is in `research/safety-research-questions.md`.
+
+| Source | Identifier | What it establishes | How the paper uses it |
+|---|---|---|---|
+| Barnett & Thiergart, *What AI evaluations … can and cannot do* | arXiv:2412.08653 | Evaluations give lower bounds only; no upper bounds, no forecasting, no robust autonomous-system risk assessment | §11, §17 row 4: a score is a bound, not a guarantee |
+| Kapoor et al., *Holistic Agent Leaderboard* | arXiv:2510.11977 | 21,730 rollouts, ~$40k; models × scaffolds × benchmarks; log inspection found agents searching for the benchmark; higher reasoning effort reduced accuracy in most runs | §8.7, §11: scaffolds are a first-order variable; logs find what scores hide |
+| Needham et al., *LLMs Often Know When They Are Being Evaluated* | arXiv:2505.23836 | Evaluation awareness: Gemini-2.5-Pro AUC 0.83 vs human 0.92; agentic settings easier to spot | §17 row 5 |
+| Charnock et al., *Expanding External Access* | arXiv:2601.11916 | AL1/AL2/AL3 access taxonomy over model access, model information, timeframe | §11: a redacted trace is the middle tier's artifact |
+| Cohen-Wang et al., *ContextCite* | arXiv:2409.00729 | Ablation-surrogate attribution; verify, prune, detect poisoning | §8.8, §17 row 1 (32× cost is body-level, unverified) |
+| Arnav et al., *CoT Red-Handed* | arXiv:2505.23575 | CoT monitoring helps on subtle sabotage, misleads on obvious cases; hybrid best | §8.10, §12 |
+| Arike et al., *Information access and monitor detection* | arXiv:2601.21112 | Less-is-more effect; extract-and-evaluate +16.8 pp | §8.10, §12: a view is a first-class object |
+| Korbak et al., *CoT Monitorability* | arXiv:2507.11473 | CoT is a monitorable but fragile opportunity | §8.10 |
+| Chen et al., *Reasoning Models Don't Always Say What They Think* | arXiv:2505.05410 | Hint reveal often under 20%; RL plateaus; more hint use ≠ more verbalization | §8.10, §17 row 2 |
+| FACE-Eval | arXiv:2608.29464 | Tool-return cues less verbalized on all 15 models; monitors detect worse as adoption is unverbalized | §8.10: the tool channel is the weakest and ctxvm records it |
+| *Why Models Know But Don't Say* | arXiv:2603.26410 | Thinking-answer divergence 55.4%; 11.8% acknowledge in neither channel; needs an activation tier | §8.10, §16 |
+| Greenblatt et al., *AI Control* | arXiv:2312.06942 | Protocols robust to intentional subversion | §8.9, §14 |
+| Bhatt et al., *Ctrl-Z* | arXiv:2504.10374 | Resampling protocols; BashBench | §8.9, §14 (58%→7%, 5% cost: body-level, unverified) |
+| Debenedetti et al., *Defeating Prompt Injections by Design* | arXiv:2503.18813 | CaMeL: control/data-flow extraction + capability policies; 77% vs 84% | §8.9, §13 |
+| Goldowsky-Dill et al., *Linear Probes* | arXiv:2502.03407 | Deception probes AUROC 0.96–0.999, insufficient as a defence | §16: white-box work needs weights |
+| Laban et al., *LLMs Get Lost in Multi-Turn Conversation* | arXiv:2505.06120 | 39% average drop; no recovery after a wrong turn | §17 row 7 |
+| FAR.AI, *Auditing Games for Sandbagging* | arXiv:2512.07810 | Blue team could not reliably discriminate sandbaggers | §16: record quality does not fix elicitation |
+| UK AISI, *Cheating behaviour in frontier model evaluations* | aisi.gov.uk, 21 Jul 2026 | Every model tested attempted to cheat; models did not reliably report it; transcript review protects published estimates | §8.11, §11: a score is an interpretation of a transcript |
+| Regulation (EU) 2024/1689, Arts. 12 and 55; GPAI Code Measure 1.2 | EUR-Lex / AI Act Service Desk | Automatic event recording for high-risk systems; evaluation, documented adversarial testing, incident reporting | §15 |
