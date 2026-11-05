@@ -29,6 +29,8 @@ pub struct SessionRow {
     pub agent: String,
     pub model: String,
     pub turns: u64,
+    /// Distinct turn boundaries a `turn.render` reported (a count, like pages —
+    /// NOT the highest turn index; a one-turn session at index 0 is one turn).
     /// Distinct declared pages (logicalRef + contentHash).
     pub pages: usize,
     /// Distinct pages a `page.render` actually showed.
@@ -77,7 +79,13 @@ pub fn session_row(path: &Path) -> Result<SessionRow, String> {
     };
     let mut declared: BTreeSet<(String, String)> = BTreeSet::new();
     let mut rendered: BTreeSet<(String, String)> = BTreeSet::new();
-    let mut last_turn = 0u64;
+    // W14 §R8 tooling: `turns` counts DISTINCT turn boundaries rendered, not the
+    // highest turn index. A max-index masquerading as a count made a real
+    // one-turn session (turn.render turn=0 exactly once) report `turns 0` —
+    // reading the road as having zero turns. Distinct-count agrees with the
+    // other row counts (pages/rendered are also counts, of unique keys).
+    let mut seen_turns: BTreeSet<u64> = BTreeSet::new();
+    let mut max_turn = 0u64;
 
     for event in &events {
         match event {
@@ -105,10 +113,11 @@ pub fn session_row(path: &Path) -> Result<SessionRow, String> {
                 resident_tokens,
                 ..
             } => {
-                if *turn >= last_turn {
-                    last_turn = *turn;
+                if *turn >= max_turn {
+                    max_turn = *turn;
                     row.resident_tokens = *resident_tokens;
                 }
+                seen_turns.insert(*turn);
             }
             _ => {}
         }
@@ -116,7 +125,7 @@ pub fn session_row(path: &Path) -> Result<SessionRow, String> {
 
     row.pages = declared.len();
     row.rendered = rendered.len();
-    row.turns = last_turn;
+    row.turns = seen_turns.len() as u64;
     Ok(row)
 }
 
@@ -401,6 +410,46 @@ mod tests {
         assert_eq!(row.rendered, 1);
         assert_eq!(row.unrendered(), 1);
         assert_eq!(row.faults, 1);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn counts_turns_as_distinct_boundaries_not_an_index() {
+        // The real-capture trap (RR-LIVE-20261104, stream run 2026-11-05): a
+        // session whose only boundary is turn 0 reported `turns 0` when the
+        // field held the max turn index. Under a count, one boundary is one
+        // turn; a repeated boundary does not double-count; and `residentTokens`
+        // still pairs with the highest-index row.
+        let dir = std::env::temp_dir().join(format!("ctxvm-stream3-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let tr = |turn: u64, resident: u64| {
+            Event::TurnRender {
+                turn,
+                resident_tokens: resident,
+                evicted_tokens: 0,
+                headroom: None,
+                ts: None,
+                prefix: None,
+            }
+        };
+        let file = dir.join("turns.jsonl");
+        write(
+            &file,
+            &[
+                session(Some("env-0a1b2c3d4e5f"), "2026-11-05T09:00:00.000Z"),
+                tr(0, 100),
+                tr(0, 101), // an unflushed boundary re-reported: one turn, not two
+                tr(1, 200),
+            ],
+        );
+        let row = session_row(&file).unwrap();
+        assert_eq!(row.turns, 2, "distinct boundaries: turn 0 and turn 1");
+        assert_eq!(row.resident_tokens, 200, "residency pairs with the highest turn");
+
+        let one = dir.join("one.jsonl");
+        write(&one, &[session(None, "2026-11-05T09:10:00.000Z"), tr(0, 100)]);
+        let row = session_row(&one).unwrap();
+        assert_eq!(row.turns, 1, "a one-turn session is ONE turn, not index zero");
         std::fs::remove_dir_all(&dir).ok();
     }
 }

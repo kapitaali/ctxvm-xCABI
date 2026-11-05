@@ -56,6 +56,9 @@ cargo build --release
 RFC-0 trace. `stream` groups trace files by `environmentId` (W14) and orders them by start
 time, which is the only way the cross-session questions become observable: how many
 declarations repeat across sessions of one repository, and how many a render never showed.
+Row fields are counts of DISTINCT keys — `turns` counts distinct turn boundaries (one turn
+index = one turn, whatever the index), `pages`/`rendered` count unique page keys — and
+`residentTokens` pairs with the highest turn index.
 `cargo install --path rust/crates/ctxvm-conformance` puts all six binaries (`replay`,
 `profile`, `diff`, `export`, `tokens`, `stream`) on `PATH`.
 
@@ -110,7 +113,7 @@ measured, and the docs say so where it matters.
 
 | track | state |
 |---|---|
-| **engine (M0)** | `rust/` — codec (strict JSONL, byte-identical vectors) + page table + deterministic renderer + replay/profile/diff/export/stream CLIs · **72 tests** (73 with `--features tiktoken`), 0 warnings |
+| **engine (M0)** | `rust/` — codec (strict JSONL, byte-identical vectors) + page table + deterministic renderer + replay/profile/diff/export/stream CLIs · **73 tests** (74 with `--features tiktoken`), 0 warnings |
 | **standard (RFC-0)** | `spec/rfc-0/` — normative semantics + strict JSON Schema; conformance **PASS (682 checks)** over 27 fixtures, 17 of them corpus traces |
 | **measurement** | `corpus/m1`–`m8` (17 traces: seed, live OpenCode, Hermes, resume pairs, AI-SDK) each with `provenance.json` + `checksums.sha256` · `benchmarks/metrics/` reference impl (44 tests) + eviction-policy simulator · ODPS manifest `productVersion 0.8.0` validated by SDK 0.4.0 |
 | **instrumentation** | `packages/node` (13 tests) · `packages/opencode` live v2 plugin (58) · `packages/hermes` plugin (80) · `packages/ai-sdk` middleware/tap (45) · `packages/py` binding (8) |
