@@ -12,8 +12,8 @@ D="${1:?capture dir}"; NAME="${2:?flushed name}"; LABEL="${3:?era label}"
 
 for ext in jsonl meta.json; do
   src="$D/$NAME.$ext"
-  dst="$D/$NAME-$label.$ext"
+  dst="$D/$NAME-$LABEL.$ext"
   [ -f "$src" ] || { echo "missing source: $src" >&2; exit 1; }
   cp -n "$src" "$dst" && echo "snapshot: $dst" || echo "kept: $dst (already snapshotted)"
 done
-wc -c "$D/$NAME-$label.jsonl" "$D/$NAME-$label.meta.json"
+wc -c "$D/$NAME-$LABEL.jsonl" "$D/$NAME-$LABEL.meta.json"
