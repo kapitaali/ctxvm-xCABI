@@ -1773,3 +1773,84 @@ class CoverageManifestTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CollisionNamingTests(unittest.TestCase):
+    """W21 — a reused trace name must never replace another session's bytes.
+
+    RR-LIVE-20261104: a post-restart capture reused the default name and the
+    write-through replaced the 13:0x evidence at identical filenames. The rule:
+    a different session gets an 8-hex digest suffix; the session that owns the
+    name keeps it.
+    """
+
+    def _drive(self, tmp: Path) -> str:
+        """Register the plugin, run one tool call, stop; return the stop message."""
+        _clear_env_for_tests()
+        os.environ["CTXVM_TRACE_DIR"] = str(tmp)
+        os.environ["CTXVM_TRACE_NAME"] = "cov"
+        cbs, cmds = {}, {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                cbs[name] = cb
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+        register(FakeCtx())
+        cbs["pre_tool_call"](
+            session_id="s", tool_name="read_file", args={"path": "notes/alpha.md"},
+        )
+        cbs["post_tool_call"](
+            session_id="s", tool_name="read_file", args={"path": "notes/alpha.md"},
+            status="ok", result={"content": [{"type": "text", "text": "hello page"}]},
+        )
+        return cmds["ctxvm-trace"]("stop")
+
+    def _checker(self, tmp: Path, trace: str, manifest: str):
+        import subprocess
+        checker = Path(__file__).resolve().parents[3] / "tools" / "coverage_check.py"
+        return subprocess.run(
+            [sys.executable, str(checker), str(tmp / trace), str(tmp / manifest)],
+            capture_output=True, text=True,
+        )
+
+    def test_a_different_session_gets_a_suffixed_name(self):
+        tmp = Path(tempfile.mkdtemp(prefix="ctxvm-collide-"))
+        sentinel = '{"sentinel": true}\n'
+        (tmp / "cov.jsonl").write_text(sentinel, encoding="utf-8")
+        (tmp / "cov.meta.json").write_text(
+            json.dumps({"sessionID": "another-session"}) + "\n", encoding="utf-8"
+        )
+        out = self._drive(tmp)
+        self.assertIn("1 trace(s)", out)
+        suffix = hashlib.sha256(b"s").hexdigest()[:8]
+        self.assertTrue((tmp / f"cov-{suffix}.jsonl").exists(), "the second session needs its own path")
+        self.assertTrue((tmp / f"cov-{suffix}.meta.json").exists())
+        self.assertTrue((tmp / f"cov-{suffix}.coverage.json").exists())
+        self.assertEqual(
+            (tmp / "cov.jsonl").read_text(encoding="utf-8"), sentinel,
+            "the other session's bytes must be untouched",
+        )
+        check = self._checker(tmp, f"cov-{suffix}.jsonl", f"cov-{suffix}.coverage.json")
+        self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
+        self.assertIn("consistent", check.stdout)
+
+    def test_the_session_that_owns_the_name_keeps_it(self):
+        tmp = Path(tempfile.mkdtemp(prefix="ctxvm-same-"))
+        self._drive(tmp)
+        self.assertTrue((tmp / "cov.jsonl").exists())
+        self._drive(tmp)  # same session id "s" flushes again
+        self.assertTrue((tmp / "cov.jsonl").exists())
+        self.assertEqual(
+            sorted(p.name for p in tmp.glob("cov-*.jsonl")), [],
+            "no suffix for the session that owns the name",
+        )
+        check = self._checker(tmp, "cov.jsonl", "cov.coverage.json")
+        self.assertEqual(check.returncode, 0, check.stdout + check.stderr)

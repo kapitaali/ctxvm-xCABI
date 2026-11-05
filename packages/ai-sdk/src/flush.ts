@@ -142,13 +142,33 @@ function coverageManifest(input: FlushInput, traceJsonl: string): Record<string,
   };
 }
 
+/** W21: a flush name that cannot replace another session's capture.
+ *
+ * A reused trace name silently replaced earlier bytes at the same path
+ * (RR-LIVE-20261104). If the meta sidecar at `name` belongs to a DIFFERENT
+ * session, append eight hex digits of the session key's digest. The same session
+ * keeps the same name, so repeated flushes stay idempotent.
+ */
+function collisionSafeName(traceDir: string, name: string, sessionKey: string): string {
+  try {
+    const meta = JSON.parse(readFileSync(join(traceDir, `${name}.meta.json`), "utf8")) as {
+      sessionID?: string;
+    };
+    if (meta?.sessionID == null || meta.sessionID === sessionKey) return name;
+  } catch {
+    return name;
+  }
+  return `${name}-${createHash("sha256").update(sessionKey, "utf8").digest("hex").slice(0, 8)}`;
+}
+
 export function writeCapture(input: FlushInput): {
   jsonlPath: string;
   metaPath: string;
   coveragePath: string;
 } {
-  const { traceDir, name } = input;
+  const { traceDir } = input;
   mkdirSync(traceDir, { recursive: true });
+  const name = collisionSafeName(traceDir, input.name, input.sessionKey);
   const jsonlPath = join(traceDir, `${name}.jsonl`);
   const metaPath = join(traceDir, `${name}.meta.json`);
   const coveragePath = join(traceDir, `${name}.coverage.json`);
@@ -178,7 +198,10 @@ export function writeCapture(input: FlushInput): {
   // W17: the coverage sidecar describes the bytes just written — flush-only, never
   // at write-through partials (a pruned partial would leave coverage describing
   // bytes that no longer exist).
-  writeFileSync(coveragePath, `${JSON.stringify(coverageManifest(input, input.trace.jsonl), null, 2)}\n`);
+  writeFileSync(
+    coveragePath,
+    `${JSON.stringify(coverageManifest({ ...input, name }, input.trace.jsonl), null, 2)}\n`,
+  );
   return { jsonlPath, metaPath, coveragePath };
 }
 

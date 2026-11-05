@@ -26,7 +26,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -363,6 +363,49 @@ test("integration: the committed fixture replays through a REAL tracer byte-iden
     delete process.env.CTXVM_TRACE_DIR;
     delete process.env.CTXVM_TRACE_NAME;
     delete process.env.CTXVM_TRACE_TS; // D9 opt-out ran only for this capture
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("W21: a reused trace name never replaces another session's bytes", async () => {
+  const tmp = freshTmp("collide");
+  try {
+    process.env.CTXVM_TRACE_DIR = tmp;
+    process.env.CTXVM_TRACE_NAME = "collide";
+    const sentinel = '{"sentinel": true}\n';
+    writeFileSync(join(tmp, "collide.jsonl"), sentinel);
+    writeFileSync(join(tmp, "collide.meta.json"), JSON.stringify({ sessionID: "someone-else" }));
+    const capture = createCtxvmCapture({
+      agentId: "ctxvm-ai-sdk",
+      model: "ctxvm-mock/echo-model",
+      provider: "ctxvm-mock",
+      budgetTokens: 120000,
+      environmentId: "env-000000000000",
+    });
+    await capture.middleware.transformParams!({
+      type: "stream",
+      params: { prompt: [] } as never,
+      model: {} as never,
+    });
+    const finished = capture.finishAll();
+    assert.equal(finished.length, 1);
+    const coveragePath = finished[0]!.coveragePath!;
+    assert.match(
+      coveragePath,
+      /collide-[0-9a-f]{8}\.coverage\.json$/,
+      "the second session must be written under a suffixed name",
+    );
+    assert.equal(
+      readFileSync(join(tmp, "collide.jsonl"), "utf8"),
+      sentinel,
+      "the other session's bytes must be untouched",
+    );
+    // The manifest describes the bytes it covers, under the resolved name too.
+    const coverage = JSON.parse(readFileSync(coveragePath, "utf8")) as { traceFile: string };
+    assert.equal(coverage.traceFile, coveragePath.split("/").pop()!.replace(".coverage.json", ".jsonl"));
+  } finally {
+    delete process.env.CTXVM_TRACE_DIR;
+    delete process.env.CTXVM_TRACE_NAME;
     rmSync(tmp, { recursive: true, force: true });
   }
 });

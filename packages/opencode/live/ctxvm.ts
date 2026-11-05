@@ -62,6 +62,25 @@ function adapterVersion(): string | null {
  * tracer.ts's per-trace opt-out law (`CTXVM_TRACE_TS=0`); the tool table
  * imports the plugin's OWN load-time snapshot so manifest and stamps can
  * never desync. */
+/** W21: a flush name that cannot replace another session's capture.
+ *
+ * A reused trace name silently replaced earlier bytes at the same path
+ * (RR-LIVE-20261104). If the meta sidecar at `file` belongs to a DIFFERENT
+ * session, append eight hex digits of the session id's digest. The same session
+ * keeps the same name, so repeated flushes stay idempotent.
+ */
+function collisionSafeFile(traceDir: string, file: string, sessionID: string): string {
+  try {
+    const meta = JSON.parse(readFileSync(join(traceDir, `${file}.meta.json`), "utf8")) as {
+      sessionID?: string;
+    };
+    if (meta?.sessionID == null || meta.sessionID === sessionID) return file;
+  } catch {
+    return file;
+  }
+  return `${file}-${createHash("sha256").update(sessionID, "utf8").digest("hex").slice(0, 8)}`;
+}
+
 function coverageManifest(sessionID: string, file: string, traceJsonl: string): Record<string, unknown> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any — trace bytes are whatever the codec emitted
   const rows: any[] = traceJsonl.split("\n")
@@ -359,8 +378,10 @@ export default {
       const flushed = vm.finishAll();
       mkdirSync(traceDir, { recursive: true });
       const base = process.env.CTXVM_TRACE_NAME;
+      let keepName: string | undefined;
       for (const { sessionID, trace } of flushed) {
-        const file = base || sessionID;
+        const file = collisionSafeFile(traceDir, base || sessionID, sessionID);
+        keepName = `${file}.jsonl`;
         writeFileSync(join(traceDir, `${file}.jsonl`), trace.jsonl);
         wit(`flush ${file}.jsonl bytes=${trace.jsonl.length} session=${sessionID}`);
         writeMeta(sessionID, trace.stats, file);
@@ -386,7 +407,7 @@ export default {
       } catch {
         /* dir may not exist yet */
       }
-      pruneTraces(traceDir, base ? `${base}.jsonl` : undefined);
+      pruneTraces(traceDir, keepName);
       return flushed;
     };
 

@@ -116,6 +116,42 @@ test("write-through persists a partial snapshot and cleanup clears it", async ()
   assert.ok(existsSync(join(dir, "wt.jsonl")), "the complete capture must exist after cleanup");
 });
 
+test("W21: a reused trace name never replaces another session's bytes", async () => {
+  clearEnv();
+  const dir = mkdtempSync(join(tmpdir(), "ctxvm-collide-"));
+  process.env.CTXVM_TRACE_DIR = dir;
+  process.env.CTXVM_TRACE_NAME = "collide";
+  const sentinel = '{"sentinel": true}\n';
+  writeFileSync(join(dir, "collide.jsonl"), sentinel);
+  writeFileSync(join(dir, "collide.meta.json"), JSON.stringify({ sessionID: "someone-else" }));
+
+  let sessionCb: (input: unknown) => void = () => {};
+  const ctx = {
+    session: {
+      hook: async (_name: string, cb: (input: unknown) => void) => {
+        sessionCb = cb;
+        return { dispose() {} };
+      },
+    },
+    tool: { hook: async () => ({ dispose() {} }) },
+  };
+  const cleanup = await live.setup(ctx as never);
+  sessionCb({
+    sessionID: "ses_collide",
+    messages: [{ role: "user", content: [{ type: "text", text: "hello" }] }],
+  });
+  await (cleanup as () => Promise<void>)();
+
+  const suffix = createHash("sha256").update("ses_collide").digest("hex").slice(0, 8);
+  assert.ok(existsSync(join(dir, `collide-${suffix}.jsonl`)), "the second session needs its own path");
+  assert.ok(existsSync(join(dir, `collide-${suffix}.coverage.json`)));
+  assert.equal(
+    readFileSync(join(dir, "collide.jsonl"), "utf8"),
+    sentinel,
+    "the other session's bytes must be untouched",
+  );
+});
+
 test("live adapter maps the three hooks and flushes a trace on cleanup", async () => {
   clearEnv();
   const dir = mkdtempSync(join(tmpdir(), "ctxvm-live-"));

@@ -233,6 +233,23 @@ stamp site read `kwargs.get("tool")` while live payloads carry `tool_name` (the 
 rows read `tool=None` on plugin 0.8.0 bytes. Both the post stamp and the pre witness now use
 `kwargs.get("tool") or kwargs.get("tool_name")`.
 
+### 3.2 W21 collision law — a reused trace name never replaces another session's bytes
+
+A post-restart capture reused the default name and the write-through replaced the 13:0x evidence
+under identical filenames (`RR-LIVE-20261104`). The rule now, identical in all three lanes:
+
+- Before writing, read `<file>.meta.json`. If it exists and its `sessionID` is **different** from the
+  session being flushed, write `<file>-<sha256(sessionID)[:8]>.jsonl` (and the same suffixed meta and
+  coverage sidecars) instead.
+- If the sidecar is absent, unreadable, or names the same session, keep `<file>`. A session therefore
+  keeps its own name across repeated flushes, and a mid-session flush still supersedes its own bytes.
+- The coverage manifest's `traceFile` and the retention `keep` argument both use the RESOLVED name.
+  With a suffix, passing the base name would leave the file just written unprotected by the prune
+  guard, so the two must move together.
+
+The rule is per flush, not per process: no session-keyed cache is kept, because the meta sidecar is
+the authority for who owns a name and a cache could outlive a directory cleanup.
+
 ## 4. Enforcement
 
 - `packages/opencode/test/meta-parity.test.ts` — asserts (a) the §2 signature table on a live

@@ -379,6 +379,26 @@ _HERMES_FAULT_SOURCES = ("tool_recall", "identifier_scan", "explicit_api", "sema
 _HERMES_TOOL_EFFECTS = ("READ_ONLY", "MUTATING")
 
 
+def _collision_safe_file(trace_dir: str, file: str, session_id: str) -> str:
+    """Return a flush name that cannot replace another session's capture (W21).
+
+    A reused trace name silently replaced earlier bytes at the same path
+    (RR-LIVE-20261104: a post-restart capture overwrote the 13:0x evidence under
+    identical filenames). The rule: if the meta sidecar at ``file`` belongs to a
+    DIFFERENT session, append eight hex digits of the session id's digest. The
+    same session keeps the same name, so repeated flushes stay idempotent and a
+    mid-session flush still supersedes its own earlier bytes.
+    """
+    try:
+        meta = json.loads(Path(trace_dir, f"{file}.meta.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return file
+    owner = meta.get("sessionID") if isinstance(meta, dict) else None
+    if owner in (None, session_id):
+        return file
+    return f"{file}-{hashlib.sha256(session_id.encode('utf-8')).hexdigest()[:8]}"
+
+
 def _coverage_manifest(session_id: str, file: str, trace_jsonl: str) -> Dict[str, Any]:
     """Build the W17 `<file>.coverage.json` body for one flushed capture.
 
@@ -804,7 +824,7 @@ def register(ctx) -> None:
             return
         _ensure_trace_dir(trace_dir)
         trace = tracer.finish()
-        file = _flush_base() or session_id
+        file = _collision_safe_file(trace_dir, _flush_base() or session_id, session_id)
         jsonl_path = Path(trace_dir) / f"{file}.jsonl"
         meta_path = Path(trace_dir) / f"{file}.meta.json"
         jsonl_path.write_text(trace.jsonl, encoding="utf-8")
@@ -828,13 +848,15 @@ def register(ctx) -> None:
         vm = _ensure_plugin()
         trace_dir = _active_trace_dir()
         written = 0
+        keep_name: Optional[str] = None
         if vm is not None and trace_dir:
             _ensure_trace_dir(trace_dir)
             base = _flush_base()
             for record in vm.finish_all():
                 session_id = record["sessionID"]
                 trace = record["trace"]
-                file = base or session_id
+                file = _collision_safe_file(trace_dir, base or session_id, session_id)
+                keep_name = f"{file}.jsonl"
                 Path(trace_dir, f"{file}.jsonl").write_text(
                     trace.jsonl, encoding="utf-8"
                 )
@@ -874,7 +896,7 @@ def register(ctx) -> None:
                         victim.unlink()
                     except OSError:
                         pass
-            _prune_traces(trace_dir, keep=f"{_flush_base()}.jsonl" if _flush_base() else None)
+            _prune_traces(trace_dir, keep=keep_name)
         # UC stubs flush (no-op for current stubs; real UCs write artefacts)
         for uc in _enabled_stubs(features):
             uc.flush()
