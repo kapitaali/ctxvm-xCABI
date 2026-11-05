@@ -235,8 +235,34 @@ class TracerTests(unittest.TestCase):
             self.assertRegex(
                 e["ts"], r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:([0-5]\d|60)\.\d{3}Z$",
             )
-        stamps = [e["ts"] for e in events]
-        self.assertEqual(sorted(stamps), stamps, "ts monotonic across the stream")
+        # The FILE order is canonical by event class, not by time: finish() emits
+        # every turn.render and then every call.meta, and the tail is re-derived on
+        # each flush so repeated flushes stay byte-identical (D9 / idempotency law).
+        # So the stream as a whole is NOT monotonic. What holds: the live prefix is
+        # stamped as events are pushed; each turn's render and meta carry the same
+        # snapshot stamp; the turn stamps ascend with the turn index.
+        types = [e["type"] for e in events]
+        split = len(types)
+        while split > 0 and types[split - 1] in ("turn.render", "call.meta"):
+            split -= 1
+        live_stamps = [e["ts"] for e in events[:split]]
+        self.assertEqual(sorted(live_stamps), live_stamps, "live pushes are time-monotonic")
+        tail = events[split:]
+        renders = [e for e in tail if e["type"] == "turn.render"]
+        metas = [e for e in tail if e["type"] == "call.meta"]
+        self.assertTrue(renders, "the fixture must exercise the tail")
+        self.assertEqual(
+            [e["type"] for e in tail],
+            ["turn.render"] * len(renders) + ["call.meta"] * len(metas),
+            "the tail is grouped by class, renders before metas",
+        )
+        render_stamps = [r["ts"] for r in renders]
+        self.assertEqual(sorted(render_stamps), render_stamps, "turn stamps ascend with the turn index")
+        for meta in metas:
+            render = next((r for r in renders if r["turn"] == meta["turn"]), None)
+            if render is None or "ts" not in meta:
+                continue
+            self.assertEqual(meta["ts"], render["ts"], f"turn {meta['turn']}: meta carries its render's stamp")
         # Tail snapshots mint at their turn's render snapshot time: repeated
         # finish() flushes re-derive the SAME stamps — covered by
         # test_finish_idempotent_tail_regenerates, deliberately left unwrapped

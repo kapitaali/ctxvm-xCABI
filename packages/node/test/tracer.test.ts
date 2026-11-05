@@ -223,26 +223,47 @@ test("ts rides LAST on every event, RFC 3339 UTC ms (RFC-0.1 §R4 / D9 default-O
     assert.equal(keys[keys.length - 1], "ts", `ts must ride LAST on ${(e as { type: string }).type}`);
     assert.match((e as { ts: string }).ts, TS, `ts pattern on ${(e as { type: string }).type}`);
   }
-  // RFC 3339 UTC strings sort lexicographically in time order. Two runs are
-  // monotonic, but not one concatenation of both:
+  // RFC 3339 UTC strings sort lexicographically in time order, but the FILE order is
+  // canonical by event class, not by time: finish() emits every `turn.render` and then
+  // every `call.meta`, and the tail is re-derived on each flush so repeated flushes stay
+  // byte-identical (D9 / idempotency law). Two invariants hold, and one does not:
   //
   //  - the live prefix is stamped as events are pushed, so it is monotonic;
-  //  - the tail (turn.render + call.meta) carries stamps cached at each turn's
-  //    RENDER, on purpose: re-flushing must reproduce identical bytes (D9 /
-  //    idempotency law), so a tail row can hold a stamp EARLIER than a live
-  //    event pushed after that render.
+  //  - each turn's render and meta carry the SAME snapshot stamp, so the turn stamps
+  //    ascend with the turn index;
+  //  - the tail as a whole is NOT monotonic — it is [s0..sN] followed by [s0..sN].
   //
-  // Asserting one monotonic sequence was a clock-resolution flake: it held while
-  // a whole run fit inside one millisecond, and failed under load. This is the
-  // gate red from 2026-11-03 that run-ci could not name before run_step.
+  // Asserting one monotonic stream was a clock-resolution flake: it held only while the
+  // whole run fitted inside one millisecond. The 2026-11-03 fix replaced one wrong
+  // assertion with another (tail monotonic) that survived the same way, and the gate
+  // went red again on 2026-11-05 at 2 ms. This is the invariant the code actually has.
   const isTail = (t: string): boolean => t === "turn.render" || t === "call.meta";
   let split = events.length;
   while (split > 0 && isTail((events[split - 1] as { type: string }).type)) split -= 1;
   const live = events.slice(0, split).map((e) => (e as { ts: string }).ts);
-  const tail = events.slice(split).map((e) => (e as { ts: string }).ts);
   assert.deepEqual([...live].sort(), live, "live pushes are time-monotonic");
-  assert.deepEqual([...tail].sort(), tail, "tail snapshots are time-monotonic");
-  assert.ok(tail.length > 0, "the fixture must exercise the tail");
+
+  const tail = events.slice(split) as { type: string; turn: number; ts?: string }[];
+  const renders = tail.filter((e) => e.type === "turn.render");
+  const metas = tail.filter((e) => e.type === "call.meta");
+  assert.ok(renders.length > 0, "the fixture must exercise the tail");
+  assert.equal(
+    tail.length,
+    renders.length + metas.length,
+    "the tail holds only turn.render and call.meta",
+  );
+  assert.deepEqual(
+    tail.map((e) => e.type),
+    [...renders.map(() => "turn.render"), ...metas.map(() => "call.meta")],
+    "the tail is grouped by class, renders before metas",
+  );
+  const renderStamps = renders.map((r) => r.ts!);
+  assert.deepEqual([...renderStamps].sort(), renderStamps, "turn stamps ascend with the turn index");
+  for (const meta of metas) {
+    const render = renders.find((r) => r.turn === meta.turn);
+    if (render?.ts === undefined || meta.ts === undefined) continue;
+    assert.equal(meta.ts, render.ts, `turn ${meta.turn}: call.meta carries its render's snapshot stamp`);
+  }
 });
 
 test("CTXVM_TRACE_TS=0 opts the whole trace out of ts — byte-stability restored (D9)", () => {
