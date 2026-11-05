@@ -718,6 +718,27 @@ tool_result (terminal fails safe to MUTATING)** — two of the three pending fac
 because the restart (gateway PID 23146, 13:03:38) postdates the 0.8.0 sync (12:57:19); old
 traces keep (unknown) by append-only. Tests: hermes 112 + 44 + 8, node 21; ALL GATES GREEN;
 plugin 0.8.0 (yaml pinned by test).
+**DAY CLOSE 2026-11-05 (index cutoff 10:38) — five commits; the paper gained its safety half, and
+the capture gained a checker.** The stream's `turns` column was reading MAX turn INDEX, so a
+one-turn session displayed zero turns (`0ac1746`, rust 72→73; corrected live read: 2 sessions /
+2 turns / 20 declarations for `env-2b4652ae9d98`). A post-restart capture reused the default trace
+name and the write-through replaced the 13:0x evidence at the same filenames; `18e1123` re-anchored
+`RR-LIVE` to the surviving bytes and turned the collision into a candidate card. Two independent
+safety notes converged into `research/synthesis-20261105.md` as the record (`e171a0b`; the sources
+stay on disk under the gitignored `research/uncommitted/`). The white paper (`0e1168c`,
+`reports/RR-WPSAFETY-20261105.md`) now carries the seven research questions as §8.7–§17 — threat
+model, counterfactual replay, evaluation infrastructure, monitor views, provenance, control,
+audit and regulation, what ctxvm cannot do, and a status table that marks every row unanswered —
+with three body-level figures marked UNVERIFIED and one measurement (417 declared / 312 rendered /
+303 faults / 99.3% on rendered, reported as definition-bound caution). `index.md` had drifted from
+the paper; `sync-index.py --check` now enforces the rule the README states. W17 (`e9656fe`,
+`reports/RR-COVERAGE-20261105.md`): the flush is a triple, `tools/coverage_check.py` is the law,
+and the checker caught the live `tool_name` defect that had classified every live hermes declare
+MUTATING on 0.8.0 (447 witness rows read `tool=None`). Tests: rust 73, ts 21+61+45, python
+117+44+8, plugin 0.9.0, ALL GATES GREEN. **Live proof of W17 and of the stamp fix still needs the
+installed copy re-synced and the gateway restarted**; commits after 10:38 belong to a follow-up
+index.
+
 **Next frontier 8 (W8 prereg landed; status 2026-11-01):** owner ratifies the freeze +
 names the model/price row + climbs the implementation-card gate (ctxvm context-engine
 plugin + hermes `post_api_request` usage wiring + `tools/dq-secret-scan.py` + frozen

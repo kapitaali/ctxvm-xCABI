@@ -5,6 +5,10 @@ proposed white-paper sections.md` (5 Nov 2026). Every citation below was fetched
 level during this pass; where a specific number appears only in a paper body I could not open, it is
 marked **body-level, unverified**. One measurement was run on this repository's own traces (§8).
 
+This file is the experiment-level pass. The merged record of the two source notes is
+`research/synthesis-20261105.md`; the paper sections that carry these answers are §8.7–§17 of
+`research/white-paper/white-paper.md`.
+
 The short version: **none of the seven can be answered from the literature alone, and only one can be
 answered at all from data we already hold.** What the literature does establish is that each question
 is well-posed, that the missing ingredient in each is a record of what the model was shown, and that
