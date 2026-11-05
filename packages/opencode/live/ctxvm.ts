@@ -22,12 +22,13 @@
  * metadata is affected; the mapping reads `sessionID` + `messages`, whose shapes match.
  */
 
+import { createHash } from "node:crypto";
 import { appendFileSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { createCtxvmPlugin, type CtxvmPlugin } from "../src/plugin.ts";
+import { createCtxvmPlugin, READ_ONLY, type CtxvmPlugin } from "../src/plugin.ts";
 import { assembleResumeBrief } from "../src/resume-brief.ts";
 import { pauseTurnFromEnv, resumeVerify, uc1Pause } from "../src/uc1-handoff.ts";
 
@@ -52,6 +53,78 @@ function adapterVersion(): string | null {
   } catch {
     return null;
   }
+}
+
+/** W17 — coverage facts computed FROM the trace bytes we are about to write,
+ * mirroring tools/coverage_check.py exactly (the checker is the law; any
+ * drift between builder and checker lands in the same card and in
+ * 09-plugin-parity.md §3). The ts claim is read at FLUSH time and mirrors
+ * tracer.ts's per-trace opt-out law (`CTXVM_TRACE_TS=0`); the tool table
+ * imports the plugin's OWN load-time snapshot so manifest and stamps can
+ * never desync. */
+function coverageManifest(sessionID: string, file: string, traceJsonl: string): Record<string, unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any — trace bytes are whatever the codec emitted
+  const rows: any[] = traceJsonl.split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+  const open: any = rows.find((r) => r.type === "session.open") ?? {};
+  const declares = rows.filter((r) => r.type === "page.declare");
+  const toolResults = declares.filter((r) => r?.page?.kind === "tool_result");
+  const faults = rows.filter((r) => r.type === "page.fault");
+  const declaresByClass: Record<string, number> = { READ_ONLY: 0, MUTATING: 0 };
+  for (const r of toolResults) {
+    if (r.toolEffect in declaresByClass) declaresByClass[r.toolEffect] += 1;
+  }
+  const faultsBySource: Record<string, number> = {
+    tool_recall: 0, identifier_scan: 0, explicit_api: 0, semantic: 0,
+  };
+  for (const r of faults) {
+    if (r.source in faultsBySource) faultsBySource[r.source] += 1;
+  }
+  const turns = new Set<number>(
+    rows.filter((r) => r.type === "turn.render" && Number.isInteger(r.turn)).map((r) => r.turn),
+  );
+  const pageKeys = new Set<string>();
+  for (const r of declares) {
+    const id = r?.page?.id;
+    if (id?.logicalRef != null && id?.contentHash != null) {
+      pageKeys.add(`${id.logicalRef}\u0000${id.contentHash}`);
+    }
+  }
+  return {
+    xcabiCoverage: "0.1",
+    traceFile: `${file}.jsonl`,
+    traceDigest: createHash("sha256").update(traceJsonl, "utf8").digest("hex"),
+    session: {
+      sessionID,
+      environmentId: open.environmentId ?? null,
+      model: open.model ?? null,
+      provider: open.provider ?? null,
+    },
+    toolTable: {
+      readOnlyRegistered: [...READ_ONLY].sort(),
+      default: "MUTATING", // the W15 fail-safe law, restated byte-verifiably
+    },
+    instrumentation: {
+      ts: process.env.CTXVM_TRACE_TS !== "0", // the tracer's per-trace opt-out law, re-read at flush
+      toolEffect: true,
+      identifierScan: true,
+    },
+    plugin: {
+      version: adapterVersion(),
+      harness: "opencode-v2-promise-plugin",
+      harnessVersion: process.env.CTXVM_OPENCODE_VERSION ?? null,
+    },
+    captures: {
+      turns: turns.size,
+      pages: pageKeys.size,
+      declares: declares.length,
+      declaresByClass,
+      faults: faults.length,
+      faultsBySource,
+    },
+  };
 }
 
 /** Minimal structural view of the v2 plugin context (typed payloads live in the spike). */
@@ -291,6 +364,11 @@ export default {
         writeFileSync(join(traceDir, `${file}.jsonl`), trace.jsonl);
         wit(`flush ${file}.jsonl bytes=${trace.jsonl.length} session=${sessionID}`);
         writeMeta(sessionID, trace.stats, file);
+        // W17: the coverage sidecar rides every full flush, last slot — its
+        // digest ties it to the jsonl bytes just written; the checker
+        // (tools/coverage_check.py) validates the pair downstream.
+        writeFileSync(join(traceDir, `${file}.coverage.json`),
+          `${JSON.stringify(coverageManifest(sessionID, file, trace.jsonl), null, 2)}\n`);
         stats.sessions.push(sessionID);
       }
       // A complete capture supersedes its partial snapshot, then the directory is

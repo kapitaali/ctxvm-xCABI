@@ -25,6 +25,7 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -42,6 +43,7 @@ const PARTS_FIXTURE = join(REPO_ROOT, "packages/ai-sdk/fixtures/echo-thrash.part
 const TRACE_FIXTURE = join(REPO_ROOT, "packages/ai-sdk/fixtures/echo-thrash.trace.jsonl");
 const VENV_PYTHON = join(REPO_ROOT, "venvs/odps/bin/python");
 const V01_VALIDATOR = join(REPO_ROOT, "spec/rfc-0.1/validate_schema_v0_1.py");
+const COVERAGE_CHECK = join(REPO_ROOT, "tools/coverage_check.py");
 
 function freshTmp(label: string): string {
   // Test isolation (m7 gate-2 regression, RR-UM7CAPTURE): quarantine leaked
@@ -311,6 +313,52 @@ test("integration: the committed fixture replays through a REAL tracer byte-iden
     assert.equal(meta.hookStats.middlewareRenders, 3); // gen had 3 model calls
     assert.equal(meta.hookStats.tapStepEnds, 3);
     assert.equal(statSync(join(tmp, "replay-echo.jsonl")).isFile(), true);
+
+    // W17: the coverage sidecar describes this flush, and the checker — the law —
+    // accepts the pair. The capture ran under the D9 opt-out, so the manifest must
+    // CLAIM ts:false and still pass (instrumentation is a real lane toggle, not a
+    // constant).
+    const coveragePath = finished[0]!.coveragePath!;
+    const coverage = JSON.parse(readFileSync(coveragePath, "utf8")) as {
+      xcabiCoverage: string;
+      traceFile: string;
+      traceDigest: string;
+      session: { sessionID: string; environmentId: string; model: string; provider: string };
+      toolTable: { readOnlyRegistered: string[]; default: string };
+      instrumentation: { ts: boolean; toolEffect: boolean; identifierScan: boolean };
+      plugin: { version: string | null; harness: string; harnessVersion: string | null };
+      captures: { turns: number; pages: number; declares: number; declaresByClass: Record<string, number>; faults: number; faultsBySource: Record<string, number> };
+    };
+    assert.equal(coverage.xcabiCoverage, "0.1");
+    assert.equal(coverage.traceFile, "replay-echo.jsonl");
+    assert.equal(
+      coverage.traceDigest,
+      createHash("sha256").update(readFileSync(join(tmp, "replay-echo.jsonl"))).digest("hex"),
+      "digest must cover the bytes physically present at the flushed path",
+    );
+    // sessionID is a pairing fact, not a byte-verifiable one (the checker says so):
+    // it must equal the meta sidecar's, whatever the default session key is.
+    assert.equal(coverage.session.sessionID, (JSON.parse(readFileSync(metaPath, "utf8")) as { sessionID: string }).sessionID);
+    assert.equal(coverage.session.environmentId, "env-000000000000");
+    assert.equal(coverage.session.model, "ctxvm-mock/echo-model");
+    assert.equal(coverage.session.provider, "ctxvm-mock");
+    assert.deepEqual(coverage.toolTable.readOnlyRegistered, ["glob", "grep", "list", "read", "webfetch"]);
+    assert.equal(coverage.toolTable.default, "MUTATING");
+    assert.deepEqual(coverage.instrumentation, { ts: false, toolEffect: true, identifierScan: true });
+    assert.equal(coverage.plugin.harness, "ai-sdk-middleware");
+    assert.equal(coverage.plugin.version, "0.0.1");
+    assert.equal(coverage.captures.turns, 3);
+    assert.equal(coverage.captures.declares, coverage.captures.declaresByClass.READ_ONLY + coverage.captures.declaresByClass.MUTATING);
+    assert.deepEqual(Object.keys(coverage.captures.faultsBySource).sort(), ["explicit_api", "identifier_scan", "semantic", "tool_recall"]);
+    if (statSafe(VENV_PYTHON)) {
+      const check = spawnSync(VENV_PYTHON, [COVERAGE_CHECK, join(tmp, "replay-echo.jsonl"), coveragePath], {
+        encoding: "utf8",
+        timeout: 120000,
+      });
+      if (check.error || check.status === undefined) assert.fail(`coverage checker spawn failed: ${check.error}`);
+      assert.equal(check.status, 0, check.stdout + check.stderr);
+      assert.match(check.stdout, /coverage_check: consistent/);
+    }
   } finally {
     delete process.env.CTXVM_TRACE_DIR;
     delete process.env.CTXVM_TRACE_NAME;

@@ -18,6 +18,9 @@ Hooks wired (see packages/hermes/HOOKS.md for the full pin):
 Trace output (flushes on session end and plugin unload):
     <trace-dir>/<session-id>.jsonl        — RFC-0 xCABI JSONL trace
     <trace-dir>/<session-id>.meta.json    — session id, harness, hook counts, trace stats
+    <trace-dir>/<session-id>.coverage.json — W17 coverage manifest (FULL flush only;
+        no sidecar at write-through partials). Validates against the trace bytes
+        with tools/coverage_check.py — the checker, not this file, is the law.
 
 Two ways to enable tracing:
 
@@ -80,7 +83,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.8.0"
+PLUGIN_VERSION = "0.9.0"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -261,7 +264,8 @@ def _prune_traces(trace_dir: str, keep: Optional[str] = None) -> int:
             kept_bytes += size
             continue
         meta = path.with_name(path.name[: -len(".jsonl")] + ".meta.json")
-        for victim in (path, meta):
+        coverage = path.with_name(path.name[: -len(".jsonl")] + ".coverage.json")
+        for victim in (path, meta, coverage):
             try:
                 victim.unlink()
                 deleted += 1
@@ -360,6 +364,85 @@ _HERMES_READ_ONLY_TOOLS: frozenset[str] = frozenset({"read_file", "search_files"
 
 def _tool_effect(tool: Any) -> str:
     return "READ_ONLY" if tool in _HERMES_READ_ONLY_TOOLS else "MUTATING"
+
+
+# --- W17: the coverage sidecar ----------------------------------------------
+# Mirrors tools/coverage_check.py — the single authoritative checker — exactly.
+# Any drift between this builder and the checker must land in the SAME card and
+# in 09-plugin-parity.md §3. The manifest is written at FULL FLUSH only (never
+# at write-through partials; partial pruning would leave coverage describing
+# bytes that no longer exist), is NOT a tenth trace event (the sealed nine-verb
+# envelope is untouched), and its digest ties it to the bytes physically
+# present at the flushed path (RR-LIVE-20261104: trace names can be reused).
+
+_HERMES_FAULT_SOURCES = ("tool_recall", "identifier_scan", "explicit_api", "semantic")
+_HERMES_TOOL_EFFECTS = ("READ_ONLY", "MUTATING")
+
+
+def _coverage_manifest(session_id: str, file: str, trace_jsonl: str) -> Dict[str, Any]:
+    """Build the W17 `<file>.coverage.json` body for one flushed capture.
+
+    Session facts (environmentId/model/provider) come from the trace's own
+    session.open row — never from env — so the claims are byte-true by
+    construction and the checker verifies them against the same bytes. The
+    instrumentation dict is lane-fixed: the hermes reference lane has no
+    per-run toggles (parity test pins the constants).
+    """
+    rows = [json.loads(line) for line in trace_jsonl.splitlines() if line.strip()]
+    open_note = [r for r in rows if r.get("type") == "session.open"]
+    session_open = open_note[0] if open_note else {}
+    declares = [r for r in rows if r.get("type") == "page.declare"]
+    tool_results = [r for r in declares
+                    if isinstance(r.get("page"), dict)
+                    and r["page"].get("kind") == "tool_result"]
+    faults = [r for r in rows if r.get("type") == "page.fault"]
+    by_class = {k: 0 for k in _HERMES_TOOL_EFFECTS}
+    for row in tool_results:
+        if row.get("toolEffect") in by_class:
+            by_class[row["toolEffect"]] += 1
+    by_source = {k: 0 for k in _HERMES_FAULT_SOURCES}
+    for row in faults:
+        if row.get("source") in by_source:
+            by_source[row["source"]] += 1
+    turns = {r["turn"] for r in rows
+             if r.get("type") == "turn.render"
+             and isinstance(r.get("turn"), int) and not isinstance(r.get("turn"), bool)}
+    page_ids = {(r["page"]["id"]["logicalRef"], r["page"]["id"]["contentHash"])
+                for r in declares
+                if isinstance(r.get("page"), dict) and isinstance(r["page"].get("id"), dict)}
+    return {
+        "xcabiCoverage": "0.1",
+        "traceFile": f"{file}.jsonl",
+        "traceDigest": hashlib.sha256(trace_jsonl.encode("utf-8")).hexdigest(),
+        "session": {
+            "sessionID": session_id,
+            "environmentId": session_open.get("environmentId"),
+            "model": session_open.get("model"),
+            "provider": session_open.get("provider"),
+        },
+        "toolTable": {
+            "readOnlyRegistered": sorted(_HERMES_READ_ONLY_TOOLS),
+            "default": "MUTATING",
+        },
+        "instrumentation": {
+            "ts": True,
+            "toolEffect": True,
+            "identifierScan": True,
+        },
+        "plugin": {
+            "version": PLUGIN_VERSION,
+            "harness": "hermes-python-plugin",
+            "harnessVersion": os.environ.get("CTXVM_HERMES_VERSION"),
+        },
+        "captures": {
+            "turns": len(turns),
+            "pages": len(page_ids),
+            "declares": len(declares),
+            "declaresByClass": by_class,
+            "faults": len(faults),
+            "faultsBySource": by_source,
+        },
+    }
 
 
 def _transcript_texts(history: Optional[list[dict[str, Any]]]) -> str:
@@ -769,6 +852,18 @@ def register(ctx) -> None:
                     + "\n",
                     encoding="utf-8",
                 )
+                # W17: the coverage sidecar rides every FULL flush, last slot —
+                # its digest ties it to the jsonl bytes just written. Write-
+                # through partials never write coverage (the partial is what a
+                # later full flush supersedes).
+                Path(trace_dir, f"{file}.coverage.json").write_text(
+                    json.dumps(
+                        _coverage_manifest(session_id, file, trace.jsonl),
+                        indent=2,
+                    )
+                    + "\n",
+                    encoding="utf-8",
+                )
         # A complete capture supersedes its partial snapshot, and the directory is
         # pruned so default-ON capture cannot grow without bound.
         if trace_dir:
@@ -815,7 +910,10 @@ def register(ctx) -> None:
     def on_pre_tool_call(**kwargs: Any) -> None:
         _stamp_environment(kwargs)
         stats["pre_tool_calls"] += 1
-        _witness(f"before tool={kwargs.get('tool')}")
+        # W17: the same effective-name law as the post path — live payloads
+        # name the tool via `tool_name`, and the witness must show the tool
+        # the run actually rendered, not a synthetic-key absence.
+        _witness(f"before tool={kwargs.get('tool') or kwargs.get('tool_name')}")
         features = _features()
         vm = _ensure_plugin()
         if vm is not None:
@@ -829,14 +927,21 @@ def register(ctx) -> None:
         _stamp_environment(kwargs)
         stats["post_tool_calls"] += 1
         status = kwargs.get("status")
-        _witness(f"after tool={kwargs.get('tool')} status={status}")
+        # W17 (found by tools/coverage_check.py against real round-trip bytes):
+        # the live payload carries the tool under `tool_name` (HOOKS.md hook
+        # table; 447 witness rows read `after tool=None` while the refs named
+        # the tool fine through the adapter's own fallback) — so the class
+        # stamp must read the SAME effective name the adapter's ref-builder
+        # uses, or every live hermes capture classified as MUTATING.
+        tool = kwargs.get("tool") or kwargs.get("tool_name")
+        _witness(f"after tool={tool} status={status}")
         if status not in ("ok", "completed"):
             stats["errored"] += 1
         else:
             stats["completed"] += 1
         # W15 (§R7): tag the class at registration time, on the payload the
         # core receives; the core forwards it verbatim and classifies nothing.
-        kwargs["toolEffect"] = _tool_effect(kwargs.get("tool"))
+        kwargs["toolEffect"] = _tool_effect(tool)
         features = _features()
         vm = _ensure_plugin()
         if vm is not None:

@@ -60,7 +60,7 @@ pre_llm_call(turn=t+1) → vm.scan(conversation_history) → vm.render()   [turn
 | `page.fault(tool_recall)` | `pre_tool_call` | `tool_name`, `args` matched against declared pages |
 | `page.fault(identifier_scan)` | `pre_llm_call` | `conversation_history` text scanned for page identity tokens |
 | `turn.render` + `call.meta` | `pre_llm_call` | Turn boundary; `providerReported=false` (estimated only) |
-| flush | `on_session_end` | `vm.finishAll()` writes traces |
+| flush | `on_session_end` | `vm.finishAll()` writes the pair + the W17 coverage sidecar (`<file>.jsonl`, `<file>.meta.json`, `<file>.coverage.json`) |
 
 **Env-gating:** Hooks are always registered; tracing is gated lazily at each hook
 call. Two ways to enable:

@@ -83,7 +83,7 @@ export interface CtxvmPlugin {
  */
 const OPENCODE_READ_ONLY_TOOLS = new Set(["read", "glob", "grep", "list", "webfetch"]);
 
-function readOnlyTable(): Set<string> {
+export function readOnlyTable(): Set<string> {
   const table = new Set(OPENCODE_READ_ONLY_TOOLS);
   for (const name of (process.env.CTXVM_READONLY_TOOLS ?? "").split(",")) {
     const trimmed = name.trim();
@@ -92,7 +92,10 @@ function readOnlyTable(): Set<string> {
   return table;
 }
 
-const READ_ONLY = readOnlyTable();
+// W17: exported so the coverage sidecar (live/ctxvm.ts) reports the SAME
+// table the stamps were derived from — both snapshot at module load, so a
+// mid-session env change can never desync the manifest from the stamps.
+export const READ_ONLY = readOnlyTable();
 
 function toolEffectOf(tool: string | undefined): "READ_ONLY" | "MUTATING" {
   return tool !== undefined && READ_ONLY.has(tool) ? "READ_ONLY" : "MUTATING";

@@ -189,6 +189,50 @@ sidecar through one module-level helper `_canon_meta(session_id, hook_stats, tra
 opencode's cleanup in `packages/opencode/live/ctxvm.ts` emits exactly this shape. The parity
 tests in both packages assert the exact key list above against live emissions.
 
+### 3.1 W17 coverage manifest — `<file>.coverage.json` (the third pair member)
+
+A coverage manifest is a **sidecar**, not a tenth event. The sealed nine-verb envelope is
+untouched. It is written at **full flush only** — never at a write-through partial, because a
+pruned partial would leave coverage describing bytes that no longer exist — and it describes the
+run's instrumentation rather than reporting a harness observation.
+
+Shape v0.1 (all three lanes write exactly these keys):
+
+| key | content | how the checker proves it |
+|---|---|---|
+| `xcabiCoverage` | `"0.1"` | literal |
+| `traceFile` | basename of the trace it covers | equals the trace path's basename |
+| `traceDigest` | sha256 hex over the trace bytes | recomputed from the file on disk |
+| `session` | `sessionID, environmentId, model, provider` | session facts read FROM the trace's own `session.open` row, so they are byte-true by construction; `sessionID` is a pairing fact and is not byte-verifiable |
+| `toolTable` | `readOnlyRegistered: [...], default: "MUTATING"` | registration law on stamps: a registered READ_ONLY tool never carries MUTATING, an unregistered name never carries READ_ONLY; `default` other than MUTATING is a violation |
+| `instrumentation` | `ts, toolEffect, identifierScan` | real lane toggles, not decoration |
+| `plugin` | `version, harness, harnessVersion` | present and typed |
+| `captures` | `turns, pages, declares, declaresByClass, faults, faultsBySource` | exact equality with the events; all four fault sources always present |
+
+**The checker is the law.** `tools/coverage_check.py` is stdlib-only and takes the trace and the
+manifest as arguments; it exits 0 when consistent, 1 on each violated law (one printed line each)
+and 2 on usage, IO or JSON error. It is invoked through a subprocess in every lane's tests, so the
+lanes cannot drift from the checker by importing it.
+
+Lane rows:
+
+| lane | file written by | `toolTable` source | `instrumentation` |
+|---|---|---|---|
+| hermes (`packages/hermes/live/__init__.py`) | `_flush_traces`, after the meta sidecar | `_HERMES_READ_ONLY_TOOLS` (`read_file, search_files` + `CTXVM_READONLY_TOOLS`) | all three true (no per-run toggles) |
+| opencode (`packages/opencode/live/ctxvm.ts`) | `flushTraces`, after `writeMeta` | `READ_ONLY` exported from `src/plugin.ts` (load-time snapshot; the shim imports the same binding, so stamps and manifest cannot desync) | `ts` re-read at flush from `CTXVM_TRACE_TS`, mirroring the tracer's per-trace opt-out |
+| ai-sdk (`packages/ai-sdk/src/flush.ts`) | `writeCapture`, after the meta write | `READ_ONLY_TOOLS` exported from `src/tap.ts` | `ts` re-read at flush, same rule as opencode |
+
+**Prune and era law.** Retention treats the coverage file as the third member of the pair: `_prune_traces`
+deletes `<file>.coverage.json` with its capture and never orphans coverage. The UC1 era-copy lists
+(`packages/hermes/src/uc1_handoff.py`, `packages/opencode/src/uc1-handoff.ts`) include `coverage.json`,
+so a handoff package carries the manifest next to the bytes it describes.
+
+**What the checker caught.** Building the hermes lane against real live bytes exposed a live bug: the
+stamp site read `kwargs.get("tool")` while live payloads carry `tool_name` (the hook table in
+`packages/hermes/HOOKS.md`), so every live hermes declare had been classified MUTATING — 447 witness
+rows read `tool=None` on plugin 0.8.0 bytes. Both the post stamp and the pre witness now use
+`kwargs.get("tool") or kwargs.get("tool_name")`.
+
 ## 4. Enforcement
 
 - `packages/opencode/test/meta-parity.test.ts` — asserts (a) the §2 signature table on a live

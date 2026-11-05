@@ -24,6 +24,11 @@ On plugin unload (`location.shutdown` → cleanup) the adapter writes:
 
 - `<name>.jsonl` — RFC-0 trace (`@ctxvm/node` `finish()` output)
 - `<name>.meta.json` — session id, model/provider, hook counts, trace stats
+- `<name>.coverage.json` — W17 coverage manifest: trace digest, session facts read
+  from the trace's own `session.open`, the registered read-only tool table, the
+  lane's instrumentation toggles and exact capture counts. Verified by
+  `python3 tools/coverage_check.py <name>.jsonl <name>.coverage.json`, which is
+  the authority for the sidecar's claims.
 
 Without `CTXVM_TRACE_DIR` the plugin is a no-op.
 

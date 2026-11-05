@@ -269,7 +269,7 @@ export function uc1Pause(options?: PauseOptions): PauseResult {
   // adapter's _flush_traces()"); here we snapshot whatever flushed file exists
   // for `name`.
   const snapshot: Record<string, unknown> = {};
-  for (const ext of ["jsonl", "meta.json"] as const) {
+  for (const ext of ["jsonl", "meta.json", "coverage.json"] as const) {
     const src = join(handoffDir, `${name}.${ext}`);
     const dst = join(handoffDir, `${name}-${turn === null ? "flush" : `turn-${turn}`}.${ext}`);
     if (isFile(src)) {

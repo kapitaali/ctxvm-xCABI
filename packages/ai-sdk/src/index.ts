@@ -96,6 +96,8 @@ export interface FinishedCapture {
   trace: FinishedTrace;
   jsonlPath?: string;
   metaPath?: string;
+  /** W17 coverage sidecar written beside the pair at full flush. */
+  coveragePath?: string;
 }
 
 export interface CtxvmCapture {
@@ -229,7 +231,13 @@ export function createCtxvmCapture(init: CtxvmCaptureInit): CtxvmCapture {
       witness(
         `flush ${key} wrote=${written.jsonlPath} renders=${counts.middlewareRenders} steps=${counts.tapStepEnds}`,
       );
-      out.push({ sessionKey: key, trace, jsonlPath: written.jsonlPath, metaPath: written.metaPath });
+      out.push({
+        sessionKey: key,
+        trace,
+        jsonlPath: written.jsonlPath,
+        metaPath: written.metaPath,
+        coveragePath: written.coveragePath,
+      });
     }
     // Deterministic flush order (opencode finishAll precedent).
     return out.sort((a, b) => (a.sessionKey < b.sessionKey ? -1 : 1));

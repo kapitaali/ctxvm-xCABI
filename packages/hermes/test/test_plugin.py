@@ -3,6 +3,7 @@
 Run: python test/test_plugin.py   (or: cd packages/hermes && npm test)
 """
 
+import hashlib
 import json
 import os
 import sys
@@ -409,6 +410,57 @@ class PluginTests(unittest.TestCase):
         declares = [e for e in record["trace"].events if e["type"] == "page.declare"]
         self.assertEqual(len(declares), 1)
         self.assertIn("read", declares[0]["page"]["id"]["logicalRef"])
+
+    def test_live_shape_stamps_the_registered_class(self):
+        """W17 finder pin: on live payloads the tool arrives under `tool_name`, so the
+        W15 class stamp must read the SAME effective name the adapter's ref
+        builder uses. On 0.8.0 real hermes bytes EVERY declare classified
+        MUTATING because the stamp site read a synthetic key (`tool`) the host
+        never sends on this hook — 447 witness rows read `after tool=None` —
+        and tools/coverage_check.py caught it from the registration-law check
+        on real capture bytes (read_file stamped MUTATING in the live trace).
+        A keys-only parity test passes while every page is wrong; this asserts
+        the registered VALUE reaches the flushed declare row through the live
+        adapter (the stamp site), fired as the real hook fires."""
+        _clear_env_for_tests()
+        tmp = Path(tempfile.mkdtemp(prefix="ctxvm-cls-"))
+        os.environ["CTXVM_TRACE_DIR"] = str(tmp)
+        os.environ["CTXVM_TRACE_NAME"] = "cls"
+        cbs, cmds = {}, {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                cbs[name] = cb
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+        register(FakeCtx())
+        try:
+            cbs["pre_tool_call"](
+                session_id="s", tool_name="read_file",
+                args={"path": "notes/alpha.md"},
+            )
+            cbs["post_tool_call"](
+                session_id="s", tool_name="read_file",
+                args={"path": "notes/alpha.md"}, status="ok",
+                result="hello world",
+            )
+            out = cmds["ctxvm-trace"]("stop")
+            self.assertIn("1 trace(s)", out)
+            rows = [json.loads(line) for line in (tmp / "cls.jsonl").read_text(
+                encoding="utf-8").splitlines() if line.strip()]
+            declare = next(r for r in rows if r.get("type") == "page.declare")
+            self.assertEqual(declare.get("toolEffect"), "READ_ONLY",
+                             "the registration table must reach live-shaped payloads")
+        finally:
+            for key in ("CTXVM_TRACE_DIR", "CTXVM_TRACE_NAME"):
+                os.environ.pop(key, None)
 
     def test_live_shape_string_content_scan_fires(self):
         """W4b B1 regression pin — RED before the fix, green after.
@@ -1187,8 +1239,12 @@ class LiveAdapterTests(unittest.TestCase):
             m = Path(tmp, f"cap{i}.meta.json")
             p.write_text("{}\n")
             m.write_text("{}\n")
+            # W17: the coverage sidecar is the third pair member — a pruned
+            # capture must not strand its manifest describing absent bytes.
+            Path(tmp, f"cap{i}.coverage.json").write_text("{}\n")
             os.utime(p, (1000 + i, 1000 + i))
             os.utime(m, (1000 + i, 1000 + i))
+            os.utime(Path(tmp, f"cap{i}.coverage.json"), (1000 + i, 1000 + i))
         os.environ["CTXVM_TRACE_RETAIN_MAX"] = "2"
         os.environ["CTXVM_TRACE_RETAIN_DAYS"] = "9999"
         deleted = live_mod._prune_traces(tmp, keep="cap0.jsonl")
@@ -1196,7 +1252,8 @@ class LiveAdapterTests(unittest.TestCase):
         self.assertIn("cap0.jsonl", remaining, "the file just written must never be pruned")
         self.assertLessEqual(len(remaining), 3)  # budget 2 + the kept file
         self.assertNotIn("cap1.jsonl", remaining)
-        self.assertGreater(deleted, 0)
+        self.assertFalse(Path(tmp, "cap1.coverage.json").exists(),
+                         "the coverage sidecar goes with its capture, never orphaned")
         for key in ("CTXVM_TRACE_RETAIN_MAX", "CTXVM_TRACE_RETAIN_DAYS"):
             os.environ.pop(key, None)
 
@@ -1442,6 +1499,250 @@ class CanonicalSidecarParity(unittest.TestCase):
         self.assertEqual(meta["budgetTokens"], 1234)
         self.assertEqual(meta["model"], "test/model")
         self.assertEqual(meta["provider"], "test")
+
+
+class CoverageManifestTests(unittest.TestCase):
+    """W17 — the coverage sidecar rides every FULL flush and answers to ONE
+    authoritative checker (tools/coverage_check.py), invoked here through
+    subprocess ON PURPOSE: the checker is the law, not an import.
+
+    Written at full flush only — never at write-through partials, so a later
+    partial prune can never leave coverage describing nonexistent bytes."""
+
+    def _flush_a_session(self, tmp: Path) -> None:
+        _clear_env_for_tests()
+        os.environ["CTXVM_TRACE_DIR"] = str(tmp)
+        os.environ["CTXVM_TRACE_NAME"] = "cov"
+        cbs, cmds = {}, {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                cbs[name] = cb
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+        register(FakeCtx())
+        cbs["pre_tool_call"](
+            session_id="s", tool_name="read_file", args={"path": "notes/alpha.md"},
+        )
+        cbs["post_tool_call"](
+            session_id="s", tool_name="read_file", args={"path": "notes/alpha.md"},
+            status="ok", result={"content": [{"type": "text", "text": "hello page"}]},
+        )
+        cbs["pre_llm_call"](
+            session_id="s", conversation_history=[
+                {"role": "user", "content": [{"type": "text", "text": "Read notes/alpha.md"}]},
+                {"role": "assistant", "content": [{"type": "text", "text": "It says hello page"}]},
+            ],
+        )
+        cbs["pre_tool_call"](
+            session_id="s", tool_name="write_file", args={"path": "notes/beta.md"},
+        )
+        cbs["post_tool_call"](
+            session_id="s", tool_name="write_file", args={"path": "notes/beta.md"},
+            status="ok", result={"content": [{"type": "text", "text": "written"}]},
+        )
+        out = cmds["ctxvm-trace"]("stop")
+        self.assertIn("1 trace(s)", out)
+        self.assertTrue((tmp / "cov.jsonl").exists())
+        self.assertTrue((tmp / "cov.meta.json").exists())
+        self.assertTrue((tmp / "cov.coverage.json").exists())
+
+    def _checker(self, tmp: Path, trace: str, manifest: str):
+        """Run the authoritative checker through subprocess — deliberately NOT
+        an import: the tool file is the law, not a library module."""
+        import subprocess
+        checker = Path(__file__).resolve().parents[3] / "tools" / "coverage_check.py"
+        return subprocess.run(
+            [sys.executable, str(checker), str(tmp / trace), str(tmp / manifest)],
+            capture_output=True, text=True,
+        )
+
+    def test_flush_writes_coverage_the_checker_accepts(self):
+        tmp = Path(tempfile.mkdtemp(prefix="ctxvm-cov-"))
+        self._flush_a_session(tmp)
+        try:
+            manifest = json.loads((tmp / "cov.coverage.json").read_text(encoding="utf-8"))
+            rows = [json.loads(line) for line in (tmp / "cov.jsonl").read_text(
+                encoding="utf-8").splitlines() if line.strip()]
+            trace_digest = hashlib.sha256((tmp / "cov.jsonl").read_bytes()).hexdigest()
+            self.assertEqual(manifest["traceDigest"], trace_digest,
+                             "the manifest ties itself to the bytes at the flushed path")
+            self.assertEqual(manifest["traceFile"], "cov.jsonl")
+            session_open = next(r for r in rows if r.get("type") == "session.open")
+            self.assertEqual(manifest["session"]["environmentId"],
+                             session_open.get("environmentId"))
+            self.assertEqual(manifest["captures"], {
+                "turns": 1,
+                "pages": 2,
+                "declares": 2,
+                "declaresByClass": {"READ_ONLY": 1, "MUTATING": 1},
+                # The pre-LLM scan attributes the history path token to the
+                # just-declared tool page → one identifier_scan fault.
+                "faults": 1,
+                "faultsBySource": {"tool_recall": 0, "identifier_scan": 1,
+                                   "explicit_api": 0, "semantic": 0},
+            })
+            result = self._checker(tmp, "cov.jsonl", "cov.coverage.json")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        finally:
+            for key in ("CTXVM_TRACE_DIR", "CTXVM_TRACE_NAME"):
+                os.environ.pop(key, None)
+
+    def test_instrumentation_and_sidecar_identities_are_lane_fixed(self):
+        from live import _HERMES_READ_ONLY_TOOLS, PLUGIN_VERSION
+        tmp = Path(tempfile.mkdtemp(prefix="ctxvm-cov-"))
+        self._flush_a_session(tmp)
+        try:
+            manifest = json.loads((tmp / "cov.coverage.json").read_text(encoding="utf-8"))
+            self.assertEqual(
+                manifest["instrumentation"],
+                {"ts": True, "toolEffect": True, "identifierScan": True},
+                "the hermes lane has no per-run toggles; the constants are pinned here "
+                "and mirrored in tools/coverage_check.py's docstring",
+            )
+            self.assertEqual(
+                manifest["toolTable"],
+                {"readOnlyRegistered": sorted(_HERMES_READ_ONLY_TOOLS), "default": "MUTATING"},
+            )
+            self.assertEqual(manifest["plugin"]["version"], PLUGIN_VERSION)
+            self.assertEqual(manifest["plugin"]["harness"], "hermes-python-plugin")
+            self.assertIsNone(manifest["plugin"].get("harnessVersion"))
+            self.assertEqual(manifest["session"]["sessionID"], "s")
+        finally:
+            for key in ("CTXVM_TRACE_DIR", "CTXVM_TRACE_NAME"):
+                os.environ.pop(key, None)
+
+    def test_no_coverage_at_write_through_partials(self):
+        """Partial snapshots never carry coverage: a partial's later pruning must
+        not strand coverage describing bytes that no longer exist."""
+        _clear_env_for_tests()
+        tmp = Path(tempfile.mkdtemp(prefix="ctxvm-cov-wt-"))
+        os.environ["CTXVM_TRACE_DIR"] = str(tmp)
+        os.environ["CTXVM_TRACE_NAME"] = "cov"
+        os.environ["CTXVM_TRACE_WRITETHROUGH"] = "1"
+        os.environ["CTXVM_TRACE_WRITETHROUGH_EVERY"] = "1"
+        cbs, cmds = {}, {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                cbs[name] = cb
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+        register(FakeCtx())
+        cbs["post_tool_call"](
+            session_id="s", tool_name="read_file", args={"path": "notes/alpha.md"},
+            status="ok", result={"content": [{"type": "text", "text": "hello page"}]},
+        )
+        try:
+            partials = list(tmp.glob("*.partial.jsonl"))
+            self.assertEqual(len(partials), 1, "the partial snapshot exists")
+            self.assertFalse(list(tmp.glob("*.partial.coverage.json")),
+                             "no coverage sidecar at write-through partials")
+            # The full flush later still writes coverage for the full capture.
+            cmds["ctxvm-trace"]("stop")
+            self.assertTrue((tmp / "cov.coverage.json").exists())
+        finally:
+            for key in ("CTXVM_TRACE_DIR", "CTXVM_TRACE_NAME",
+                        "CTXVM_TRACE_WRITETHROUGH", "CTXVM_TRACE_WRITETHROUGH_EVERY"):
+                os.environ.pop(key, None)
+
+    def test_checker_rejects_tampered_pairs(self):
+        """The checker's negative classes — what a wrong manifest must look like
+        to consumers: digest mismatch, a registered tool stamped MUTATING, an
+        unregistered name stamped READ_ONLY, a claimed class coverage missing
+        from the bytes, and counts that disagree with observation. Every case
+        exits 1 and names its law; the byte-tampered cases rebuild the manifest
+        digest first, so the complaint is the CLASS law, not byte drift."""
+        tmp = Path(tempfile.mkdtemp(prefix="ctxvm-cov-neg-"))
+        self._flush_a_session(tmp)
+        try:
+            trace_text = (tmp / "cov.jsonl").read_text(encoding="utf-8")
+            manifest = json.loads((tmp / "cov.coverage.json").read_text(encoding="utf-8"))
+
+            def rewrite(label: str, mutation) -> str:
+                rows = [json.loads(line) for line in trace_text.splitlines() if line.strip()]
+                hits = 0
+                for row in rows:
+                    hit = mutation(row)
+                    if hit:
+                        hits += 1
+                self.assertEqual(hits, 1, f"{label}: the mutation must hit exactly one row")
+                return "\n".join(json.dumps(row) for row in rows) + "\n"
+
+            def write_case(name: str, trace: str, overrides: dict):
+                body = json.dumps({**manifest, **overrides}, indent=2) + "\n"
+                (tmp / name).write_text(body, encoding="utf-8")
+                return self._checker(tmp, trace, name)
+
+            def tamper_digest(tampered: str) -> dict:
+                return {"traceDigest": hashlib.sha256(tampered.encode("utf-8")).hexdigest()}
+
+            # digest tamper: the manifest no longer describes these bytes
+            result = write_case("neg-digest.coverage.json", "cov.jsonl",
+                                {"traceDigest": "0" * 64})
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("violated digest", result.stdout)
+
+            # registered READ_ONLY tool stamped MUTATING — the W15 law as seen
+            # in real capture bytes before the effective-name fix
+            tampered = rewrite("flip class", lambda row: (
+                row.update(toolEffect="MUTATING") or True)
+                if row.get("type") == "page.declare" and row.get("toolEffect") == "READ_ONLY"
+                else False)
+            (tmp / "neg-mutating.jsonl").write_text(tampered, encoding="utf-8")
+            result = write_case("neg-mutating.coverage.json", "neg-mutating.jsonl",
+                                tamper_digest(tampered))
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("violated toolTable", result.stdout)
+
+            # unregistered tool name stamped READ_ONLY — the fail-safe law
+            tampered = rewrite("rename tool", lambda row: (
+                row["page"]["id"].update(
+                    logicalRef=row["page"]["id"]["logicalRef"].replace("read_file", "terminal", 1))
+                or True)
+                if row.get("type") == "page.declare" and row.get("toolEffect") == "READ_ONLY"
+                else False)
+            (tmp / "neg-readonly.jsonl").write_text(tampered, encoding="utf-8")
+            result = write_case("neg-readonly.coverage.json", "neg-readonly.jsonl",
+                                tamper_digest(tampered))
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("violated toolTable", result.stdout)
+
+            # claimed class coverage missing from the bytes
+            tampered = rewrite("drop class", lambda row: (
+                row.pop("toolEffect") or True)
+                if row.get("type") == "page.declare" and row.get("toolEffect") == "READ_ONLY"
+                else False)
+            (tmp / "neg-missing.jsonl").write_text(tampered, encoding="utf-8")
+            result = write_case("neg-missing.coverage.json", "neg-missing.jsonl",
+                                tamper_digest(tampered))
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("violated instrumentation", result.stdout)
+
+            # counts that disagree with observation
+            counts = dict(manifest["captures"])
+            counts["declaresByClass"] = {"READ_ONLY": 0, "MUTATING": 0}
+            result = write_case("neg-counts.coverage.json", "cov.jsonl",
+                                {"captures": counts})
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("violated captures", result.stdout)
+        finally:
+            for key in ("CTXVM_TRACE_DIR", "CTXVM_TRACE_NAME"):
+                os.environ.pop(key, None)
 
 
 if __name__ == "__main__":

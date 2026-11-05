@@ -2,6 +2,7 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join } from "node:path";
@@ -208,6 +209,42 @@ test("live adapter maps the three hooks and flushes a trace on cleanup", async (
     "after", "before", "completed", "contexts", "errored", "extraHookStats", "sessions",
   ]);
   assert.deepEqual(meta.hookStats.extraHookStats, {});
+
+  // W17 (09-plugin-parity.md §3): the coverage sidecar rides every FULL flush,
+  // and its digest ties it to the jsonl bytes physically at the flushed path.
+  const coverage = JSON.parse(
+    readFileSync(join(dir, "live-test.coverage.json"), "utf8"),
+  ) as Record<string, never>;
+  const cov: any = coverage;
+  assert.deepEqual(Object.keys(cov).sort(), [
+    "captures", "instrumentation", "plugin", "session", "toolTable",
+    "traceDigest", "traceFile", "xcabiCoverage",
+  ]);
+  assert.equal(cov.xcabiCoverage, "0.1");
+  assert.equal(cov.traceFile, "live-test.jsonl");
+  assert.equal(
+    cov.traceDigest,
+    createHash("sha256").update(readFileSync(join(dir, "live-test.jsonl"))).digest("hex"),
+  );
+  assert.equal(cov.session.sessionID, "ses_live_test");
+  assert.deepEqual(cov.toolTable, {
+    readOnlyRegistered: ["glob", "grep", "list", "read", "webfetch"].sort(),
+    default: "MUTATING",
+  });
+  assert.deepEqual(cov.instrumentation, { ts: true, toolEffect: true, identifierScan: true });
+  assert.equal(cov.plugin.harness, "opencode-v2-promise-plugin");
+  assert.equal(cov.plugin.version, meta.pluginVersion); // same version source as the meta
+  // captures equal observation (declared class computed, fault rows echoed)
+  assert.equal(cov.captures.declares, 1);
+  assert.deepEqual(cov.captures.declaresByClass, { READ_ONLY: 1, MUTATING: 0 });
+  const byFault: Record<string, number> = {
+    tool_recall: 0, identifier_scan: 0, explicit_api: 0, semantic: 0,
+  };
+  for (const e of events) {
+    if (e.type === "page.fault") byFault[String(e.source)] += 1;
+  }
+  assert.deepEqual(cov.captures.faultsBySource, byFault);
+  assert.equal(cov.captures.faults, events.filter((e) => e.type === "page.fault").length);
 
   clearEnv();
 });

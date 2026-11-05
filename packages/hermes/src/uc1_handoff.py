@@ -159,7 +159,7 @@ class UC1Handoff(UCModule):
 
         # Step 1 + 2: flush happens via the live adapter's _flush_traces();
         # here we snapshot whatever flushed file exists for `name`.
-        for ext in ("jsonl", "meta.json"):
+        for ext in ("jsonl", "meta.json", "coverage.json"):
             src = Path(handoff_dir) / f"{name}.{ext}"
             dst = Path(handoff_dir) / f"{name}-{label}.{ext}"
             if src.is_file():

@@ -35,7 +35,7 @@ export interface TapStats {
  */
 const AI_SDK_READ_ONLY_TOOLS = new Set(["read", "glob", "grep", "list", "webfetch"]);
 
-const READ_ONLY_TOOLS = (() => {
+export const READ_ONLY_TOOLS = (() => {
   const table = new Set(AI_SDK_READ_ONLY_TOOLS);
   for (const name of (process.env.CTXVM_READONLY_TOOLS ?? "").split(",")) {
     const trimmed = name.trim();
