@@ -14,7 +14,7 @@ Version 0 is a read-only flight recorder. You add it to any agent loop. Nothing 
 
 This paper explains what the framework is, how to use it, and where it stops.
 
-**Context tracing is not logging — it is the ability to reconstruct, verify, and replay the exact input an agent received.** Every other improvement — token savings, quality, safety, compliance — depends on knowing what the model actually saw.
+**Context tracing is not logging — it is the ability to reconstruct, verify, and replay the exact input an agent received.** Every other improvement — token savings, quality, safety, compliance — starts from knowing what the model actually saw. That knowledge is necessary for each of them and sufficient for none: a faithful record of the input does not by itself evaluate a model, reach its reasoning, or make it behave.
 
 ---
 
@@ -255,7 +255,7 @@ Conventional logging cannot distinguish these two cases. It records the tool cal
 
 5. **Capacity planning.** Per-turn, per-page token accounting reveals which pages consumed the most tokens, which turns had the highest context pressure, and where the budget went. The KPI formulas (touch ratio, fault recall, net token reduction, thrash index) answer "can I reduce the budget?" without guessing.
 
-6. **Compliance and audit.** The trace is a tamper-evident, checksummed record of what the model saw. The replay engine verifies byte-identical re-render (exit code 0). The `skipped_untraced` counter detects when context was rendered without being declared — a fidelity gap that would be a compliance finding.
+6. **Compliance and audit.** The trace is a checksummed record of what the model saw: checksums prove the bytes are unchanged since they were written, which is evidence of accidental corruption and tamper-evidence only against parties without write access to the file. A threat model where the traced agent can reach its own log needs something stronger — hash-chained events or a signed root — and that is not built. The replay engine verifies byte-identical re-render (exit code 0). The `skipped_untraced` counter detects when context was rendered without being declared — a fidelity gap that would be a compliance finding.
 
 **Why this matters for ctxvm specifically:**
 
@@ -265,7 +265,7 @@ The gap is not in recording — it is in *using* the record. The trace enables d
 
 The path from "recording" to "acting" is the control beat (see §7, Limitations): turning the trace into eviction decisions, stub replacements, and budget enforcement. But the recording comes first — you cannot act on what you cannot measure, and you cannot measure what you do not record.
 
-**The one-liner restated:** Every other improvement — token savings, quality, safety, compliance — depends on knowing what the model actually saw. Context tracing is the foundation. ctxvm's tracer already records this; the remaining work is turning the trace into action.
+**The one-liner restated:** Every other improvement — token savings, quality, safety, compliance — starts from knowing what the model actually saw. Knowing it is necessary for each of them and sufficient for none. Context tracing supplies that, and only that; the improvements have to be built on it. ctxvm's tracer already records it; the remaining work is turning the trace into action.
 
 ---
 

@@ -30,3 +30,9 @@ research/white-paper/_build/
 
 # build output (npm package emit; never commit — rebuilt by `npm run build`/prepack)
 dist/
+
+# Uncommitted research sources (2026-11-05): two independent safety-research notes
+# were written by different models and the owner asked for the SYNTHESIS to be the
+# committed record, not the sources. They stay on disk under this folder, tracked
+# by name in research/synthesis-20261105.md, never by git.
+research/uncommitted/
