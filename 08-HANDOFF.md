@@ -736,7 +736,10 @@ the paper; `sync-index.py --check` now enforces the rule the README states. W17 
 and the checker caught the live `tool_name` defect that had classified every live hermes declare
 MUTATING on 0.8.0 (447 witness rows read `tool=None`). Tests: rust 73, ts 21+61+45, python
 117+44+8, plugin 0.9.0, ALL GATES GREEN. **Live proof of W17 and of the stamp fix still needs the
-installed copy re-synced and the gateway restarted.** **TS ORDER (`RR-TSORDER-20261105`):** the gate was red on the docs-only W19 commit — the node test
+gateway restarted.** The installed copy at `~/.hermes/plugins/ctxvm-tracer/` is now 0.9.0 and proven
+by import and by a smoke flush in a temp dir: the triple landed, the declare stamped READ_ONLY from
+`tool_name`, and `tools/coverage_check.py` returned 0 on the pair. The running gateway still holds
+0.8.0 in memory, so live traffic keeps the old behaviour until the owner restarts it. **TS ORDER (`RR-TSORDER-20261105`):** the gate was red on the docs-only W19 commit — the node test
 asserted "the tail is time-monotonic", but `finish()` groups the tail by class (all `turn.render`,
 then all `call.meta`) with each pair sharing the turn's render stamp, so the sequence is a sawtooth
 that looks monotonic only inside one millisecond. The 11-03 fix had swapped one clock-luck assertion
