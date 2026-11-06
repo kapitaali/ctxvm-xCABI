@@ -71,6 +71,35 @@ paged:     ~24k per request, if the floor stays under vBudget
 expected NTR: 2.0–2.8x  (gate: >= 1.5x)
 ```
 
+## 4b. Pre-set environment (2026-11-06) — nothing left for the operator to configure
+
+Two profiles and one env contract were created so a run needs no hand-edited setting.
+
+| Path | What it holds |
+|---|---|
+| `~/.hermes/profiles/w8-naive/config.yaml` | a copy of the global config with `context.engine: compressor` |
+| `~/.hermes/profiles/w8-paged/config.yaml` | the same copy with `context.engine: ctxvm` |
+| both | `.env` and `plugins` are symlinks to the real ones, so credentials and the plugin are shared, not duplicated |
+
+Verified: `hermes config get context.engine` returns `compressor` and `ctxvm` respectively under
+`HERMES_HOME=...`, and `hermes plugins list` shows `ctxvm-tracer 0.10.2 enabled` in both. The two
+config trees differ in exactly one key, which is the experiment's one-factor property made checkable.
+
+`tools/w8-run-env.sh <naive|paged> <trace-dir> <trace-name>` is the only place a run's settings live.
+It exports `HERMES_HOME`, `CTXVM_FEATURES`, `CTXVM_TRACE_DIR`, `CTXVM_TRACE_NAME`, the write-through
+pair, `CTXVM_MODEL` (default `openai/gpt-6-luna`, to be confirmed at P0) and `CTXVM_BUDGET_TOKENS`;
+it sets `CTXVM_VBUDGET=24000` for the paged arm only and leaves it UNSET for naive, because the
+virtual budget is a paged-arm concept and exporting it for both would blur the factor. `CTXVM_PROVIDER`
+is left alone on purpose: the plugin records `unknown` rather than guessing.
+
+Defaults now fixed, so no decision blocks the start: `vBudget` 24,000 (the T0 lock may raise, never
+lower), `R = 3`, budget tokens 200,000, and the second repository `~/Documents/umpire` (clean at
+`d383255`).
+
+The global `context.engine` was returned to `compressor`. The experiment never reads that value — it
+reads the profile — and leaving it on `ctxvm` would have put everyday sessions into the measured no-op
+regime with compaction disabled.
+
 ## 5. The pilot before the grid
 
 One task (template 1), both arms, one round. On Luna this costs about $0.14. It answers what no design
