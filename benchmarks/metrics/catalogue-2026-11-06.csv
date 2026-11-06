@@ -1,0 +1,342 @@
+#1,Upstage: Solar Mini 4,Text,FREE,—,—
+#2,DeepSeek: DeepSeek V4.1 Flash 1017,Text,in $0.15/1M / out $0.60/1M,—,—
+#3,Reflection: Beam 1.0 501B A23B,Text,FREE,—,—
+#4,DeepSeek: DeepSeek V4.1 Flash,Text,in $0.11/1M / out $0.51/1M,—,—
+#5,StepFun: Step 3.7 Flash,Text,FREE,—,—
+#6,DeepSeek: DeepSeek V4 Flash,Text,in $0.05/1M / out $0.16/1M,—,—
+#9,Anthropic: Claude Opus 5.5,Text,in $4.00/1M / out $20.00/1M,—,—
+#10,Crouton Alpha,Text,FREE,—,—
+,Z.ai: GLM 5.3 Flash,Text,in $0.12/1M / out $0.40/1M,in $0.15/1M / out $0.50/1M,20%
+,Z.ai: GLM 5.3,Text,in $0.91/1M / out $2.86/1M,—,—
+,DeepSeek: DeepSeek V4 Pro 0423,Text,in $0.94/1M / out $1.89/1M,—,—
+,DeepSeek: DeepSeek V4 Flash 0423,Text,in $0.09/1M / out $0.18/1M,—,—
+,OpenAI: GPT-6 Luna,Text,in $0.10/1M / out $0.50/1M,—,—
+,Anthropic: Claude Sonnet 5.5,Text,in $2.00/1M / out $10.00/1M,—,—
+,Google: Gemini 4 Argon,Text,in $2.00/1M / out $10.00/1M,in $4.00/1M / out $20.00/1M,50% off
+,Z.ai: GLM 5.2,Text,in $0.90/1M / out $2.83/1M,—,—
+,OpenAI: GPT-6.1 Sol,Text,in $2.00/1M / out $10.00/1M,—,—
+,LongCat-2.5:Free,Text,FREE,—,—
+,DeepSeek: DeepSeek V4.1 Flash,Text,in $0.36/1M / out $1.09/1M,—,—
+,Xiaomi: MiMo-V2.6-Pro,Text,in $0.43/1M / out $0.87/1M,—,—
+,MoonshotAI: Kimi K3,Text,in $0.99/1M / out $8.99/1M,—,—
+,Anthropic: Claude Haiku 5.5,Text,in $0.10/1M / out $0.50/1M,—,—
+,Anthropic: Claude Fable 5.1,Text,in $10.00/1M / out $50.00/1M,—,—
+,MiniMax: MiniMax M3.1 Flash,Text,in $0.15/1M / out $0.60/1M,—,—
+,DeepSeek: DeepSeek V4 Pro 0813,Text,in $0.12/1M / out $4.66/1M,—,—
+,Google: Gemini 3.8 Flash,Text,in $0.83/1M / out $4.13/1M,—,—
+,OpenAI: GPT-6.1 Terra,Text,in $1.00/1M / out $5.00/1M,—,—
+,OpenAI: GPT-6 Luna Pro,Text,in $0.10/1M / out $0.50/1M,—,—
+,Anthropic: Claude Sonnet 5,Text,in $2.00/1M / out $10.00/1M,—,—
+,Qwen: Qwen3.8 Flash,Text,in $0.15/1M / out $0.47/1M,—,—
+,DeepSeek: DeepSeek Flash Latest,Text,in $0.01/1M / out $0.50/1M,—,—
+,Xiaomi: MiMo-V2.6-Flash,Text,in $0.14/1M / out $0.28/1M,—,—
+,MiniMax: MiniMax M3,Text,in $0.30/1M / out $1.20/1M,—,—
+,MoonshotAI: Kimi K3.1 Pro,Text,in $2.00/1M / out $10.00/1M,—,—
+,DeepSeek: DeepSeek V4 Flash Latest,Text,in $0.06/1M / out $0.30/1M,—,—
+,Tencent: Hy4 preview,Text,in $0.83/1M / out $2.50/1M,—,—
+,Z.ai: GLM 5.3 Flash,Text,in $0.25/1M / out $0.83/1M,—,—
+,Qwen: Qwen3.8 Max (0902),Text,in $2.00/1M / out $6.00/1M,—,—
+,Tencent: Hy3,Text,in $0.13/1M / out $0.53/1M,—,—
+,OpenAI: GPT-6 Astra,Text,in $10.00/1M / out $50.00/1M,—,—
+,Z.ai: GLM Flash Latest,Text,in $0.03/1M / out $0.09/1M,—,—
+,Qwen: Qwen3.8 27B,Text,in $0.15/1M / out $1.88/1M,—,—
+,Z.ai: GLM 5.3 FlashX,Text,in $0.37/1M / out $1.25/1M,—,—
+,Google: Gemini 3.7 Flash,Text,in $0.75/1M / out $3.75/1M,in $1.50/1M / out $7.50/1M,50% off
+,Anthropic: Claude Opus 5,Text,in $5.00/1M / out $25.00/1M,—,—
+,xAI: Grok 4.7,Text,in $2.00/1M / out $6.00/1M,—,—
+,inclusionAI: Ling 3.0 Flash,Text,in $0.02/1M / out $0.06/1M,—,—
+,Upstage: Solar Pro 4,Text,in $0.15/1M / out $0.60/1M,in $0.30/1M / out $1.20/1M,50% off
+,StepFun: Step 3.7 Flash,Text,in $0.20/1M / out $1.15/1M,—,—
+,OpenAI: GPT-5.6 Sol Pro,Text,in $4.00/1M / out $20.00/1M,—,—
+,OpenAI: GPT-5.6 Luna Pro,Text,in $0.20/1M / out $1.20/1M,—,—
+,Anthropic: Claude Opus 4.6,Text,in $5.00/1M / out $25.00/1M,—,—
+,DeepSeek: DeepSeek V4 Flash Vision Exp,Text,in $0.44/1M / out $1.32/1M,—,—
+,Qwen: Qwen3.7 Flash,Text,in $0.03/1M / out $0.13/1M,—,—
+,MiniMax: MiniMax M2.5,Text,in $0.27/1M / out $0.95/1M,—,—
+,Anthropic: Claude Opus 4.8,Text,in $5.00/1M / out $25.00/1M,—,—
+,OpenAI: GPT-6 Sol,Text,in $2.00/1M / out $10.00/1M,—,—
+,Anthropic: Claude Fable 5,Text,in $10.00/1M / out $50.00/1M,—,—
+,Upstage: Solar Mini 4,Text,in $0.05/1M / out $0.20/1M,in $0.10/1M / out $0.40/1M,50% off
+,Inception: Mercury 3,Text,in $0.10/1M / out $0.35/1M,in $0.20/1M / out $0.70/1M,50% off
+,OpenAI: GPT-6 Sol Pro,Text,in $2.00/1M / out $10.00/1M,—,—
+,OpenAI: GPT-5.4 Mini,Text,in $0.75/1M / out $4.50/1M,—,—
+,Meta: Muse Spark 1.3,Text,in $1.25/1M / out $4.25/1M,—,—
+,Anthropic: Claude Sonnet 4.6,Text,in $3.00/1M / out $15.00/1M,—,—
+,Z.ai: GLM 5.3,Text,in $2.31/1M / out $7.26/1M,—,—
+,Xiaomi: MiMo-V2.6-Pro-UltraSpeed,Text,in $4.35/1M / out $8.70/1M,—,—
+,xAI: Grok 4.6,Text,in $2.00/1M / out $6.00/1M,—,—
+,OpenAI: GPT-5.6 Sol,Text,in $4.00/1M / out $20.00/1M,—,—
+,OpenAI: GPT-5.6 Luna,Text,in $0.20/1M / out $1.20/1M,—,—
+,OpenAI: GPT-6.1 Sol Pro,Text,in $2.00/1M / out $10.00/1M,—,—
+,Xiaomi: MiMo-V2.5-Pro,Text,in $0.48/1M / out $1.80/1M,—,—
+,Reflection: Beam 1.0 501B A23B,Text,in $0.30/1M / out $1.00/1M,—,—
+,Inception: Mercury 2.5,Text,in $0.04/1M / out $0.15/1M,in $0.20/1M / out $0.75/1M,80% off
+,MoonshotAI: Kimi K2.6,Text,in $0.65/1M / out $3.41/1M,—,—
+,Anthropic: Claude Haiku 4.5,Text,in $1.00/1M / out $5.00/1M,—,—
+,Tencent: Hy4,Text,in $0.17/1M / out $0.50/1M,in $0.83/1M / out $2.50/1M,80% off
+,NVIDIA: Nemotron 3.5 Super VL,Text,in $0.15/1M / out $0.50/1M,—,—
+,Z.ai: GLM 5.3 Prime,Text,in $2.80/1M / out $8.80/1M,—,—
+,OpenAI: GPT-6.1 Terra Pro,Text,in $1.00/1M / out $5.00/1M,—,—
+,Anthropic: Claude Sonnet 4.5,Text,in $3.00/1M / out $15.00/1M,—,—
+,Meta: Muse Wonder,Text,in $4.00/1M / out $20.00/1M,—,—
+,Qwen: Qwen3 Coder Next,Text,in $0.12/1M / out $0.80/1M,—,—
+,Mistral: Mistral Large 4,Text,in $0.70/1M / out $2.10/1M,—,—
+,OpenAI: GPT-5.6 Terra,Text,in $2.00/1M / out $12.00/1M,—,—
+,OpenAI: gpt-oss-20b,Text,in $0.03/1M / out $0.13/1M,—,—
+,NVIDIA: Nemotron 3.5 Lightning,Text,in $0.07/1M / out $0.20/1M,—,—
+,NVIDIA: Nemotron 3 Super,Text,in $0.07/1M / out $0.40/1M,—,—
+,OpenAI: GPT-5.5,Text,in $5.00/1M / out $30.00/1M,—,—
+,Z.ai: GLM 5.3 FlashX Legal,Text,in $0.37/1M / out $1.25/1M,—,—
+,Anthropic: Claude Opus Latest,Text,in $4.00/1M / out $20.00/1M,—,—
+,OpenAI: GPT-6 Astra Pro,Text,in $10.00/1M / out $50.00/1M,—,—
+,Particle AI: Particle-1,Text,in $0.05/1M / out $0.50/1M,—,—
+,Google: Gemini 3.5 Flash,Text,in $1.50/1M / out $9.00/1M,—,—
+,MoonshotAI: Kimi K2.7 Code,Text,in $0.60/1M / out $3.50/1M,—,—
+,Google: Gemini 3.6 Flash,Text,in $0.75/1M / out $3.75/1M,—,—
+,Z.ai: GLM 4.5 Air,Text,in $0.13/1M / out $0.85/1M,—,—
+,DeepSeek: DeepSeek V3.2,Text,in $0.26/1M / out $0.38/1M,—,—
+,Mistral: Mistral Nemo,Text,in $0.03/1M / out $0.03/1M,—,—
+,OpenAI: gpt-oss-120b,Text,in $0.02/1M / out $0.08/1M,—,—
+,OpenAI: GPT-6 Astra Flex,Text,in $5.00/1M / out $25.00/1M,—,—
+,Google: Gemini 3.1 Pro Preview,Text,in $2.00/1M / out $12.00/1M,—,—
+,StepFun: Step 5 Preview,Text,in $1.00/1M / out $2.70/1M,—,—
+,Google: Gemini 3 Flash Preview,Text,in $0.50/1M / out $3.00/1M,—,—
+,inclusionAI: Ling 3.1 Flash,Text,in $0.07/1M / out $0.22/1M,—,—
+,MiniMax: MiniMax M2.7,Text,in $0.21/1M / out $0.84/1M,—,—
+,Google: Gemini 2.5 Flash,Text,in $0.30/1M / out $2.50/1M,—,—
+,xAI: Grok 4.5,Text,in $2.00/1M / out $6.00/1M,—,—
+,Qwen: Qwen3.6 27B,Text,in $0.45/1M / out $2.70/1M,—,—
+,OpenAI: GPT-5.3-Codex,Text,in $1.75/1M / out $14.00/1M,—,—
+,OpenAI: GPT-6 Astra Pro Flex,Text,in $5.00/1M / out $25.00/1M,—,—
+,Meituan: LongCat 2.0,Text,in $0.30/1M / out $1.20/1M,—,—
+,Z.ai: GLM 5,Text,in $1.00/1M / out $3.20/1M,—,—
+,OpenAI: GPT-5.6 Terra Pro,Text,in $2.00/1M / out $12.00/1M,—,—
+,Qwen: Qwen3 Coder 30B A3B Instruct,Text,in $0.15/1M / out $0.60/1M,—,—
+,Z.ai: GLM 4.7,Text,in $0.60/1M / out $2.20/1M,—,—
+,Qwen: Qwen3.7 Max,Text,in $1.48/1M / out $4.42/1M,—,—
+,Qwen: Qwen3.8 Max Prime,Text,in $4.00/1M / out $12.00/1M,—,—
+,Z.ai: GLM Latest,Text,in $0.07/1M / out $1.40/1M,—,—
+,OpenAI: Text Embedding 3 Small,Embeddings,$0.02/1M input,—,—
+,Anthropic: Claude Sonnet Latest,Text,in $2.00/1M / out $10.00/1M,—,—
+,Qwen: Qwen3.7 Plus,Text,in $0.32/1M / out $1.28/1M,—,—
+,Z.ai: GLM 4.7 Flash,Text,in $0.06/1M / out $0.40/1M,—,—
+,Anthropic: Claude Haiku Latest,Text,in $0.10/1M / out $0.50/1M,—,—
+,Google: Gemini 2.5 Flash Lite,Text,in $0.10/1M / out $0.40/1M,—,—
+,Qwen: Qwen3 Coder 480B A35B,Text,in $0.30/1M / out $1.00/1M,—,—
+,OpenAI: GPT-5.4,Text,in $2.50/1M / out $15.00/1M,—,—
+,Google: Gemini 3.1 Flash Lite,Text,in $0.25/1M / out $1.50/1M,—,—
+,Google: Gemini 3.5 Flash Lite,Text,in $0.30/1M / out $2.50/1M,—,—
+,Google: Gemma 4 26B A4B ,Text,in $0.09/1M / out $0.30/1M,—,—
+,NVIDIA: Nemotron 3 Ultra,Text,in $0.60/1M / out $2.40/1M,—,—
+,Qwen: Qwen3.8 Omni Flash,Text,in $0.15/1M / out $0.47/1M,—,—
+,SpaceXAI: Grok 4.3,Text,in $1.25/1M / out $2.50/1M,—,—
+,Meta: Llama 3.3 70B Instruct,Text,in $0.59/1M / out $0.79/1M,—,—
+,DeepSeek: DeepSeek Pro Latest,Text,in $0.10/1M / out $8.00/1M,—,—
+,DeepSeek: DeepSeek V3,Text,in $0.32/1M / out $0.89/1M,—,—
+,Qwen: Qwen3 Embedding 8B,Embeddings,$0.01/1M input,—,—
+,BAAI: bge-m3,Embeddings,$0.01/1M input,—,—
+,OpenAI: o3,Text,in $2.00/1M / out $8.00/1M,—,—
+,Xiaomi: MiMo-V2.5,Text,in $0.40/1M / out $2.00/1M,—,—
+,Google: Gemma 4 31B,Text,in $0.20/1M / out $0.40/1M,—,—
+,OpenAI: GPT Terra Latest,Text,in $1.00/1M / out $5.00/1M,—,—
+,Google: Gemini Flash Latest,Text,in $0.75/1M / out $3.75/1M,—,—
+,Anthropic: Claude Opus 4.7,Text,in $5.00/1M / out $25.00/1M,—,—
+,Qwen: Qwen3 Coder Flash,Text,in $0.20/1M / out $0.97/1M,—,—
+,Qwen: Qwen3 Embedding 4B,Embeddings,$0.02/1M input,—,—
+,Qwen: Qwen3.6 Plus,Text,in $0.33/1M / out $1.95/1M,—,—
+,Google: Gemma 3 12B,Text,in $0.05/1M / out $0.15/1M,—,—
+,Google: Gemini Embedding 2,Embeddings,$0.20/1M input,—,—
+,Qwen: Qwen3 30B A3B Instruct 2507,Text,in $0.10/1M / out $0.30/1M,—,—
+,Mistral Large,Text,in $2.00/1M / out $6.00/1M,—,—
+,Sakana: Fugu Ultra,Text,in $5.00/1M / out $30.00/1M,—,—
+,Amazon: Nova 2 Lite,Text,in $0.30/1M / out $2.50/1M,—,—
+,OpenAI: GPT-6 Astra Fast,Text,in $20.00/1M / out $100.00/1M,—,—
+,Qwen: Qwen3.5-27B,Text,in $0.26/1M / out $2.60/1M,—,—
+,Meta: Muse Spark 1.2,Text,in $1.25/1M / out $4.25/1M,—,—
+,Qwen: Qwen3.5-35B-A3B,Text,in $0.14/1M / out $1.00/1M,—,—
+,OpenAI: GPT-4o-mini,Text,in $0.15/1M / out $0.60/1M,—,—
+,OpenAI: GPT Sol Latest,Text,in $2.00/1M / out $10.00/1M,—,—
+,Z.ai: GLM 5.1,Text,in $1.40/1M / out $4.40/1M,—,—
+,Qwen: Qwen3 235B A22B Instruct 2507,Text,in $0.14/1M / out $0.80/1M,—,—
+,OpenAI: GPT-5 Nano,Text,in $0.05/1M / out $0.40/1M,—,—
+,OpenAI: GPT-4o,Text,in $2.50/1M / out $10.00/1M,—,—
+,VoyageAI by MongoDB: voyage-4-large,Embeddings,$0.12/1M input,—,—
+,OpenAI: GPT Luna Latest,Text,in $0.10/1M / out $0.50/1M,—,—
+,NVIDIA: Nemotron 3 Nano 30B A3B,Text,in $0.06/1M / out $0.24/1M,—,—
+,OpenAI: GPT-6 Astra Pro Fast,Text,in $20.00/1M / out $100.00/1M,—,—
+,StepFun: Step 3.5 Flash,Text,in $0.10/1M / out $0.30/1M,—,—
+,Google: Gemini Pro Latest,Text,in $2.00/1M / out $10.00/1M,—,—
+,OpenAI: GPT-5.2,Text,in $1.75/1M / out $14.00/1M,—,—
+,Qwen: Qwen3.6 35B A3B,Text,in $0.10/1M / out $0.90/1M,—,—
+,inclusionAI: Ling 3.0 Flash VL,Text,in $0.06/1M / out $0.18/1M,—,—
+,Qwen: Qwen3.8 2.4T A95B,Text,in $2.00/1M / out $6.00/1M,—,—
+,Qwen: Qwen3.5 397B A17B,Text,in $0.50/1M / out $3.60/1M,—,—
+,Google: Gemini Embedding 001,Embeddings,$0.15/1M input,—,—
+,Qwen: Qwen3 VL 30B A3B Instruct,Text,in $0.15/1M / out $0.60/1M,—,—
+,OpenAI: GPT-4.1 Mini,Text,in $0.40/1M / out $1.60/1M,—,—
+,MoonshotAI: Kimi K2.5,Text,in $0.50/1M / out $2.50/1M,—,—
+,OpenAI: GPT-5.4 Nano,Text,in $0.20/1M / out $1.25/1M,—,—
+,SpaceXAI: Grok 4.20,Text,in $1.25/1M / out $2.50/1M,—,—
+,Pareto 26.10,Text,in $0.80/1M / out $3.20/1M,—,—
+,Meta: Llama 3.1 8B Instruct,Text,in $0.05/1M / out $0.08/1M,—,—
+,Mistral: Mistral Small 3.2 24B,Text,in $0.07/1M / out $0.20/1M,—,—
+,Qwen: Qwen3 VL 235B A22B Instruct,Text,in $0.21/1M / out $1.90/1M,—,—
+,Perplexity: Embed V1 4B,Embeddings,$0.03/1M input,—,—
+,OpenAI: GPT-5.5 Pro,Text,in $30.00/1M / out $180.00/1M,—,—
+,Google: Gemma 3 27B,Text,in $0.08/1M / out $0.35/1M,—,—
+,Anthropic: Claude Fable Latest,Text,in $10.00/1M / out $50.00/1M,—,—
+,OpenAI: GPT-5.1,Text,in $1.25/1M / out $10.00/1M,—,—
+,Qwen: Qwen3.5-9B,Text,in $0.17/1M / out $0.25/1M,—,—
+,ByteDance Seed: Seed-2.0-Mini,Text,in $0.10/1M / out $0.40/1M,—,—
+,Pareto Latest,Text,in $0.80/1M / out $3.20/1M,—,—
+,Qwen: Qwen3 32B,Text,in $0.08/1M / out $0.28/1M,—,—
+,Qwen: Qwen3.5-Flash,Text,in $0.07/1M / out $0.26/1M,—,—
+,Google: Gemini 3.1 Flash Lite Preview,Text,in $0.25/1M / out $1.50/1M,—,—
+,Z.ai: GLM 4.6V,Text,in $0.30/1M / out $0.90/1M,—,—
+,DeepSeek: DeepSeek V3.1,Text,in $0.25/1M / out $0.95/1M,—,—
+,OpenAI: Text Embedding 3 Large,Embeddings,$0.13/1M input,—,—
+,IBM: Granite 4.2 8B,Text,in $0.06/1M / out $0.25/1M,—,—
+,AionLabs: Aion 3.5,Text,in $3.00/1M / out $6.00/1M,—,—
+,Google: Nano Banana Pro (Gemini 3 Pro Image),Text,in $2.00/1M / out $12.00/1M,—,—
+,Z.ai: GLM 5V Turbo,Text,in $1.20/1M / out $4.00/1M,—,—
+,DeepSeek: R1 0528,Text,in $0.50/1M / out $2.15/1M,—,—
+,Mistral: Mistral Large 3 2512,Text,in $0.50/1M / out $1.50/1M,—,—
+,MoonshotAI: Kimi K2 Thinking,Text,in $0.60/1M / out $2.50/1M,—,—
+,OpenAI: GPT-5 Mini,Text,in $0.25/1M / out $2.00/1M,—,—
+,LiquidAI: LFM2.5-24B-A2B,Text,in $0.05/1M / out $0.70/1M,—,—
+,Anthropic: Claude Opus 4.5,Text,in $5.00/1M / out $25.00/1M,—,—
+,Mistral: Ministral 3 8B 2512,Text,$0.15/1M,—,—
+,DeepSeek: DeepSeek V3 0324,Text,in $0.29/1M / out $1.14/1M,—,—
+,OpenAI: GPT-4o-mini (2024-07-18),Text,in $0.15/1M / out $0.60/1M,—,—
+,Mistral: Ministral 3 14B 2512,Text,$0.20/1M,—,—
+,Sakana: Fugu Ultra v2,Text,in $5.00/1M / out $30.00/1M,—,—
+,Qwen: Qwen-Plus,Text,in $0.26/1M / out $0.78/1M,—,—
+,Mistral: Mistral Medium 3.5,Text,in $1.50/1M / out $7.50/1M,—,—
+,PrismML: Ternary Bonsai 2 9B,Text,in $0.08/1M / out $0.13/1M,—,—
+,Mistral: Mistral Medium 3.1,Text,in $0.40/1M / out $2.00/1M,—,—
+,xAI: Grok Latest,Text,in $2.00/1M / out $6.00/1M,—,—
+,ByteDance Seed: Seed 1.6 Flash,Text,in $0.07/1M / out $0.30/1M,—,—
+,Mistral: Ministral 3 3B 2512,Text,$0.10/1M,—,—
+,Google: Nano Banana 2.1,Text,in $1.50/1M / out $7.50/1M,—,—
+,Mistral: Mistral Small 4,Text,in $0.15/1M / out $0.60/1M,—,—
+,VoyageAI by MongoDB: voyage-4-lite,Embeddings,$0.02/1M input,—,—
+,AionLabs: Aion 3.5 Mini,Text,in $0.70/1M / out $1.40/1M,—,—
+,AionLabs: Aion-2.0,Text,in $0.80/1M / out $1.60/1M,—,—
+,AionLabs: Aion-3.0,Text,in $3.00/1M / out $6.00/1M,—,—
+,AionLabs: Aion-3.0-Mini,Text,in $0.70/1M / out $1.40/1M,—,—
+,Amazon: Nova Lite 1.0,Text,in $0.06/1M / out $0.24/1M,—,—
+,Amazon: Nova Micro 1.0,Text,in $0.04/1M / out $0.14/1M,—,—
+,Amazon: Nova Premier 1.0,Text,in $2.50/1M / out $12.50/1M,—,—
+,Amazon: Nova Pro 1.0,Text,in $0.80/1M / out $3.20/1M,—,—
+,Amazon: Titan Embeddings G1 - Text,Embeddings,$0.10/1M input,—,—
+,Amazon: Titan Multimodal Embeddings G1,Embeddings,$0.80/1M input,—,—
+,Amazon: Titan Text Embeddings V2,Embeddings,$0.02/1M input,—,—
+,Anthropic: Claude Opus 4.1,Text,in $15.00/1M / out $75.00/1M,—,—
+,BAAI: bge-base-en-v1.5,Embeddings,$0.01/1M input,—,—
+,BAAI: bge-large-en-v1.5,Embeddings,$0.01/1M input,—,—
+,ByteDance Seed: Seed 1.6,Text,in $0.25/1M / out $2.00/1M,—,—
+,ByteDance Seed: Seed 2.1 Turbo,Text,in $0.50/1M / out $2.50/1M,—,—
+,ByteDance Seed: Seed-2.0-Code,Text,in $0.50/1M / out $3.00/1M,—,—
+,ByteDance Seed: Seed-2.0-Lite,Text,in $0.25/1M / out $2.00/1M,—,—
+,Cohere: Command A+,Text,in $0.30/1M / out $1.50/1M,—,—
+,Cohere: Command R (08-2024),Text,in $0.15/1M / out $0.60/1M,—,—
+,Cohere: Command R+ (08-2024),Text,in $2.50/1M / out $10.00/1M,—,—
+,Cohere: Embed 5 Fast,Embeddings,$0.08/1M input,—,—
+,Cohere: Embed 5 Pro,Embeddings,$0.12/1M input,—,—
+,DeepSeek: DeepSeek V3.1 Terminus,Text,in $0.27/1M / out $1.00/1M,—,—
+,DeepSeek: DeepSeek V3.2 Exp,Text,in $0.27/1M / out $0.41/1M,—,—
+,DeepSeek: DeepSeek V4 Flash,Text,in $0.36/1M / out $1.09/1M,—,—
+,Elorian: Glimpse,Text,in $0.60/1M / out $3.00/1M,—,—
+,Fireworks: Ember-1,Text,in $3.00/1M / out $15.00/1M,—,—
+,Google: Gemini 2.5 Pro,Text,in $1.25/1M / out $10.00/1M,—,—
+,Google: Gemini 2.5 Pro Preview 06-05,Text,in $1.25/1M / out $10.00/1M,—,—
+,Google: Gemini 3.1 Pro Preview Custom Tools,Text,in $2.00/1M / out $12.00/1M,—,—
+,Google: Gemini Embedding 2 Preview,Embeddings,$0.20/1M input,—,—
+,Inception: Mercury 2,Text,in $0.25/1M / out $0.75/1M,—,—
+,inclusionAI: Ling 3.0 Tiny,Text,in $0.01/1M / out $0.04/1M,—,—
+,Intfloat: E5-Base-v2,Embeddings,$0.01/1M input,—,—
+,Intfloat: E5-Large-v2,Embeddings,$0.01/1M input,—,—
+,Intfloat: Multilingual-E5-Large,Embeddings,$0.01/1M input,—,—
+,Meta: Llama 4 Maverick,Text,in $0.35/1M / out $1.00/1M,—,—
+,Meta: Llama 4 Scout,Text,in $0.10/1M / out $0.30/1M,—,—
+,Meta: Muse Glimmer 30B,Text,in $0.30/1M / out $1.20/1M,—,—
+,Meta: Muse Spark Open,Text,in $1.25/1M / out $4.25/1M,—,—
+,MiniMax: MiniMax M1,Text,in $0.55/1M / out $2.20/1M,—,—
+,Mistral Large 2407,Text,in $2.00/1M / out $6.00/1M,—,—
+,Mistral: Codestral 2508,Text,in $0.30/1M / out $0.90/1M,—,—
+,Mistral: Codestral Embed 2505,Embeddings,$0.15/1M input,—,—
+,Mistral: Devstral 2 2512,Text,in $0.40/1M / out $2.00/1M,—,—
+,Mistral: Mistral Embed 2312,Embeddings,$0.10/1M input,—,—
+,Mistral: Mistral Medium 3,Text,in $0.40/1M / out $2.00/1M,—,—
+,Mistral: Mistral Small 3.1 24B,Text,in $0.35/1M / out $0.55/1M,—,—
+,Mistral: Mixtral 8x22B Instruct,Text,in $2.00/1M / out $6.00/1M,—,—
+,Mistral: Saba,Text,in $0.20/1M / out $0.60/1M,—,—
+,Mistral: Voxtral Small 24B 2507,Text,in $0.10/1M / out $0.30/1M,—,—
+,MoonshotAI: Kimi K2 0711,Text,in $0.57/1M / out $2.30/1M,—,—
+,MoonshotAI: Kimi K2 0905,Text,in $0.60/1M / out $2.50/1M,—,—
+,MoonshotAI: Kimi K3,Text,in $3.63/1M / out $18.15/1M,—,—
+,MoonshotAI: Kimi Latest,Text,in $0.18/1M / out $9.34/1M,—,—
+,Nex AGI: Nex-N2.5-Pro,Text,in $0.07/1M / out $0.25/1M,—,—
+,OpenAI: GPT Astra Latest,Text,in $10.00/1M / out $50.00/1M,—,—
+,OpenAI: GPT Audio,Text,in $2.50/1M / out $10.00/1M,—,—
+,OpenAI: GPT Audio Mini,Text,in $0.60/1M / out $2.40/1M,—,—
+,OpenAI: GPT Chat Latest,Text,in $5.00/1M / out $30.00/1M,—,—
+,OpenAI: GPT Mini Latest,Text,in $0.75/1M / out $4.50/1M,—,—
+,OpenAI: GPT-3.5 Turbo (older v0613),Text,in $1.00/1M / out $2.00/1M,—,—
+,OpenAI: GPT-3.5 Turbo 16k,Text,in $3.00/1M / out $4.00/1M,—,—
+,OpenAI: GPT-4,Text,in $30.00/1M / out $60.00/1M,—,—
+,OpenAI: GPT-4.1,Text,in $2.00/1M / out $8.00/1M,—,—
+,OpenAI: GPT-4.1 Nano,Text,in $0.10/1M / out $0.40/1M,—,—
+,OpenAI: GPT-4o (2024-05-13),Text,in $5.00/1M / out $15.00/1M,—,—
+,OpenAI: GPT-4o (2024-08-06),Text,in $2.50/1M / out $10.00/1M,—,—
+,OpenAI: GPT-4o (2024-11-20),Text,in $2.50/1M / out $10.00/1M,—,—
+,OpenAI: GPT-5,Text,in $1.25/1M / out $10.00/1M,—,—
+,OpenAI: GPT-5 Pro,Text,in $15.00/1M / out $120.00/1M,—,—
+,OpenAI: GPT-5.1-Codex,Text,in $1.25/1M / out $10.00/1M,—,—
+,OpenAI: GPT-5.1-Codex-Max,Text,in $1.25/1M / out $10.00/1M,—,—
+,OpenAI: GPT-5.1-Codex-Mini,Text,in $0.25/1M / out $2.00/1M,—,—
+,OpenAI: GPT-5.2 Pro,Text,in $21.00/1M / out $168.00/1M,—,—
+,OpenAI: GPT-5.2-Codex,Text,in $1.75/1M / out $14.00/1M,—,—
+,OpenAI: GPT-5.4 Pro,Text,in $30.00/1M / out $180.00/1M,—,—
+,OpenAI: gpt-oss-safeguard-20b,Text,in $0.07/1M / out $0.30/1M,—,—
+,OpenAI: o3 Pro,Text,in $20.00/1M / out $80.00/1M,—,—
+,OpenAI: Text Embedding Ada 002,Embeddings,$0.10/1M input,—,—
+,Ornith: Ornith 1.5 122B,Text,in $0.16/1M / out $0.64/1M,—,—
+,Pareto 26.9,Text,in $2.50/1M / out $7.50/1M,—,—
+,Perceptron: Perceptron Mk1.5,Text,in $0.15/1M / out $1.50/1M,—,—
+,Perplexity: Embed V1 0.6B,Embeddings,$0.00/1M input,—,—
+,PrismML: Ternary Bonsai 2 27B,Text,in $0.07/1M / out $0.50/1M,—,—
+,Qwen: Qwen2.5 7B Instruct,Text,in $0.10/1M / out $0.20/1M,—,—
+,Qwen: Qwen3 14B,Text,in $0.12/1M / out $0.24/1M,—,—
+,Qwen: Qwen3 30B A3B,Text,in $0.12/1M / out $0.50/1M,—,—
+,Qwen: Qwen3 235B A22B Thinking 2507,Text,in $0.45/1M / out $3.50/1M,—,—
+,Qwen: Qwen3 Next 80B A3B Instruct,Text,in $0.09/1M / out $1.10/1M,—,—
+,Qwen: Qwen3 VL 8B Instruct,Text,in $0.25/1M / out $0.75/1M,—,—
+,Qwen: Qwen3 VL 30B A3B Thinking,Text,in $0.29/1M / out $1.00/1M,—,—
+,Qwen: Qwen3.5 Plus 2026-02-15,Text,in $0.26/1M / out $1.56/1M,—,—
+,Qwen: Qwen3.5 Plus 2026-04-20,Text,in $0.30/1M / out $1.80/1M,—,—
+,Qwen: Qwen3.5-122B-A10B,Text,in $0.26/1M / out $2.08/1M,—,—
+,Qwen: Qwen3.6 Flash,Text,in $0.19/1M / out $1.13/1M,—,—
+,Qwen2.5 72B Instruct,Text,in $0.36/1M / out $0.40/1M,—,—
+,Reka Edge,Text,$0.10/1M,—,—
+,Relace: Relace Search,Text,in $1.00/1M / out $3.00/1M,—,—
+,ricursiveAI/Ripple-65B-Preview,Text,in $0.20/1M / out $0.60/1M,—,—
+,Sakana: Fugu Max,Text,in $2.00/1M / out $6.00/1M,—,—
+,Sentence Transformers: all-MiniLM-L6-v2,Embeddings,$0.01/1M input,—,—
+,Sentence Transformers: all-MiniLM-L12-v2,Embeddings,$0.01/1M input,—,—
+,Sentence Transformers: all-mpnet-base-v2,Embeddings,$0.01/1M input,—,—
+,Sentence Transformers: multi-qa-mpnet-base-dot-v1,Embeddings,$0.01/1M input,—,—
+,Sentence Transformers: paraphrase-MiniLM-L6-v2,Embeddings,$0.01/1M input,—,—
+,SpaceXAI: Grok Build 0.1,Text,in $1.00/1M / out $2.00/1M,—,—
+,Tencent: Hy3 preview,Text,in $0.18/1M / out $0.60/1M,—,—
+,Thenlper: GTE-Base,Embeddings,$0.01/1M input,—,—
+,Thenlper: GTE-Large,Embeddings,$0.01/1M input,—,—
+,Thinking Machines: Inkling,Text,in $1.00/1M / out $4.05/1M,—,—
+,Thinking Machines: Inkling Small,Text,in $0.45/1M / out $1.20/1M,—,—
+,VoyageAI by MongoDB: voyage-4,Embeddings,$0.06/1M input,—,—
+,VoyageAI by MongoDB: voyage-code-4,Embeddings,$0.12/1M input,—,—
+,VoyageAI by MongoDB: voyage-multimodal-3.5,Embeddings,$0.12/1M input,—,—
+,Z.ai: GLM 4.5,Text,in $0.60/1M / out $2.20/1M,—,—
+,Z.ai: GLM 4.5V,Text,in $0.60/1M / out $1.80/1M,—,—
+,Z.ai: GLM 4.6,Text,in $0.50/1M / out $2.00/1M,—,—
+,Z.ai: GLM 5 Turbo,Text,in $1.20/1M / out $4.00/1M,—,—
