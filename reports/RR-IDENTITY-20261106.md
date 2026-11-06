@@ -38,8 +38,10 @@ host's reserved-root rule. A permissive fake hid a real refusal.
 
 ## The fix
 
-`_identity_from_settings` now reads the **non-reserved mapping** `identity` first, then each bare key
-in its own `try`:
+`_identity_from_settings` now reads the **non-reserved mapping** `identity` first, then only the bare
+`provider` key. The bare `model` probe is gone: it is refused on every host version seen, so it could
+only raise and log a rejection warning on every load — the noise that hid this defect in the first
+place. Model comes from the mapping or not at all.
 
 ```yaml
 plugins:
@@ -51,8 +53,7 @@ plugins:
           provider: "deepseek"
 ```
 
-A bare `settings.provider` still works, because `provider` is not a reserved root. A refused root now
-costs that one field and nothing else. Absence is still absence: a blank or non-string value is
+A bare `settings.provider` still works, because `provider` is not a reserved root. Absence is still absence: a blank or non-string value is
 skipped, never minted.
 
 **Live check on the installed copy** (0.10.1), with a stub that enforces the host's rule:
@@ -61,6 +62,13 @@ skipped, never minted.
 identity via mapping          -> {'model': 'vendor/m', 'provider': 'vendor'}
 provider with refused model   -> {'provider': 'vendor2'}
 ```
+
+## A follow-up worth one line: the warning is silenced
+
+The 0.10.1 version still probed the bare `model` key in its own `try`, which keeps the host warning
+alive on every load. 0.10.2 removes that probe, because a call that can only fail is noise. The two
+test fakes that mapped bare keys (and so never enforced the host rule) are now host-shaped, which is
+what let the defect hide.
 
 ## Also fixed in the same card
 

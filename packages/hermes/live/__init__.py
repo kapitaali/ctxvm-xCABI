@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.10.1"
+PLUGIN_VERSION = "0.10.2"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -623,15 +623,17 @@ def _identity_from_settings(ctx: Any) -> Dict[str, str]:
             value = identity.get(field)
             if isinstance(value, str) and value.strip():
                 out[field] = value.strip()
-    for field in ("model", "provider"):
-        if field in out:
-            continue
+    # Only `provider` is asked for bare. `model` is a reserved root on every host
+    # version seen, so asking for it can only raise and log a rejection warning on
+    # every load — the noise that hid this defect in the first place. Model comes
+    # from the `identity` mapping or not at all.
+    if "provider" not in out:
         try:
-            value = getter(field)
+            value = getter("provider")
         except Exception:
-            continue  # host refuses that root (model is reserved) — absence, not an error
+            value = None
         if isinstance(value, str) and value.strip():
-            out[field] = value.strip()
+            out["provider"] = value.strip()
     return out
 
 

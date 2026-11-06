@@ -683,9 +683,12 @@ class LiveAdapterTests(unittest.TestCase):
         from live import _identity_from_settings
 
         class SettingsCtx:
+            """Host-shaped: `identity` carries both; a bare `model` would be refused."""
             def get_config(self, key):
-                return {"model": "vendor/model-a",
-                        "provider": "vendor"}.get(key)
+                if key.split(".")[0].lower() in {"model", "plugins", "security", "settings"}:
+                    raise ValueError("reserved root")
+                return {"identity": {"model": "vendor/model-a",
+                                     "provider": "vendor"}}.get(key)
 
         self.assertEqual(_identity_from_settings(SettingsCtx()),
                          {"model": "vendor/model-a", "provider": "vendor"})
@@ -754,8 +757,10 @@ class LiveAdapterTests(unittest.TestCase):
                     return None
 
                 def get_config(self, key):
-                    return {"model": "vendor/model-a",
-                            "provider": "settingsprov"}.get(key)
+                    if key.split(".")[0].lower() in {"model", "plugins", "security", "settings"}:
+                        raise ValueError("reserved root")
+                    return {"identity": {"model": "vendor/model-a",
+                                         "provider": "settingsprov"}}.get(key)
 
             register(SettingsCtx())
             from live import _make_plugin

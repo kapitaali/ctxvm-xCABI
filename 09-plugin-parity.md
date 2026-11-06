@@ -408,8 +408,9 @@ segment is `model`, `plugins`, `security` or `settings` (`hermes_cli/plugins_sta
 `get_config("model")` raised — and because the whole loop sat inside one `try`, the raise on
 `model` aborted the lookup before `provider` was ever asked for. The documented remedy for
 `provider: unknown` was therefore dead on every release since 0.4.1, silently. The reader now
-takes the non-reserved `identity` mapping first and each bare key in its own `try`, so a refused
-root costs that one field and nothing else. It exists because hermes ~v0.22.5 does not send `provider` at
+takes the non-reserved `identity` mapping first and then only the bare `provider` key, because
+`model` is refused on every host version seen and asking for it can only log the rejection warning on
+every load — the noise that hid the defect. Model comes from the `identity` mapping or not at all. It exists because hermes ~v0.22.5 does not send `provider` at
 tracer-creation time: the turn-prep `pre_llm_call` payload carries `model`/`platform` only
 (`packages/hermes/HOOKS.md` §1, source-verified) and `provider` only reaches the
 `pre_api_request`/`post_api_request` payloads, after the tracer already exists. A default-ON
