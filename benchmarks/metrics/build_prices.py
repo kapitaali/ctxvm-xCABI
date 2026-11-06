@@ -33,6 +33,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 CATALOGUE = HERE / "catalogue-2026-11-06.csv"
+MODEL_LIST = HERE / "model-list-2026-11-06.txt"
 PRICES = HERE / "prices.json"
 ACCESSED = "2026-11-06"
 
@@ -105,6 +106,60 @@ def parse_row(line: str, row: int) -> dict:
     }
 
 
+LIST_RE = re.compile(
+    r"^\s*\((?:●|○)\)\s+(?:★\s+)?(?P<model>\S+)\s+\$?(?P<inp>[0-9.]+|free)\s+"
+    r"\$?(?P<out>[0-9.]+|free)\s*(?P<third>\$?[0-9.]+|-?[0-9.]+%|-)?\s*(?:<-.*)?$"
+)
+
+
+def _num(token: str) -> float | None:
+    token = token.strip().lstrip("$")
+    if token.lower() == "free":
+        return 0.0
+    try:
+        return float(token)
+    except ValueError:
+        return None
+
+
+def parse_model_list() -> list[dict]:
+    """Parse the provider's `hermes model list` output the owner pasted.
+
+    Columns are: marker, model id, input, output, and an optional third figure. For paid
+    rows that figure is a price and it tracks the cached-input rate (10% of input on Luna
+    and Haiku, 5% on Sonnet/Opus); for the free row it is a discount percentage. The third
+    column is therefore recorded as `cachedReadCandidate` with its basis named, never
+    silently promoted to a verified cache price — the list has no header.
+    """
+    rows: list[dict] = []
+    for n, line in enumerate(MODEL_LIST.read_text(encoding="utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        m = LIST_RE.match(line)
+        if m is None:
+            raise SystemExit(f"build_prices: model list row {n}: unparseable {line!r}")
+        third = (m.group("third") or "").strip()
+        cached = None
+        basis = None
+        if third.endswith("%"):
+            basis = "discount-percent"
+        elif third:
+            cached = _num(third)
+            basis = "model-list third column; read as cached-input rate"
+        rows.append({
+            "model": m.group("model"),
+            "usdPer1mInput": _num(m.group("inp")),
+            "usdPer1mOutput": _num(m.group("out")),
+            "cachedReadCandidate": cached,
+            "thirdColumnBasis": basis,
+        })
+    return rows
+
+
+def _norm(vendor: str | None, model: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", f"{vendor or ''}{model}".lower())
+
+
 def build() -> dict:
     rows = [ln for ln in CATALOGUE.read_text(encoding="utf-8").splitlines() if ln.strip()]
     entries = [parse_row(ln, i) for i, ln in enumerate(rows, start=1)]
@@ -120,6 +175,26 @@ def build() -> dict:
             seen[key] = e["id"]
             e["duplicateOf"] = None
 
+    listed = parse_model_list()
+    by_key = {_norm(None, r["model"]): r for r in listed}
+    # Cross-check every catalogue row that the provider list also carries, and fill the
+    # cache-read candidate where the catalogue had no such column.
+    matched = 0
+    for e in entries:
+        key = _norm(e["vendor"], e["model"])
+        hit = by_key.get(key)
+        if hit is None:
+            e["crossCheck"] = None
+            continue
+        matched += 1
+        same = (e["usdPer1mInput"] == hit["usdPer1mInput"]
+                and e["usdPer1mOutput"] == hit["usdPer1mOutput"])
+        e["crossCheck"] = "matches model list" if same else (
+            f"DIFFERS: model list {hit['usdPer1mInput']}/{hit['usdPer1mOutput']}")
+        if e["usdPer1mCachedRead"] is None and hit["cachedReadCandidate"] is not None:
+            e["usdPer1mCachedRead"] = hit["cachedReadCandidate"]
+            e["cachedReadSource"] = hit["thirdColumnBasis"]
+
     raw = json.loads(PRICES.read_text(encoding="utf-8"))
     out = dict(raw)
     out["priceModelVersion"] = 2
@@ -127,6 +202,15 @@ def build() -> dict:
     # Idempotence: the note is rebuilt from its v1 base each run, never appended to itself.
     base_note = raw["note"].split(" v2 (2026-11-06):")[0]
     out["note"] = base_note + " " + V2_NOTE
+    out["providerList"] = {
+        "source": MODEL_LIST.name,
+        "sourceKind": "owner-pasted `hermes model list` output",
+        "accessed": ACCESSED,
+        "verified": "owner-supplied; the list carries no column header",
+        "rows": len(listed),
+        "matchedCatalogueRows": matched,
+        "entries": listed,
+    }
     out["catalogue"] = {
         "source": CATALOGUE.name,
         "sourceKind": "owner-supplied provider catalogue export (CSV, six columns, no header)",

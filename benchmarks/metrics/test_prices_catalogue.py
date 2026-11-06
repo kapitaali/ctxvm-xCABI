@@ -63,8 +63,13 @@ def test_embeddings_have_no_output_price(entries: list[dict]) -> None:
 
 
 def test_cache_read_is_never_invented(entries: list[dict]) -> None:
-    # The export has no cache-read column; a price here would be fabricated.
-    assert all(e["usdPer1mCachedRead"] is None for e in entries)
+    # The CSV export has no cache-read column. A price may appear only where the provider
+    # model list names one, and it must carry the basis that says so.
+    for e in entries:
+        if e["usdPer1mCachedRead"] is not None:
+            assert e.get("cachedReadSource"), f"{e['model']} has a cache price with no source"
+            assert e.get("crossCheck") == "matches model list", (
+                f"{e['model']} has a cache price but was not matched to the model list")
 
 
 def test_duplicate_listings_are_preserved_and_marked(entries: list[dict]) -> None:
@@ -80,6 +85,34 @@ def test_duplicate_listings_are_preserved_and_marked(entries: list[dict]) -> Non
 def test_the_w8_candidate_row_is_present(entries: list[dict]) -> None:
     row = next(e for e in entries if e["model"] == "DeepSeek V4.1 Flash 1017")
     assert (row["vendor"], row["usdPer1mInput"], row["usdPer1mOutput"]) == ("DeepSeek", 0.15, 0.60)
+
+
+def test_provider_list_is_parsed_and_matched(doc: dict) -> None:
+    pl = doc["providerList"]
+    assert pl["rows"] == 25
+    assert pl["matchedCatalogueRows"] == 24, "every list row except the free one has a catalogue twin"
+    luna = next(r for r in pl["entries"] if r["model"] == "openai/gpt-6-luna")
+    assert (luna["usdPer1mInput"], luna["usdPer1mOutput"], luna["cachedReadCandidate"]) == (0.10, 0.50, 0.01)
+    free = next(r for r in pl["entries"] if r["model"].endswith("crouton-alpha"))
+    assert free["thirdColumnBasis"] == "discount-percent"
+
+
+def test_catalogue_agrees_with_the_provider_list(entries: list[dict]) -> None:
+    checked = [e for e in entries if e.get("crossCheck")]
+    assert len(checked) == 24
+    bad = [e for e in checked if e["crossCheck"] != "matches model list"]
+    assert not bad, f"catalogue and provider list disagree: {[(e['model'], e['crossCheck']) for e in bad]}"
+
+
+def test_cached_read_is_filled_only_from_the_list(entries: list[dict]) -> None:
+    with_cache = [e for e in entries if e["usdPer1mCachedRead"] is not None]
+    assert with_cache, "the model list carries a cached rate for the models it names"
+    assert all(e.get("cachedReadSource") for e in with_cache), "a filled cache price must name its basis"
+    # Nothing outside the list's rows may acquire a cache price.
+    luna = next(e for e in entries if e["model"] == "GPT-6 Luna")
+    assert luna["usdPer1mCachedRead"] == 0.01
+    deepseek = next(e for e in entries if e["model"] == "DeepSeek V4.1 Flash 1017")
+    assert deepseek["usdPer1mCachedRead"] is None
 
 
 def test_builder_check_is_clean() -> None:

@@ -11,9 +11,16 @@ one-factor property therefore holds unchanged — both arms run Luna, differing 
 
 ## 1. Model and price row
 
-`OpenAI: GPT-6 Luna` — catalogue row, `usdPer1mInput 0.10`, `usdPer1mOutput 0.50`, basis `in-out`,
-source `benchmarks/metrics/catalogue-2026-11-06.csv`, accessed 2026-11-06, owner-supplied (not
-web-verified by this repository).
+`OpenAI: GPT-6 Luna` — model id `openai/gpt-6-luna` (confirmed against the provider list), catalogue row
+`usdPer1mInput 0.10`, `usdPer1mOutput 0.50`, and `usdPer1mCachedRead 0.01` from the model list's third
+column; source `benchmarks/metrics/catalogue-2026-11-06.csv` + `model-list-2026-11-06.txt`, accessed
+2026-11-06, owner-supplied.
+
+**Cache pricing changes what the numbers mean.** A cached read costs a tenth of an uncached one. The
+naive arm keeps a stable prefix and can accumulate hits; the paged arm rewrites the prefix on every
+selection, which forfeits them. A run can therefore cut tokens and still cost more dollars, and the
+preregistered gate reads tokens. The ledger carries both columns and the analysis must present both —
+token reduction is the gate, cost is the finding.
 
 Why it and not its siblings, at the design's volumes (36 runs = 22.3 M input, 0.5 M output):
 
