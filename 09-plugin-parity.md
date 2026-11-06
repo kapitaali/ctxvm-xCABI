@@ -69,6 +69,21 @@ audited by the recorded driver fixture) and hermes's is tool hooks + `pre_llm_ca
 history (no usage facts). Per-lane omission (`providerUsage` optional in the v0.1
 schema) keeps the key signatures above valid for both ports.
 
+**W8 note (2026-11-06, RR-W8IMPL-20261106):** the "hermes has no usage source" clause
+above is closed. Plugin 0.10.0 registers `post_api_request` and the lane now emits
+optional `call.meta.providerUsage` on the canonical shape: `inputTokens` is the UNCACHED
+input (prompt minus both cache buckets, clamped at zero), `outputTokens` and
+`cachedInputTokens` ride as reported, whole numbers only, absence never coerced to zero.
+Order is the rust writer's (`latencyMs`, `providerUsage`, `ts`). A receipt that arrives
+while no pending meta exists is held and attaches to the next created meta (the node
+`orphanUsage` law); a second receipt on one meta overwrites the first (last write wins,
+because the last response describes what was finally sent). `cacheEstimate.
+providerReported` stays `false` by owner ruling (option A, 2026-11-06): the estimate
+keeps page-table semantics and the receipt is a separate fact — the est-to-provider
+upgrade question stays open (RR-W2B1 §6). The opencode lane still emits no usage and its
+table is untouched: hermes key-signature equality is a per-port assertion, which the
+opencode mirror's own comment states.
+
 **RFC-0.1 §R4 note (2026-10-31, RR-R4TS1 + RR-R4TS2):** per-event `ts` — RFC 3339 UTC
 ms, riding LAST on every line, default ON with the per-trace opt-out `CTXVM_TRACE_TS=0`
 (D9; §R4 keeps the field optional). LANDED on ALL FOUR lanes: node + its opencode/ai-sdk

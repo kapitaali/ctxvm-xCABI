@@ -59,8 +59,18 @@ pre_llm_call(turn=t+1) → vm.scan(conversation_history) → vm.render()   [turn
 | `page.declare` | `post_tool_call` (status in {"ok", "completed"}) | `tool_name`, `args`, `result.content` text items |
 | `page.fault(tool_recall)` | `pre_tool_call` | `tool_name`, `args` matched against declared pages |
 | `page.fault(identifier_scan)` | `pre_llm_call` | `conversation_history` text scanned for page identity tokens |
-| `turn.render` + `call.meta` | `pre_llm_call` | Turn boundary; `providerReported=false` (estimated only) |
+| `turn.render` + `call.meta` | `pre_llm_call` (boundary) + `pre_api_request` (latency) + `post_api_request` (usage, W8) | Turn boundary; `cacheEstimate.providerReported=false` (estimated only) with the provider's own receipt in the separate `providerUsage` slot (W8) |
 | flush | `on_session_end` | `vm.finishAll()` writes the pair + the W17 coverage sidecar (`<file>.jsonl`, `<file>.meta.json`, `<file>.coverage.json`) |
+
+**W8 wiring note (2026-11-06, plugin 0.10.0):** the plugin registers SEVEN hooks —
+`on_session_start`, `pre_tool_call`, `post_tool_call`, `pre_llm_call`,
+`pre_api_request` (latency source, W2b), `post_api_request` (usage intake, W8) and
+`on_session_end`. The usage summary is consumed through a strict intake: whole-number
+buckets only, `inputTokens` = prompt minus both cache buckets, absence stays absent (no
+zero is invented). The receipt rides `call.meta.providerUsage` after `latencyMs` and
+before `ts`, last write wins per pending meta, and a receipt observed before any meta
+exists attaches to the next one. `cacheEstimate.providerReported` is NOT flipped (owner
+option A): the receipt is a separate fact, never an in-place upgrade of the estimate.
 
 **Env-gating:** Hooks are always registered; tracing is gated lazily at each hook
 call. Two ways to enable:

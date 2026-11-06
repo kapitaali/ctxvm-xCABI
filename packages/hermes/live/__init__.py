@@ -13,6 +13,8 @@ Hooks wired (see packages/hermes/HOOKS.md for the full pin):
     pre_tool_call      → recall({tool, args})
     post_tool_call     → page.declare   (status in {"ok", "completed"} only; T6 §2)
     pre_llm_call       → scan(history) + render()   [turn boundary]
+    pre_api_request    → call.meta latency (W2b)
+    post_api_request   → providerUsage     (W8: provider receipt, last-write-wins)
     on_session_end     → finish_all() flush
 
 Trace output (flushes on session end and plugin unload):
@@ -65,6 +67,12 @@ if _hermes_src is None and (_plugin_dir / "plugin.py").is_file():
     _hermes_src = str(_plugin_dir)
 if _hermes_src and _hermes_src not in sys.path:
     sys.path.insert(0, _hermes_src)
+# The W8 engine module (context_engine.py) is a live/-sibling in the committed
+# tree and a plugin-local file in the installed copy: this directory carries
+# it either way. Kept AFTER the src insert so `plugin`/`uc*` always resolve to
+# packages/hermes/src first (the shadowing order the flat imports expect).
+if str(_plugin_dir) not in sys.path:
+    sys.path.insert(1, str(_plugin_dir))
 
 from plugin import create_ctxvm_plugin, identity_from_payload  # noqa: E402
 from uc_registry import (
@@ -83,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.9.0"
+PLUGIN_VERSION = "0.10.0"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -330,6 +338,8 @@ ENV_KEYS = [
     "CTXVM_PROVIDER",
     "CTXVM_AGENT_ID",
     "CTXVM_BUDGET_TOKENS",
+    # W8: the paged arm's engine reads the T0 lock surface (design §5).
+    "CTXVM_VBUDGET",
 ]
 
 
@@ -1180,6 +1190,7 @@ def register(ctx) -> None:
         ("CTXVM_MODEL", "unknown/unknown", "fallback model when the host payload has none"),
         ("CTXVM_PROVIDER", "unknown", "fallback provider when the host payload has none"),
         ("CTXVM_BUDGET_TOKENS", "200000", "declared page budget (drives turn.render headroom)"),
+        ("CTXVM_VBUDGET", "24000 (preregistered)", "W8 paged arm: conf/raises only — a value below 24000 is refused and flagged"),
         ("CTXVM_FEATURES", "unset", "comma list: forensics, handoff"),
         ("CTXVM_HANDOFF_DIR", "unset", "where /ctxvm-handoff packages"),
         ("CTXVM_RESUME_FROM", "unset", "snapshot to verify at boot"),
@@ -1505,6 +1516,18 @@ def register(ctx) -> None:
 
     ctx.register_hook("pre_llm_call", on_pre_llm_call)
     ctx.register_hook("pre_api_request", on_pre_api_request)
+
+    def on_post_api_request(**kwargs: Any) -> None:
+        """W8 D12: the provider's own receipt — strict intake, absence is not a zero."""
+        stats["events_seen"] = stats.get("events_seen", 0) + 1
+        if not _traced():
+            return
+        vm = _ensure_plugin()
+        if vm is not None:
+            vm.on_post_api_request(kwargs)
+
+    ctx.register_hook("post_api_request", on_post_api_request)
+
     ctx.register_hook("on_session_end", on_session_end)
 
     # Register slash command for runtime start/stop/status
@@ -1549,6 +1572,24 @@ def register(ctx) -> None:
             _handle_resume_cmd,
             description="UC1 resume: verified-boot a paused snapshot, print brief result.",
         )
+
+    # --- W8 gate 3: register the paged arm's context engine (fail-open) ----
+    # design/w8-capture-design.md §3.3: the host activates the engine ONLY
+    # when a profile carries `context.engine: "ctxvm"` (the naive arm runs the
+    # default profile — the one-factor design). Outside the hermes runtime
+    # (the plugin's own test suite) build_engine() returns None and nothing
+    # registers; a host that refuses the registration must never break the
+    # observer duties — the hooks above stay fully functional either way.
+    try:
+        from context_engine import build_engine  # live/-sibling, flat import
+        engine = build_engine()
+        if engine is not None and hasattr(ctx, "register_context_engine"):
+            ctx.register_context_engine(engine)
+            state["engine_registered"] = engine.name
+            _witness(f"engine={engine.name} registered")
+    except Exception as exc:  # noqa: BLE001 - fail-open is the design law here
+        state["engine_registered"] = None
+        _witness(f"engine_register=skip reason={type(exc).__name__}: {exc}")
 
     # Register cleanup on plugin unload
     ctx.on_unload(lambda: _flush_traces())

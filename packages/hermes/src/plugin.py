@@ -149,9 +149,49 @@ class FinishedTrace:
         self.stats = stats
 
 
+def _is_token_count(value: Any) -> bool:
+    """node mirror: whole numbers >= 0 only; booleans refused."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def provider_usage_of(summary: Any) -> Optional[Dict[str, Any]]:
+    """Strict intake for the host's `post_api_request` usage summary → the §R3
+    wire shape `{inputTokens, outputTokens, cachedInputTokens?}`.
+
+    The host summary (agent/api_request_hooks.py `_usage_summary_for_api_request_hook`)
+    carries the canonical buckets — `prompt_tokens` (= input + cacheRead + cacheWrite
+    for OpenAI-shaped providers), `cache_read_tokens`, `cache_write_tokens`,
+    `output_tokens`. `inputTokens` on the wire is the UNCACHED input:
+    ``prompt − cache_read − cache_write`` clamped at zero — derived from the host's
+    own keys so the provider's wire shape cannot leak through the field's meaning
+    (the W3 cents split: cache-read at `usdPer1mCachedRead`, uncached input at
+    `usdPer1mInput`; cache write stays unmodeled per D12 and is subtracted so it can
+    neither inflate the miss column nor silently re-enter as input).
+
+    Any required bucket not a whole number >= 0 makes the receipt an ABSENCE
+    (return None, never a zero). `cachedInputTokens` always rides when the
+    receipt is usable: the summarizer always reports the bucket, and a reported
+    zero is a fact (the node mirror's own comment). Returns None for absent or
+    malformed input as well — the same "absence" law as node.
+    """
+    if not isinstance(summary, dict):
+        return None
+    prompt_tokens = summary.get("prompt_tokens")
+    cache_read = summary.get("cache_read_tokens")
+    cache_write = summary.get("cache_write_tokens")
+    output_tokens = summary.get("output_tokens")
+    if not (_is_token_count(prompt_tokens) and _is_token_count(cache_read)
+            and _is_token_count(cache_write) and _is_token_count(output_tokens)):
+        return None
+    return {
+        "inputTokens": max(0, prompt_tokens - cache_read - cache_write),
+        "outputTokens": output_tokens,
+        "cachedInputTokens": cache_read,
+    }
+
+
 class Tracer:
     """Per-session RFC-0 xCABI tracer. Mirrors @ctxvm/node createTrace()."""
-
     def __init__(self, init: TraceInit):
         self._init = init
         self._events: List[Dict[str, Any]] = []
@@ -163,6 +203,14 @@ class Tracer:
         self._fault_count = 0
         self._all_declared: Dict[str, int] = {}  # ref|hash → tokens
         self._pending_meta: List[Dict[str, Any]] = []
+        # W8 D12 (RR-W2B1 §6): provider receipts ride `providerUsage` as the raw
+        # fact; cacheEstimate stays the page-table estimate and providerReported
+        # stays false. A receipt that arrives while no meta exists (an api call
+        # outside the pre_llm_call→render sequence) is held here and attaches to
+        # the NEXT created meta (the node mirror `orphanUsage` law). Last
+        # receipt on a meta wins (the host may attempt several api calls per
+        # turn; the last response's receipt describes what was finally sent).
+        self._orphan_usage: Optional[Dict[str, Any]] = None
         # RFC-0.1 §R4 (D9 policy): every event gains `ts` — RFC 3339 UTC ms.
         # DEFAULT ON; the per-trace opt-out `CTXVM_TRACE_TS=0` (read ONCE at
         # trace creation) covers byte-stability needs (fixtured drops,
@@ -336,13 +384,37 @@ class Tracer:
         # these exact bytes (node mirror: the same `now` for both).
         now: Optional[str] = self._stamp() if self._ts_enabled else None
         self._turn_stamps.append(now)
-        self._pending_meta.append({
+        pending = {
             "turn": self._turn,
             "hit": hit,
             "residentAtTurn": resident_at_turn,
             "latencyMs": input.get("latencyMs"),
             "ts": now,
-        })
+        }
+        orphan = self._orphan_usage
+        if orphan is not None:
+            # node mirror: a receipt held while no meta existed attaches here.
+            pending["providerUsage"] = orphan
+            self._orphan_usage = None
+        self._pending_meta.append(pending)
+
+    def note_usage(self, usage: Dict[str, Any]) -> None:
+        """W8 D12: attach the provider's own receipt to the turn's call.meta.
+
+        Intake mirrors node's `providerUsageOf` law (whole numbers, >= 0, booleans
+        refused; a reported zero is a fact, never an absence). `inputTokens` is the
+        UNCACHED input: prompt minus both cache buckets, derived from the host's
+        own summary keys so the provider's wire shape (Anthropic vs OpenAI)
+        cannot leak through — `cacheEstimate` stays the page-table estimate and
+        `providerReported` stays false (D12; owner ratified option A 2026-11-06).
+        """
+        shaped = provider_usage_of(usage)
+        if shaped is None:
+            return  # absence of a usable receipt is an absence, never a zero
+        if self._pending_meta:
+            self._pending_meta[-1]["providerUsage"] = shaped  # last write wins
+        else:
+            self._orphan_usage = shaped
 
     def scan(self, input: Dict[str, Any]) -> None:
         """identifier_scan over produced model text (deduped per page per source)."""
@@ -447,6 +519,14 @@ class Tracer:
             }
             if m.get("latencyMs") is not None:
                 meta["latencyMs"] = m["latencyMs"]
+            # W8 D12: the raw provider receipt rides the §R3 slot — AFTER
+            # cacheEstimate/latencyMs, BEFORE ts (the canonical v0.1 wire order
+            # the rust writer minted). providerReported stays false (owner
+            # ratified option A 2026-11-06): the upgrade of est* to provider
+            # truth is the D12 open question (RR-W2B1 §6); est stays the
+            # page-table estimate, the receipt is a separate fact.
+            if m.get("providerUsage") is not None:
+                meta["providerUsage"] = m["providerUsage"]
             # §R4-ts rides LAST (the wire slot where providerUsage would ride
             # first if this port's hook surface ever gains a usage source —
             # the §R3 per-lane omission law; see 09-plugin-parity.md §2).
@@ -584,6 +664,14 @@ class CtxvmPlugin:
         session_id = payload.get("session_id", "")
         vm = self._vm_for(session_id, identity_from_payload(payload))
         vm.on_pre_api_request(payload)
+
+    def on_post_api_request(self, payload: Dict[str, Any]) -> None:
+        """W8 D12: the provider's own receipt. `usage` is the host's canonical
+        bucket summary (or None); intake is strict — anything unusable is an
+        absence, never a zero (mirrors node `noteUsage`)."""
+        session_id = payload.get("session_id", "")
+        vm = self._vm_for(session_id, identity_from_payload(payload))
+        vm.note_usage(payload.get("usage") or {})
 
     def on_pre_llm_call(self, payload: Dict[str, Any]) -> None:
         """pre_llm_call hook: scan conversation history for identifiers, then render turn boundary."""

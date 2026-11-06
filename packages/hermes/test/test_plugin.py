@@ -19,8 +19,8 @@ for _p in (_HERMES_ROOT, _HERMES_SRC):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from plugin import CtxvmPlugin, create_ctxvm_plugin, Tracer, TraceInit, canonical_json, content_hash, tool_ref, identity_tokens  # noqa: E402
-from live import PLUGIN_VERSION, _canon_meta, _clear_env_for_tests, register  # noqa: E402
+from plugin import CtxvmPlugin, create_ctxvm_plugin, Tracer, TraceInit, canonical_json, content_hash, tool_ref, identity_tokens, provider_usage_of  # noqa: E402
+from live import PLUGIN_VERSION, _canon_meta, _clear_env_for_tests, _state, register  # noqa: E402
 
 INIT = {
     "agentId": "hermes",
@@ -609,7 +609,7 @@ class LiveAdapterTests(unittest.TestCase):
         register(FakeCtx())
         # Hooks are always registered (gating is lazy per-call); the key invariant
         # is that no plugin instance is created and no traces are written.
-        self.assertEqual(len(calls), 10)  # 6 hooks + 3 commands (trace/help/start) + 1 unload
+        self.assertEqual(len(calls), 11)  # 7 hooks (W8: +post_api_request) + 3 commands (trace/help/start) + 1 unload
         self.assertIn(("hook", "on_session_start"), calls)
         self.assertIn(("hook", "pre_api_request"), calls)
         self.assertIn(("command", "ctxvm-trace"), calls)
@@ -1400,6 +1400,11 @@ OPTIONAL_EVENT_KEYS = {
     # W14 (§R8): present only when the operator registered an opaque environment id
     # (the hermes gateway does not disclose the session's workspace).
     "session.open": frozenset({"environmentId"}),
+    # W8 (§R3 note, owner option A): the provider receipt is a separate fact on
+    # call.meta (the cacheEstimate stays page-table semantics). Optional per v0.1;
+    # this lane became an emitter only now — the opencode table stays untouched
+    # (its per-port comment rule defers hermes key-signature equality here).
+    "call.meta": frozenset({"providerUsage"}),
 }
 
 CANONICAL_META_KEYS = [
@@ -1470,6 +1475,13 @@ class CanonicalSidecarParity(unittest.TestCase):
                 elif key == "environmentId":
                     self.assertRegex(str(event[key]), r"^env-[0-9a-f]{12}$",
                                      f"{t}.{key} must be an opaque id, never a path")
+                elif key == "providerUsage":
+                    self.assertEqual(set(event[key].keys()),
+                                     {"inputTokens", "outputTokens", "cachedInputTokens"},
+                                     f"{t}.providerUsage must be the three v0.1 buckets")
+                    self.assertTrue(all(isinstance(v, int) and not isinstance(v, bool)
+                                        and v >= 0 for v in event[key].values()),
+                                    f"{t}.providerUsage buckets must be whole numbers >= 0")
         self.assertEqual(
             {e["type"] for e in events},
             set(CANONICAL_EVENT_KEYS),
@@ -1854,3 +1866,215 @@ class CollisionNamingTests(unittest.TestCase):
         )
         check = self._checker(tmp, "cov.jsonl", "cov.coverage.json")
         self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
+
+
+class ProviderUsageIntakeTests(unittest.TestCase):
+    """W8 D12 intake law (packages/hermes/src/plugin.py `provider_usage_of`).
+
+    The host's post_api_request usage summary carries the canonical buckets —
+    `input_tokens` is the UNCACHED input on every provider shape (agent/
+    usage_pricing.py normalize_usage: Anthropic reports uncached directly;
+    Chat/Codex totals are split by subtracting the cache buckets), and
+    `prompt_tokens = input + cache_read + cache_write`. The wire shape is
+    `{inputTokens, outputTokens, cachedInputTokens?}` (RFC-0.1 §R3).
+    `cacheEstimate` stays the page-table estimate and `providerReported` stays
+    FALSE — owner option A (2026-11-06): the provider receipt rides the
+    separate `providerUsage` fact; the est*→provider-truth upgrade question
+    (RR-W2B1 §6) remains open."""
+
+    def _summary(self, **over):
+        base = {
+            "input_tokens": 1200, "output_tokens": 512,
+            "cache_read_tokens": 800, "cache_write_tokens": 200,
+            "reasoning_tokens": 64, "request_count": 1,
+            "prompt_tokens": 2200, "total_tokens": 2712,
+        }
+        base.update(over)
+        return base
+
+    def test_canonical_summary_maps_to_the_r3_shape(self):
+        shaped = provider_usage_of(self._summary())
+        self.assertEqual(shaped, {
+            "inputTokens": 1200,       # prompt 2200 − read 800 − write 200
+            "outputTokens": 512,
+            "cachedInputTokens": 800,  # a read bucket exists → it rides
+        })
+
+    def test_reported_zero_cache_read_is_a_fact_not_an_absence(self):
+        shaped = provider_usage_of(self._summary(
+            cache_read_tokens=0, cache_write_tokens=0, prompt_tokens=1200,
+            total_tokens=1712))
+        self.assertEqual(shaped["cachedInputTokens"], 0)
+        self.assertIn("cachedInputTokens", shaped)
+
+    def test_malformed_and_absent_buckets_are_an_absence(self):
+        self.assertIsNone(provider_usage_of(None))
+        self.assertIsNone(provider_usage_of({}))
+        self.assertIsNone(provider_usage_of({"output_tokens": 5}))
+        self.assertIsNone(provider_usage_of(self._summary(prompt_tokens=True)))
+        self.assertIsNone(provider_usage_of(self._summary(output_tokens="512")))
+        self.assertIsNone(provider_usage_of(self._summary(cache_read_tokens=-1)))
+        self.assertIsNone(provider_usage_of("2200/512"))
+        self.assertIsNone(provider_usage_of([1, 2, 3]))
+
+    def test_bucketless_but_nonnegative_shapes_derive_clamped(self):
+        """The clamp law: prompt − read − write below zero pins at zero (a
+        harness remap error must not mint negative tokens)."""
+        shaped = provider_usage_of(self._summary(prompt_tokens=100))
+        self.assertEqual(shaped["inputTokens"], 0)
+
+
+class ProviderUsageTracerTests(unittest.TestCase):
+    """note_usage + the finish slot: last-write-wins, orphan pairing, and the
+    §R3 wire position (providerUsage rides after latencyMs, BEFORE ts)."""
+
+    SID = "ses_usage"
+
+    def _plugin(self):
+        plugin = create_ctxvm_plugin(INIT)
+        plugin.on_session_start({"session_id": self.SID})
+        return plugin
+
+    def _meta_events(self, events):
+        return [e for e in events if e["type"] == "call.meta"]
+
+    def test_receipt_attaches_to_the_pending_meta(self):
+        plugin = self._plugin()
+        plugin.on_pre_llm_call({"session_id": self.SID, "conversation_history": []})
+        plugin.on_post_api_request({
+            "session_id": self.SID,
+            "usage": {"input_tokens": 900, "output_tokens": 100,
+                      "cache_read_tokens": 300, "cache_write_tokens": 200,
+                      "prompt_tokens": 1400},
+        })
+        record = plugin.finish_all()[0]
+        metas = self._meta_events(record["trace"].events)
+        self.assertEqual(len(metas), 1)
+        self.assertEqual(metas[0]["providerUsage"],
+                         {"inputTokens": 900, "outputTokens": 100,
+                          "cachedInputTokens": 300})
+
+    def test_last_write_wins_on_multiple_receipts(self):
+        plugin = self._plugin()
+        plugin.on_pre_llm_call({"session_id": self.SID, "conversation_history": []})
+        plugin.on_post_api_request({
+            "session_id": self.SID,
+            "usage": {"input_tokens": 1, "output_tokens": 1,
+                      "cache_read_tokens": 1, "cache_write_tokens": 1,
+                      "prompt_tokens": 3},
+        })
+        plugin.on_post_api_request({
+            "session_id": self.SID,
+            "usage": {"input_tokens": 5, "output_tokens": 6,
+                      "cache_read_tokens": 7, "cache_write_tokens": 0,
+                      "prompt_tokens": 12},
+        })
+        record = plugin.finish_all()[0]
+        (meta,) = self._meta_events(record["trace"].events)
+        self.assertEqual(meta["providerUsage"],
+                         {"inputTokens": 5, "outputTokens": 6,
+                          "cachedInputTokens": 7})
+
+    def test_absent_usage_is_an_absence_never_a_zero(self):
+        plugin = self._plugin()
+        plugin.on_pre_llm_call({"session_id": self.SID, "conversation_history": []})
+        plugin.on_post_api_request({"session_id": self.SID})          # usage key absent
+        plugin.on_post_api_request({"session_id": self.SID, "usage": None})
+        plugin.on_post_api_request({"session_id": self.SID, "usage": {"junk": 1}})
+        record = plugin.finish_all()[0]
+        (meta,) = self._meta_events(record["trace"].events)
+        self.assertNotIn("providerUsage", meta)
+        # the estimate stays honest: page-table semantics, providerReported False
+        self.assertEqual(meta["cacheEstimate"]["providerReported"], False)
+
+    def test_orphan_receipt_pairs_with_the_next_meta(self):
+        plugin = self._plugin()
+        # a receipt BEFORE any meta exists (api call outside the render
+        # sequence): held on the tracer, attached to the NEXT created meta
+        plugin.on_post_api_request({
+            "session_id": self.SID,
+            "usage": {"input_tokens": 42, "output_tokens": 9,
+                      "cache_read_tokens": 3, "cache_write_tokens": 0,
+                      "prompt_tokens": 45},
+        })
+        plugin.on_pre_llm_call({"session_id": self.SID, "conversation_history": []})
+        record = plugin.finish_all()[0]
+        (meta,) = self._meta_events(record["trace"].events)
+        self.assertEqual(meta["providerUsage"]["inputTokens"], 42)
+
+    def test_wire_order_provider_usage_before_ts(self):
+        """§R3: the receipt rides AFTER cacheEstimate/latencyMs, BEFORE ts —
+        the canonical v0.1 wire order the rust writer minted."""
+        plugin = self._plugin()
+        plugin.on_pre_llm_call({"session_id": self.SID,
+                                "conversation_history": [], "latencyMs": 42})
+        plugin.on_post_api_request({
+            "session_id": self.SID,
+            "usage": {"input_tokens": 1, "output_tokens": 2,
+                      "cache_read_tokens": 3, "cache_write_tokens": 0,
+                      "prompt_tokens": 4},
+        })
+        record = plugin.finish_all()[0]
+        (meta,) = self._meta_events(record["trace"].events)
+        keys = list(meta.keys())
+        self.assertIn("latencyMs", keys)
+        self.assertIn("providerUsage", keys)
+        self.assertIn("ts", keys)
+        self.assertLess(keys.index("providerUsage"), keys.index("ts"))
+        self.assertLess(keys.index("latencyMs"), keys.index("providerUsage"))
+        self.assertLess(keys.index("cacheEstimate"), keys.index("providerUsage"))
+
+    def test_meta_without_receipt_carries_none_of_it(self):
+        plugin = self._plugin()
+        plugin.on_pre_llm_call({"session_id": self.SID, "conversation_history": []})
+        record = plugin.finish_all()[0]
+        (meta,) = self._meta_events(record["trace"].events)
+        self.assertNotIn("providerUsage", meta)
+
+
+class EngineWiringTests(unittest.TestCase):
+    """register() enrolls the paged arm's engine, fail-open (design §13 gate 3:
+    host activates it only with a profile carrying context.engine: "ctxvm";
+    outside the hermes runtime build_engine() returns None and the observer
+    duties are untouched)."""
+
+    def setUp(self):
+        _clear_env_for_tests()
+
+    def test_register_enrolls_one_engine_named_ctxvm(self):
+        captured = []
+
+        class SpyCtx:
+            def register_hook(self, name, cb):
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                return None
+
+            def register_context_engine(self, engine):
+                captured.append(engine)
+                return object()
+
+        register(SpyCtx())
+        self.assertEqual(len(captured), 1,
+                         "exactly one engine — the host allows only one")
+        self.assertEqual(captured[0].name, "ctxvm")
+        self.assertEqual(_state()["engine_registered"], "ctxvm")
+
+    def test_register_survives_a_ctx_without_the_engine_seam(self):
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                return None
+
+        register(FakeCtx())  # must not raise
+        self.assertIsNone(_state().get("engine_registered"),
+                          "a ctx without the seam keeps the engine out of state")

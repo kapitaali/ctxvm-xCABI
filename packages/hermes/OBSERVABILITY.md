@@ -35,7 +35,7 @@ where the two differ in emphasis.
 | `post_tool_call.status` vocabulary | `ok` \| `error` \| `blocked` \| `cancelled`; "emitted for blocked and cancelled paths so telemetry plugins can close spans cleanly" | matches the T17.1 errata (`ok`, not `completed`); the plugin correctly declares no page for all three non-`ok` values |
 | `pre_llm_call` timing | "Before the tool loop begins for a **user turn**" + "Use request-scoped API hooks for LLM span telemetry" | **contradicts the plugin's turn model** (finding F2) |
 | Sanitized request/response | `pre_api_request.request`, `post_api_request.response` are "the canonical observer inputs for new consumers" | not consumed (finding F3) |
-| Provider usage | `post_api_request` includes `usage` | **not consumed** — `providerReported` is hardcoded `false` (finding F3) |
+| Provider usage | `post_api_request` includes `usage` | **consumed since plugin 0.10.0 (W8)** — the receipt rides `call.meta.providerUsage` (three buckets, after `latencyMs` before `ts`); `cacheEstimate.providerReported` stays `false` by owner option A — see the F3 resolution below |
 | Legacy context field | "Legacy compatibility fields such as `request_messages`, `conversation_history` … may still be present" | the plugin depends on `conversation_history` (finding F1 makes it load-bearing) |
 | Cost gating | "Expensive request/response payload construction is gated behind `has_hook(...)`" | plugin registers only `on_session_start`, `pre_tool_call`, `post_tool_call`, `pre_llm_call`, `on_session_end` — no API-payload hooks, so it pays none of that cost |
 | Author duty | "Keep hook callbacks fast and fail-open. Offload network export or batch writes when practical." | audited in §3: no network, no I/O inside hooks |
@@ -172,6 +172,15 @@ quoting any divergence.
 registers neither hook. W1 measured `providerReported 0/32` call.metas. The W2b
 gap is therefore **closable in Hermes with hooks that already exist** — no
 schema change, no new event type.
+
+**F3 resolution (2026-11-06, RR-W8IMPL-20261106):** closed as proposed, with one owner
+ruling (option A). `post_api_request.usage` is consumed through `provider_usage_of` +
+`note_usage` (last write wins; a receipt seen before any meta exists pairs with the next
+created meta) and rides `call.meta.providerUsage`. The `providerReported = false`
+hardcode REMAINS, deliberately: option A keeps `cacheEstimate` on page-table semantics
+and treats the provider receipt as a separate fact, so the est-to-provider upgrade
+question (RR-W2B1 §6) stays open. The prereg text that had the estimate flip to `true`
+is a freeze-text erratum, recorded in RR-W8IMPL without editing the frozen design file.
 
 **F4 — the observer contract version is not recorded.**
 Every payload carries `telemetry_schema_version = "hermes.observer.v1"`; the
