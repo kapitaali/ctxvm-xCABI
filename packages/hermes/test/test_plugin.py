@@ -705,6 +705,37 @@ class LiveAdapterTests(unittest.TestCase):
 
         self.assertEqual(_identity_from_settings(BlankCtx()), {})
 
+        # The host REFUSES a plugin settings key whose first segment is reserved
+        # (model/plugins/security/settings): `get_config("model")` raises. The first
+        # version wrapped the whole loop in one try, so the raise on `model` aborted
+        # the lookup before `provider` was ever read — the documented remedy for
+        # `provider: unknown` was dead, and the exception was swallowed. Mirror the
+        # real rule here so a permissive fake cannot hide it again.
+        class ReservedRootCtx:
+            RESERVED = {"model", "plugins", "security", "settings"}
+            def __init__(self, identity=None, provider=None):
+                self._identity, self._provider = identity, provider
+            def get_config(self, key):
+                if key.split(".")[0].lower() in self.RESERVED:
+                    raise ValueError("reserved root")
+                if key == "identity":
+                    return self._identity
+                if key == "provider":
+                    return self._provider
+                return None
+
+        self.assertEqual(
+            _identity_from_settings(ReservedRootCtx(identity={"model": "vendor/model-b",
+                                                              "provider": "vendor-b"})),
+            {"model": "vendor/model-b", "provider": "vendor-b"},
+            "the non-reserved `identity` mapping carries both fields",
+        )
+        self.assertEqual(
+            _identity_from_settings(ReservedRootCtx(provider="vendor-c")),
+            {"provider": "vendor-c"},
+            "a refused `model` root must not abort the `provider` read",
+        )
+
     def test_settings_outrank_env_and_payload_still_wins(self):
         """Priority chain: payload > plugin settings > env > 'unknown'. Settings
         beat env because they are the running gateway's declared configuration."""

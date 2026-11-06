@@ -398,8 +398,18 @@ model.
 
 **Priority chain (0.4.1): payload > plugin settings > env > `unknown`.** The middle layer is
 the host-owned plugin settings subtree (hermes
-`plugins.entries.<id>.settings.model` / `.provider`, read via `ctx.get_config` at register() —
-before any hook fires). It exists because hermes ~v0.22.5 does not send `provider` at
+`plugins.entries.<id>.settings.identity.model` / `.identity.provider`, read as the single
+mapping `ctx.get_config("identity")` at register() — before any hook fires; a bare
+`settings.provider` key is also accepted).
+
+**Reserved-root erratum (2026-11-06, RR-IDENTITY-20261106):** the 0.4.1 text named
+`settings.model` / `.provider` read per key. The host refuses a plugin settings key whose first
+segment is `model`, `plugins`, `security` or `settings` (`hermes_cli/plugins_state.py:17`), so
+`get_config("model")` raised — and because the whole loop sat inside one `try`, the raise on
+`model` aborted the lookup before `provider` was ever asked for. The documented remedy for
+`provider: unknown` was therefore dead on every release since 0.4.1, silently. The reader now
+takes the non-reserved `identity` mapping first and each bare key in its own `try`, so a refused
+root costs that one field and nothing else. It exists because hermes ~v0.22.5 does not send `provider` at
 tracer-creation time: the turn-prep `pre_llm_call` payload carries `model`/`platform` only
 (`packages/hermes/HOOKS.md` §1, source-verified) and `provider` only reaches the
 `pre_api_request`/`post_api_request` payloads, after the tracer already exists. A default-ON

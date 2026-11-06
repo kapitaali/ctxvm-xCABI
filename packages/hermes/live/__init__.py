@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.10.0"
+PLUGIN_VERSION = "0.10.1"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -588,31 +588,50 @@ def _enabled_stubs(features: Set[str]) -> list[UCModule]:
 
 
 def _identity_from_settings(ctx: Any) -> Dict[str, str]:
-    """Identity the HOST itself is configured with, from the plugin settings subtree
-    (hermes ``plugins.entries.<id>.settings.model`` / ``.provider`` — ``ctx.get_config``,
-    host-owned, readable at register(), before any hook fires).
+    """Identity the HOST itself is configured with, from the plugin settings subtree.
 
     Why: hermes v0.22.5 hook payloads do not carry provider at tracer-creation time —
     ``pre_llm_call`` (turn prep, the first observed hook when ``on_session_start`` does
     not fire) sends ``model``/``platform`` only (packages/hermes/HOOKS.md §1,
     source-verified against the pinned runtime), while the ``provider`` value only
     reaches the request-side ``pre_api_request``/``post_api_request`` payloads, after
-    the tracer already exists. Identity is stamped once (it rides ``session.open`` and
-    every ``call.meta``; write-through persists each event immediately, so a later
-    "fix provider" would produce a partial-file/final divergence) — the settings source
-    exists so a gateway CAN complete its identity before the first request instead of
-    the owner reaching for the env ritual.
+    the tracer already exists. Identity is stamped once, so the settings source exists
+    so a gateway CAN complete its identity before the first request.
+
+    Reserved-root law (found live on 2026-11-06): the host refuses a plugin settings
+    key whose FIRST segment is ``model``, ``plugins``, ``security`` or ``settings``
+    (``hermes_cli/plugins_state.py:17``). ``ctx.get_config("model")`` therefore raises,
+    and the earlier version of this function — one try around the whole loop — aborted
+    on ``model`` before it ever asked for ``provider``. The documented remedy for
+    ``provider: unknown`` was dead for that reason, and the failure was invisible
+    because the exception was swallowed.
+
+    Shape now: read the one non-reserved mapping ``identity`` first, then each field in
+    its own try, so a refused root is an absence for that field only. Absence is never
+    fabricated; a blank or non-string value is skipped.
     """
     out: Dict[str, str] = {}
+    getter = getattr(ctx, "get_config", None)
+    if not callable(getter):
+        return out
     try:
-        getter = getattr(ctx, "get_config", None)
-        if callable(getter):
-            for field in ("model", "provider"):
-                value = getter(field)
-                if isinstance(value, str) and value.strip():
-                    out[field] = value.strip()
+        identity = getter("identity")
     except Exception:
-        pass  # fail-open: identity fragments must never raise into hook dispatch
+        identity = None
+    if isinstance(identity, dict):
+        for field in ("model", "provider"):
+            value = identity.get(field)
+            if isinstance(value, str) and value.strip():
+                out[field] = value.strip()
+    for field in ("model", "provider"):
+        if field in out:
+            continue
+        try:
+            value = getter(field)
+        except Exception:
+            continue  # host refuses that root (model is reserved) — absence, not an error
+        if isinstance(value, str) and value.strip():
+            out[field] = value.strip()
     return out
 
 
