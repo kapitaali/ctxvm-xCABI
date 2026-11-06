@@ -197,7 +197,9 @@ fn short_file(path: &str) -> String {
         .to_string()
 }
 
-/// Human-readable table. One line per session, then a per-environment summary
+/// Human-readable table. One line per trace FILE (a process slice: a restart
+/// builds a new tracer, so one conversation can appear as several rows), then a
+/// per-environment summary
 /// that says how much the group repeats — the question the key exists for.
 pub fn render_text(rows: &[SessionRow]) -> String {
     let mut out = String::new();

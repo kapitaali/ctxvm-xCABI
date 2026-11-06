@@ -7,6 +7,16 @@ run, that file changes nothing). The engine enforces the virtual budget
 contract only, and ``prune_tool_results_only()`` stays the preregistered no-op
 so the two seams cannot double-apply inside one capture (§4).
 
+IMPORTANT, measured 2026-11-06 (RR-ENGINEGAP-20261106): at the preregistered
+vBudget of 24,000 the engine is a NO-OP on long sessions. `_plan` returns early
+when the protected floor (system prompt + protect_first_n head + protect_last_n
+tail + pinned pages) already exceeds vBudget, and six real tool results exceed
+24,000 tokens on their own. A live capture shipped 358,616 tokens with the
+engine attached: no selection, and compaction disabled by `should_compress()`
+returning False, so nothing bounded the context. Raise `CTXVM_VBUDGET` for real
+traffic, or keep the compressor. The engine also emits no record of what it
+selected — a gap, not a feature.
+
 --------------------------- the seven laws ---------------------------
 L1 (ordering, §3.3): the selected request runs (a) the system prompt verbatim
     FIRST, (b) the head-protected messages (stock ``protect_first_n`` counts

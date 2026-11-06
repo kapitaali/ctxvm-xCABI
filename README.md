@@ -53,7 +53,7 @@ cargo build --release
 ```
 
 `profile` prints every page's decision history, faults and the per-turn residency for any
-RFC-0 trace. `stream` groups trace files by `environmentId` (W14) and orders them by start
+RFC-0 trace. `stream` groups trace files by `environmentId` (W14) and orders them by start. **A file is a process slice, not a whole conversation:** each restart builds a new tracer and each stop truncates, so one long session can appear as several rows — era copies (`tools/snapshot-capture.sh`) are the only way to keep the earlier segments
 time, which is the only way the cross-session questions become observable: how many
 declarations repeat across sessions of one repository, and how many a render never showed.
 Row fields are counts of DISTINCT keys — `turns` counts distinct turn boundaries (one turn
