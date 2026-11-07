@@ -7,10 +7,16 @@
 # profiles differ in exactly one key (`context.engine`), which is the experiment's
 # one-factor property. Everything else here is shared by both arms.
 #
-# Why a sourced script and not env in the caller: a run is one `hermes -z` process. It
-# inherits these values, writes its own trace dir, and exits. Nothing here touches the
-# gateway, the global config, or a running session, so no restart is owed and no operator
-# action is needed beyond invoking the runner.
+# WHERE THESE VALUES MUST LAND (measured 2026-11-07, RR-PROVIDER-20261107):
+# `hermes -z` does NOT run the turn in the client process. hermes_cli/main.py:2844 —
+# "Every `hermes` / `hermes chat` turn (classic view, -q, -z, TUI) executes in the
+# gateway". The client is a transport; the executing process is the GATEWAY for that
+# profile. A probe that exported CTXVM_TRACE_DIR=/tmp/w8/probe wrote nothing there and
+# landed in the gateway's own dir instead.
+#
+# So these variables must be in the environment of the gateway that will run the turn:
+# source this script, then start/restart that profile's gateway under it, then send
+# prompts. Exporting them in a client shell alone changes nothing about capture.
 #
 # Model: W8_MODEL defaults to the catalogue row "OpenAI: GPT-6 Luna". CONFIRM the
 # provider's exact id at P0 and record the string actually used — a display name and a
@@ -42,7 +48,13 @@ export CTXVM_TRACE_WRITETHROUGH_EVERY=10
 # ts stays default-ON: a W8 capture is a fresh capture, never a byte-stability fixture.
 
 # --- identity and budget ----------------------------------------------------
-export CTXVM_MODEL="${W8_MODEL:-openai/gpt-6-luna}"
+# The provider is NOT a trace stamp only: it decides which endpoint serves the model.
+# On 2026-11-07 the profiles carried provider "nvidia" with an nvidia default model, so
+# `openai/gpt-6-luna` fell through to another vendor's free tier and the run died on
+# 429 org_token_rate_limit_day. Both profiles now say provider "nous".
+export W8_PROVIDER="${W8_PROVIDER:-nous}"
+export W8_MODEL="${W8_MODEL:-openai/gpt-6-luna}"
+export CTXVM_MODEL="$W8_MODEL"
 export CTXVM_BUDGET_TOKENS="${W8_BUDGET_TOKENS:-200000}"
 # CTXVM_PROVIDER is deliberately NOT set here: the plugin records "unknown" rather than
 # guessing, and the provider's own payload wins when it carries one.

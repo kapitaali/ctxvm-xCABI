@@ -149,6 +149,28 @@ The global `context.engine` was returned to `compressor`. The experiment never r
 reads the profile — and leaving it on `ctxvm` would have put everyday sessions into the measured no-op
 regime with compaction disabled.
 
+## 4c. Where a run's settings must land (2026-11-07)
+
+`hermes -z` does not execute the turn in the client process. `hermes_cli/main.py:2844` states it:
+every `hermes` / `-q` / `-z` / TUI turn runs in the **gateway**. Measured consequence: a probe
+exporting `CTXVM_TRACE_DIR=/tmp/w8/probe` wrote nothing there and landed in the gateway's own
+directory instead.
+
+So the runner is two steps, not one:
+
+1. source `tools/w8-run-env.sh <arm> <dir> <name>`, then start (or restart) **that profile's
+   gateway** under it — the gateway is the process that captures;
+2. send prompts with `hermes -z … -m "$W8_MODEL" --provider "$W8_PROVIDER"` to that gateway.
+
+One gateway per arm, because the arms differ by profile (`context.engine`) and a shared gateway
+writes both arms into one directory and one name — the seventeen `w8-run-<hex>` files were exactly
+that: one name, many sessions, collision suffixes.
+
+Provider: `nous` (both profiles). The earlier `nvidia` values were stale copies and routed
+`openai/gpt-6-luna` to another vendor's free tier, which answered 429. `session.open.provider` stays
+`unknown` until the gateway serving the run is started after the identity fix; the payload for that
+hook carries no provider, so settings are the only source.
+
 ## 5. The pilot before the grid
 
 One task (template 1), both arms, one round. On Luna this costs about $0.14. It answers what no design
