@@ -9,3 +9,4 @@ total usd, remaining. A literal pipe inside a field breaks the row — replace i
 
 | time | chunk | cell | task | arm | verdict | minutes | tokens in/cached/out | usd | total usd | remaining |
 |---|---|---|---|---|---|---|---|---|---|---|
+| 2026-11-07T15:57Z | c1 | 1/2 | t1 | naive | FAIL - no artefact, max_iterations 150/150 | 42.5 | 24802048/24552150/169443 | 0.3303 | 0.8464 | 24.1536 |

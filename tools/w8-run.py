@@ -79,6 +79,27 @@ def assert_safe_worker_off() -> None:
     print("  assert safe worker: off in both profiles  OK")
 
 
+def assert_arm_engines_resolve() -> None:
+    """The two arms must resolve DIFFERENT engines through the CLI a cell uses.
+
+    Reading the two config files is not the same test: a cell names its profile on the
+    command line (`-p w8-<arm>`), and that is the path the run actually takes. Ask the
+    CLI the same question, once per arm (RR-W8PREFLIGHT-20261107).
+    """
+    seen = {}
+    for arm, want in (("naive", "compressor"), ("paged", "ctxvm")):
+        r = sh(["hermes", "-p", f"w8-{arm}", "config", "get", "context.engine"])
+        lines = [ln.strip() for ln in (r.stdout or "").splitlines() if ln.strip()]
+        got = lines[-1] if lines else ""
+        if got != want:
+            die(f"hermes -p w8-{arm} config get context.engine -> {got!r}, expected {want!r}"
+                f" (exit {r.returncode}): the arm's profile does not resolve its engine", 1)
+        seen[arm] = got
+    if seen["naive"] == seen["paged"]:
+        die(f"both arms resolve context.engine {seen['naive']!r}: one factor, no difference", 1)
+    print(f"  assert arm engines: naive={seen['naive']} paged={seen['paged']}  OK")
+
+
 def assert_model_and_price(model: str) -> dict:
     prices = json.loads(PRICES.read_text())
     entries = (prices.get("catalogue") or {}).get("entries") or []
@@ -143,9 +164,17 @@ def run_cell(task: str, arm: str, rnd: int, *, grid: dict, runs: Path, dry: bool
     prompt_path = outdir / "prompt.txt"
     prompt_path.write_text((tdir / "task.md").read_text(encoding="utf-8"), encoding="utf-8")
     usage_path = outdir / "usage.json"
-    cmd = ["hermes", "-z", prompt_path.read_text(encoding="utf-8"),
+    # The arm IS the profile. Profile selection is client-side
+    # (hermes_cli/main.py:430: --profile/-p is pre-parsed and sets HERMES_HOME), so a
+    # command that names no profile runs the caller's profile for BOTH arms and the
+    # factor disappears (RR-W8PREFLIGHT-20261107: every cell would have run the default
+    # profile's compressor). `-p w8-<arm>` is the ratified fix.
+    cmd = ["hermes", "-p", f"w8-{arm}", "-z", prompt_path.read_text(encoding="utf-8"),
            "-m", grid["model"], "--provider", grid["provider"],
            "--in", str(ws), "--usage-file", str(usage_path), "-t", grid["toolsets"]]
+    if cmd[1:3] != ["-p", f"w8-{arm}"]:
+        die(f"{task}/{arm}-r{rnd}: the command does not name the arm's profile: {cmd[:4]}", 1)
+
     (outdir / "cmd.txt").write_text(" ".join(cmd) + "\n", encoding="utf-8")
 
     if dry:
@@ -376,6 +405,7 @@ def main() -> int:
     price = assert_model_and_price(grid["catalogueModel"])
     assert_profiles_differ_only_in_engine()
     assert_safe_worker_off()
+    assert_arm_engines_resolve()
     vbudget = int(grid["vbudget"])
 
     def _price(key: str, tokens: int) -> float:
