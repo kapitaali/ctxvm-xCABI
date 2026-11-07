@@ -1,26 +1,15 @@
-# W8 spend ledger
+# W8 spend ledger — grid
 
-Control variable for the $25 hard cap (design/w8-run-plan.md §6). One row per run:
-date · arm · task · round · model · provider-receipt tokens · USD from the pinned price row ·
-running total. The receipt columns are the provider's own numbers; cached reads are priced at
-the input rate — an upper bound, labelled as one.
+Control variable for the $25 hard cap (design/w8-run-plan.md §6), cumulative across the card.
 
-Model pinned: `gpt-6-luna` on provider `explabs`, catalogue row `OpenAI: GPT-6 Luna`
-(`benchmarks/metrics/prices.json` v2, row-013, $0.10 in / $0.50 out / $0.01 cached per 1M).
+carried forward: $0.5161 (7 rows, archived in reports/W8-SPEND-pilot-20261107.md)
 
-Projected for the frozen grid (T1–T4 × 6 rounds × 2 arms = 48 runs, `benchmarks/w8/grid.json`):
-≈ $3.30 at the pinned row, 13% of the $25 cap. The stopping rule below is enforced in
-`tools/w8-run.py` before every run: projected = mean USD of that arm so far; stop when
-spent + 2 × projected > 25.
-
-No paid call has been made as of the row below.
+One row per cell: date · arm · task · round · model · receipt tokens · USD from the pinned row
+· running total. A cell writes a STARTED row before its first API call and is settled when it
+ends; a STARTED row older than the cell ceiling is reconciled to ABORTED on the next run, so a
+killed cell can never vanish from the record. Cached reads are priced at the catalogue's cached
+rate; uncached input is prompt minus both cache buckets (the double-priced version overstated a
+run 7.8× — measured 2026-11-07).
 
 | # | date | arm | task | round | model | in | out | cached | USD | run total | note |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | 2026-11-07 | both | t1 | 0 | gpt-6-luna | 0 | 0 | 0 | 0.0000 | 0.0000 | dry run: zero API calls, every assertion passed, checker=PASS |
-| 1 | 2026-11-07 | naive | t1 | 1 | gpt-6-luna | 59691 | 6323 | 37302 | 0.0095 | 0.0095 | PASS; coverage ok; replay exit 0, byte-identical |
-| 2 | 2026-11-07 | paged | t1 | 1 | gpt-6-luna | 59355 | 5958 | 37298 | 0.0093 | 0.0188 | PASS; coverage ok; replay exit 0, byte-identical |
-| 1 | 2026-11-07 | naive | t1 | 1 | openai/gpt-6-luna | 1298978 | 68762 | 1229752 | 0.1766 | 0.1766 | n/a; coverage ok; replay exit 0, byte-identical |
-| 3 | 2026-11-07 | naive | t1 | 1 | openai/gpt-6-luna | 1298978 | 68762 | 1229752 | 0.1766 | 0.1954 | RE-NUMBERED: this is the re-pilot naive run the row above recorded as #1 after the runner restarted its counter; no flags.json (model declined), coverage ok, replay byte-identical. Counter + running total fixed in tools/w8-run.py. |
-| 6 | 2026-11-07 | naive | t1 | 1 | openai/gpt-6-luna | 21989502 | 157982 | 21747580 | 2.4954 | 2.6908 | FAIL; coverage ok; replay exit 0, byte-identical |
-| 7 | 2026-11-07 | naive | t1 | 1 | openai/gpt-6-luna | 21989502 | 157982 | 21747580 | 0.3207 | 0.5161 | CORRECTION of run 6: the runner charged 2.4954 by pricing the whole prompt at the input rate and the cached class again; true cost 0.3207 (matches the host estimate 0.3267). Checker FAIL (lineShape.maxLineBytes off by 4-9 bytes on several files); 150 API calls — the per-run call budget. Paged arm killed at ~4 min. Fixed in tools/w8-run.py. |

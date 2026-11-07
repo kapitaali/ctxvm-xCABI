@@ -231,7 +231,17 @@ def _ledger_state(path: Path) -> tuple[float, int]:
     if not path.exists():
         return 0.0, 0
     spent, runs = 0.0, 0
-    for line in path.read_text(encoding="utf-8").splitlines():
+    text = path.read_text(encoding="utf-8")
+    # A grid ledger carries the archived pilot's total forward: the cap is cumulative
+    # across the whole card, so a fresh file must not look like zero spend.
+    for line in text.splitlines():
+        if line.lower().startswith("carried forward:"):
+            digits = "".join(ch for ch in line.split("$")[-1].split()[0] if ch.isdigit() or ch == ".")
+            try:
+                spent = float(digits)
+            except ValueError:
+                pass
+    for line in text.splitlines():
         if not line.startswith("| ") or line.startswith("| #") or line.startswith("|---"):
             continue
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
@@ -245,6 +255,65 @@ def _ledger_state(path: Path) -> tuple[float, int]:
     return spent, runs
 
 
+def _now() -> str:
+    return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def ledger_start(path: Path, n: int, task: str, arm: str, rnd: int, model: str,
+                 total: float) -> None:
+    """Write-ahead row: a cell exists in the record BEFORE its first API call.
+
+    A cell killed by a signal cannot write its own epitaph (measured 2026-11-07: exit 143
+    after ~15 minutes left no row at all), so the record says STARTED first and is settled
+    when the cell ends; a stale STARTED row is reconciled to ABORTED on the next run.
+    """
+    if not path.exists():
+        path.write_text(LEDGER_HEADER, encoding="utf-8")
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(COLUMNS.format(n=n, date=dt.date.today().isoformat(), arm=arm, task=task,
+                                rnd=rnd, model=model, inp="—", out="—", cached="—",
+                                usd="0.0000", total=f"{total:.4f}",
+                                note=f"STARTED {_now()}") + "\n")
+
+
+def _rewrite_row(path: Path, n: int, row: str) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    for k, line in enumerate(lines):
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if line.startswith("| ") and cells and cells[0] == str(n):
+            lines[k] = row
+            break
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def reconcile_started(path: Path, ceiling_s: int) -> int:
+    """Rewrite STARTED rows older than the cell ceiling as ABORTED; return how many."""
+    if not path.exists():
+        return 0
+    now = dt.datetime.now(dt.timezone.utc)
+    fixed = 0
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("| "):
+            continue
+        c = [x.strip() for x in line.strip().strip("|").split("|")]
+        if len(c) < 12 or not c[0].isdigit() or not c[11].startswith("STARTED"):
+            continue
+        try:
+            started = dt.datetime.strptime(c[11].split()[1], "%Y-%m-%dT%H:%M:%SZ").replace(
+                tzinfo=dt.timezone.utc)
+        except (IndexError, ValueError):
+            continue
+        age = (now - started).total_seconds()
+        if age > ceiling_s:
+            note = (f"ABORTED after {int(age)}s (killed or crashed; ceiling {ceiling_s}s); "
+                    f"cost unknown — reconcile from the run's usage file if present")
+            _rewrite_row(path, int(c[0]), COLUMNS.format(
+                n=c[0], date=c[1], arm=c[2], task=c[3], rnd=c[4], model=c[5],
+                inp="—", out="—", cached="—", usd="0.0000", total=c[10], note=note))
+            fixed += 1
+    return fixed
+
+
 def _ledger_cells(path: Path) -> set:
     """(round, task, arm) already recorded — the resume key."""
     cells = set()
@@ -256,11 +325,22 @@ def _ledger_cells(path: Path) -> set:
         c = [x.strip() for x in line.strip().strip("|").split("|")]
         if len(c) < 5 or not c[0].isdigit():
             continue
+        if len(c) > 11 and (c[11].startswith("STARTED") or c[11].startswith("ABORTED")):
+            continue      # an unsettled cell is not done; a chunk may retry it
         try:
             cells.add((int(c[4]), c[3], c[2]))
         except ValueError:
             continue
     return cells
+
+
+def ledger_settle(path: Path, n: int, row: dict, total: float) -> None:
+    """Settle a STARTED row with the cell's real numbers."""
+    _rewrite_row(path, n, COLUMNS.format(
+        n=n, date=dt.date.today().isoformat(), arm=row["arm"], task=row["task"],
+        rnd=row["round"], model=row["model"], inp=row["in"], out=row["out"],
+        cached=row["cached"], usd=f"{row['usd']:.4f}", total=f"{total:.4f}",
+        note=f"{row['checker']}; {row['note']}"))
 
 
 def ledger_append(path: Path, row: dict, n: int, total: float) -> None:
@@ -316,6 +396,9 @@ def main() -> int:
     # continue from the rows already there (a second invocation used to restart at 1 and
     # at 0.0000, which made the control variable lie).
     spent, n = _ledger_state(ledger)
+    stale = reconcile_started(ledger, int(grid.get("runTimeoutSec", 1800)))
+    if stale:
+        print(f"  reconciled {stale} STARTED row(s) older than the cell ceiling to ABORTED")
 
     done = _ledger_cells(ledger) if args.skip_done else set()
     plan = [(rnd, task, arm) for rnd in range(1, rounds + 1)
@@ -344,11 +427,12 @@ def main() -> int:
                     continue
                 if arm == "paged":
                     os.environ["W8_VBUDGET"] = str(vbudget)
+                n += 1
+                ledger_start(ledger, n, task, arm, rnd, grid["model"], spent)
                 row = run_cell(task, arm, rnd, grid=grid, runs=runs, dry=args.dry_run)
                 ran += 1
                 spent += row["usd"]
-                n += 1
-                ledger_append(ledger, row, n, spent)
+                ledger_settle(ledger, n, row, spent)
                 print(f"  run {n}: {task} {arm} r{rnd} in={row['in']} out={row['out']} "
                       f"cached={row['cached']} usd={row['usd']:.4f} checker={row['checker']}")
     print(f"grid done: {n} runs, USD {spent:.4f} of cap {grid['capUsd']}")

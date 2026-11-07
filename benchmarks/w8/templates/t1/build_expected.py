@@ -13,6 +13,11 @@ Rule (stated in benchmarks/w8/templates/t1/task.md and frozen with the checker):
                binary's main(), i.e. the conformance library function the binary
                hands its parsed arguments to. A binary with no such call records
                null.
+  lineShape    lines: the number of lines, a trailing newline opening none;
+               maxLineBytes: the longest line's UTF-8 byte length, newline excluded
+               (a multi-byte character counts its bytes, never one); overlong100: how
+               many lines exceed 100 bytes. Recomputed from the file bytes on every
+               build; verified 2026-11-07 against an independent byte count (20/20).
   surface      For each fixture file, the public items are every top-level
                declaration whose line starts with `pub ` at column 0, in source
                order: pub fn / struct / enum / trait / const / type / mod.

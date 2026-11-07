@@ -41,11 +41,18 @@ answer.
 2. **Core function.** `coreFunction` is the first `cli::<name>(` call inside the binary's
    `main()` — the conformance-library function the binary hands its parsed arguments to,
    written as `"cli::<name>"`. If `main()` makes no such call, the value is `null`.
-3. **Line shape.** For each file, `lineShape` records `lines` (the number of lines, where a
-   trailing newline does not open a line), `maxLineBytes` (the byte length of the longest
-   line, UTF-8, newline excluded) and `overlong100` (how many lines are longer than 100
-   bytes). These are counts over the whole file: a search returns the lines that match a
-   pattern, never the shape of the file, so read the parts.
+3. **Line shape.** For each file, `lineShape` records:
+
+   * `lines` — how many lines the file has; a trailing newline does not open a line. The
+     manifest's `lines` ranges describe the parts, and summing them is a legitimate check,
+     but the file's own bytes are the answer.
+   * `maxLineBytes` — the byte length of the file's longest line, newline excluded, measured
+     in **UTF-8 bytes, not characters**: a typographic dash (`—`) is three bytes, `…` is
+     three, an accented letter two. This is not derivable from the manifest or from any
+     match list — it must be measured over every line of the file.
+   * `overlong100` — how many lines are longer than 100 bytes, same encoding rule.
+
+   A search returns the lines that match a pattern; it never reports the shape of the file.
 4. **Public items.** For each file, `items` lists every declaration whose line begins at
    column 0 with `pub ` and is one of `pub fn`, `pub struct`, `pub enum`, `pub trait`,
    `pub const`, `pub type`, `pub mod`. Record `kind` (the keyword) and `name`. Exclude
