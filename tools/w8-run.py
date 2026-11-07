@@ -212,7 +212,12 @@ def run_cell(task: str, arm: str, rnd: int, *, grid: dict, runs: Path, dry: bool
     inp = int(usage.get("input_tokens") or 0)
     out = int(usage.get("output_tokens") or 0)
     cached = int(usage.get("cache_read_tokens") or 0)
-    usd = grid["_price"]("usdPer1mInput", inp) + grid["_price"]("usdPer1mOutput", out) \
+    written = int(usage.get("cache_write_tokens") or 0)
+    # `input_tokens` is the WHOLE prompt (cached included). Pricing it whole and then
+    # pricing the cached class again charges the cache twice — measured 2026-11-07:
+    # $2.4954 charged against $0.3207 true for the same run. Uncached = prompt - cache.
+    uncached = max(inp - cached - written, 0)
+    usd = grid["_price"]("usdPer1mInput", uncached) + grid["_price"]("usdPer1mOutput", out) \
         + grid["_price"]("usdPer1mCachedRead", cached)
     return {"arm": arm, "task": task, "round": rnd, "model": usage.get("model", grid["model"]),
             "in": inp, "out": out, "cached": cached, "usd": usd, "checker": verdict,

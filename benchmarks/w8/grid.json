@@ -18,5 +18,6 @@
     "/tmp/w8/traces",
     "~/.local/state/ctxvm/traces"
   ],
-  "runs": "/tmp/w8/runs"
+  "runs": "/tmp/w8/runs",
+  "runTimeoutSec": 3600
 }
