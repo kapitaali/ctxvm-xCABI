@@ -82,7 +82,9 @@ call. Two ways to enable:
 
 2. **Slash command** (no gateway restart needed — works from inside Hermes):
    `/ctxvm-trace start <dir> [name]` — begin tracing, writes `<dir>/<name>.jsonl`
-   `/ctxvm-trace stop` — flush traces and stop
+   `/ctxvm-trace stop` — flush. When the deployment sets `CTXVM_TRACE_DIR`, capture stays
+   armed afterwards: one gateway process serves many sessions, and a single session's stop
+   must not silence the rest. `stop --hard` disables it in the process regardless.
    `/ctxvm-trace status` — show whether tracing is active
 
 Without either, hooks are registered but no tracing occurs (mirror-only v0:

@@ -673,6 +673,39 @@ class LiveAdapterTests(unittest.TestCase):
         self.assertEqual(opened["model"], "vendor/model-a")
         self.assertEqual(opened["provider"], "vendor")
 
+    def test_stop_keeps_env_configured_capture_armed(self):
+        """A gateway serves many sessions from one process. Capture configured by the
+        deployment's environment is not one session's preference: a single stop must
+        flush and leave the process armed, or every other session silently stops
+        writing. `stop --hard` is the explicit way to silence it."""
+        _clear_env_for_tests()
+        tmpdir = tempfile.mkdtemp(prefix="ctxvm-stop-env-")
+        os.environ["CTXVM_TRACE_DIR"] = tmpdir
+        cmds = {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                cmds[name] = handler
+                return None
+
+        import live as live_mod
+        try:
+            register(FakeCtx())
+            msg = cmds["ctxvm-trace"]("stop")
+            self.assertIn("STAYS ARMED", msg)
+            self.assertEqual(Path(live_mod._active_trace_dir()), Path(tmpdir).resolve())
+            hard = cmds["ctxvm-trace"]("stop --hard")
+            self.assertIn("stopped", hard)
+            self.assertIsNone(live_mod._active_trace_dir())
+        finally:
+            _clear_env_for_tests()
+
     def test_over_budget_render_omits_headroom(self):
         """v0's `headroom` is UNSIGNED: a resident set above the declared budget has no
         representable value. Emitting a negative integer makes the trace unreadable by
@@ -842,7 +875,11 @@ class LiveAdapterTests(unittest.TestCase):
         # Stop tracing — no session activity, so the message must say ZERO, not "flushed"
         out = handle("stop")
         self.assertIn("stopped", out)
-        self.assertIn("0 traces written", out)
+        # The message must not read as a failure: nothing pending is normal, because each
+        # session flushes at its own end. "0 traces written" read like "nothing captured"
+        # and cost an afternoon of false alarm on 2026-11-07.
+        self.assertIn("nothing was pending to flush", out)
+        self.assertNotIn("0 traces written", out)
         self.assertFalse(live_mod._traced())
         self.assertIsNone(live_mod._active_trace_dir())
 

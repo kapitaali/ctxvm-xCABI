@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.10.2"
+PLUGIN_VERSION = "0.10.3"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -1042,7 +1042,8 @@ def register(ctx) -> None:
             return (
                 "Usage: /ctxvm-trace start <dir> [name] | stop | status\n"
                 "  start <dir> [name]  — begin tracing, writes <dir>/<session-id>.jsonl\n"
-                "  stop                — flush traces and stop tracing\n"
+                "  stop                — flush; env-configured capture stays armed\n"
+                "  stop --hard         — flush and disable capture in this process\n"
                 "  status              — show whether tracing is active"
             )
 
@@ -1077,15 +1078,33 @@ def register(ctx) -> None:
             )
 
         if sub == "stop":
-            _witness("trace stop -> flush all tracers")
+            # Semantics (2026-11-07): a gateway serves many sessions from one process.
+            # Capture configured by the DEPLOYMENT's environment is not one session's
+            # preference, so stop flushes and then falls back to the env instead of
+            # disabling the process. A silent disable looks like a quiet system, not a
+            # stopped one: it cost an afternoon of "no captures" on 2026-11-07, with
+            # every -z run in that process writing nothing while the env said otherwise.
+            hard = "--hard" in argv[1:]
+            _witness("trace stop -> flush all tracers" + (" (hard)" if hard else ""))
             written = _flush_traces()
-            state["trace_dir"] = ""   # sentinel: disabled in this process
+            env_dir = _resolve_trace_dir(os.environ.get("CTXVM_TRACE_DIR"))
+            command_started = bool(state.get("trace_dir_cmd_started"))
             state["plugin"] = None
+            if env_dir and not command_started and not hard:
+                state["trace_dir"] = None   # drop any override; env is the fallback again
+                state["trace_name"] = os.environ.get("CTXVM_TRACE_NAME") or ""
+                return (
+                    f"ctxvm-trace: {written} trace(s) flushed; capture STAYS ARMED from the "
+                    f"environment at {env_dir} (this process serves many sessions — use "
+                    f"/ctxvm-trace stop --hard to silence it)."
+                )
+            state["trace_dir"] = ""   # sentinel: disabled in this process
             if written:
                 return f"ctxvm-trace: tracing stopped, {written} trace(s) flushed."
             return (
-                "ctxvm-trace: tracing stopped, 0 traces written — no events were captured "
-                "between start and stop. Run at least one tool call while tracing is on."
+                "ctxvm-trace: tracing stopped; nothing was pending to flush. Each session "
+                "flushes at its own end, so this is normal when every session already "
+                "closed — it does not mean no events were captured."
             )
 
         if sub == "status":
@@ -1144,9 +1163,13 @@ def register(ctx) -> None:
             "detail": (
                 "start  — same as /ctxvm-start; a fresh tracer, so a new dir never inherits\n"
                 "         another dir's sessions.\n"
-                "stop   — flush every tracer, then disable capture in this process. The\n"
-                "         count is honest: '0 traces written' means nothing was captured\n"
-                "         between start and stop.\n"
+                "stop   — flush every tracer. When the deployment sets CTXVM_TRACE_DIR,\n"
+                "         capture STAYS ARMED afterwards: one gateway process serves many\n"
+                "         sessions, so a single session's stop must not silence the rest.\n"
+                "stop --hard\n"
+                "         flush and disable capture in this process regardless of the env.\n"
+                "         The count is honest: nothing pending is not 'nothing captured' —\n"
+                "         each session flushes at its own end.\n"
                 "status — enabled, resolved directory and WHERE it came from (env, default,\n"
                 "         or a start argument), name, plugin version, per-session event and\n"
                 "         page counts."
