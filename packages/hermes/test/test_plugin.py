@@ -706,6 +706,25 @@ class LiveAdapterTests(unittest.TestCase):
         finally:
             _clear_env_for_tests()
 
+    def test_engine_field_records_activation_not_construction(self):
+        """A -p w8-naive cell wrote "engine": "ctxvm" on 2026-11-07, because
+        build_engine() runs unconditionally at plugin load. The field must mean the host
+        SELECTED with the engine, which is the only behavioural arm evidence there is."""
+        import live as live_mod
+        import context_engine as ce
+        live_mod._state()["engine_registered"] = "ctxvm"
+        saved = dict(ce.ACTIVATIONS)
+        try:
+            ce.ACTIVATIONS.update({"select": 0, "firstTs": None, "lastTs": None})
+            self.assertIsNone(live_mod._engine_activated(),
+                              "an engine that was built but never selected is not the arm")
+            ce.ACTIVATIONS["select"] = 7
+            self.assertEqual(live_mod._engine_activated(), "ctxvm")
+            self.assertEqual(live_mod._engine_selections(), 7)
+        finally:
+            ce.ACTIVATIONS.update(saved)
+            live_mod._state()["engine_registered"] = None
+
     def test_over_budget_render_omits_headroom(self):
         """v0's `headroom` is UNSIGNED: a resident set above the declared budget has no
         representable value. Emitting a negative integer makes the trace unreadable by

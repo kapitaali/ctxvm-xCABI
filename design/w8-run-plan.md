@@ -166,6 +166,15 @@ One gateway per arm, because the arms differ by profile (`context.engine`) and a
 writes both arms into one directory and one name — the seventeen `w8-run-<hex>` files were exactly
 that: one name, many sessions, collision suffixes.
 
+**The arm witness is activation, not construction (0.10.5).** `build_engine()` runs
+unconditionally, so "an engine was built" is true in every process; a `-p w8-naive` cell wrote
+`"engine": "ctxvm"` because of it. The sidecar now records `engine` only when the host called
+`select_context()` in this process, plus `engineSelections` as the count. That is a
+process-level fact, so it attests an arm **only when one gateway serves one arm** — a
+multiplexer serving both profiles cannot attest either, and the runner must refuse to run a
+cell against a gateway that serves more than one profile. `profile` is read from
+`HERMES_HOME`, which is the multiplexer's home in that case and therefore useless there.
+
 Provider: `nous` (both profiles). The earlier `nvidia` values were stale copies and routed
 `openai/gpt-6-luna` to another vendor's free tier, which answered 429. `session.open.provider` stays
 `unknown` until the gateway serving the run is started after the identity fix; the payload for that

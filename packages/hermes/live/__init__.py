@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.10.4"
+PLUGIN_VERSION = "0.10.5"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -425,6 +425,23 @@ def _per_call_samples(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return out
 
 
+def _engine_activated() -> Optional[str]:
+    """Engine name only if the host actually selected with it in this process."""
+    try:
+        from context_engine import ACTIVATIONS
+    except Exception:  # noqa: BLE001 - outside the hermes runtime the module may not exist
+        return None
+    return _state().get("engine_registered") if ACTIVATIONS.get("select", 0) > 0 else None
+
+
+def _engine_selections() -> int:
+    try:
+        from context_engine import ACTIVATIONS
+    except Exception:  # noqa: BLE001
+        return 0
+    return int(ACTIVATIONS.get("select", 0))
+
+
 def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
                        api_samples: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Build the W17 `<file>.coverage.json` body for one flushed capture.
@@ -486,7 +503,15 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # such field, so a silent profile miss would have produced a full set of
             # "paged" runs that were naive runs. `engine` is the registered engine's name
             # or None; `profile` is the profile directory that served the session.
-            "engine": _state().get("engine_registered"),
+            # ACTIVATION, not construction. `build_engine()` runs unconditionally at load,
+            # so engine_registered is set in every process and can never be null for the
+            # naive arm (measured 2026-11-07: a -p w8-naive cell wrote "engine": "ctxvm").
+            # The field now means "select_context() was called in this process", which is
+            # the only behavioural evidence the plugin can offer. It is meaningful only when
+            # one gateway serves one arm (plan 4c); a multiplexer serving both cannot attest
+            # either, and the runner must enforce the single-arm gateway.
+            "engine": _engine_activated(),
+            "engineSelections": _engine_selections(),
             "profile": os.path.basename(os.environ.get("HERMES_HOME", "")) or None,
         },
         "captures": {

@@ -247,6 +247,15 @@ def _rollup(body: str) -> str:
     return hashlib.sha256(body.encode("utf-8", "surrogatepass")).hexdigest()[:16]
 
 
+# Activation record (2026-11-07, RR-W8ARM2): the engine object is CONSTRUCTED
+# unconditionally at plugin load, so "a ctxvm engine was built" is true in every process and
+# says nothing about which arm ran. What the experiment needs is whether the host ever
+# ACTIVATED this engine — i.e. whether select_context() was called at all. That is a
+# behavioural fact of the process, so it is only meaningful when one gateway serves one
+# arm (design/w8-run-plan.md 4c); a multiplexer serving both arms cannot attest either one.
+ACTIVATIONS = {"select": 0, "firstTs": None, "lastTs": None}
+
+
 class _PageUnit:
     """One tool-call → tool-result page in the CURRENT request (pairing is
     1:1 by ``tool_call_id``)."""
@@ -342,6 +351,12 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
     ) -> Optional[List[Dict[str, Any]]]:
         """Per-request resident-set replacement (§3.3 item 2). Returns None to
         leave the request byte-identical; the returned list is request-only."""
+        import datetime as _dt
+        ACTIVATIONS["select"] += 1
+        _now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        ACTIVATIONS["firstTs"] = ACTIVATIONS["firstTs"] or _now
+        ACTIVATIONS["lastTs"] = _now
+
         units = self._classify(request_messages)
         self._update_page_state(units)
         self._credit_demand(request_messages)
