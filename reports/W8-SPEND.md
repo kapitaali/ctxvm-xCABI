@@ -18,3 +18,5 @@ No paid call has been made as of the row below.
 | # | date | arm | task | round | model | in | out | cached | USD | run total | note |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 0 | 2026-11-07 | both | t1 | 0 | gpt-6-luna | 0 | 0 | 0 | 0.0000 | 0.0000 | dry run: zero API calls, every assertion passed, checker=PASS |
+| 1 | 2026-11-07 | naive | t1 | 1 | gpt-6-luna | 59691 | 6323 | 37302 | 0.0095 | 0.0095 | PASS; coverage ok; replay exit 0, byte-identical |
+| 2 | 2026-11-07 | paged | t1 | 1 | gpt-6-luna | 59355 | 5958 | 37298 | 0.0093 | 0.0188 | PASS; coverage ok; replay exit 0, byte-identical |

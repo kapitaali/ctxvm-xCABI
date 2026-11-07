@@ -158,7 +158,8 @@ def run_cell(task: str, arm: str, rnd: int, *, grid: dict, runs: Path, dry: bool
         env = dict(os.environ)
         for k in [k for k in env if k.startswith("CTXVM")]:
             env.pop(k)                     # the gateway carries the contract, never the caller
-        p = subprocess.run(cmd, text=True, capture_output=True, env=env)
+        p = subprocess.run(cmd, text=True, capture_output=True, env=env,
+                           timeout=int(grid.get("runTimeoutSec", 1800)))
         (outdir / "stdout.txt").write_text(p.stdout, encoding="utf-8")
         (outdir / "stderr.txt").write_text(p.stderr, encoding="utf-8")
         if not usage_path.exists():
