@@ -1,5 +1,5 @@
 {
-  "_note": "T1 fixture \u2014 explicit path lists, never globs (w8-run-plan.md \u00a73b finding 3). Twenty files: six binaries, the three conformance-library modules, the seven ctxvm-core modules, the three ctxvm-codec modules, and the tokenizer crate the tokens binary dispatches to.",
+  "_note": "T1 fixture \u2014 explicit path lists, never globs (w8-run-plan.md \u00a73b finding 3). Twenty files: six binaries, the three conformance-library modules, the seven ctxvm-core modules, the three ctxvm-codec modules, and the tokenizer crate the tokens binary dispatches to. chunkBytes 12000 (T0 decision 2026-11-07): the 5600-byte default made 58 pages and a 150-call run; 12 KB parts give ~22 pages at the same tokens, keeping the six-tail floor near 21k against a 24k budget.",
   "binaries": [
     "rust/crates/ctxvm-conformance/src/bin/replay.rs",
     "rust/crates/ctxvm-conformance/src/bin/diff.rs",
@@ -30,5 +30,6 @@
     "rust/crates/ctxvm-codec/src/jsonl.rs",
     "rust/crates/ctxvm-tokenizer/src/lib.rs"
   ],
-  "artefact": "flags.json"
+  "artefact": "flags.json",
+  "chunkBytes": 12000
 }

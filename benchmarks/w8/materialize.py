@@ -37,10 +37,11 @@ def main() -> int:
     root = Path(sys.argv[2]).resolve()
     ws = Path(sys.argv[3]).resolve()
     spec = json.loads((tdir / "fixture.json").read_text(encoding="utf-8"))
+    limit = int(spec.get("chunkBytes", CHUNK_BYTES))
     rows = []
     for rel in spec["files"]:
         src = (root / rel).read_text(encoding="utf-8")
-        for idx, (lo, hi, body) in enumerate(chunk(src), 1):
+        for idx, (lo, hi, body) in enumerate(chunk(src, limit), 1):
             out = ws / (rel + f".part{idx:02d}")
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(body, encoding="utf-8")

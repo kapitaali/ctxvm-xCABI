@@ -3,14 +3,14 @@
   "family": "pressure",
   "thresholdTokens": 45000,
   "minReadTokens": 64676,
-  "expectedPages": 58,
+  "expectedPages": 33,
   "pageCapTokens": 1500,
   "artefact": "flags.json",
   "files": [
     {
       "path": "rust/crates/ctxvm-conformance/src/bin/replay.rs",
       "apx4Tokens": 1490,
-      "parts": 2
+      "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-conformance/src/bin/diff.rs",
@@ -20,12 +20,12 @@
     {
       "path": "rust/crates/ctxvm-conformance/src/bin/profile.rs",
       "apx4Tokens": 1713,
-      "parts": 2
+      "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-conformance/src/bin/export.rs",
       "apx4Tokens": 1565,
-      "parts": 2
+      "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-conformance/src/bin/stream.rs",
@@ -40,17 +40,17 @@
     {
       "path": "rust/crates/ctxvm-conformance/src/cli.rs",
       "apx4Tokens": 12956,
-      "parts": 10
+      "parts": 5
     },
     {
       "path": "rust/crates/ctxvm-conformance/src/lib.rs",
       "apx4Tokens": 1910,
-      "parts": 2
+      "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-conformance/src/stream.rs",
       "apx4Tokens": 4358,
-      "parts": 4
+      "parts": 2
     },
     {
       "path": "rust/crates/ctxvm-core/src/lib.rs",
@@ -60,32 +60,32 @@
     {
       "path": "rust/crates/ctxvm-core/src/replay.rs",
       "apx4Tokens": 2280,
-      "parts": 2
+      "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-core/src/diff.rs",
       "apx4Tokens": 3108,
-      "parts": 3
+      "parts": 2
     },
     {
       "path": "rust/crates/ctxvm-core/src/profile.rs",
       "apx4Tokens": 3520,
-      "parts": 3
+      "parts": 2
     },
     {
       "path": "rust/crates/ctxvm-core/src/export.rs",
       "apx4Tokens": 5653,
-      "parts": 5
+      "parts": 2
     },
     {
       "path": "rust/crates/ctxvm-core/src/render.rs",
       "apx4Tokens": 6552,
-      "parts": 5
+      "parts": 3
     },
     {
       "path": "rust/crates/ctxvm-core/src/page_table.rs",
       "apx4Tokens": 5241,
-      "parts": 4
+      "parts": 2
     },
     {
       "path": "rust/crates/ctxvm-codec/src/lib.rs",
@@ -95,17 +95,17 @@
     {
       "path": "rust/crates/ctxvm-codec/src/model.rs",
       "apx4Tokens": 3986,
-      "parts": 3
+      "parts": 2
     },
     {
       "path": "rust/crates/ctxvm-codec/src/jsonl.rs",
       "apx4Tokens": 5001,
-      "parts": 4
+      "parts": 2
     },
     {
       "path": "rust/crates/ctxvm-tokenizer/src/lib.rs",
       "apx4Tokens": 2318,
-      "parts": 2
+      "parts": 1
     }
   ]
 }

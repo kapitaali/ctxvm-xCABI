@@ -45,7 +45,7 @@ def main() -> int:
         n, cur = 1, 0
         for line in text.splitlines(keepends=True):
             b = len(line.encode("utf-8"))
-            if cur and cur + b > args.chunk_bytes:
+            if cur and cur + b > spec.get("chunkBytes", args.chunk_bytes):
                 n, cur = n + 1, 0
             cur += b
         pages += n

@@ -245,6 +245,24 @@ def _ledger_state(path: Path) -> tuple[float, int]:
     return spent, runs
 
 
+def _ledger_cells(path: Path) -> set:
+    """(round, task, arm) already recorded — the resume key."""
+    cells = set()
+    if not path.exists():
+        return cells
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("| ") or line.startswith("| #") or line.startswith("|---"):
+            continue
+        c = [x.strip() for x in line.strip().strip("|").split("|")]
+        if len(c) < 5 or not c[0].isdigit():
+            continue
+        try:
+            cells.add((int(c[4]), c[3], c[2]))
+        except ValueError:
+            continue
+    return cells
+
+
 def ledger_append(path: Path, row: dict, n: int, total: float) -> None:
     if not path.exists():
         path.write_text(LEDGER_HEADER, encoding="utf-8")
@@ -263,6 +281,12 @@ def main() -> int:
     ap.add_argument("--tasks", default=None, help="comma list, default from the grid")
     ap.add_argument("--rounds", type=int, default=None)
     ap.add_argument("--runs", default=None)
+    ap.add_argument("--max-cells", type=int, default=0,
+                    help="stop cleanly after N cells in this invocation (0 = no limit)")
+    ap.add_argument("--skip-done", action="store_true",
+                    help="skip cells the ledger already has a row for (resumable chunks)")
+    ap.add_argument("--plan", action="store_true",
+                    help="print the remaining cells and exit; no API call, no ledger row")
     ap.add_argument("--ledger", default=str(REPO / "reports/W8-SPEND.md"))
     args = ap.parse_args()
 
@@ -293,16 +317,35 @@ def main() -> int:
     # at 0.0000, which made the control variable lie).
     spent, n = _ledger_state(ledger)
 
-    for rnd in range(1, rounds + 1):
-        for task in tasks:
-            for arm in ("naive", "paged"):       # per-task alternation (plan §6)
+    done = _ledger_cells(ledger) if args.skip_done else set()
+    plan = [(rnd, task, arm) for rnd in range(1, rounds + 1)
+            for task in tasks for arm in ("naive", "paged")]
+    if args.plan:
+        todo = [c for c in plan if c not in done]
+        for rnd, task, arm in todo:
+            print(f"pending: round {rnd} {task} {arm}")
+        print(f"{len(todo)} of {len(plan)} cells pending; "
+              f"{len(done)} already in the ledger")
+        return 0
+
+    ran = 0
+    for rnd, task, arm in plan:
                 projected = spent / n if n else 0.0
                 if not args.dry_run and spent + 2 * projected > grid["capUsd"]:
                     print(f"STOPPED BY BUDGET at coverage {n} of {rounds * len(tasks) * 2}")
                     return 3
+                if args.max_cells and ran >= args.max_cells:
+                    print(f"chunk complete: {ran} cells this invocation, "
+                          f"{len(plan) - len(done) - ran} still pending")
+                    print(f"grid so far: USD {spent:.4f} of cap {grid['capUsd']}")
+                    return 0
+                if (rnd, task, arm) in done:
+                    print(f"  skip (in ledger): round {rnd} {task} {arm}")
+                    continue
                 if arm == "paged":
                     os.environ["W8_VBUDGET"] = str(vbudget)
                 row = run_cell(task, arm, rnd, grid=grid, runs=runs, dry=args.dry_run)
+                ran += 1
                 spent += row["usd"]
                 n += 1
                 ledger_append(ledger, row, n, spent)
