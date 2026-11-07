@@ -96,7 +96,7 @@ run_step "@ctxvm/py suite" bash -c 'cd packages/py && python -m pytest test/ -q'
 run_step "packages/node/LICENSE must match the root LICENSE" cmp -s LICENSE packages/node/LICENSE
 log "gate 2b: benchmarks/metrics — 07 reference suite + policy simulator"
 run_step "benchmarks/metrics suite" venvs/odps/bin/python -m pytest benchmarks/metrics -q
-log "ts suites green (21 + 62 + 46 tests); python suites green (171 + 66 + 8 tests)"
+log "ts suites green (22 + 62 + 46 tests); python suites green (172 + 66 + 8 tests)"
 
 # 3) schema + corpus integrity + the T21 export round-trip
 log "gate 3/4: schema validator + corpus checksums + export round-trip"

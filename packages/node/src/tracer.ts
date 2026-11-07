@@ -533,7 +533,12 @@ export function createTrace(init: TraceInit): Tracer {
           residentTokens: resident,
           evictedTokens: 0,
         };
-        if (init.budgetTokens > 0) tr.headroom = init.budgetTokens - resident;
+        // v0's headroom is UNSIGNED: a resident set above the declared budget has no
+        // representable value, so the key is omitted — never a negative integer (the
+        // codec rejects it) and never a clamp to 0 (which would read as "full").
+        if (init.budgetTokens > 0 && resident <= init.budgetTokens) {
+          tr.headroom = init.budgetTokens - resident;
+        }
         // R4-ts: cached from snapshot time — repeated flushes stay byte-stable.
         // W13: the render row carries the static cost. A harness with no request
         // visibility says "unknown" — absence of a measurement, never a zero.

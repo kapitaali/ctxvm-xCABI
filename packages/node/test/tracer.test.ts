@@ -199,6 +199,23 @@ test("noteUsage refuses non-integer/invalid shapes — omitted never coerced (fl
   );
 });
 
+test("over-budget render omits headroom (v0's field is unsigned)", () => {
+  // A resident set above the declared budget has no representable headroom. A negative
+  // integer fails the strict codec; a clamp to 0 would read as "full". The key is omitted.
+  const vm = createTrace({ ...INIT, budgetTokens: 1000 });
+  vm.page({ ref: "file:big.md", kind: "file", content: "x", tokens: 5000 });
+  vm.render();
+  const render = of(vm.finish().events, "turn.render")[0] as { headroom?: number; residentTokens: number };
+  assert.equal(render.residentTokens, 5000);
+  assert.equal("headroom" in render, false, "an over-budget render must omit the key");
+
+  const vm2 = createTrace({ ...INIT, budgetTokens: 9000 });
+  vm2.page({ ref: "file:big.md", kind: "file", content: "x", tokens: 5000 });
+  vm2.render();
+  const render2 = of(vm2.finish().events, "turn.render")[0] as { headroom?: number };
+  assert.equal(render2.headroom, 4000);
+});
+
 test("usage observed before any render is claimed by the next render (orphan slot)", () => {
   // A stream wrapper could hand usage before the matching transformParams runs;
   // the fact must not be lost. The orphan is claimed exactly once.

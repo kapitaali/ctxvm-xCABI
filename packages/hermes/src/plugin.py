@@ -493,8 +493,15 @@ class Tracer:
                 "residentTokens": resident,
                 "evictedTokens": 0,
             }
-            if self._init.budget_tokens > 0:
-                tr["headroom"] = self._init.budget_tokens - resident
+            # The v0 wire field is UNSIGNED (`headroom: Option<u64>`). A resident set
+            # above the declared budget therefore has no representable headroom:
+            # emit nothing rather than a negative integer (which the codec rejects —
+            # observed live 2026-11-07 on a 425,267-token set against a 200,000
+            # budget) or a clamp to 0 (which would read as "full"). A reader that
+            # needs the overrun computes budgetTokens - residentTokens itself.
+            headroom = self._init.budget_tokens - resident
+            if self._init.budget_tokens > 0 and headroom >= 0:
+                tr["headroom"] = headroom
             # §R4-ts: cached from snapshot time — repeated flushes stay
             # byte-stable (idempotency law). Turn index aligns with render order.
             # W13: parity with the TS tracer — every render carries the prefix record,

@@ -265,6 +265,12 @@ under identical filenames (`RR-LIVE-20261104`). The rule now, identical in all t
 The rule is per flush, not per process: no session-keyed cache is kept, because the meta sidecar is
 the authority for who owns a name and a cache could outlive a directory cleanup.
 
+**Headroom law (2026-11-07, RR-HEADROOM-20261107):** `turn.render.headroom` is optional and
+UNSIGNED (`Option<u64>`). An emitter MUST omit it when the resident set exceeds the declared budget:
+a negative integer fails the strict codec and makes the whole capture unreadable, and a clamp to `0`
+would read as "full". A reader that needs the overrun computes `budgetTokens - residentTokens`. The
+python and TypeScript emitters both omit it; the opencode and ai-sdk lanes inherit the TS fix.
+
 ## 4. Enforcement
 
 - `packages/opencode/test/meta-parity.test.ts` — asserts (a) the §2 signature table on a live

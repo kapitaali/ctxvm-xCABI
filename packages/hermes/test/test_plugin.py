@@ -673,6 +673,30 @@ class LiveAdapterTests(unittest.TestCase):
         self.assertEqual(opened["model"], "vendor/model-a")
         self.assertEqual(opened["provider"], "vendor")
 
+    def test_over_budget_render_omits_headroom(self):
+        """v0's `headroom` is UNSIGNED: a resident set above the declared budget has no
+        representable value. Emitting a negative integer makes the trace unreadable by
+        the strict codec (seen live 2026-11-07: 425,267 tokens against 200,000);
+        clamping to 0 would read as "full". The key is omitted, and a reader that needs
+        the overrun computes budgetTokens - residentTokens."""
+        _clear_env_for_tests()
+        from plugin import Tracer, TraceInit
+        vm = Tracer(TraceInit(agent_id="hermes", model="m", provider="p",
+                              budget_tokens=1000, tokenizer_id="apx4-char"))
+        vm.page({"ref": "file:big.md", "kind": "file", "content": "x", "tokens": 5000})
+        vm.render()
+        rows = vm.finish().events
+        render = [e for e in rows if e.get("type") == "turn.render"][0]
+        self.assertEqual(render["residentTokens"], 5000)
+        self.assertNotIn("headroom", render, "an over-budget render must omit the key")
+        # and the in-budget case still carries it
+        vm2 = Tracer(TraceInit(agent_id="hermes", model="m", provider="p",
+                               budget_tokens=9000, tokenizer_id="apx4-char"))
+        vm2.page({"ref": "file:big.md", "kind": "file", "content": "x", "tokens": 5000})
+        vm2.render()
+        r2 = [e for e in vm2.finish().events if e.get("type") == "turn.render"][0]
+        self.assertEqual(r2["headroom"], 4000)
+
     def test_settings_identity_fills_the_init_fallback(self):
         """Host-owned plugin settings (ctx.get_config) complete the identity the
         turn-prep payload cannot: pre_llm_call carries no provider (HOOKS.md §1,
