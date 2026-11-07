@@ -252,6 +252,67 @@ def main(argv: list) -> int:
                   f"faultsBySource {captures.get('faultsBySource')!r} != observed "
                   f"{expected['faultsBySource']!r}")
 
+    # ---- perCall: the per-turn resident series, byte-true against the trace ----
+    # ADDITIVE, OPTIONAL (shape 0.1 stays valid without it). The manifest may carry one
+    # sample per turn.render, in trace order: turn, residentTokens, and — when the row has
+    # a measured prefix — requestChars / approxInputTokens. A flat series is the failure
+    # this field exists to expose: before 2026-11-07 the emitter stamped every render with
+    # the flush-time total, so a long session's pages looked constant.
+    series = manifest.get("perCall")
+    if series is not None:
+        renders = [r for r in rows if r.get("type") == "turn.render"]
+        if not isinstance(series, list):
+            _fail(violations, "perCall", "must be a list of per-turn samples")
+        elif len(series) != len(renders):
+            _fail(violations, "perCall",
+                  f"{len(series)} samples != {len(renders)} turn.render rows in the trace")
+        else:
+            for k, (claim, row) in enumerate(zip(series, renders)):
+                if not isinstance(claim, dict):
+                    _fail(violations, "perCall", f"sample {k} is not an object")
+                    continue
+                if claim.get("turn") != row.get("turn"):
+                    _fail(violations, "perCall",
+                          f"sample {k} turn {claim.get('turn')!r} != {row.get('turn')!r}")
+                if claim.get("residentTokens") != row.get("residentTokens"):
+                    _fail(violations, "perCall",
+                          f"sample {k} residentTokens {claim.get('residentTokens')!r} != "
+                          f"{row.get('residentTokens')!r}")
+                prefix = row.get("prefix") if isinstance(row.get("prefix"), dict) else {}
+                for key in ("requestChars", "approxInputTokens"):
+                    if key in claim and claim[key] != prefix.get(key):
+                        _fail(violations, "perCall",
+                              f"sample {k} {key} {claim[key]!r} != trace {prefix.get(key)!r}")
+
+    # ---- perApiRequest: the per-request series (ADDITIVE, OPTIONAL) ----
+    # The wire cannot carry one row per API call (a five-call task is one user turn), so
+    # the request-size series lives here. It is not byte-derivable from the trace — the
+    # checker verifies shape and order instead of claiming a byte identity it does not have.
+    calls = manifest.get("perApiRequest")
+    if calls is not None:
+        if not isinstance(calls, list):
+            _fail(violations, "perApiRequest", "must be a list of per-request samples")
+        else:
+            seen: dict = {}
+            for k, sample in enumerate(calls):
+                if not isinstance(sample, dict):
+                    _fail(violations, "perApiRequest", f"sample {k} is not an object")
+                    continue
+                turn, call = sample.get("turn"), sample.get("call")
+                if not (_int(turn) and _int(call) and isinstance(call, int) and call >= 1):
+                    _fail(violations, "perApiRequest",
+                          f"sample {k} needs an integer turn and a 1-based call index")
+                    continue
+                expected_call = seen.get(turn, 0) + 1
+                if call != expected_call:
+                    _fail(violations, "perApiRequest",
+                          f"sample {k}: turn {turn} call {call}, expected {expected_call}")
+                seen[turn] = call
+                for key in ("requestChars", "approxInputTokens", "toolSchemas", "messageCount"):
+                    if key in sample and not _int(sample[key]):
+                        _fail(violations, "perApiRequest",
+                              f"sample {k} {key} must be a non-negative integer")
+
     # ---- plugin: present and typed; a pairing fact, not a byte claim ----
     if plugin is not None:
         if not (isinstance(plugin.get("version"), str) and plugin["version"].strip()):

@@ -219,6 +219,12 @@ class Tracer:
         # idempotency law below holds under default-on (RR-R4TS2, node mirror).
         self._ts_enabled: bool = os.environ.get("CTXVM_TRACE_TS") != "0"
         self._turn_stamps: List[Optional[str]] = []
+        # W8 instrument fix (2026-11-07): one sample per API request the host makes, so
+        # the request-size series exists even when a whole task runs inside ONE user turn
+        # (the pilot made 5 calls and rendered once). It rides the coverage sidecar, not
+        # the wire: the trace's `residentTokens` is pinned to ctxvm-core's whole-table
+        # `tally_at`, and a per-turn value there makes replay exit 1.
+        self._api_samples: List[Dict[str, Any]] = []
         # W13: static per-turn cost, keyed by turn. Last attempt of a turn wins.
         self._turn_prefixes: Dict[int, Dict[str, Any]] = {}
         # W13: static per-turn cost, keyed by turn. Set by pre_api_request (last
@@ -475,6 +481,20 @@ class Tracer:
             snapshot["systemPromptBytes"] = len(system_prompt.encode("utf-8"))
         snapshot["source"] = "measured" if len(snapshot) > 0 else "unknown"
         self._turn_prefixes[turn] = snapshot
+        # The per-call series: one sample per request, in call order. `call` restarts at 1
+        # for each turn. Only measured integers are copied — a harness that cannot see a
+        # counter contributes absence, never a zero.
+        if snapshot["source"] == "measured":
+            sample = {"turn": turn,
+                      "call": 1 + sum(1 for s in self._api_samples if s["turn"] == turn)}
+            for key in ("requestChars", "approxInputTokens", "toolSchemas", "messageCount"):
+                if key in snapshot:
+                    sample[key] = snapshot[key]
+            self._api_samples.append(sample)
+
+    def api_samples(self) -> List[Dict[str, Any]]:
+        """The per-request samples this tracer observed (copy; sidecar-only)."""
+        return [dict(s) for s in self._api_samples]
 
     def finish(self) -> FinishedTrace:
         """Flush: turn.render × (turn+1) then call.meta × len(pending_meta).
@@ -487,6 +507,11 @@ class Tracer:
         turn = self._turn
         tail: List[Dict[str, Any]] = []
         for t in range(turn + 1):
+            # The wire value stays the WHOLE-TABLE tally (ctxvm-core `tally_at`): a page
+            # declared at any stream point is resident from turn 0, and replay infers it
+            # that way (probe 2026-11-07: per-turn values made replay exit 1 with
+            # inferred 20 vs recorded 10). The per-turn series lives in the coverage
+            # sidecar (`perCall`), where it is byte-true and replay is not the reader.
             tr: Dict[str, Any] = {
                 "type": "turn.render",
                 "turn": t,

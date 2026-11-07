@@ -409,7 +409,24 @@ def _collision_safe_file(trace_dir: str, file: str, session_id: str) -> str:
     return f"{file}-{hashlib.sha256(session_id.encode('utf-8')).hexdigest()[:8]}"
 
 
-def _coverage_manifest(session_id: str, file: str, trace_jsonl: str) -> Dict[str, Any]:
+def _per_call_samples(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """One sample per turn.render, in trace order: the per-turn resident series."""
+    out: List[Dict[str, Any]] = []
+    for row in rows:
+        if row.get("type") != "turn.render":
+            continue
+        sample: Dict[str, Any] = {"turn": row.get("turn"),
+                                  "residentTokens": row.get("residentTokens")}
+        prefix = row.get("prefix") if isinstance(row.get("prefix"), dict) else {}
+        for key in ("requestChars", "approxInputTokens"):
+            if isinstance(prefix.get(key), int) and not isinstance(prefix.get(key), bool):
+                sample[key] = prefix[key]
+        out.append(sample)
+    return out
+
+
+def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
+                       api_samples: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Build the W17 `<file>.coverage.json` body for one flushed capture.
 
     Session facts (environmentId/model/provider) come from the trace's own
@@ -472,6 +489,17 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str) -> Dict[str
             "faults": len(faults),
             "faultsBySource": by_source,
         },
+        # The per-turn resident series, read straight out of the trace rows this sidecar
+        # describes — so the claim is byte-true and coverage_check.py can verify it. Added
+        # 2026-11-07 (W8 instrument fix): the emitter used to stamp every render with the
+        # flush-time total, which made a long session's series flat and the NTR noise.
+        "perCall": _per_call_samples(rows),
+        # One sample per API request the host made (W8 instrument fix, sidecar-only): the
+        # request-size series NTR is computed from. It lives here because the wire's
+        # `residentTokens` is pinned to ctxvm-core's whole-table `tally_at`, and a
+        # per-turn value there makes replay exit 1. Shape: turn, call (1-based within the
+        # turn), and the measured counters the host exposed.
+        "perApiRequest": list(api_samples or []),
     }
 
 
@@ -911,7 +939,12 @@ def register(ctx) -> None:
                 # later full flush supersedes).
                 Path(trace_dir, f"{file}.coverage.json").write_text(
                     json.dumps(
-                        _coverage_manifest(session_id, file, trace.jsonl),
+                        _coverage_manifest(
+                            session_id, file, trace.jsonl,
+                            api_samples=(vm.tracer_for(session_id).api_samples()
+                                         if hasattr(vm.tracer_for(session_id), "api_samples")
+                                         else None),
+                        ),
                         indent=2,
                     )
                     + "\n",

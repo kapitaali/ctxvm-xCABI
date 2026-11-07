@@ -527,6 +527,9 @@ export function createTrace(init: TraceInit): Tracer {
       for (const tokens of allDeclared.values()) resident += tokens;
       const tail: object[] = [];
       for (let t = 0; t <= turn; t++) {
+        // The wire value is the WHOLE-TABLE tally (ctxvm-core `tally_at`): a page
+        // declared at any stream point is resident from turn 0, and replay infers it that
+        // way — a per-turn value here makes replay exit 1 (probe 2026-11-07).
         const tr: Record<string, unknown> = {
           type: "turn.render",
           turn: t,
