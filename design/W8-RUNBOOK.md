@@ -74,9 +74,16 @@ calls.
 ======================================================================
 5. THE CHUNK PROTOCOL — this is the whole job
 ======================================================================
-CHUNK SIZE: ask the owner once, at the start of the session, or take it from the command
-line. Defaults: 4 cells (~2.5-3 h), 8 cells for an unattended run (~5-6 h). Never exceed
-the number given.
+STEP 0 — ASK, BEFORE ANY SPEND. Two questions, both answered by the owner, no defaults
+applied on your own:
+
+  Q1  How many cells this sitting?  (the owner may say 6; never run more than they say,
+      and never fewer without saying why)
+  Q2  One go for the whole chunk, or a go before each cell?  If they say per cell, run
+      `--max-cells 1` in a loop and stop after every cell for a one-word go.
+
+Record both answers at the top of the chunk report. If the owner does not answer, do not
+start a paid call.
 
 STEP 1 — PRE-FLIGHT, zero spend, all of it recorded:
     python3 tools/w8-run.py --plan
@@ -95,6 +102,16 @@ STEP 2 — THE CHUNK:
   The runner alternates arms inside the chunk and appends one ledger row per cell. Do not
   reorder cells, do not add cells, do not edit tasks or thresholds.
 
+STEP 2b — LOG EVERY CELL, as it lands, not at the end. Append one row to
+reports/W8-CHUNKLOG.md (append-only; any literal pipe inside a field breaks the row, so
+replace it with a slash):
+
+  | time | chunk | cell k/N | task | arm | verdict | minutes | in/cached/out tokens | usd | total usd | remaining |
+
+The row is written BEFORE you ask for the next go, so the owner can read the running state
+from the file without reading your transcript. A cell with no row is a cell that did not
+happen.
+
 STEP 3 — PER-CELL VERIFICATION, no spend. For every cell the runner finished:
   a) the capture is a triple: <file>.jsonl + .meta.json + .coverage.json;
   b) python3 tools/coverage_check.py <file>.jsonl <file>.coverage.json -> exit 0;
@@ -111,8 +128,10 @@ STEP 4 — CLOSE THE CHUNK:
     (in / cached / out), cost, verdicts, the commit, drift checks, and what remains;
   - one LOG row, four pipes;
   - commit with explicit paths, sign, do not push;
-  - print: cells done / cells remaining / spend to date / next cell.
-  Then STOP. Do not start the next chunk because "there is time".
+  - print: cells done / cells remaining / spend to date / next cell;
+  - ASK the owner whether to start another chunk now. Do not decide that yourself, and do
+    not start one because "there is time".
+  Then STOP until they answer.
 
 ======================================================================
 6. HARD STOPS
@@ -139,5 +158,5 @@ STEP 4 — CLOSE THE CHUNK:
 - Do not edit the frozen design, the corpus, or the spec tree.
 - Do not push. The owner pushes.
 
-START by printing the --plan output and the six drift checks, and wait for one word from
-the owner ("go") before the first paid call of this chunk.
+START by printing the --plan output and the six drift checks, then ask Q1 and Q2 from
+STEP 0. The first paid call happens only after the owner answers both and says go.
