@@ -69,6 +69,19 @@ def main() -> int:
         text = (root / rel).read_text(encoding="utf-8")
         items = [{"kind": k, "name": n} for k, n in PUB.findall(text)]
         out["publicSurface"].append({"file": rel, "items": items})
+    # Line-shape section (2026-11-07 rebuild): per-file integers that no match list yields.
+    # A content search returns the lines that MATCH a pattern; it cannot report how many
+    # lines a file has or which line is longest without the whole file being read.
+    out["lineShape"] = []
+    for rel in FIXTURE:
+        body = (root / rel).read_text(encoding="utf-8")
+        lines = body.split("\n")
+        if lines and lines[-1] == "":
+            lines = lines[:-1]            # a trailing newline does not open a line
+        widths = [len(l.encode("utf-8")) for l in lines]
+        out["lineShape"].append({"file": rel, "lines": len(lines),
+                                 "maxLineBytes": max(widths) if widths else 0,
+                                 "overlong100": sum(1 for w in widths if w > 100)})
     Path(sys.argv[2]).write_text(json.dumps(out, indent=2, sort_keys=False) + "\n", encoding="utf-8")
     total = sum(len(b["flags"]) for b in out["binaries"])
     print(f"binaries={len(out['binaries'])} flags={total} files={len(out['publicSurface'])} "

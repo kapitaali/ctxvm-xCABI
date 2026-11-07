@@ -16,6 +16,9 @@ answer.
   "binaries": [
     {"binary": "replay.rs", "flags": ["--help", "--turn"], "coreFunction": "cli::replay_core"}
   ],
+  "lineShape": [
+    {"file": "rust/crates/ctxvm-core/src/render.rs", "lines": 812, "maxLineBytes": 118, "overlong100": 4}
+  ],
   "publicSurface": [
     {"file": "rust/crates/ctxvm-core/src/render.rs", "items": [{"kind": "fn", "name": "derive_projection"}]}
   ]
@@ -38,7 +41,12 @@ answer.
 2. **Core function.** `coreFunction` is the first `cli::<name>(` call inside the binary's
    `main()` — the conformance-library function the binary hands its parsed arguments to,
    written as `"cli::<name>"`. If `main()` makes no such call, the value is `null`.
-3. **Public items.** For each file, `items` lists every declaration whose line begins at
+3. **Line shape.** For each file, `lineShape` records `lines` (the number of lines, where a
+   trailing newline does not open a line), `maxLineBytes` (the byte length of the longest
+   line, UTF-8, newline excluded) and `overlong100` (how many lines are longer than 100
+   bytes). These are counts over the whole file: a search returns the lines that match a
+   pattern, never the shape of the file, so read the parts.
+4. **Public items.** For each file, `items` lists every declaration whose line begins at
    column 0 with `pub ` and is one of `pub fn`, `pub struct`, `pub enum`, `pub trait`,
    `pub const`, `pub type`, `pub mod`. Record `kind` (the keyword) and `name`. Exclude
    `pub(crate)` and anything indented (methods inside `impl` blocks are not top-level

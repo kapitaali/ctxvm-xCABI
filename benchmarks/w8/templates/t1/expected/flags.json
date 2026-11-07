@@ -517,5 +517,127 @@
         }
       ]
     }
+  ],
+  "lineShape": [
+    {
+      "file": "rust/crates/ctxvm-conformance/src/bin/replay.rs",
+      "lines": 136,
+      "maxLineBytes": 100,
+      "overlong100": 0
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/bin/diff.rs",
+      "lines": 101,
+      "maxLineBytes": 95,
+      "overlong100": 0
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/bin/profile.rs",
+      "lines": 170,
+      "maxLineBytes": 117,
+      "overlong100": 3
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/bin/export.rs",
+      "lines": 148,
+      "maxLineBytes": 97,
+      "overlong100": 0
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/bin/stream.rs",
+      "lines": 50,
+      "maxLineBytes": 101,
+      "overlong100": 1
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/bin/tokens.rs",
+      "lines": 105,
+      "maxLineBytes": 279,
+      "overlong100": 2
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/cli.rs",
+      "lines": 1296,
+      "maxLineBytes": 208,
+      "overlong100": 41
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/lib.rs",
+      "lines": 190,
+      "maxLineBytes": 174,
+      "overlong100": 5
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/stream.rs",
+      "lines": 457,
+      "maxLineBytes": 194,
+      "overlong100": 6
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/lib.rs",
+      "lines": 33,
+      "maxLineBytes": 106,
+      "overlong100": 3
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/replay.rs",
+      "lines": 236,
+      "maxLineBytes": 123,
+      "overlong100": 5
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/diff.rs",
+      "lines": 348,
+      "maxLineBytes": 128,
+      "overlong100": 3
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/profile.rs",
+      "lines": 390,
+      "maxLineBytes": 118,
+      "overlong100": 2
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/export.rs",
+      "lines": 537,
+      "maxLineBytes": 129,
+      "overlong100": 4
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/render.rs",
+      "lines": 615,
+      "maxLineBytes": 134,
+      "overlong100": 5
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/page_table.rs",
+      "lines": 521,
+      "maxLineBytes": 201,
+      "overlong100": 5
+    },
+    {
+      "file": "rust/crates/ctxvm-codec/src/lib.rs",
+      "lines": 21,
+      "maxLineBytes": 91,
+      "overlong100": 0
+    },
+    {
+      "file": "rust/crates/ctxvm-codec/src/model.rs",
+      "lines": 402,
+      "maxLineBytes": 105,
+      "overlong100": 1
+    },
+    {
+      "file": "rust/crates/ctxvm-codec/src/jsonl.rs",
+      "lines": 507,
+      "maxLineBytes": 206,
+      "overlong100": 13
+    },
+    {
+      "file": "rust/crates/ctxvm-tokenizer/src/lib.rs",
+      "lines": 218,
+      "maxLineBytes": 124,
+      "overlong100": 1
+    }
   ]
 }

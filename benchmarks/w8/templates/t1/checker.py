@@ -40,7 +40,7 @@ def main() -> int:
     if not isinstance(got, dict):
         print("FAIL flags.json: top level must be an object")
         return 1
-    extra = set(got) - {"binaries", "publicSurface"}
+    extra = set(got) - {"binaries", "publicSurface", "lineShape"}
     if extra:
         bad.append(f"unexpected top-level keys: {sorted(extra)}")
 
@@ -55,6 +55,15 @@ def main() -> int:
             if g.get("coreFunction") != w["coreFunction"]:
                 bad.append(f"{w['binary']} coreFunction: expected {w['coreFunction']}, "
                            f"got {g.get('coreFunction')}")
+
+    gl, wl = got.get("lineShape") or [], want["lineShape"]
+    if [x.get("file") for x in gl if isinstance(x, dict)] != [x["file"] for x in wl]:
+        bad.append("lineShape: file list or order differs from the fixture")
+    else:
+        for g, w in zip(gl, wl):
+            for key in ("lines", "maxLineBytes", "overlong100"):
+                if g.get(key) != w[key]:
+                    bad.append(f"{w['file']} lineShape.{key}: expected {w[key]}, got {g.get(key)}")
 
     gs, ws = got.get("publicSurface") or [], want["publicSurface"]
     if [f.get("file") for f in gs if isinstance(f, dict)] != [f["file"] for f in ws]:
