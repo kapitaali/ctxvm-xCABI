@@ -14,4 +14,4 @@ run 7.8× — measured 2026-11-07).
 | # | date | arm | task | round | model | in | out | cached | USD | run total | note |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | 2026-11-07 | naive | t1 | 1 | openai/gpt-6-luna | 24802048 | 169443 | 24552150 | 0.3303 | 0.8464 | n/a; coverage ok; replay exit 0, byte-identical |
-| 2 | 2026-11-07 | naive | t1 | 1 | openai/gpt-6-luna | 24248569 | 135061 | 24016030 | 0.3077 | 1.1541 | n/a; coverage ok; replay exit 0, byte-identical |
+| 2 | 2026-11-07 | naive | t1 | 1 | openai/gpt-6-luna | 24248569 | 135061 | 24016030 | 0.3077 | 1.1541 | ABORTED 2026-11-07T17:07Z: arm witness mismatch (engine=ctxvm, profile=.hermes under -p w8-naive); no artefact, max_iterations 150/150; USD 0.3077 spent, cell is not data (RR-W8CHUNK-20261107-2) |
