@@ -140,6 +140,10 @@ STEP 4 — CLOSE THE CHUNK:
 - Drift in model, provider, plugin version or commit between chunks -> stop, report.
 - A cell's capture fails coverage_check or replay -> stop after quarantining, report; do
   not continue the chunk with a broken instrument.
+- A task's fixture, task text or expected vector changes after any cell of that task has
+  run -> every earlier cell of that task becomes pilot evidence and no longer counts. The
+  resume key carries the fixture digest, so `--skip-done` re-runs them; do not "fix" that by
+  deleting rows.
 - A cell's capture reports `plugin.engine` that does not match its arm (paged must read
   "ctxvm", naive must read null) -> stop: the arm did not run, whatever the ledger says.
 - The checker fails on BOTH arms in a cell for the same reason -> stop: that is a fixture

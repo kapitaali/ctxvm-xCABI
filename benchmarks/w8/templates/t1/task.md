@@ -1,10 +1,9 @@
 # Task T1 — the CLI reference table for this project
 
 This workspace holds a source snapshot of the `ctxvm` project — the repository's own code,
-which you are documenting for its README. The snapshot is in this workspace. Its sources are split into line-aligned parts so that no single read is large:
-`MANIFEST.tsv` maps every `*.partNN` file back to its logical path (`logical_path`), its
-line range, and a digest. Concatenating a file's parts in manifest order reproduces the
-source exactly.
+which you are documenting for its README. The snapshot is in this workspace. Each source file is provided whole as a single `*.partNN`
+file, so one read gives you every byte of it: `MANIFEST.tsv` maps each part to its logical
+path (`logical_path`), its line range, and a digest. Thirteen files, thirteen parts.
 
 Write the audit as **`flags.json` in the workspace root**. Nothing else is part of the
 answer.

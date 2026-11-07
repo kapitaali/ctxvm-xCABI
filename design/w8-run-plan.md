@@ -171,6 +171,30 @@ Provider: `nous` (both profiles). The earlier `nvidia` values were stale copies 
 `unknown` until the gateway serving the run is started after the identity fix; the payload for that
 hook carries no provider, so settings are the only source.
 
+## 4d. The metric, decided (2026-11-07) — receipts, not turn rows
+
+Cell 1 answered a question the plan had left open: a `-z` capture can arrive with **no
+`turn.render` and no `call.meta` at all** (721 events, 570 declares, 150 faults, zero turn
+rows), because the plugin's turn boundary is `on_pre_llm_call`, which does not fire for that
+path. Turn-level residency is therefore not derivable, and any metric defined on it would be
+silently empty for every cell.
+
+Decision:
+
+- **NTR is defined on the provider receipt**, per cell: `1 - (paged input) / (naive input)`,
+  where input = uncached + cached (plus cache-write when reported). It is the quantity the
+  experiment is about, it is billed, and it exists in every cell.
+- **Request-size evidence comes from `perApiRequest`** in the coverage sidecar: peak and
+  median approx tokens per call, per arm. The "paged request smaller than naive" gate is
+  read as *peak perApiRequest smaller*, with the quantile named in the report.
+- **`turn.render` is used when present and never imputed.** Its absence is recorded in the
+  cell row as a limitation; a cell with zero `perApiRequest` samples is an instrument
+  failure and stops the chunk.
+
+This keeps the headline number honest without changing the sealed wire: one render per user
+turn stays the model's meaning, and the experiment stops pretending it can read a series the
+capture does not contain.
+
 ## 5. The pilot before the grid
 
 One task (template 1), both arms, one round. On Luna this costs about $0.14. It answers what no design

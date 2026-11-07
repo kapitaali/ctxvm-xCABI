@@ -129,168 +129,31 @@
       ]
     },
     {
-      "file": "rust/crates/ctxvm-conformance/src/lib.rs",
-      "items": [
-        {
-          "kind": "const",
-          "name": "EXPECTED_TAGS"
-        },
-        {
-          "kind": "mod",
-          "name": "cli"
-        },
-        {
-          "kind": "mod",
-          "name": "stream"
-        }
-      ]
-    },
-    {
-      "file": "rust/crates/ctxvm-conformance/src/stream.rs",
+      "file": "rust/crates/ctxvm-core/src/render.rs",
       "items": [
         {
           "kind": "struct",
-          "name": "SessionRow"
-        },
-        {
-          "kind": "fn",
-          "name": "session_row"
-        },
-        {
-          "kind": "fn",
-          "name": "expand"
-        },
-        {
-          "kind": "fn",
-          "name": "collect"
-        },
-        {
-          "kind": "fn",
-          "name": "groups"
-        },
-        {
-          "kind": "fn",
-          "name": "render_text"
-        },
-        {
-          "kind": "fn",
-          "name": "render_json"
-        }
-      ]
-    },
-    {
-      "file": "rust/crates/ctxvm-core/src/lib.rs",
-      "items": [
-        {
-          "kind": "mod",
-          "name": "page_table"
-        },
-        {
-          "kind": "mod",
-          "name": "render"
-        },
-        {
-          "kind": "mod",
-          "name": "replay"
-        },
-        {
-          "kind": "mod",
-          "name": "profile"
-        },
-        {
-          "kind": "mod",
-          "name": "diff"
-        },
-        {
-          "kind": "mod",
-          "name": "export"
-        }
-      ]
-    },
-    {
-      "file": "rust/crates/ctxvm-core/src/replay.rs",
-      "items": [
-        {
-          "kind": "enum",
-          "name": "Divergence"
+          "name": "Slot"
         },
         {
           "kind": "struct",
-          "name": "ReplayReport"
+          "name": "TurnTally"
+        },
+        {
+          "kind": "struct",
+          "name": "TurnProjection"
         },
         {
           "kind": "fn",
-          "name": "replay"
+          "name": "derive_projection"
         },
         {
-          "kind": "fn",
-          "name": "replay_turn"
-        }
-      ]
-    },
-    {
-      "file": "rust/crates/ctxvm-core/src/diff.rs",
-      "items": [
-        {
-          "kind": "fn",
-          "name": "event_turn"
+          "kind": "struct",
+          "name": "ForcedResident"
         },
         {
           "kind": "enum",
-          "name": "TraceRelation"
-        },
-        {
-          "kind": "struct",
-          "name": "PageOnly"
-        },
-        {
-          "kind": "struct",
-          "name": "DivergentHash"
-        },
-        {
-          "kind": "struct",
-          "name": "TallyMismatch"
-        },
-        {
-          "kind": "struct",
-          "name": "TraceDiff"
-        },
-        {
-          "kind": "fn",
-          "name": "diff_traces"
-        }
-      ]
-    },
-    {
-      "file": "rust/crates/ctxvm-core/src/profile.rs",
-      "items": [
-        {
-          "kind": "struct",
-          "name": "PageProfile"
-        },
-        {
-          "kind": "struct",
-          "name": "ProfileSummary"
-        },
-        {
-          "kind": "struct",
-          "name": "FaultRow"
-        },
-        {
-          "kind": "struct",
-          "name": "EvictRow"
-        },
-        {
-          "kind": "struct",
-          "name": "ProfileReport"
-        },
-        {
-          "kind": "fn",
-          "name": "profile"
-        },
-        {
-          "kind": "fn",
-          "name": "turn_windows"
+          "name": "Pin"
         }
       ]
     },
@@ -328,35 +191,6 @@
       ]
     },
     {
-      "file": "rust/crates/ctxvm-core/src/render.rs",
-      "items": [
-        {
-          "kind": "struct",
-          "name": "Slot"
-        },
-        {
-          "kind": "struct",
-          "name": "TurnTally"
-        },
-        {
-          "kind": "struct",
-          "name": "TurnProjection"
-        },
-        {
-          "kind": "fn",
-          "name": "derive_projection"
-        },
-        {
-          "kind": "struct",
-          "name": "ForcedResident"
-        },
-        {
-          "kind": "enum",
-          "name": "Pin"
-        }
-      ]
-    },
-    {
       "file": "rust/crates/ctxvm-core/src/page_table.rs",
       "items": [
         {
@@ -382,15 +216,60 @@
       ]
     },
     {
-      "file": "rust/crates/ctxvm-codec/src/lib.rs",
+      "file": "rust/crates/ctxvm-core/src/profile.rs",
       "items": [
         {
-          "kind": "mod",
-          "name": "jsonl"
+          "kind": "struct",
+          "name": "PageProfile"
         },
         {
-          "kind": "mod",
-          "name": "model"
+          "kind": "struct",
+          "name": "ProfileSummary"
+        },
+        {
+          "kind": "struct",
+          "name": "FaultRow"
+        },
+        {
+          "kind": "struct",
+          "name": "EvictRow"
+        },
+        {
+          "kind": "struct",
+          "name": "ProfileReport"
+        },
+        {
+          "kind": "fn",
+          "name": "profile"
+        },
+        {
+          "kind": "fn",
+          "name": "turn_windows"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-codec/src/jsonl.rs",
+      "items": [
+        {
+          "kind": "struct",
+          "name": "CodecError"
+        },
+        {
+          "kind": "fn",
+          "name": "parse_line"
+        },
+        {
+          "kind": "fn",
+          "name": "read_jsonl"
+        },
+        {
+          "kind": "fn",
+          "name": "to_line"
+        },
+        {
+          "kind": "fn",
+          "name": "write_jsonl"
         }
       ]
     },
@@ -446,76 +325,6 @@
           "name": "check_version"
         }
       ]
-    },
-    {
-      "file": "rust/crates/ctxvm-codec/src/jsonl.rs",
-      "items": [
-        {
-          "kind": "struct",
-          "name": "CodecError"
-        },
-        {
-          "kind": "fn",
-          "name": "parse_line"
-        },
-        {
-          "kind": "fn",
-          "name": "read_jsonl"
-        },
-        {
-          "kind": "fn",
-          "name": "to_line"
-        },
-        {
-          "kind": "fn",
-          "name": "write_jsonl"
-        }
-      ]
-    },
-    {
-      "file": "rust/crates/ctxvm-tokenizer/src/lib.rs",
-      "items": [
-        {
-          "kind": "mod",
-          "name": "tokens_source"
-        },
-        {
-          "kind": "const",
-          "name": "APX4_CHAR"
-        },
-        {
-          "kind": "const",
-          "name": "TIKTOKEN_O200K_BASE"
-        },
-        {
-          "kind": "const",
-          "name": "TIKTOKEN_CL100K_BASE"
-        },
-        {
-          "kind": "fn",
-          "name": "apx4"
-        },
-        {
-          "kind": "trait",
-          "name": "Tokenizer"
-        },
-        {
-          "kind": "struct",
-          "name": "Apx4Char"
-        },
-        {
-          "kind": "fn",
-          "name": "known_ids"
-        },
-        {
-          "kind": "fn",
-          "name": "for_id"
-        },
-        {
-          "kind": "fn",
-          "name": "is_known_id"
-        }
-      ]
     }
   ],
   "lineShape": [
@@ -562,40 +371,10 @@
       "overlong100": 41
     },
     {
-      "file": "rust/crates/ctxvm-conformance/src/lib.rs",
-      "lines": 190,
-      "maxLineBytes": 174,
+      "file": "rust/crates/ctxvm-core/src/render.rs",
+      "lines": 615,
+      "maxLineBytes": 134,
       "overlong100": 5
-    },
-    {
-      "file": "rust/crates/ctxvm-conformance/src/stream.rs",
-      "lines": 457,
-      "maxLineBytes": 194,
-      "overlong100": 6
-    },
-    {
-      "file": "rust/crates/ctxvm-core/src/lib.rs",
-      "lines": 33,
-      "maxLineBytes": 106,
-      "overlong100": 3
-    },
-    {
-      "file": "rust/crates/ctxvm-core/src/replay.rs",
-      "lines": 236,
-      "maxLineBytes": 123,
-      "overlong100": 5
-    },
-    {
-      "file": "rust/crates/ctxvm-core/src/diff.rs",
-      "lines": 348,
-      "maxLineBytes": 128,
-      "overlong100": 3
-    },
-    {
-      "file": "rust/crates/ctxvm-core/src/profile.rs",
-      "lines": 390,
-      "maxLineBytes": 118,
-      "overlong100": 2
     },
     {
       "file": "rust/crates/ctxvm-core/src/export.rs",
@@ -604,28 +383,16 @@
       "overlong100": 4
     },
     {
-      "file": "rust/crates/ctxvm-core/src/render.rs",
-      "lines": 615,
-      "maxLineBytes": 134,
-      "overlong100": 5
-    },
-    {
       "file": "rust/crates/ctxvm-core/src/page_table.rs",
       "lines": 521,
       "maxLineBytes": 201,
       "overlong100": 5
     },
     {
-      "file": "rust/crates/ctxvm-codec/src/lib.rs",
-      "lines": 21,
-      "maxLineBytes": 91,
-      "overlong100": 0
-    },
-    {
-      "file": "rust/crates/ctxvm-codec/src/model.rs",
-      "lines": 402,
-      "maxLineBytes": 105,
-      "overlong100": 1
+      "file": "rust/crates/ctxvm-core/src/profile.rs",
+      "lines": 390,
+      "maxLineBytes": 118,
+      "overlong100": 2
     },
     {
       "file": "rust/crates/ctxvm-codec/src/jsonl.rs",
@@ -634,9 +401,9 @@
       "overlong100": 13
     },
     {
-      "file": "rust/crates/ctxvm-tokenizer/src/lib.rs",
-      "lines": 218,
-      "maxLineBytes": 124,
+      "file": "rust/crates/ctxvm-codec/src/model.rs",
+      "lines": 402,
+      "maxLineBytes": 105,
       "overlong100": 1
     }
   ]

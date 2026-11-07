@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import os
 import shutil
@@ -153,6 +154,8 @@ def run_cell(task: str, arm: str, rnd: int, *, grid: dict, runs: Path, dry: bool
     tdir = REPO / "benchmarks/w8/templates" / task
     spec = json.loads((tdir / "fixture.json").read_text())
     outdir = runs / task / f"{arm}-r{rnd}"
+    outdir.mkdir(parents=True, exist_ok=True)
+    (outdir / "fixture.sha256").write_text(_fixture_digest(task) + "\n", encoding="utf-8")
     if outdir.exists():
         shutil.rmtree(outdir)
     ws = outdir / "ws"
@@ -343,8 +346,28 @@ def reconcile_started(path: Path, ceiling_s: int) -> int:
     return fixed
 
 
-def _ledger_cells(path: Path) -> set:
-    """(round, task, arm) already recorded — the resume key."""
+def _fixture_digest(task: str) -> str:
+    """Digest of what a cell actually measured: the task text, the fixture and its
+    expected vector. The resume key includes it because a re-scoped fixture invalidates
+    the cells that measured the old one — on 2026-11-07 T1 went from 33 parts to 13 after
+    cell 1 hit the iteration ceiling, and a key of (round, task, arm) would have skipped
+    the naive cell and compared a paged run on the new fixture against a naive run on the
+    old one, silently."""
+    h = hashlib.sha256()
+    tdir = REPO / "benchmarks/w8/templates" / task
+    for name in ("task.md", "fixture.json", "profile.json"):
+        f = tdir / name
+        if f.exists():
+            h.update(name.encode() + b"\0" + f.read_bytes() + b"\0")
+    exp = tdir / "expected"
+    if exp.is_dir():
+        for f in sorted(exp.glob("*.json")):
+            h.update(f.name.encode() + b"\0" + f.read_bytes() + b"\0")
+    return h.hexdigest()[:12]
+
+
+def _ledger_cells(path: Path, runs: Path) -> set:
+    """(round, task, arm) already recorded AND measured on the current fixture."""
     cells = set()
     if not path.exists():
         return cells
@@ -357,9 +380,13 @@ def _ledger_cells(path: Path) -> set:
         if len(c) > 11 and (c[11].startswith("STARTED") or c[11].startswith("ABORTED")):
             continue      # an unsettled cell is not done; a chunk may retry it
         try:
-            cells.add((int(c[4]), c[3], c[2]))
-        except ValueError:
+            rnd, task, arm = int(c[4]), c[3], c[2]
+        except (ValueError, IndexError):
             continue
+        stamp = runs / task / f"{arm}-r{rnd}" / "fixture.sha256"
+        if not stamp.exists() or stamp.read_text(encoding="utf-8").strip() != _fixture_digest(task):
+            continue      # measured on a fixture that no longer exists: not done
+        cells.add((rnd, task, arm))
     return cells
 
 
@@ -430,7 +457,7 @@ def main() -> int:
     if stale:
         print(f"  reconciled {stale} STARTED row(s) older than the cell ceiling to ABORTED")
 
-    done = _ledger_cells(ledger) if args.skip_done else set()
+    done = _ledger_cells(ledger, runs) if args.skip_done else set()
     plan = [(rnd, task, arm) for rnd in range(1, rounds + 1)
             for task in tasks for arm in ("naive", "paged")]
     if args.plan:

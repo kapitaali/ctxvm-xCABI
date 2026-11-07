@@ -2,109 +2,74 @@
   "template": "t1",
   "family": "pressure",
   "thresholdTokens": 45000,
-  "minReadTokens": 64676,
-  "expectedPages": 33,
-  "pageCapTokens": 1500,
+  "minReadTokens": 50257,
+  "expectedPages": 13,
+  "pageCapTokens": 60000,
   "artefact": "flags.json",
   "files": [
     {
       "path": "rust/crates/ctxvm-conformance/src/bin/replay.rs",
-      "apx4Tokens": 1490,
+      "apx4Tokens": 1494,
       "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-conformance/src/bin/diff.rs",
-      "apx4Tokens": 937,
+      "apx4Tokens": 940,
       "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-conformance/src/bin/profile.rs",
-      "apx4Tokens": 1713,
+      "apx4Tokens": 1719,
       "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-conformance/src/bin/export.rs",
-      "apx4Tokens": 1565,
+      "apx4Tokens": 1571,
       "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-conformance/src/bin/stream.rs",
-      "apx4Tokens": 412,
+      "apx4Tokens": 413,
       "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-conformance/src/bin/tokens.rs",
-      "apx4Tokens": 972,
+      "apx4Tokens": 974,
       "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-conformance/src/cli.rs",
-      "apx4Tokens": 12956,
-      "parts": 5
-    },
-    {
-      "path": "rust/crates/ctxvm-conformance/src/lib.rs",
-      "apx4Tokens": 1910,
+      "apx4Tokens": 12974,
       "parts": 1
-    },
-    {
-      "path": "rust/crates/ctxvm-conformance/src/stream.rs",
-      "apx4Tokens": 4358,
-      "parts": 2
-    },
-    {
-      "path": "rust/crates/ctxvm-core/src/lib.rs",
-      "apx4Tokens": 441,
-      "parts": 1
-    },
-    {
-      "path": "rust/crates/ctxvm-core/src/replay.rs",
-      "apx4Tokens": 2280,
-      "parts": 1
-    },
-    {
-      "path": "rust/crates/ctxvm-core/src/diff.rs",
-      "apx4Tokens": 3108,
-      "parts": 2
-    },
-    {
-      "path": "rust/crates/ctxvm-core/src/profile.rs",
-      "apx4Tokens": 3520,
-      "parts": 2
-    },
-    {
-      "path": "rust/crates/ctxvm-core/src/export.rs",
-      "apx4Tokens": 5653,
-      "parts": 2
     },
     {
       "path": "rust/crates/ctxvm-core/src/render.rs",
-      "apx4Tokens": 6552,
-      "parts": 3
+      "apx4Tokens": 6613,
+      "parts": 1
+    },
+    {
+      "path": "rust/crates/ctxvm-core/src/export.rs",
+      "apx4Tokens": 5680,
+      "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-core/src/page_table.rs",
-      "apx4Tokens": 5241,
-      "parts": 2
+      "apx4Tokens": 5310,
+      "parts": 1
     },
     {
-      "path": "rust/crates/ctxvm-codec/src/lib.rs",
-      "apx4Tokens": 263,
+      "path": "rust/crates/ctxvm-core/src/profile.rs",
+      "apx4Tokens": 3526,
+      "parts": 1
+    },
+    {
+      "path": "rust/crates/ctxvm-codec/src/jsonl.rs",
+      "apx4Tokens": 5051,
       "parts": 1
     },
     {
       "path": "rust/crates/ctxvm-codec/src/model.rs",
-      "apx4Tokens": 3986,
-      "parts": 2
-    },
-    {
-      "path": "rust/crates/ctxvm-codec/src/jsonl.rs",
-      "apx4Tokens": 5001,
-      "parts": 2
-    },
-    {
-      "path": "rust/crates/ctxvm-tokenizer/src/lib.rs",
-      "apx4Tokens": 2318,
+      "apx4Tokens": 3992,
       "parts": 1
     }
   ]

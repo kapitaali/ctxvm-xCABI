@@ -1,5 +1,5 @@
 {
-  "_note": "T1 fixture \u2014 explicit path lists, never globs (w8-run-plan.md \u00a73b finding 3). Twenty files: six binaries, the three conformance-library modules, the seven ctxvm-core modules, the three ctxvm-codec modules, and the tokenizer crate the tokens binary dispatches to. chunkBytes 12000 (T0 decision 2026-11-07): the 5600-byte default made 58 pages and a 150-call run; 12 KB parts give ~22 pages at the same tokens, keeping the six-tail floor near 21k against a 24k budget.",
+  "_note": "T1 fixture \u2014 explicit path lists, never globs (w8-run-plan.md \u00a73b finding 3). Thirteen files, one part each. Re-scoped 2026-11-07 after cell 1: the 33-part/20-file build did not fit the 150-iteration ceiling, because every part is a call before any measurement happens. Fewer, larger pages keep the same >=45k declared floor at a third of the calls.",
   "binaries": [
     "rust/crates/ctxvm-conformance/src/bin/replay.rs",
     "rust/crates/ctxvm-conformance/src/bin/diff.rs",
@@ -16,20 +16,13 @@
     "rust/crates/ctxvm-conformance/src/bin/stream.rs",
     "rust/crates/ctxvm-conformance/src/bin/tokens.rs",
     "rust/crates/ctxvm-conformance/src/cli.rs",
-    "rust/crates/ctxvm-conformance/src/lib.rs",
-    "rust/crates/ctxvm-conformance/src/stream.rs",
-    "rust/crates/ctxvm-core/src/lib.rs",
-    "rust/crates/ctxvm-core/src/replay.rs",
-    "rust/crates/ctxvm-core/src/diff.rs",
-    "rust/crates/ctxvm-core/src/profile.rs",
-    "rust/crates/ctxvm-core/src/export.rs",
     "rust/crates/ctxvm-core/src/render.rs",
+    "rust/crates/ctxvm-core/src/export.rs",
     "rust/crates/ctxvm-core/src/page_table.rs",
-    "rust/crates/ctxvm-codec/src/lib.rs",
-    "rust/crates/ctxvm-codec/src/model.rs",
+    "rust/crates/ctxvm-core/src/profile.rs",
     "rust/crates/ctxvm-codec/src/jsonl.rs",
-    "rust/crates/ctxvm-tokenizer/src/lib.rs"
+    "rust/crates/ctxvm-codec/src/model.rs"
   ],
   "artefact": "flags.json",
-  "chunkBytes": 12000
+  "chunkBytes": 60000
 }
