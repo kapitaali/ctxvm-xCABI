@@ -1,8 +1,8 @@
 {
-  "_note": "W8 grid \u2014 one factor (context.engine), one model, six templates, R rounds, alternating arms per task. Model id is the provider's wire id confirmed against https://api.experientiallabs.ai/v1/models on 2026-11-07 (context_window 1,050,000; $0.10 in / $0.50 out / $0.01 cached per 1M). catalogueModel is the name the pinned price catalogue uses (row-013). T0 decision 2026-11-07: R raised from 3 to 6 (48 runs, ~$3.30) because T5/T6 premises failed and the owner chose interval width over task count; four templates, all at pressure.",
-  "model": "gpt-6-luna",
+  "_note": "W8 grid \u2014 one factor (context.engine), one model, six templates, R rounds, alternating arms per task. Model id is the provider's wire id confirmed against https://api.experientiallabs.ai/v1/models on 2026-11-07 (context_window 1,050,000; $0.10 in / $0.50 out / $0.01 cached per 1M). catalogueModel is the name the pinned price catalogue uses (row-013). T0 decision 2026-11-07: R raised from 3 to 6 (48 runs, ~$3.30) because T5/T6 premises failed and the owner chose interval width over task count; four templates, all at pressure. Provider corrected 2026-11-07: nous (the catalogue's own list), not the experientiallabs mirror that carries a daily free-tier cap.",
+  "model": "openai/gpt-6-luna",
   "catalogueModel": "GPT-6 Luna",
-  "provider": "explabs",
+  "provider": "nous",
   "toolsets": "file",
   "rounds": 6,
   "vbudget": 24000,
