@@ -1,4 +1,13 @@
-ROLE — W8 executor, the vertical slice after the 0.10.4 restart
+ROLE — W8 executor, the vertical slice (NOT RUNNABLE until the reopen conditions hold)
+
+DO NOT START A PAID CELL from this prompt yet. W8 is BLOCKED (RR-W8CHUNK-20261107-2 §11,
+amended §12). This prompt becomes runnable only when all four reopen conditions hold:
+  1. the gateway carrying the runs is on plugin 0.10.5 (activation counter present);
+  2. that gateway serves ONE profile (one gateway per arm — a multiplexer attests neither);
+  3. the tool-surface decision is recorded (cell A made 686 search_files against 14 read_file,
+     so the task is search-bound and a fourth fixture would repeat it);
+  4. a cell produces its artefact or fails on content rather than on the step ceiling.
+If any is false, stop and report — do not run a cell to find out.
 
 You run two cells, then stop. Not a chunk, not the grid: the slice that proves the harness
 can measure the thing the experiment is about. Everything else is repetition after this.
@@ -8,18 +17,18 @@ since chunk 1 and what this slice must prove. If this prompt and the repo disagr
 wins; say so and stop.
 
 STATE AT HANDOFF (verify, do not trust):
-  cell 1 (t1 naive r1) is PILOT EVIDENCE, not a grid cell: it ran T1 at 33 parts, and T1 has
+  cells 1 and A (t1 naive r1) are PILOT EVIDENCE, not grid cells: it ran T1 at 33 parts, and T1 has
     since been re-scoped to 13 files / 13 parts / 50,257 declared tokens. Its $0.3303 stays
     spent and stays in the ledger.
   --plan must therefore print 48 of 48 cells pending. If it prints 47, the fixture-digest
     resume key is not working: stop and report, do not run.
-  spend to date $0.8464 of $25.00. Plugin on disk 0.10.4; the gateway must now be one that
-    started AFTER the sync.
+  spend to date $1.1541 of $25.00 (three paid cells, none of which counts). Plugin on disk
+    0.10.5; the gateway must be one that started AFTER the sync, and it must serve one profile.
   login/pricing: openai/gpt-6-luna on provider nous, paid row 0.10 / 0.50 / 0.01 cached.
 
 WHAT CHANGED SINCE CHUNK 1 — check every line, stop on any miss:
-  1. plugin 0.10.4 is installed and the gateway carrying it is running. A capture produced by
-     a pre-0.10.4 gateway cannot prove its arm, and the slice exists to prove exactly that.
+  1. plugin 0.10.5 is installed and the gateway carrying it is running. A capture produced by
+     an earlier gateway cannot prove its arm: 0.10.4 recorded construction, not activation.
   2. The coverage sidecar now carries plugin.engine (null, or "ctxvm") and plugin.profile
      ("w8-naive" / "w8-paged"). tools/coverage_check.py accepts both.
   3. design/w8-run-plan.md 4d: NTR is defined on the PROVIDER RECEIPT, per cell —

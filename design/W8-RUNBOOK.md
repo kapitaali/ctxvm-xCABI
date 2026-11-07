@@ -92,8 +92,10 @@ STEP 1 — PRE-FLIGHT, zero spend, all of it recorded:
     git status --short                        (must be clean; if not, report and stop)
     for a in naive paged; do HERMES_HOME=~/.hermes/profiles/w8-$a \
         hermes config get model.provider; done          -> both must print nous
-    grep -m1 PLUGIN_VERSION ~/.hermes/plugins/ctxvm-tracer/__init__.py -> 0.10.4
+    grep -m1 PLUGIN_VERSION ~/.hermes/plugins/ctxvm-tracer/__init__.py -> 0.10.5
     tail -3 reports/W8-SPEND.md               (running total vs the $25 cap)
+    hermes gateway list                        (must show ONE profile per gateway: a
+        multiplexer serving several profiles cannot attest an arm, plan 4c — refuse and stop)
   A model, provider or plugin change between chunks is an AMENDMENT, not a detail: report
   it and stop unless the owner has already ratified it for this chunk.
 
