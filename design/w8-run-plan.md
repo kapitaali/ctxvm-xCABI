@@ -69,6 +69,48 @@ output needs prose judgement (uncheckable); any task whose fixture is synthetic 
 content (the design's "real work product" clause); any task that reads one huge file (floor above
 budget, arm inert).
 
+## 3b. Review findings (2026-11-07) — five amendments before the freeze
+
+A second lane checked templates 1–4 with throwaway scripts (`RR-W8TPLCHK-20261107`). Five holes, all
+of which change the freeze.
+
+**1. The pressure bar is unreachable for three templates.** Measured minimum-read bounds: T1 ≈7k
+tokens, T2 ≈19.4k, T4 ≈4.5k, against the 45–70k the design requires. A task that declares 7k cannot
+test a 24k budget — both arms behave identically. New freeze rule: every template carries a
+**minimum-read bound** computed from its fixture (the tokens of the files a correct solution must
+read), and a template that cannot reach 45k is either enlarged or reclassified as a **floor control**:
+a task that fits comfortably, where paging must be a no-op and accuracy identical. Floor controls are
+reported, never counted toward the NTR gate.
+
+- **T1**: extend from the six `bin/*.rs` to every binary plus the conformance library and the core
+  crate's public surface (~25 files), so the minimum-read bound clears the bar.
+- **T2**: digest every corpus trace (20+) individually instead of eight drop summaries, with per-drop
+  checksum verification.
+- **T4**: widen to 60 LOG rows with per-card RR header reads, or replace it with the report-versus-LOG
+  audit (every `RR-*.md` has a row and vice versa).
+
+**2. T3's checker can pass on an empty set.** The repository's spec page and the core enum agree
+exactly on the nine verbs, so the measured violator set is empty and five empty arrays would satisfy
+the checker without any reading. Freeze rule: the expected violator lists are authored, non-empty, and
+computed by a stated mechanical rule, with per-file evidence rows. A checker whose expected set is
+empty fails the freeze.
+
+**3. Freeze paths, not globs.** `packages/*/src` is exactly 20 files under the strict glob and 53 or 33
+under looser rules. Every template's fixture list is an explicit path list at T0.
+
+**4. T2's "sessions" is not derivable from rows.** Only the meta sidecar carries `sessionID`; `m1` has
+none, and `ctxvm stream` cannot help because these drops predate `environmentId`. The artefact records
+`sessions: n` where a sidecar answers it and `sessions: null` where none does, naming the sidecar.
+
+**5. A DQ trap, reproduced.** Quoting the last twelve LOG rows verbatim trips `tools/dq-secret-scan.py`:
+one row quotes the scan's own pattern list, so `path.abs_home` fires and the drop would burn. Expected
+artefacts carry ids, dates and tracks, never verbatim rows. Added to §8: **every frozen expected
+artefact must pass the scan before the first paid call.**
+
+Two details worth keeping from the same review: T1's USAGE text names `--features tiktoken`, which no
+parser arm accepts, so a doc-derived answer is wrong on that binary and the exact vector is the check;
+and error strings inside match arms (`--turn:`, `--event:`) need explicit scrub rules in the freeze.
+
 ## 4. Pressure arithmetic and expectation
 
 ```
@@ -138,7 +180,9 @@ the catalogue; pricing them at the input rate is an upper bound and must be name
 - the model row (GPT-6 Luna) and `priceModelVersion 2`;
 - `vBudget`, confirmed or raised (never lowered);
 - R and the stopping rule as already frozen;
-- the ledger's projected-cost assumption for the first run.
+- the ledger's projected-cost assumption for the first run;
+- each template's minimum-read bound and its family (pressure task or floor control);
+- the explicit fixture path list per template.
 
 ## 8. Acceptance before run #1
 
@@ -148,3 +192,4 @@ the catalogue; pricing them at the input rate is an upper bound and must be name
 4. The runner asserts safe-worker mode is off and that `context.engine` differs only between arms.
 5. `ctxvm replay` is byte-identical on every captured trace.
 6. The task texts and checkers are committed before the first paid call.
+7. Every frozen expected artefact passes `tools/dq-secret-scan.py` with zero matches.
