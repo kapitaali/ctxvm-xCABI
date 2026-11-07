@@ -7,6 +7,12 @@ the input rate — an upper bound, labelled as one.
 
 Model pinned: `gpt-6-luna` on provider `explabs`, catalogue row `OpenAI: GPT-6 Luna`
 (`benchmarks/metrics/prices.json` v2, row-013, $0.10 in / $0.50 out / $0.01 cached per 1M).
+
+Projected for the frozen grid (T1–T4 × 6 rounds × 2 arms = 48 runs, `benchmarks/w8/grid.json`):
+≈ $3.30 at the pinned row, 13% of the $25 cap. The stopping rule below is enforced in
+`tools/w8-run.py` before every run: projected = mean USD of that arm so far; stop when
+spent + 2 × projected > 25.
+
 No paid call has been made as of the row below.
 
 | # | date | arm | task | round | model | in | out | cached | USD | run total | note |
