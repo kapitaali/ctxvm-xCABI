@@ -20,3 +20,5 @@ No paid call has been made as of the row below.
 | 0 | 2026-11-07 | both | t1 | 0 | gpt-6-luna | 0 | 0 | 0 | 0.0000 | 0.0000 | dry run: zero API calls, every assertion passed, checker=PASS |
 | 1 | 2026-11-07 | naive | t1 | 1 | gpt-6-luna | 59691 | 6323 | 37302 | 0.0095 | 0.0095 | PASS; coverage ok; replay exit 0, byte-identical |
 | 2 | 2026-11-07 | paged | t1 | 1 | gpt-6-luna | 59355 | 5958 | 37298 | 0.0093 | 0.0188 | PASS; coverage ok; replay exit 0, byte-identical |
+| 1 | 2026-11-07 | naive | t1 | 1 | openai/gpt-6-luna | 1298978 | 68762 | 1229752 | 0.1766 | 0.1766 | n/a; coverage ok; replay exit 0, byte-identical |
+| 3 | 2026-11-07 | naive | t1 | 1 | openai/gpt-6-luna | 1298978 | 68762 | 1229752 | 0.1766 | 0.1954 | RE-NUMBERED: this is the re-pilot naive run the row above recorded as #1 after the runner restarted its counter; no flags.json (model declined), coverage ok, replay byte-identical. Counter + running total fixed in tools/w8-run.py. |

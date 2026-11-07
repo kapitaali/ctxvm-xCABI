@@ -221,6 +221,25 @@ def run_cell(task: str, arm: str, rnd: int, *, grid: dict, runs: Path, dry: bool
 
 # --- ledger -----------------------------------------------------------------
 
+def _ledger_state(path: Path) -> tuple[float, int]:
+    """(spent, runs) read from the ledger's existing rows."""
+    if not path.exists():
+        return 0.0, 0
+    spent, runs = 0.0, 0
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("| ") or line.startswith("| #") or line.startswith("|---"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 11 or not cells[0].isdigit():
+            continue
+        runs += 1
+        try:
+            spent = float(cells[10])
+        except ValueError:
+            pass
+    return spent, runs
+
+
 def ledger_append(path: Path, row: dict, n: int, total: float) -> None:
     if not path.exists():
         path.write_text(LEDGER_HEADER, encoding="utf-8")
@@ -264,8 +283,10 @@ def main() -> int:
     ledger = Path(args.ledger)
     if not ledger.exists():
         ledger.write_text(LEDGER_HEADER, encoding="utf-8")
-    spent = 0.0
-    n = 0
+    # The ledger is append-only across invocations: numbering and the running total
+    # continue from the rows already there (a second invocation used to restart at 1 and
+    # at 0.0000, which made the control variable lie).
+    spent, n = _ledger_state(ledger)
 
     for rnd in range(1, rounds + 1):
         for task in tasks:
