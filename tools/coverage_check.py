@@ -37,7 +37,11 @@ Shape v0.1 and what this checker proves for each claim:
                      MUTATING; identifierScan has no byte shadow yet — the
                      field documents that the scan instrumentation ran. All
                      three are lane-fixed constants for the hermes lane.
-  plugin{}           {version, harness, harnessVersion} — descriptive pairing
+  plugin{}           {version, harness, harnessVersion, engine, profile} — descriptive
+                     pairing. `engine` is the registered engine name or null, `profile`
+                     is the serving profile directory. Both are OPTIONAL in 0.1 so an
+                     older sidecar still validates, but a W8 cell REQUIRES them: without
+                     them a capture cannot be attributed to an arm after the fact.
                      facts, asserted present and typed only.
   captures{}         counts that must match observation exactly: turns
                      (distinct turn.render boundaries), pages (distinct
@@ -319,6 +323,11 @@ def main(argv: list) -> int:
             _fail(violations, "plugin", "plugin.version must be a non-empty string")
         if not (isinstance(plugin.get("harness"), str) and plugin["harness"].strip()):
             _fail(violations, "plugin", "plugin.harness must be a non-empty string")
+        for key in ("engine", "profile"):
+            if key in plugin:
+                value = plugin[key]
+                if value is not None and not (isinstance(value, str) and value.strip()):
+                    _fail(violations, "plugin", f"plugin.{key} must be a name or null")
         hv = plugin.get("harnessVersion")
         if hv is not None and not isinstance(hv, str):
             _fail(violations, "plugin", "plugin.harnessVersion must be a string or null")

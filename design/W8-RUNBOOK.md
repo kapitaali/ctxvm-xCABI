@@ -92,7 +92,7 @@ STEP 1 — PRE-FLIGHT, zero spend, all of it recorded:
     git status --short                        (must be clean; if not, report and stop)
     for a in naive paged; do HERMES_HOME=~/.hermes/profiles/w8-$a \
         hermes config get model.provider; done          -> both must print nous
-    grep -m1 PLUGIN_VERSION ~/.hermes/plugins/ctxvm-tracer/__init__.py -> 0.10.3
+    grep -m1 PLUGIN_VERSION ~/.hermes/plugins/ctxvm-tracer/__init__.py -> 0.10.4
     tail -3 reports/W8-SPEND.md               (running total vs the $25 cap)
   A model, provider or plugin change between chunks is an AMENDMENT, not a detail: report
   it and stop unless the owner has already ratified it for this chunk.
@@ -140,6 +140,8 @@ STEP 4 — CLOSE THE CHUNK:
 - Drift in model, provider, plugin version or commit between chunks -> stop, report.
 - A cell's capture fails coverage_check or replay -> stop after quarantining, report; do
   not continue the chunk with a broken instrument.
+- A cell's capture reports `plugin.engine` that does not match its arm (paged must read
+  "ctxvm", naive must read null) -> stop: the arm did not run, whatever the ledger says.
 - The checker fails on BOTH arms in a cell for the same reason -> stop: that is a fixture
   or checker defect, not an arm result.
 - The same cell aborts twice for the same infrastructure reason -> stop, report BLOCKED.

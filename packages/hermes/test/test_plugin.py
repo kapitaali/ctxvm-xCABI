@@ -1724,6 +1724,14 @@ class CoverageManifestTests(unittest.TestCase):
                 "faultsBySource": {"tool_recall": 0, "identifier_scan": 1,
                                    "explicit_api": 0, "semantic": 0},
             })
+            # Arm identity: the sidecar must say which profile served the session and
+            # which engine, if any, was registered. Without it a capture cannot be
+            # attributed to an arm after the fact — the pilot's sidecars carried neither,
+            # so a silent profile miss would have looked exactly like a paged run.
+            self.assertIn("engine", manifest["plugin"])
+            self.assertIn("profile", manifest["plugin"])
+            self.assertIsNone(manifest["plugin"]["engine"],
+                              "no engine registers outside the hermes runtime")
             result = self._checker(tmp, "cov.jsonl", "cov.coverage.json")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         finally:

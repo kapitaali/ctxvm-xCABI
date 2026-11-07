@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.10.3"
+PLUGIN_VERSION = "0.10.4"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -480,6 +480,14 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             "version": PLUGIN_VERSION,
             "harness": "hermes-python-plugin",
             "harnessVersion": os.environ.get("CTXVM_HERMES_VERSION"),
+            # Arm identity (2026-11-07). The experiment's two arms differ only by the
+            # profile's context.engine, and a capture that does not say which engine was
+            # registered cannot be attributed afterwards — the pilot's sidecars carried no
+            # such field, so a silent profile miss would have produced a full set of
+            # "paged" runs that were naive runs. `engine` is the registered engine's name
+            # or None; `profile` is the profile directory that served the session.
+            "engine": _state().get("engine_registered"),
+            "profile": os.path.basename(os.environ.get("HERMES_HOME", "")) or None,
         },
         "captures": {
             "turns": len(turns),
