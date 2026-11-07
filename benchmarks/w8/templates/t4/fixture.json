@@ -1,0 +1,7 @@
+{
+  "artefact": "release.md",
+  "_note": "T4 fixture \u2014 the report index itself. The audit is internal to LOG.md: order, duplicates, id/date/track derivation over all 162 rows. No RR file is read, so no row prose and no /home path can enter the artefact (the DQ trap of \u00a73b finding 5).",
+  "files": [
+    "reports/LOG.md"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "_note": "T1 fixture \u2014 explicit path lists, never globs (w8-run-plan.md \u00a73b finding 3). Twenty files: six binaries, the three conformance-library modules, the seven ctxvm-core modules, the three ctxvm-codec modules, and the tokenizer crate the tokens binary dispatches to.",
+  "binaries": [
+    "rust/crates/ctxvm-conformance/src/bin/replay.rs",
+    "rust/crates/ctxvm-conformance/src/bin/diff.rs",
+    "rust/crates/ctxvm-conformance/src/bin/profile.rs",
+    "rust/crates/ctxvm-conformance/src/bin/export.rs",
+    "rust/crates/ctxvm-conformance/src/bin/stream.rs",
+    "rust/crates/ctxvm-conformance/src/bin/tokens.rs"
+  ],
+  "files": [
+    "rust/crates/ctxvm-conformance/src/bin/replay.rs",
+    "rust/crates/ctxvm-conformance/src/bin/diff.rs",
+    "rust/crates/ctxvm-conformance/src/bin/profile.rs",
+    "rust/crates/ctxvm-conformance/src/bin/export.rs",
+    "rust/crates/ctxvm-conformance/src/bin/stream.rs",
+    "rust/crates/ctxvm-conformance/src/bin/tokens.rs",
+    "rust/crates/ctxvm-conformance/src/cli.rs",
+    "rust/crates/ctxvm-conformance/src/lib.rs",
+    "rust/crates/ctxvm-conformance/src/stream.rs",
+    "rust/crates/ctxvm-core/src/lib.rs",
+    "rust/crates/ctxvm-core/src/replay.rs",
+    "rust/crates/ctxvm-core/src/diff.rs",
+    "rust/crates/ctxvm-core/src/profile.rs",
+    "rust/crates/ctxvm-core/src/export.rs",
+    "rust/crates/ctxvm-core/src/render.rs",
+    "rust/crates/ctxvm-core/src/page_table.rs",
+    "rust/crates/ctxvm-codec/src/lib.rs",
+    "rust/crates/ctxvm-codec/src/model.rs",
+    "rust/crates/ctxvm-codec/src/jsonl.rs",
+    "rust/crates/ctxvm-tokenizer/src/lib.rs"
+  ],
+  "artefact": "flags.json"
+}

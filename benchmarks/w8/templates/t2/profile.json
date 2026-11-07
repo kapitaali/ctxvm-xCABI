@@ -1,0 +1,281 @@
+{
+  "template": "t2",
+  "family": "pressure",
+  "thresholdTokens": 45000,
+  "minReadTokens": 47821,
+  "expectedPages": 67,
+  "pageCapTokens": 1500,
+  "artefact": "drops.json",
+  "files": [
+    {
+      "path": "04-odps-dataproduct-corpus.yaml",
+      "apx4Tokens": 2745,
+      "parts": 2
+    },
+    {
+      "path": "corpus/m1/README.md",
+      "apx4Tokens": 288,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m1/checksums.sha256",
+      "apx4Tokens": 110,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m1/opencode-echo.jsonl",
+      "apx4Tokens": 556,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m1/provenance.json",
+      "apx4Tokens": 571,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m1/session-healthy.jsonl",
+      "apx4Tokens": 371,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m1/session-thrashing.jsonl",
+      "apx4Tokens": 1422,
+      "parts": 2
+    },
+    {
+      "path": "corpus/m1/tracer-healthy.jsonl",
+      "apx4Tokens": 505,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m1/tracer-recall.jsonl",
+      "apx4Tokens": 638,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m2/README.md",
+      "apx4Tokens": 750,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m2/checksums.sha256",
+      "apx4Tokens": 85,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m2/live-echo.jsonl",
+      "apx4Tokens": 773,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m2/live-echo.meta.json",
+      "apx4Tokens": 136,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m2/live-thrash.jsonl",
+      "apx4Tokens": 1119,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m2/live-thrash.meta.json",
+      "apx4Tokens": 137,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m2/provenance.json",
+      "apx4Tokens": 877,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m3/README.md",
+      "apx4Tokens": 696,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m3/checksums.sha256",
+      "apx4Tokens": 97,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m3/hermes-echo-synthetic.jsonl",
+      "apx4Tokens": 762,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m3/hermes-echo-synthetic.meta.json",
+      "apx4Tokens": 140,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m3/hermes-thrash-synthetic.jsonl",
+      "apx4Tokens": 954,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m3/hermes-thrash-synthetic.meta.json",
+      "apx4Tokens": 142,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m3/provenance.json",
+      "apx4Tokens": 876,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m4/README.md",
+      "apx4Tokens": 1005,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m4/checksums.sha256",
+      "apx4Tokens": 49,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m4/hermes-live-session-01.jsonl",
+      "apx4Tokens": 1244,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m4/hermes-live-session-01.meta.json",
+      "apx4Tokens": 210,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m4/provenance.json",
+      "apx4Tokens": 1202,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m5/README.md",
+      "apx4Tokens": 1428,
+      "parts": 2
+    },
+    {
+      "path": "corpus/m5/checksums.sha256",
+      "apx4Tokens": 50,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m5/opencode-live-session-01.jsonl",
+      "apx4Tokens": 4070,
+      "parts": 3
+    },
+    {
+      "path": "corpus/m5/opencode-live-session-01.meta.json",
+      "apx4Tokens": 136,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m5/provenance.json",
+      "apx4Tokens": 1658,
+      "parts": 2
+    },
+    {
+      "path": "corpus/m6/README.md",
+      "apx4Tokens": 1904,
+      "parts": 2
+    },
+    {
+      "path": "corpus/m6/checksums.sha256",
+      "apx4Tokens": 260,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m6/opencode-pause-session-a.jsonl",
+      "apx4Tokens": 1144,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m6/opencode-pause-session-a.meta.json",
+      "apx4Tokens": 153,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m6/opencode-resume-session-b.jsonl",
+      "apx4Tokens": 437,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m6/opencode-resume-session-b.meta.json",
+      "apx4Tokens": 287,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m6/provenance.json",
+      "apx4Tokens": 2213,
+      "parts": 2
+    },
+    {
+      "path": "corpus/m7/README.md",
+      "apx4Tokens": 2704,
+      "parts": 2
+    },
+    {
+      "path": "corpus/m7/checksums.sha256",
+      "apx4Tokens": 258,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m7/hermes-pause-session-a.jsonl",
+      "apx4Tokens": 1541,
+      "parts": 2
+    },
+    {
+      "path": "corpus/m7/hermes-pause-session-a.meta.json",
+      "apx4Tokens": 214,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m7/hermes-resume-session-b.jsonl",
+      "apx4Tokens": 2131,
+      "parts": 2
+    },
+    {
+      "path": "corpus/m7/hermes-resume-session-b.meta.json",
+      "apx4Tokens": 388,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m7/provenance.json",
+      "apx4Tokens": 3811,
+      "parts": 3
+    },
+    {
+      "path": "corpus/m8/README.md",
+      "apx4Tokens": 1141,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m8/checksums.sha256",
+      "apx4Tokens": 85,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m8/live-echo.jsonl",
+      "apx4Tokens": 1006,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m8/live-echo.meta.json",
+      "apx4Tokens": 161,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m8/live-thrash.jsonl",
+      "apx4Tokens": 699,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m8/live-thrash.meta.json",
+      "apx4Tokens": 159,
+      "parts": 1
+    },
+    {
+      "path": "corpus/m8/provenance.json",
+      "apx4Tokens": 1323,
+      "parts": 1
+    }
+  ]
+}

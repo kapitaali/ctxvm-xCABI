@@ -1,0 +1,26 @@
+{
+  "artefact": "deltas.json",
+  "_note": "T3 fixture \u2014 the strict 20-file set under packages/*/src, enumerated (the looser globs give 53 or 33; the plan freezes the 20).",
+  "files": [
+    "packages/ai-sdk/src/contract.ts",
+    "packages/ai-sdk/src/flush.ts",
+    "packages/ai-sdk/src/index.ts",
+    "packages/ai-sdk/src/middleware.ts",
+    "packages/ai-sdk/src/resume-brief.ts",
+    "packages/ai-sdk/src/tap.ts",
+    "packages/ai-sdk/src/uc1-handoff.ts",
+    "packages/hermes/src/plugin.py",
+    "packages/hermes/src/uc1_handoff.py",
+    "packages/hermes/src/uc2_forensics.py",
+    "packages/hermes/src/uc3_planner.py",
+    "packages/hermes/src/uc_registry.py",
+    "packages/node/src/ident.ts",
+    "packages/node/src/index.ts",
+    "packages/node/src/tracer.ts",
+    "packages/opencode/src/opencode-contract.ts",
+    "packages/opencode/src/plugin.ts",
+    "packages/opencode/src/resume-brief.ts",
+    "packages/opencode/src/uc1-handoff.ts",
+    "packages/opencode/src/uc2-forensics.ts"
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "specSource": "02-xcabi-events-v0.md",
+  "filesExamined": 20,
+  "behaviours": [
+    {
+      "id": "B1",
+      "behaviour": "Strict codec: a module that parses trace JSON must reject unknown fields, so it must declare an allowlist.",
+      "predicate": "JSON.parse | json.loads  \u21d2  allowlist | ALLOW",
+      "examined": 20,
+      "violators": [
+        {
+          "file": "packages/ai-sdk/src/flush.ts",
+          "trigger": "JSON.parse"
+        },
+        {
+          "file": "packages/ai-sdk/src/resume-brief.ts",
+          "trigger": "JSON.parse"
+        },
+        {
+          "file": "packages/ai-sdk/src/uc1-handoff.ts",
+          "trigger": "JSON.parse"
+        },
+        {
+          "file": "packages/hermes/src/uc1_handoff.py",
+          "trigger": "json.loads"
+        },
+        {
+          "file": "packages/hermes/src/uc2_forensics.py",
+          "trigger": "json.loads"
+        },
+        {
+          "file": "packages/opencode/src/resume-brief.ts",
+          "trigger": "JSON.parse"
+        },
+        {
+          "file": "packages/opencode/src/uc1-handoff.ts",
+          "trigger": "JSON.parse"
+        },
+        {
+          "file": "packages/opencode/src/uc2-forensics.ts",
+          "trigger": "JSON.parse"
+        }
+      ],
+      "violatorCount": 8
+    },
+    {
+      "id": "B2",
+      "behaviour": "Wire order: a module that reads providerUsage must also read latencyMs.",
+      "predicate": "providerUsage  \u21d2  latencyMs",
+      "examined": 20,
+      "violators": [
+        {
+          "file": "packages/ai-sdk/src/tap.ts",
+          "trigger": "providerUsage"
+        }
+      ],
+      "violatorCount": 1
+    },
+    {
+      "id": "B3",
+      "behaviour": "Every trace line carries schemaVersion: a module that emits a line must name it.",
+      "predicate": "page.declare | turn.render  \u21d2  schemaVersion",
+      "examined": 20,
+      "violators": [
+        {
+          "file": "packages/ai-sdk/src/flush.ts",
+          "trigger": "page.declare"
+        },
+        {
+          "file": "packages/ai-sdk/src/uc1-handoff.ts",
+          "trigger": "turn.render"
+        },
+        {
+          "file": "packages/hermes/src/uc1_handoff.py",
+          "trigger": "turn.render"
+        },
+        {
+          "file": "packages/node/src/index.ts",
+          "trigger": "turn.render"
+        },
+        {
+          "file": "packages/opencode/src/uc1-handoff.ts",
+          "trigger": "turn.render"
+        }
+      ],
+      "violatorCount": 5
+    },
+    {
+      "id": "B4",
+      "behaviour": "Fault taxonomy: a module that handles page.fault must name an RFC-0.1 fault source.",
+      "predicate": "page.fault  \u21d2  identifier_scan | tool_recall",
+      "examined": 20,
+      "violators": [
+        {
+          "file": "packages/opencode/src/uc2-forensics.ts",
+          "trigger": "page.fault"
+        }
+      ],
+      "violatorCount": 1
+    },
+    {
+      "id": "B5",
+      "behaviour": "Eviction tally: a module that handles page.evict must name evictedTokens.",
+      "predicate": "page.evict  \u21d2  evictedTokens",
+      "examined": 20,
+      "violators": [
+        {
+          "file": "packages/ai-sdk/src/index.ts",
+          "trigger": "page.evict"
+        },
+        {
+          "file": "packages/ai-sdk/src/resume-brief.ts",
+          "trigger": "page.evict"
+        },
+        {
+          "file": "packages/hermes/src/uc2_forensics.py",
+          "trigger": "page.evict"
+        },
+        {
+          "file": "packages/opencode/src/resume-brief.ts",
+          "trigger": "page.evict"
+        },
+        {
+          "file": "packages/opencode/src/uc2-forensics.ts",
+          "trigger": "page.evict"
+        }
+      ],
+      "violatorCount": 5
+    }
+  ]
+}

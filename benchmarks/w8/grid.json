@@ -1,0 +1,14 @@
+{
+  "_note": "W8 grid — one factor (context.engine), one model, six templates, R rounds, alternating arms per task. Model id is the provider's wire id confirmed against https://api.experientiallabs.ai/v1/models on 2026-11-07 (context_window 1,050,000; $0.10 in / $0.50 out / $0.01 cached per 1M). catalogueModel is the name the pinned price catalogue uses (row-013).",
+  "model": "gpt-6-luna",
+  "catalogueModel": "GPT-6 Luna",
+  "provider": "explabs",
+  "toolsets": "file",
+  "rounds": 3,
+  "vbudget": 24000,
+  "budgetTokens": 200000,
+  "capUsd": 25,
+  "tasks": ["t1", "t2", "t3", "t4"],
+  "pools": ["/tmp/w8/traces", "~/.local/state/ctxvm/traces"],
+  "runs": "/tmp/w8/runs"
+}

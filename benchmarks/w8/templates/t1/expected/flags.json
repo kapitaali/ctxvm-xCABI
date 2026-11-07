@@ -1,0 +1,521 @@
+{
+  "binaries": [
+    {
+      "binary": "replay.rs",
+      "flags": [
+        "--help",
+        "--turn",
+        "--pin",
+        "--output"
+      ],
+      "coreFunction": "cli::replay_core"
+    },
+    {
+      "binary": "diff.rs",
+      "flags": [
+        "--help",
+        "--output"
+      ],
+      "coreFunction": "cli::diff_core"
+    },
+    {
+      "binary": "profile.rs",
+      "flags": [
+        "--help",
+        "--event",
+        "--turns",
+        "--source",
+        "--output"
+      ],
+      "coreFunction": "cli::profile_core"
+    },
+    {
+      "binary": "export.rs",
+      "flags": [
+        "--help",
+        "--odps",
+        "--force",
+        "--turn",
+        "--output"
+      ],
+      "coreFunction": "cli::export_core"
+    },
+    {
+      "binary": "stream.rs",
+      "flags": [
+        "--json",
+        "--help"
+      ],
+      "coreFunction": null
+    },
+    {
+      "binary": "tokens.rs",
+      "flags": [
+        "--tokenizer",
+        "--file",
+        "--help"
+      ],
+      "coreFunction": null
+    }
+  ],
+  "publicSurface": [
+    {
+      "file": "rust/crates/ctxvm-conformance/src/bin/replay.rs",
+      "items": []
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/bin/diff.rs",
+      "items": []
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/bin/profile.rs",
+      "items": []
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/bin/export.rs",
+      "items": []
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/bin/stream.rs",
+      "items": []
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/bin/tokens.rs",
+      "items": []
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/cli.rs",
+      "items": [
+        {
+          "kind": "const",
+          "name": "EVENT_TYPES"
+        },
+        {
+          "kind": "const",
+          "name": "SOURCES"
+        },
+        {
+          "kind": "const",
+          "name": "SOURCES_STR"
+        },
+        {
+          "kind": "fn",
+          "name": "parse_source"
+        },
+        {
+          "kind": "struct",
+          "name": "CliOutcome"
+        },
+        {
+          "kind": "fn",
+          "name": "replay_core"
+        },
+        {
+          "kind": "fn",
+          "name": "profile_core"
+        },
+        {
+          "kind": "fn",
+          "name": "diff_core"
+        },
+        {
+          "kind": "struct",
+          "name": "Artifact"
+        },
+        {
+          "kind": "fn",
+          "name": "export_core"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/lib.rs",
+      "items": [
+        {
+          "kind": "const",
+          "name": "EXPECTED_TAGS"
+        },
+        {
+          "kind": "mod",
+          "name": "cli"
+        },
+        {
+          "kind": "mod",
+          "name": "stream"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-conformance/src/stream.rs",
+      "items": [
+        {
+          "kind": "struct",
+          "name": "SessionRow"
+        },
+        {
+          "kind": "fn",
+          "name": "session_row"
+        },
+        {
+          "kind": "fn",
+          "name": "expand"
+        },
+        {
+          "kind": "fn",
+          "name": "collect"
+        },
+        {
+          "kind": "fn",
+          "name": "groups"
+        },
+        {
+          "kind": "fn",
+          "name": "render_text"
+        },
+        {
+          "kind": "fn",
+          "name": "render_json"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/lib.rs",
+      "items": [
+        {
+          "kind": "mod",
+          "name": "page_table"
+        },
+        {
+          "kind": "mod",
+          "name": "render"
+        },
+        {
+          "kind": "mod",
+          "name": "replay"
+        },
+        {
+          "kind": "mod",
+          "name": "profile"
+        },
+        {
+          "kind": "mod",
+          "name": "diff"
+        },
+        {
+          "kind": "mod",
+          "name": "export"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/replay.rs",
+      "items": [
+        {
+          "kind": "enum",
+          "name": "Divergence"
+        },
+        {
+          "kind": "struct",
+          "name": "ReplayReport"
+        },
+        {
+          "kind": "fn",
+          "name": "replay"
+        },
+        {
+          "kind": "fn",
+          "name": "replay_turn"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/diff.rs",
+      "items": [
+        {
+          "kind": "fn",
+          "name": "event_turn"
+        },
+        {
+          "kind": "enum",
+          "name": "TraceRelation"
+        },
+        {
+          "kind": "struct",
+          "name": "PageOnly"
+        },
+        {
+          "kind": "struct",
+          "name": "DivergentHash"
+        },
+        {
+          "kind": "struct",
+          "name": "TallyMismatch"
+        },
+        {
+          "kind": "struct",
+          "name": "TraceDiff"
+        },
+        {
+          "kind": "fn",
+          "name": "diff_traces"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/profile.rs",
+      "items": [
+        {
+          "kind": "struct",
+          "name": "PageProfile"
+        },
+        {
+          "kind": "struct",
+          "name": "ProfileSummary"
+        },
+        {
+          "kind": "struct",
+          "name": "FaultRow"
+        },
+        {
+          "kind": "struct",
+          "name": "EvictRow"
+        },
+        {
+          "kind": "struct",
+          "name": "ProfileReport"
+        },
+        {
+          "kind": "fn",
+          "name": "profile"
+        },
+        {
+          "kind": "fn",
+          "name": "turn_windows"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/export.rs",
+      "items": [
+        {
+          "kind": "fn",
+          "name": "handoff_prefix"
+        },
+        {
+          "kind": "const",
+          "name": "REDACTION_PATTERNS"
+        },
+        {
+          "kind": "struct",
+          "name": "RedactionHit"
+        },
+        {
+          "kind": "fn",
+          "name": "scan_redaction"
+        },
+        {
+          "kind": "struct",
+          "name": "HandoffKpis"
+        },
+        {
+          "kind": "struct",
+          "name": "HandoffSnapshot"
+        },
+        {
+          "kind": "fn",
+          "name": "build_handoff_snapshot"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/render.rs",
+      "items": [
+        {
+          "kind": "struct",
+          "name": "Slot"
+        },
+        {
+          "kind": "struct",
+          "name": "TurnTally"
+        },
+        {
+          "kind": "struct",
+          "name": "TurnProjection"
+        },
+        {
+          "kind": "fn",
+          "name": "derive_projection"
+        },
+        {
+          "kind": "struct",
+          "name": "ForcedResident"
+        },
+        {
+          "kind": "enum",
+          "name": "Pin"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-core/src/page_table.rs",
+      "items": [
+        {
+          "kind": "type",
+          "name": "PageKey"
+        },
+        {
+          "kind": "struct",
+          "name": "Violation"
+        },
+        {
+          "kind": "enum",
+          "name": "ViolationKind"
+        },
+        {
+          "kind": "struct",
+          "name": "PageTrack"
+        },
+        {
+          "kind": "struct",
+          "name": "Playback"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-codec/src/lib.rs",
+      "items": [
+        {
+          "kind": "mod",
+          "name": "jsonl"
+        },
+        {
+          "kind": "mod",
+          "name": "model"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-codec/src/model.rs",
+      "items": [
+        {
+          "kind": "struct",
+          "name": "PageId"
+        },
+        {
+          "kind": "enum",
+          "name": "PageKind"
+        },
+        {
+          "kind": "enum",
+          "name": "RenderMode"
+        },
+        {
+          "kind": "enum",
+          "name": "FaultSource"
+        },
+        {
+          "kind": "enum",
+          "name": "ToolEffect"
+        },
+        {
+          "kind": "struct",
+          "name": "ProviderUsage"
+        },
+        {
+          "kind": "struct",
+          "name": "PageRef"
+        },
+        {
+          "kind": "struct",
+          "name": "CacheEstimate"
+        },
+        {
+          "kind": "struct",
+          "name": "PrefixCost"
+        },
+        {
+          "kind": "enum",
+          "name": "Event"
+        },
+        {
+          "kind": "fn",
+          "name": "schema_version_of"
+        },
+        {
+          "kind": "fn",
+          "name": "check_version"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-codec/src/jsonl.rs",
+      "items": [
+        {
+          "kind": "struct",
+          "name": "CodecError"
+        },
+        {
+          "kind": "fn",
+          "name": "parse_line"
+        },
+        {
+          "kind": "fn",
+          "name": "read_jsonl"
+        },
+        {
+          "kind": "fn",
+          "name": "to_line"
+        },
+        {
+          "kind": "fn",
+          "name": "write_jsonl"
+        }
+      ]
+    },
+    {
+      "file": "rust/crates/ctxvm-tokenizer/src/lib.rs",
+      "items": [
+        {
+          "kind": "mod",
+          "name": "tokens_source"
+        },
+        {
+          "kind": "const",
+          "name": "APX4_CHAR"
+        },
+        {
+          "kind": "const",
+          "name": "TIKTOKEN_O200K_BASE"
+        },
+        {
+          "kind": "const",
+          "name": "TIKTOKEN_CL100K_BASE"
+        },
+        {
+          "kind": "fn",
+          "name": "apx4"
+        },
+        {
+          "kind": "trait",
+          "name": "Tokenizer"
+        },
+        {
+          "kind": "struct",
+          "name": "Apx4Char"
+        },
+        {
+          "kind": "fn",
+          "name": "known_ids"
+        },
+        {
+          "kind": "fn",
+          "name": "for_id"
+        },
+        {
+          "kind": "fn",
+          "name": "is_known_id"
+        }
+      ]
+    }
+  ]
+}

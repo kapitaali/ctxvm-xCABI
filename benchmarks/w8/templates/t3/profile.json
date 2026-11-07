@@ -1,0 +1,111 @@
+{
+  "template": "t3",
+  "family": "pressure",
+  "thresholdTokens": 45000,
+  "minReadTokens": 57059,
+  "expectedPages": 51,
+  "pageCapTokens": 1500,
+  "artefact": "deltas.json",
+  "files": [
+    {
+      "path": "packages/ai-sdk/src/contract.ts",
+      "apx4Tokens": 805,
+      "parts": 1
+    },
+    {
+      "path": "packages/ai-sdk/src/flush.ts",
+      "apx4Tokens": 2051,
+      "parts": 2
+    },
+    {
+      "path": "packages/ai-sdk/src/index.ts",
+      "apx4Tokens": 2917,
+      "parts": 3
+    },
+    {
+      "path": "packages/ai-sdk/src/middleware.ts",
+      "apx4Tokens": 558,
+      "parts": 1
+    },
+    {
+      "path": "packages/ai-sdk/src/resume-brief.ts",
+      "apx4Tokens": 2140,
+      "parts": 2
+    },
+    {
+      "path": "packages/ai-sdk/src/tap.ts",
+      "apx4Tokens": 1826,
+      "parts": 2
+    },
+    {
+      "path": "packages/ai-sdk/src/uc1-handoff.ts",
+      "apx4Tokens": 6742,
+      "parts": 5
+    },
+    {
+      "path": "packages/hermes/src/plugin.py",
+      "apx4Tokens": 8987,
+      "parts": 7
+    },
+    {
+      "path": "packages/hermes/src/uc1_handoff.py",
+      "apx4Tokens": 6350,
+      "parts": 5
+    },
+    {
+      "path": "packages/hermes/src/uc2_forensics.py",
+      "apx4Tokens": 2736,
+      "parts": 2
+    },
+    {
+      "path": "packages/hermes/src/uc3_planner.py",
+      "apx4Tokens": 178,
+      "parts": 1
+    },
+    {
+      "path": "packages/hermes/src/uc_registry.py",
+      "apx4Tokens": 780,
+      "parts": 1
+    },
+    {
+      "path": "packages/node/src/ident.ts",
+      "apx4Tokens": 735,
+      "parts": 1
+    },
+    {
+      "path": "packages/node/src/index.ts",
+      "apx4Tokens": 317,
+      "parts": 1
+    },
+    {
+      "path": "packages/node/src/tracer.ts",
+      "apx4Tokens": 6032,
+      "parts": 5
+    },
+    {
+      "path": "packages/opencode/src/opencode-contract.ts",
+      "apx4Tokens": 802,
+      "parts": 1
+    },
+    {
+      "path": "packages/opencode/src/plugin.ts",
+      "apx4Tokens": 1727,
+      "parts": 2
+    },
+    {
+      "path": "packages/opencode/src/resume-brief.ts",
+      "apx4Tokens": 1969,
+      "parts": 2
+    },
+    {
+      "path": "packages/opencode/src/uc1-handoff.ts",
+      "apx4Tokens": 6624,
+      "parts": 5
+    },
+    {
+      "path": "packages/opencode/src/uc2-forensics.ts",
+      "apx4Tokens": 2783,
+      "parts": 2
+    }
+  ]
+}

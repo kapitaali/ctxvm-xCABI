@@ -1,0 +1,16 @@
+{
+  "template": "t4",
+  "family": "pressure",
+  "thresholdTokens": 45000,
+  "minReadTokens": 53093,
+  "expectedPages": 46,
+  "pageCapTokens": 1500,
+  "artefact": "release.md",
+  "files": [
+    {
+      "path": "reports/LOG.md",
+      "apx4Tokens": 53093,
+      "parts": 46
+    }
+  ]
+}

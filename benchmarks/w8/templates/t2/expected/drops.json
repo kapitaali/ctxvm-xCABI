@@ -1,0 +1,253 @@
+{
+  "drops": [
+    {
+      "drop": "m1",
+      "files": [
+        {
+          "name": "opencode-echo.jsonl",
+          "sha256": "b66e48e30fb9afbd3f657290c0c62a7d70bf9b9fe87769ad0f207fdd013c9437",
+          "checksumStatus": "verified"
+        },
+        {
+          "name": "session-healthy.jsonl",
+          "sha256": "52a0cdccb176ac997bbfb2f60c3b1fdcda08c3a5b46a4d638dc10122fb4a46ae",
+          "checksumStatus": "verified"
+        },
+        {
+          "name": "session-thrashing.jsonl",
+          "sha256": "3a2f6daeabd91eff49b7c5e6eb35e03c2296515545d873c41af1e501fad5ea51",
+          "checksumStatus": "verified"
+        },
+        {
+          "name": "tracer-healthy.jsonl",
+          "sha256": "50593d9848489cc7f00db0eaf90096762b3614e98d47bcc8646c75249614931b",
+          "checksumStatus": "verified"
+        },
+        {
+          "name": "tracer-recall.jsonl",
+          "sha256": "69d037e60a2eb0481bf333bbe709b4db2be69336a330b4e49fc5a3dac3daaa4c",
+          "checksumStatus": "verified"
+        }
+      ],
+      "eventsByType": {
+        "call.meta": 15,
+        "page.declare": 13,
+        "page.evict": 4,
+        "page.fault": 9,
+        "page.pin": 1,
+        "page.render": 31,
+        "page.unpin": 1,
+        "session.open": 5,
+        "turn.render": 26
+      },
+      "totalEvents": 105,
+      "pages": 13,
+      "faultsBySource": {
+        "identifier_scan": 5,
+        "tool_recall": 4
+      },
+      "sessions": null,
+      "sessionsSource": "no .meta.json sidecar (checked: README.md, checksums.sha256, opencode-echo.jsonl, provenance.json, session-healthy.jsonl, session-thrashing.jsonl, tracer-healthy.jsonl, tracer-recall.jsonl)"
+    },
+    {
+      "drop": "m2",
+      "files": [
+        {
+          "name": "live-echo.jsonl",
+          "sha256": "05dec804b98b0a81a671bc0a99c55a175401f0a02bb3415237c2fbbd7c80a683",
+          "checksumStatus": "verified"
+        },
+        {
+          "name": "live-thrash.jsonl",
+          "sha256": "8b5d71fb33c883be2f53eba333a6d9b37df090c04115c498524ddd22f631e389",
+          "checksumStatus": "verified"
+        }
+      ],
+      "eventsByType": {
+        "call.meta": 12,
+        "page.declare": 8,
+        "page.fault": 13,
+        "page.render": 8,
+        "session.open": 2,
+        "turn.render": 12
+      },
+      "totalEvents": 55,
+      "pages": 8,
+      "faultsBySource": {
+        "identifier_scan": 7,
+        "tool_recall": 6
+      },
+      "sessions": 2,
+      "sessionsSource": "live-echo.meta.json, live-thrash.meta.json"
+    },
+    {
+      "drop": "m3",
+      "files": [
+        {
+          "name": "hermes-echo-synthetic.jsonl",
+          "sha256": "14297728f8f504ad543b4d98b6fef735dd8b0dc3eb104af11fec41e66b2145bc",
+          "checksumStatus": "verified"
+        },
+        {
+          "name": "hermes-thrash-synthetic.jsonl",
+          "sha256": "361835f6dc42e5e96273f25b4b89df6f26d29db5694bdad472c860713a98d2c5",
+          "checksumStatus": "verified"
+        }
+      ],
+      "eventsByType": {
+        "call.meta": 10,
+        "page.declare": 8,
+        "page.fault": 8,
+        "page.render": 8,
+        "session.open": 2,
+        "turn.render": 10
+      },
+      "totalEvents": 46,
+      "pages": 8,
+      "faultsBySource": {
+        "identifier_scan": 2,
+        "tool_recall": 6
+      },
+      "sessions": 2,
+      "sessionsSource": "hermes-echo-synthetic.meta.json, hermes-thrash-synthetic.meta.json"
+    },
+    {
+      "drop": "m4",
+      "files": [
+        {
+          "name": "hermes-live-session-01.jsonl",
+          "sha256": "4913b738ea1594ee28720ea0a559f68df84298133cfa1da2c2532400984de453",
+          "checksumStatus": "verified"
+        }
+      ],
+      "eventsByType": {
+        "call.meta": 2,
+        "page.declare": 13,
+        "page.fault": 1,
+        "page.render": 4,
+        "session.open": 1,
+        "turn.render": 2
+      },
+      "totalEvents": 23,
+      "pages": 13,
+      "faultsBySource": {
+        "tool_recall": 1
+      },
+      "sessions": 1,
+      "sessionsSource": "hermes-live-session-01.meta.json"
+    },
+    {
+      "drop": "m5",
+      "files": [
+        {
+          "name": "opencode-live-session-01.jsonl",
+          "sha256": "738a0a6aaecb74e4908c9cc2594311bbcf6cbb9af63548da071203989622c370",
+          "checksumStatus": "verified"
+        }
+      ],
+      "eventsByType": {
+        "call.meta": 14,
+        "page.declare": 17,
+        "page.fault": 17,
+        "page.render": 17,
+        "session.open": 1,
+        "turn.render": 14
+      },
+      "totalEvents": 80,
+      "pages": 17,
+      "faultsBySource": {
+        "identifier_scan": 17
+      },
+      "sessions": 1,
+      "sessionsSource": "opencode-live-session-01.meta.json"
+    },
+    {
+      "drop": "m6",
+      "files": [
+        {
+          "name": "opencode-pause-session-a.jsonl",
+          "sha256": "d2dce2adba2575973e874c580385b700076c603d637139baaa418603dc97cb38",
+          "checksumStatus": "verified"
+        },
+        {
+          "name": "opencode-resume-session-b.jsonl",
+          "sha256": "3073c226791110ba4ec3b82f0d3817ad7c0af01b37026630a8228ddf2483bbec",
+          "checksumStatus": "verified"
+        }
+      ],
+      "eventsByType": {
+        "call.meta": 10,
+        "page.declare": 8,
+        "page.fault": 7,
+        "page.render": 8,
+        "session.open": 2,
+        "turn.render": 10
+      },
+      "totalEvents": 45,
+      "pages": 8,
+      "faultsBySource": {
+        "identifier_scan": 7
+      },
+      "sessions": 2,
+      "sessionsSource": "opencode-pause-session-a.meta.json, opencode-resume-session-b.meta.json"
+    },
+    {
+      "drop": "m7",
+      "files": [
+        {
+          "name": "hermes-pause-session-a.jsonl",
+          "sha256": "a09aab8fd4f98b375a22fc56adbae8dfc325a574d7b5b3c0264b165013e2c74d",
+          "checksumStatus": "verified"
+        },
+        {
+          "name": "hermes-resume-session-b.jsonl",
+          "sha256": "1ff8c48304bfb3347ea73fd79e17c70a74a0be74b3012e1b90a9c0c0682ff3bf",
+          "checksumStatus": "verified"
+        }
+      ],
+      "eventsByType": {
+        "call.meta": 6,
+        "page.declare": 45,
+        "page.render": 10,
+        "session.open": 2,
+        "turn.render": 6
+      },
+      "totalEvents": 69,
+      "pages": 45,
+      "faultsBySource": {},
+      "sessions": 2,
+      "sessionsSource": "hermes-pause-session-a.meta.json, hermes-resume-session-b.meta.json"
+    },
+    {
+      "drop": "m8",
+      "files": [
+        {
+          "name": "live-echo.jsonl",
+          "sha256": "944a76edbf1136a964dbfdac651ae3ca55c88a9baa004531a8d323c31ef78008",
+          "checksumStatus": "verified"
+        },
+        {
+          "name": "live-thrash.jsonl",
+          "sha256": "ee390d49614dd4885a9ad42e47533bf8a6e4f5ea5a61162920244ef1397a49e4",
+          "checksumStatus": "verified"
+        }
+      ],
+      "eventsByType": {
+        "call.meta": 16,
+        "page.declare": 6,
+        "page.fault": 7,
+        "page.render": 6,
+        "session.open": 2,
+        "turn.render": 16
+      },
+      "totalEvents": 53,
+      "pages": 6,
+      "faultsBySource": {
+        "identifier_scan": 3,
+        "tool_recall": 4
+      },
+      "sessions": 1,
+      "sessionsSource": "live-echo.meta.json, live-thrash.meta.json"
+    }
+  ]
+}
