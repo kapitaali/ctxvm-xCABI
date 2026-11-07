@@ -14,3 +14,4 @@ run 7.8× — measured 2026-11-07).
 | # | date | arm | task | round | model | in | out | cached | USD | run total | note |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | 2026-11-07 | naive | t1 | 1 | openai/gpt-6-luna | 24802048 | 169443 | 24552150 | 0.3303 | 0.8464 | n/a; coverage ok; replay exit 0, byte-identical |
+| 2 | 2026-11-07 | naive | t1 | 1 | openai/gpt-6-luna | 24248569 | 135061 | 24016030 | 0.3077 | 1.1541 | n/a; coverage ok; replay exit 0, byte-identical |
