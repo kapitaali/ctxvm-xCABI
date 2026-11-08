@@ -52,15 +52,24 @@ need_heading() {
 need_heading handoff/PROJECT-STATE.md \
   '## Goal' \
   '## Artifacts and versions' \
-  '## Done (last 7 items: one line each, with report path)' \
+  '## Done (last 3 items: one line each, with locators)' \
   '## In progress (one item: what, blocker, next command)' \
   '## Next three (ordered, one line each)' \
   '## Decisions made (date, decision, reason)' \
   '## Open decisions for the owner (D-numbered, options, your recommendation)' \
   '## Do not touch (sealed specs, frozen fixtures, plugin defaults)' \
   '## Evidence rules (the integrity rules, three lines)' \
-  '## Verification status (UNVERIFIED items and what would verify each)' \
+  '## Verification status (gate pointer, UNVERIFIED items and what would verify each)' \
   '## Blocked (item, what it waits for)'
+
+# A dated gate pointer must exist (review fix 5): line names the conformance gate GREEN
+# with a date, pointing at the latest green run.
+grep -Eq 'Conformance gate: GREEN [0-9]{4}-[0-9]{2}-[0-9]{2}' handoff/PROJECT-STATE.md || {
+  echo "MISSINGGATESTATUS handoff/PROJECT-STATE.md: dated 'Conformance gate: GREEN <date>' line"
+  fail=1
+}
+
+need_heading handoff/CONTEXT-PACK.md '## 8. Labels (how to read the books)'
 
 if [ -e handoff/packets/TEMPLATE.md ]; then
   need_heading handoff/packets/TEMPLATE.md \

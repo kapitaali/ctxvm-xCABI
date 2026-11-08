@@ -36,3 +36,7 @@ dist/
 # committed record, not the sources. They stay on disk under this folder, tracked
 # by name in research/synthesis-20261105.md, never by git.
 research/uncommitted/
+
+# Disposable paste artefact regenerated per run by tools/session-start.sh
+# (review fix 6, 2026-11-08): untracked noise that can carry packet content.
+handoff/SESSION-START.md

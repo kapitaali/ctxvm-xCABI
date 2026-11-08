@@ -138,10 +138,51 @@ Every future work item now leaves, before closing: a ≤150-word state delta app
 new/updated packet when that question needs a chat answer, and a green `bash tools/check-handoff.sh`
 before reporting. This card's own delta is already in place (the header line and Done row 1).
 
-## Limitations
+## Revision (2026-11-08, after the owner's review of this card)
+
+Six fixes, each with the verification behind it:
+
+1. **The four cited report paths never existed as files** (`RR-W8BOOK-20261107`, `RR-W8SLICE-20261107`,
+   `RR-W8CHUNK-20261107-2b`, `-2c`). History verified: no file, no `--follow` commit ever carried them —
+   the W8 run lane records those cards as LOG rows beside the commits carrying the content
+   (`RR-W8BOOK` = `89ff8e4` → `design/W8-PROMPT-SLICE.md` + `design/W8-RUNBOOK.md`; `RR-W8SLICE` =
+   `3dd1f52` → created `design/W8-PROMPT-SLICE.md`; `RR-W8CHUNK-20261107-2b` = `4d08da5` and `-2c` =
+   `9947bf0` → both appended the real file `reports/RR-W8CHUNK-20261107-2.md`). Resolution chosen:
+   **path correction, not file creation** — writing four cards for another lane's work from their LOG
+   summaries would author content I did not run; the owner's "either … or" allows this. Done rows now
+   cite commits/files; the four mappings are spelled out for readers in CONTEXT-PACK §8. A reference
+   sweep over `handoff/**` + both reports now finds **zero nonexistent-path citations** (only
+   deliberate row-only references).
+2. **Stale next step dropped**: `git ls-remote` shows origin at `f71a500` — the push instruction is
+   gone; the archive-`/tmp/w8` instruction remains.
+3. **Headroom**: PROJECT-STATE 6,025 → **5,217 B** (three Done items as allowed; the Done heading
+   string moved `last 7` → `last 3` and the checker's required-heading list was synced — this is the
+   one prescribed-string change this fix makes), CONTEXT-PACK 7,677 → 8,140/8,192 after absorbing the
+   labels section. Worst-case paste (state + context + largest packet) 16,320 → **15,975 of 16,384**;
+   state headroom 927 B ≥ a standing 150-word delta.
+4. **Labels**: new CONTEXT-PACK §8 decodes W-numbers, the W8 vocabulary (cell/slice/arm/arm witness),
+   D-numbers, RR cards vs LOG-row-only cards, and "lane". The checker now requires the heading.
+5. **Gate status**: the state's verification section opens with the dated pointer "Conformance gate:
+   GREEN 2026-11-08 (f71a500, nine-key `env -u` chain …)" plus the rerun command; counts stay
+   snapshot-only in this report's §c (no-hardcoding law holds). The checker asserts the dated line's
+   presence.
+6. **`handoff/SESSION-START.md` gitignored** (it regenerates per paste and can carry packet content);
+   confirmed absent from `git status` after a live regeneration.
+
+Post-fix verification, all on the final tree: `bash tools/check-handoff.sh` exit 0;
+`session-start.sh N --with-context` for N=1,2,3 → 15,975 / 15,555 / 15,967 bytes, all exit 0;
+plain runs exit 0; CJK + secret sweeps over `handoff/**`, `.gitignore`, and both tools NONE; and the
+nine-key `env -u` gate rerun on the fixed tree returns `[ctxvm-ci] ALL GATES GREEN` with exit 0
+(`bash tools/run-ci.sh`; last log `/tmp/opencode/w8chk/gate-handofffix.log`, echo $? = 0 via
+`gate-handofffix.exit`). Record: LOG row `RR-HANDOFFFIX-20261108`.
+
+## Limitations (original + revision adds)
 
 - Byte counts are heavyweight facts only at commit time; the files are dated at the head so drift is
   visible, and the checker enforces the limits going forward.
 - The two tools are shell-verified on this box only (POSIX sh, coreutils); no cross-OS claim.
 - The kit proves nothing about the trace standard; it is editor infrastructure. All facts inside it
   carry their own locators and were verified at the named dates; their age is the reader's to check.
+- The W8-lane books (`design/W8-RUNBOOK.md`) keep their own drift-check line; no action from this card.
+- CONTEXT-PACK sits at 52 B spare of its own 8,192 limit — the next growth there must come paired with
+  a glossary trim, or reuse the same three-passes discipline applied here.
