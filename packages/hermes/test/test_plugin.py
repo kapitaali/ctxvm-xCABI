@@ -706,6 +706,43 @@ class LiveAdapterTests(unittest.TestCase):
         finally:
             _clear_env_for_tests()
 
+    def test_profile_is_the_serving_profile_not_the_host_home(self):
+        """`os.environ["HERMES_HOME"]` is process-wide and names the HOST in a gateway, which
+        is why a `-p w8-naive` cell recorded ".hermes". The host sets a contextvar per turn;
+        the plugin must read what the hook saw, not the environment at flush time."""
+        _clear_env_for_tests()
+        import live as live_mod
+        cbs = {}
+
+        class FakeCtx:
+            def register_hook(self, name, cb):
+                cbs[name] = cb
+                return lambda: None
+
+            def on_unload(self, cb):
+                return None
+
+            def register_command(self, name, handler, description=""):
+                return None
+
+        os.environ["HERMES_HOME"] = "/home/host/.hermes"   # the host home, as in a gateway
+        live_mod._state().pop("serving_profile", None)
+        saved = live_mod._serving_profile
+        try:
+            live_mod._serving_profile = lambda: "w8-paged"   # what the turn's scope reports
+            register(FakeCtx())
+            cbs["pre_tool_call"](session_id="s1", tool_name="read_file",
+                                 tool_input={"path": "a"}, tool_result="x")
+            self.assertEqual(live_mod._state()["serving_profile"], "w8-paged")
+            self.assertNotIn(live_mod._state()["serving_profile"], ("hermes", ".hermes"),
+                             "the host home must never win")
+        finally:
+            live_mod._serving_profile = saved
+            live_mod._state().pop("serving_profile", None)
+            for key in ("HERMES_HOME",):
+                os.environ.pop(key, None)
+            _clear_env_for_tests()
+
     def test_engine_field_records_activation_not_construction(self):
         """A -p w8-naive cell wrote "engine": "ctxvm" on 2026-11-07, because
         build_engine() runs unconditionally at plugin load. The field must mean the host

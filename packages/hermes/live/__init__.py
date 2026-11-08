@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.10.5"
+PLUGIN_VERSION = "0.10.6"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -425,6 +425,25 @@ def _per_call_samples(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return out
 
 
+def _serving_profile() -> Optional[str]:
+    """The profile this turn is being served for — not the host's own.
+
+    `os.environ["HERMES_HOME"]` is process-wide and in the gateway names the HOST home, which
+    is why a `-p w8-naive` cell recorded `.hermes` (2026-11-07). The host sets a contextvar
+    per turn instead (`gateway/run.py` `_profile_runtime_scope`, "reaches the agent worker via
+    copy_context()"), and `hermes_constants.get_hermes_home()` reads it first. Ask the host.
+    """
+    try:
+        from hermes_cli.profiles import get_active_profile_name
+        name = get_active_profile_name()
+        if isinstance(name, str) and name.strip():
+            return name.strip()
+    except Exception:  # noqa: BLE001 - outside the hermes runtime
+        pass
+    home = os.environ.get("HERMES_HOME")
+    return os.path.basename(home) if home else None
+
+
 def _engine_activated() -> Optional[str]:
     """Engine name only if the host actually selected with it in this process."""
     try:
@@ -512,7 +531,9 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # either, and the runner must enforce the single-arm gateway.
             "engine": _engine_activated(),
             "engineSelections": _engine_selections(),
-            "profile": os.path.basename(os.environ.get("HERMES_HOME", "")) or None,
+            # Recorded when a hook ran (inside the turn's profile scope); reading the
+            # environment at flush time would name the host again.
+            "profile": _state().get("serving_profile") or _serving_profile(),
         },
         "captures": {
             "turns": len(turns),
@@ -1012,6 +1033,10 @@ def register(ctx) -> None:
         environment = _session_environment_id(session_id)
         if environment:
             kwargs["environmentId"] = environment
+        # Same law as the environment id: whichever hook fires first must carry the profile,
+        # because the flush happens after the turn's profile scope has been reset.
+        if not _state().get("serving_profile"):
+            _state()["serving_profile"] = _serving_profile()
 
     def on_session_start(**kwargs: Any) -> None:
         _stamp_environment(kwargs)

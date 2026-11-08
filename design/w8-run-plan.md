@@ -204,6 +204,62 @@ This keeps the headline number honest without changing the sealed wire: one rend
 turn stays the model's meaning, and the experiment stops pretending it can read a series the
 capture does not contain.
 
+## 4e. The decision set after consultation (2026-11-08)
+
+A read-only consultant reviewed §4c, §4d and the three paid cells (brief:
+`design/W8-CONSULT-20261108.md`). The rulings below replace the ones they supersede; the
+superseded text stays in place so the reversal is visible.
+
+**D-A stands — one host gateway.** Per-arm gateways contradict the shipped topology
+(`hermes gateway migrate` converges to ONE host gateway) and would measure a configuration
+nobody runs, adding a second factor.
+
+**D-C is RETIRED — "one gateway per arm" was wrong.** It was inferred from activation being a
+process fact. It is not: the gateway scope-sets `hermes_constants.get_hermes_home()` per turn
+(`gateway/run.py:1779-1797`), each profile gets its own plugin manager and submodules
+(`hermes_cli/plugins.py:1643`), and the manifest's `.hermes` came from our own code reading
+`os.environ["HERMES_HOME"]` instead of the resolver (fixed in plugin 0.10.6).
+
+**D-B — attestation is scope equality, not a separate process.** A cell counts only when the
+profile recorded at hook time equals the `-p` the runner passed, and the sidecar's
+`plugin.engine`/`engineSelections` agree with the arm. Option (a) of the brief needed no
+upstream change: the accessor already exists.
+
+**D-D — restart only when plugin code changes**, between chunks, once. No per-run restarts.
+
+**D-E — vBudget from the plugin default (24,000).** The paged arm needs no environment.
+
+**D-F — NTR on the provider receipt**, accepted, with the conditions the consultant named:
+report that `turn.render` is absent on `-z` captures and that the sidecar sits outside the
+sealed wire and outside replay's guarantee; publish the sidecar's checksum and the extraction
+command; show the cached/uncached split, completion rates and the accuracy gate beside the
+ratio; use paired per-task ratios with bootstrap intervals; and reconcile the series against
+the receipts within a tolerance fixed BEFORE the run.
+
+**Grid validity (D-G, new).** The resume key becomes composite: fixture digest, plugin
+version, profile-config digest, model and provider id, toolset digest, vBudget, iteration
+ceiling, runner commit. A chunk is a statistical block; arm order inside it is randomised from
+a recorded seed. Declared as limits: time-of-day and provider drift, cache warmth induced by
+arm order (cache-read tokens recorded per cell), process carry-over, and tasks — not rounds —
+as the unit of generalisation.
+
+**Noise floor (D-H, new).** A few naive-versus-naive pairs, preregistered, before any paged
+cell is compared against anything.
+
+**Non-completion (D-I, new).** Completion is a primary outcome and is preregistered before the
+next paid cell. Tokens conditional on completion are reported as such: a survival-biased
+subset, never the headline.
+
+**Tool surface (D-J, new).** Task redesign first — two designs that complete inside the
+iteration ceiling on the naive arm, with the search/read mix recorded. A read/write-only MCP
+surface is the fallback, and it must also remove shell and terminal, or the claim is scoped to
+"reads were unavoidable, greps were not". Raising the ceiling is rejected: it only moves cost.
+
+**Open, probe-decidable (D-K).** Whether `context_engine.ACTIVATIONS` is per profile or per
+process. The host evicts same-slug submodule state between profiles, which suggests per
+profile, but no probe has shown it. Until it does, the isolation canary stands: a paged cell
+followed by a naive cell in the same gateway, where the naive cell must show zero selections.
+
 ## 5. The pilot before the grid
 
 One task (template 1), both arms, one round. On Luna this costs about $0.14. It answers what no design
