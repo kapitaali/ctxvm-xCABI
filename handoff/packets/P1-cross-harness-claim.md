@@ -1,5 +1,7 @@
 # Packet 1: the cross-harness claim and an RFC-0.1 normalisation proposal
 2026-11-08 · requester: ctxvm repo agent · related decision: D13 (proposed, PROJECT-STATE)
+STATUS: answered 2026-11-08 (verdicts in handoff/QUESTIONS.md; card authored per verdict 2:
+design/diff-normalisation.md, owner-cleared).
 ## Question
 Should Part I keep its Pillar-1 wording that xCABI traces are "cross-harness replayable, diffable, or conformance-testable" as-is — or be narrowed to (a) byte-identity within one trace's replay and (b) cross-harness comparisons as W5-classified diff journeys — and should the repo write the diff-normalisation law (name/args canonicalisation + page-body semantics + turn unit) as an RFC-0.1 PROPOSAL the paper cites, instead of leaving the claim unqualified?
 ## Excerpt or diff

@@ -1,4 +1,4 @@
-# State (updated 2026-11-08, by ctxvm repo agent (opencode), after review fixes 1–6 on the kit)
+# State (updated 2026-11-08, by ctxvm repo agent (opencode), after P1's answer + normalisation card)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8 closed FAILED by the owner.
@@ -11,16 +11,16 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous, `~/.local/state/ctxvm/traces`, `ctxvm-dev`, budget 200000 — full values in RR-WP2REV §Verification.
 
 ## Done (last 3 items: one line each, with locators)
-1. Session-continuity kit: handoff/ files + packets + the two tools, owner review fixes 1–6 applied (`reports/RR-HANDOFF-20261108.md`, §Revision).
-2. W8 closure index after the FAILED ruling: ruling, chain, money, reopen gates (`reports/RR-W8INDEX-20261107.md`).
-3. W8 blocked record corrected: the cell was SEARCH-BOUND, 686/700 declares `search_files` (`9947bf0` in `reports/RR-W8CHUNK-20261107-2.md`).
+1. Kit built + the owner's six review fixes applied (`reports/RR-HANDOFF-20261108.md`, §Revision).
+2. P1 answered; diff-normalisation proposal authored (`design/diff-normalisation.md`; `reports/RR-DIFFNORM-20261108.md`; D13).
+3. W8 closure index after the FAILED ruling (`reports/RR-W8INDEX-20261107.md`).
 
 ## In progress (one item: what, blocker, next command)
-Part II revision per RR-WP2REV-20261107. Blocker: that lane's uncommitted WIP + owner decisions D13–D17. Next: `git status --short research/`.
+Part II revision per RR-WP2REV-20261107 (absorbs D13's replacement sentence). Blocker: the lane's uncommitted WIP + owner routing. Next: `git status --short research/`.
 
 ## Next three (ordered, one line each)
-1. Owner: answer packets P1–P3 (`handoff/QUESTIONS.md`) — decides D13, D14, D15.
-2. Owner: archive `/tmp/w8` traces before any reboot (RR-W8INDEX-20261107 (c)).
+1. Owner: ratify D13 + route the Part I edit to the white-paper lane (incl. `:635` + echo sweep) — working-tree bytes, not HEAD.
+2. Owner: answer packets P2/P3 (`handoff/QUESTIONS.md`) — P2 framing + D14.
 3. Agent: next build card W2b provider-reported usage per lane (`reports/RR-RFC01E1-20261031.md`); W8 reopen only after owner go under `design/W8-PROMPT-SLICE.md`.
 
 ## Decisions made (date, decision, reason)
@@ -31,7 +31,7 @@ Part II revision per RR-WP2REV-20261107. Blocker: that lane's uncommitted WIP + 
 - 2026-11-07: W8 ruled FAILED; capture stays default-on; everyday contract restored (RR-W8CHUNK-20261107-2b + RR-W8INDEX-20261107).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
-- D13 (Pkt 1) cross-harness claim: (a) keep Part I's Pillar-1 wording; (b) narrow to within-trace byte-identity + W5-classified diffs + a proposal-only normalisation law. Recommend (b).
+- D13 (Pkt 1) ANSWERED 2026-11-08: the Pillar-1 sentence splits — replayable + conformance-testable kept; "diffable" qualified by the consumer-side profile; "reconstructs any turn" narrowed; absence claim → "we found none in this review" (+ scope). Card: `design/diff-normalisation.md`. Owner next: ratify + route the paper edit (echo sweep incl. `:635`).
 - D14 (Pkt 3) capture + redaction: keep capture default-on (RR-PLUGIN-DEFAULTS-20261101); (a) redaction stays prose; (b) author the §18 session redaction block additive proposal-only. Recommend (b).
 - D15 paper structure: keep Part I + II; merge only after D13/D14. Recommend keep.
 - D16 W8 amendment: (a) reopen with a task set whose floor < 24k; (b) amend arm value/budget + prereg first. Recommend (a) with (b) documented, under `design/W8-PROMPT-SLICE.md` gates.

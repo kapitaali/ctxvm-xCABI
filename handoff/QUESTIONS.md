@@ -4,7 +4,7 @@ Statuses: queued (packet ready, not yet pasted), sent (owner pasted it), answere
 
 | Packet | Title | Status | Answer summary |
 |---|---|---|---|
-| P1 | Cross-harness claim + RFC-0.1 normalisation proposal | queued | — |
+| P1 | Cross-harness claim + RFC-0.1 normalisation proposal | **answered 2026-11-08** | Split the Pillar-1 sentence: keep replayable + conformance-testable, qualify "diffable" behind a consumer-side profile, narrow "reconstructs any turn"; absence claim → "we found none in this review" with scope; author the proposal card (done same day: `design/diff-normalisation.md`); rules N1 + N3 (checked: the RFC-0.1 `turn` field defines NO unit — the profile does), OP-N2 open problem — diff on `logical_ref`, hash mismatches = separate class, canonical-hash deferred; fix :635 + sweep "same bytes"/"byte-identically"/"any harness" echoes; paper edit routed to the working-tree revision via the owner. |
 | P2 | `faultOfResidentPage` violation shown by the healthy-fixture demo | queued | — |
 | P3 | Redaction block + default-capture decision | queued | — |
 
