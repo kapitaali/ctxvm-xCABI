@@ -1,0 +1,1055 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "ctxvm"
+            }
+          },
+          {
+            "key": "ctxvm.export.schema",
+            "value": {
+              "stringValue": "otlp-json/1.11.1"
+            }
+          },
+          {
+            "key": "ctxvm.export.version",
+            "value": {
+              "stringValue": "0.1.0-prototype"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "ctxvm.otel-export",
+            "version": "0.1.0-prototype"
+          },
+          "spans": [
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "25a34fe37c376a63",
+              "name": "invoke_agent ctxvm-m6",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "invoke_agent"
+                  }
+                },
+                {
+                  "key": "gen_ai.agent.name",
+                  "value": {
+                    "stringValue": "ctxvm-m6"
+                  }
+                },
+                {
+                  "key": "gen_ai.conversation.id",
+                  "value": {
+                    "stringValue": "opencode-pause-session-a"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "opencode/glm-5.3-flash-free"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "opencode"
+                  }
+                },
+                {
+                  "key": "ctxvm.trace.xcabi_version",
+                  "value": {
+                    "stringValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.trace.tokenizer",
+                  "value": {
+                    "stringValue": "apx4-char"
+                  }
+                },
+                {
+                  "key": "ctxvm.trace.pages",
+                  "value": {
+                    "intValue": "6"
+                  }
+                },
+                {
+                  "key": "ctxvm.budget.tokens",
+                  "value": {
+                    "intValue": "200000"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "6ba1248852da570e",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "chat opencode/glm-5.3-flash-free",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "opencode/glm-5.3-flash-free"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "253"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "199747"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.fault",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/alpha.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.fault.source",
+                      "value": {
+                        "stringValue": "identifier_scan"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "725e10ee9bbef4c0",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "chat opencode/glm-5.3-flash-free",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "opencode/glm-5.3-flash-free"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "253"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "199747"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "56"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/alpha.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.fault",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/beta.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.fault.source",
+                      "value": {
+                        "stringValue": "identifier_scan"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "fc8f4596faecf885",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "chat opencode/glm-5.3-flash-free",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "opencode/glm-5.3-flash-free"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "253"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "199747"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "56"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "27"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/beta.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.fault",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:edit({\"newString\":\"it mentions the gamma plan.\",\"oldString\":\"it mentions nothing yet.\",\"path\":\"notes/alpha.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.fault.source",
+                      "value": {
+                        "stringValue": "identifier_scan"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "f185cd1e2fe27d84",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "chat opencode/glm-5.3-flash-free",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "opencode/glm-5.3-flash-free"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "3"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "253"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "199747"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "83"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "10"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:edit({\"newString\":\"it mentions the gamma plan.\",\"oldString\":\"it mentions nothing yet.\",\"path\":\"notes/alpha.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "8a8f0d43801da1a2",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "chat opencode/glm-5.3-flash-free",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "opencode/glm-5.3-flash-free"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "4"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "253"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "199747"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "37"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "57"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/alpha.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.fault",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/gamma.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.fault.source",
+                      "value": {
+                        "stringValue": "identifier_scan"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "ca397af47712bae0",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "chat opencode/glm-5.3-flash-free",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "opencode/glm-5.3-flash-free"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "5"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "253"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "199747"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "94"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "27"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/gamma.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.fault",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:shell({\"command\":\"cat notes/*.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.fault.source",
+                      "value": {
+                        "stringValue": "identifier_scan"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "5b523832204004e6",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "chat opencode/glm-5.3-flash-free",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "opencode/glm-5.3-flash-free"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "6"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "253"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "199747"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "121"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "76"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:shell({\"command\":\"cat notes/*.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "a25cf819556f7c41",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "execute_tool read",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read({\"path\":\"notes/alpha.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:804abd95"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "56"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "0f983ccb937b2faa",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "execute_tool read",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read({\"path\":\"notes/beta.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:95511733"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "27"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "2"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "9b7c9f627973f696",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "execute_tool edit",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "edit"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:edit({\"newString\":\"it mentions the gamma plan.\",\"oldString\":\"it mentions nothing yet.\",\"path\":\"notes/alpha.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:290aed65"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "10"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "3"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "a25cf819556f7c41",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "execute_tool read",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read({\"path\":\"notes/alpha.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:e377b8aa"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "57"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "8462e4511ba898e6",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "execute_tool read",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read({\"path\":\"notes/gamma.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:036d85a9"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "27"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "5"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "4a5fbfa113896127ed79f34dd10f0010",
+              "spanId": "cf090ca13de82739",
+              "parentSpanId": "25a34fe37c376a63",
+              "name": "execute_tool shell",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "shell"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:shell({\"command\":\"cat notes/*.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:1f2aa30b"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "76"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "6"
+                  }
+                }
+              ],
+              "events": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

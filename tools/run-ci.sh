@@ -94,6 +94,9 @@ run_step "@ctxvm/py suite" bash -c 'cd packages/py && python -m pytest test/ -q'
 # W10 node build: the package ships a copy of the root LICENSE so `npm pack` carries it.
 # The copy must never drift from the single source of truth.
 run_step "packages/node/LICENSE must match the root LICENSE" cmp -s LICENSE packages/node/LICENSE
+# D3-c exporter promotion: the OTLP projection is a supported surface now — its
+# field-set sync, golden bytes, OTLP structure and CLI determinism are the gate.
+run_step "otel-export drift guard (D3-c: schema sync + goldens + OTLP structure)" node --test tools/otel-export.test.mjs
 log "gate 2b: benchmarks/metrics — 07 reference suite + policy simulator"
 run_step "benchmarks/metrics suite" venvs/odps/bin/python -m pytest benchmarks/metrics -q
 log "ts suites green (22 + 62 + 46 tests); python suites green (174 + 66 + 8 tests)"

@@ -1,0 +1,1166 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "ctxvm"
+            }
+          },
+          {
+            "key": "ctxvm.export.schema",
+            "value": {
+              "stringValue": "otlp-json/1.11.1"
+            }
+          },
+          {
+            "key": "ctxvm.export.version",
+            "value": {
+              "stringValue": "0.1.0-prototype"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "ctxvm.otel-export",
+            "version": "0.1.0-prototype"
+          },
+          "spans": [
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "c03c74a1982a145d",
+              "name": "invoke_agent hermes",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "invoke_agent"
+                  }
+                },
+                {
+                  "key": "gen_ai.agent.name",
+                  "value": {
+                    "stringValue": "hermes"
+                  }
+                },
+                {
+                  "key": "gen_ai.conversation.id",
+                  "value": {
+                    "stringValue": "hermes-pause-session-a"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "nvidia"
+                  }
+                },
+                {
+                  "key": "ctxvm.trace.xcabi_version",
+                  "value": {
+                    "stringValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.trace.tokenizer",
+                  "value": {
+                    "stringValue": "apx4-char"
+                  }
+                },
+                {
+                  "key": "ctxvm.trace.pages",
+                  "value": {
+                    "intValue": "11"
+                  }
+                },
+                {
+                  "key": "ctxvm.budget.tokens",
+                  "value": {
+                    "intValue": "120000"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "697315c37c26d0c5",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "chat nvidia/nemotron-3.5-super-vl-120b-a12b",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "20904"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "99096"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "f1d3a478b08d5b68",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "chat nvidia/nemotron-3.5-super-vl-120b-a12b",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "20904"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "99096"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "19013"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:terminal({\"command\":\"cd /home/theb/Documents/ctxvm && git status --short --branch && echo '---LOG---' && git log --oneline -15 &&#09ff574e)"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file({\"path\":\"/home/theb/Documents/ctxvm/README.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:terminal({\"command\":\"cd /home/theb/Documents/ctxvm && git log --oneline origin/main..HEAD && echo '---UNTRACKED FILES---' && git #3bcf5048)"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file({\"path\":\"/home/theb/Documents/ctxvm/research/ncm-integration.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file({\"path\":\"/home/theb/Documents/ctxvm/08-HANDOFF.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "50381bb6d6258abb",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "chat nvidia/nemotron-3.5-super-vl-120b-a12b",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "20904"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "99096"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "19013"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "547"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:execute_code({\"code\":\"import os\\nos.makedirs('/tmp/ctxvm-m7/work/src', exist_ok=True)\\nprint('dirs ready')\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file({\"path\":\"/tmp/ctxvm-m7/work/src/notes.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:write_file({\"content\":\"# ctxvm \\u2014 project summary\\n\\n**ctxvm** is a virtual-memory manager for LLM agent context. Version 0 is #31bbb15b)"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "ce5b52a7f402290a",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "chat nvidia/nemotron-3.5-super-vl-120b-a12b",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "3"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "20904"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "99096"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "19151"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "716"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file({\"path\":\"/tmp/ctxvm-m7/work/src/notes.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:patch({\"new_string\":\"Notes written 2026-10-26.\\n\\nStatus: all four parts complete and CI-green (last witness 2026-10-23, run `#d0fddca3)"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "11f2493258423212",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "chat nvidia/nemotron-3.5-super-vl-120b-a12b",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "4"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "20904"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "99096"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "19867"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "02150ec9b4bd4e78",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "execute_tool terminal",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "terminal"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:terminal({\"command\":\"cd /home/theb/Documents/ctxvm && git status --short --branch && echo '---LOG---' && git log --oneline -15 &&#09ff574e)"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:41dc3816"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "877"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "f1de961f8235d8dd",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "execute_tool read_file",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read_file"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read_file({\"path\":\"/home/theb/Documents/ctxvm/README.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:dc7158ad"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "1441"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "627bce48d14174e2",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "execute_tool terminal",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "terminal"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:terminal({\"command\":\"cd /home/theb/Documents/ctxvm && git log --oneline origin/main..HEAD && echo '---UNTRACKED FILES---' && git #3bcf5048)"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:6e151891"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "593"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "271c304007194f82",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "execute_tool read_file",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read_file"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read_file({\"path\":\"/home/theb/Documents/ctxvm/research/ncm-integration.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:2bd244dc"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "1941"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "1d440f6772367009",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "execute_tool read_file",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read_file"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read_file({\"path\":\"/home/theb/Documents/ctxvm/08-HANDOFF.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:8fba4333"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "14161"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "a654fbf1eae4f81d",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "execute_tool execute_code",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "execute_code"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:execute_code({\"code\":\"import os\\nos.makedirs('/tmp/ctxvm-m7/work/src', exist_ok=True)\\nprint('dirs ready')\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:071e8e32"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "78"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "2"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "8fbbe6d9dfccf040",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "execute_tool read_file",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read_file"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read_file({\"path\":\"/tmp/ctxvm-m7/work/src/notes.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:360b7518"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "409"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "2"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "3a82afb4052f8a54",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "execute_tool write_file",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "write_file"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:write_file({\"content\":\"# ctxvm \\u2014 project summary\\n\\n**ctxvm** is a virtual-memory manager for LLM agent context. Version 0 is #31bbb15b)"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:5f739d95"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "60"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "2"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "8fbbe6d9dfccf040",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "execute_tool read_file",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read_file"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read_file({\"path\":\"/tmp/ctxvm-m7/work/src/notes.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:e847ca35"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "564"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "2"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "9ee2da1db8c6bd83",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "execute_tool patch",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "patch"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:patch({\"new_string\":\"Notes written 2026-10-26.\\n\\nStatus: all four parts complete and CI-green (last witness 2026-10-23, run `#d0fddca3)"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:17f3e2d3"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "152"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "3"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "16712e98e47b2c7939c07172559d1b4a",
+              "spanId": "8fbbe6d9dfccf040",
+              "parentSpanId": "c03c74a1982a145d",
+              "name": "execute_tool read_file",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read_file"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read_file({\"path\":\"/tmp/ctxvm-m7/work/src/notes.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:ba620aaa"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "628"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "2"
+                  }
+                }
+              ],
+              "events": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

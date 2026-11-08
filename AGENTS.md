@@ -132,7 +132,17 @@ The gate prints the authoritative totals; do not hardcode counts in docs.
 - The **committed** HEAD is green and mirrors `ci.yml`. RFC-0.1 is landed; the sealed v0 boundary
   is intact. A dirty tree may be another agent's work in progress — check `git status` before
   concluding that a failing test is yours.
-- W13 (`turn.render.prefix`, static cost) landed. W14 (environment key), W15 (side-effect
-  classification, plan in `design/W15-tool-effect.md`) and W16 (causal edges, design only) are open.
-- `packages/hermes` capture is default-on at plugin 0.4.x; the installed copy lives in
+- Landed through 2026-11-07: W13 (`turn.render.prefix`), W14 (environment key), W15 (`toolEffect`
+  side-effect classes), W17 (coverage-manifest sidecar + checker), W18 (monitor replay tier 1),
+  W21 (collide-proof trace filenames), W10 node build + CI wiring, and the RFC-0.1 emitter chain
+  (`schemaVersion`, `providerUsage`, `ts` on all four lanes). W16 (causal edges), W19 (tier-2
+  interventions) and W20 (trace-surface extensions) are design notes only, owner-gated. The §5
+  card board is fully statused; the remaining open work is owner-gated: W8 reopen (ruled FAILED
+  2026-11-07; reopen conditions in RR-W8CHUNK-20261107-2 §12 + `design/W8-PROMPT-SLICE.md`), W12
+  beyond Steps 0–1 (D7 hold), publication (D17). The OTLP exporter is promoted to the supported
+  path with a field-set drift guard (D3-c, 2026-11-08, `reports/RR-D3COTEL-20261108.md`).
+- Review round: reviewer Packet 1 answered 2026-11-08 (D13 recorded in `handoff/QUESTIONS.md`);
+  P2/P3 pending. The session-continuity kit lives in `handoff/`; `bash tools/check-handoff.sh`
+  must stay green.
+- `packages/hermes` capture is default-on at plugin 0.10.x; the installed copy lives in
   `~/.hermes/plugins/ctxvm-tracer/` and needs a gateway restart to take effect.

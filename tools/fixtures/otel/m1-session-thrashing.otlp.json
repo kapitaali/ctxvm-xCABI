@@ -1,0 +1,1158 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "ctxvm"
+            }
+          },
+          {
+            "key": "ctxvm.export.schema",
+            "value": {
+              "stringValue": "otlp-json/1.11.1"
+            }
+          },
+          {
+            "key": "ctxvm.export.version",
+            "value": {
+              "stringValue": "0.1.0-prototype"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "ctxvm.otel-export",
+            "version": "0.1.0-prototype"
+          },
+          "spans": [
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "2c9fe6cba3bd6138",
+              "name": "invoke_agent thrash-demo",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "invoke_agent"
+                  }
+                },
+                {
+                  "key": "gen_ai.agent.name",
+                  "value": {
+                    "stringValue": "thrash-demo"
+                  }
+                },
+                {
+                  "key": "gen_ai.conversation.id",
+                  "value": {
+                    "stringValue": "m1-thrash"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "openai/gpt-5"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                },
+                {
+                  "key": "ctxvm.trace.xcabi_version",
+                  "value": {
+                    "stringValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.trace.tokenizer",
+                  "value": {
+                    "stringValue": "tiktoken-o200k_base"
+                  }
+                },
+                {
+                  "key": "ctxvm.trace.pages",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "ctxvm.budget.tokens",
+                  "value": {
+                    "intValue": "6000"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "f92239c696382d8b",
+              "parentSpanId": "2c9fe6cba3bd6138",
+              "name": "chat openai/gpt-5",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "openai/gpt-5"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "1400"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "4600"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "file:src/db/schema.sql"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "9ce1d75f746db060",
+              "parentSpanId": "2c9fe6cba3bd6138",
+              "name": "chat openai/gpt-5",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "openai/gpt-5"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "1000"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "45"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "5000"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "file:src/db/schema.sql"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "stub"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.evict",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.evict.stub_chars",
+                      "value": {
+                        "stringValue": "126"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "f27b58b9780069b1",
+              "parentSpanId": "2c9fe6cba3bd6138",
+              "name": "chat openai/gpt-5",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "openai/gpt-5"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "1000"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "45"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "5000"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "file:src/db/schema.sql"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "stub"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.fault",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.fault.source",
+                      "value": {
+                        "stringValue": "tool_recall"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "f9caeb14f67f7d9f",
+              "parentSpanId": "2c9fe6cba3bd6138",
+              "name": "chat openai/gpt-5",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "openai/gpt-5"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "3"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "1400"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "4600"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "file:src/db/schema.sql"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "775749c49cb139b7",
+              "parentSpanId": "2c9fe6cba3bd6138",
+              "name": "chat openai/gpt-5",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "openai/gpt-5"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "4"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "1000"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "45"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "5000"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "file:src/db/schema.sql"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "stub"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.evict",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.evict.stub_chars",
+                      "value": {
+                        "stringValue": "126"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "a7d28adee3c6cc4b",
+              "parentSpanId": "2c9fe6cba3bd6138",
+              "name": "chat openai/gpt-5",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "openai/gpt-5"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "5"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "77"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "6000"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "file:src/db/schema.sql"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "stub"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "stub"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.evict",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "file:src/db/schema.sql"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.evict.stub_chars",
+                      "value": {
+                        "stringValue": "122"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "09125384bffc348f",
+              "parentSpanId": "2c9fe6cba3bd6138",
+              "name": "chat openai/gpt-5",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "openai/gpt-5"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "6"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "77"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "6000"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "file:src/db/schema.sql"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "stub"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "stub"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.fault",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.fault.source",
+                      "value": {
+                        "stringValue": "tool_recall"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "ecfa1ded7e06b084",
+              "parentSpanId": "2c9fe6cba3bd6138",
+              "name": "chat openai/gpt-5",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "openai/gpt-5"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "7"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "400"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "77"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "5600"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "file:src/db/schema.sql"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "stub"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "3321e7ac4c0d4c65",
+              "parentSpanId": "2c9fe6cba3bd6138",
+              "name": "chat openai/gpt-5",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "openai/gpt-5"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "8"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "77"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "6000"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "file:src/db/schema.sql"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "stub"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "stub"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.evict",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.evict.stub_chars",
+                      "value": {
+                        "stringValue": "126"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "c1b96400bab0fc9c",
+              "parentSpanId": "2c9fe6cba3bd6138",
+              "name": "chat openai/gpt-5",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "openai/gpt-5"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "9"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "77"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "6000"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "5700"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "300"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                },
+                {
+                  "key": "ctxvm.call.latency_ms",
+                  "value": {
+                    "intValue": "2440"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "file:src/db/schema.sql"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "stub"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "stub"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.fault",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "file:src/db/schema.sql"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.fault.source",
+                      "value": {
+                        "stringValue": "identifier_scan"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "4582ac24c372157d",
+              "parentSpanId": "2c9fe6cba3bd6138",
+              "name": "execute_tool page.file",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "page.file"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "file:src/db/schema.sql"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:s1"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "file"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "1000"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "0"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "35ef25a1f31fa25014bafc3f76ce4248",
+              "spanId": "3c2dab50d204d49b",
+              "parentSpanId": "2c9fe6cba3bd6138",
+              "name": "execute_tool read_file",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read_file"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read_file(path=\"src/auth/session.ts\")"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:9f2ac17d"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "400"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "0"
+                  }
+                }
+              ],
+              "events": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -62,6 +62,13 @@ jobs:
       - name: "@ctxvm/opencode tests"
         run: node --test test/
         working-directory: packages/opencode
+      - name: "@ctxvm/ai-sdk tests (mirror fix: run-ci has run this suite since T15 B3, ci.yml never got the step)"
+        run: node --test test/
+        working-directory: packages/ai-sdk
+      - name: "packages/node/LICENSE must match the root LICENSE (mirror fix: run-ci gate 2 has checked this since the W10 build card)"
+        run: cmp -s LICENSE packages/node/LICENSE
+      - name: "otel-export drift guard (D3-c promotion: EXPORT_SPEC vs schema + golden bytes + OTLP structure + CLI)"
+        run: node --test tools/otel-export.test.mjs
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"

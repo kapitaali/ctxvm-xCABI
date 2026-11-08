@@ -1,0 +1,745 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "ctxvm"
+            }
+          },
+          {
+            "key": "ctxvm.export.schema",
+            "value": {
+              "stringValue": "otlp-json/1.11.1"
+            }
+          },
+          {
+            "key": "ctxvm.export.version",
+            "value": {
+              "stringValue": "0.1.0-prototype"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "ctxvm.otel-export",
+            "version": "0.1.0-prototype"
+          },
+          "spans": [
+            {
+              "traceId": "f89bbeda1d75f4491624ad368e22ae8d",
+              "spanId": "ca5b4df7d4abceee",
+              "name": "invoke_agent ctxvm-ai-sdk",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "invoke_agent"
+                  }
+                },
+                {
+                  "key": "gen_ai.agent.name",
+                  "value": {
+                    "stringValue": "ctxvm-ai-sdk"
+                  }
+                },
+                {
+                  "key": "gen_ai.conversation.id",
+                  "value": {
+                    "stringValue": "live-thrash"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "nvidia"
+                  }
+                },
+                {
+                  "key": "ctxvm.trace.xcabi_version",
+                  "value": {
+                    "stringValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.trace.tokenizer",
+                  "value": {
+                    "stringValue": "apx4-char"
+                  }
+                },
+                {
+                  "key": "ctxvm.trace.pages",
+                  "value": {
+                    "intValue": "3"
+                  }
+                },
+                {
+                  "key": "ctxvm.budget.tokens",
+                  "value": {
+                    "intValue": "120000"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "f89bbeda1d75f4491624ad368e22ae8d",
+              "spanId": "4579077377418b59",
+              "parentSpanId": "ca5b4df7d4abceee",
+              "name": "chat nvidia/nemotron-3.5-super-vl-120b-a12b",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "99"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "119901"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "f89bbeda1d75f4491624ad368e22ae8d",
+              "spanId": "b6fe3a0b18f51439",
+              "parentSpanId": "ca5b4df7d4abceee",
+              "name": "chat nvidia/nemotron-3.5-super-vl-120b-a12b",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "99"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "119901"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "99"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/a.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/b.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.render",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/c.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.render.mode",
+                      "value": {
+                        "stringValue": "full"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "f89bbeda1d75f4491624ad368e22ae8d",
+              "spanId": "bd8f93ba7d09714e",
+              "parentSpanId": "ca5b4df7d4abceee",
+              "name": "chat nvidia/nemotron-3.5-super-vl-120b-a12b",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "99"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "119901"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "99"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "ctxvm.page.fault",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/a.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.fault.source",
+                      "value": {
+                        "stringValue": "tool_recall"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.fault",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/b.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.fault.source",
+                      "value": {
+                        "stringValue": "tool_recall"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "ctxvm.page.fault",
+                  "attributes": [
+                    {
+                      "key": "ctxvm.page.ref",
+                      "value": {
+                        "stringValue": "tool:read({\"path\":\"notes/c.md\"})"
+                      }
+                    },
+                    {
+                      "key": "ctxvm.fault.source",
+                      "value": {
+                        "stringValue": "tool_recall"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "f89bbeda1d75f4491624ad368e22ae8d",
+              "spanId": "8aa40b6664ea23e1",
+              "parentSpanId": "ca5b4df7d4abceee",
+              "name": "chat nvidia/nemotron-3.5-super-vl-120b-a12b",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "3"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "99"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "119901"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "99"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "f89bbeda1d75f4491624ad368e22ae8d",
+              "spanId": "31815332f3e4b5be",
+              "parentSpanId": "ca5b4df7d4abceee",
+              "name": "chat nvidia/nemotron-3.5-super-vl-120b-a12b",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "4"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "99"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "119901"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "99"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "f89bbeda1d75f4491624ad368e22ae8d",
+              "spanId": "6eecf52087eb785f",
+              "parentSpanId": "ca5b4df7d4abceee",
+              "name": "chat nvidia/nemotron-3.5-super-vl-120b-a12b",
+              "kind": 3,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+                  }
+                },
+                {
+                  "key": "ctxvm.turn",
+                  "value": {
+                    "intValue": "5"
+                  }
+                },
+                {
+                  "key": "ctxvm.resident_tokens",
+                  "value": {
+                    "intValue": "99"
+                  }
+                },
+                {
+                  "key": "ctxvm.evicted_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.headroom_tokens",
+                  "value": {
+                    "intValue": "119901"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_hit_tokens",
+                  "value": {
+                    "intValue": "99"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.est_miss_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "ctxvm.cache.provider_reported",
+                  "value": {
+                    "boolValue": false
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "f89bbeda1d75f4491624ad368e22ae8d",
+              "spanId": "281bdd9fce2fe9ba",
+              "parentSpanId": "ca5b4df7d4abceee",
+              "name": "execute_tool read",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read({\"path\":\"notes/a.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:7f164fd1"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "33"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "f89bbeda1d75f4491624ad368e22ae8d",
+              "spanId": "0b5a1735a3426bc3",
+              "parentSpanId": "ca5b4df7d4abceee",
+              "name": "execute_tool read",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read({\"path\":\"notes/b.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:d22de49a"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "33"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "events": []
+            },
+            {
+              "traceId": "f89bbeda1d75f4491624ad368e22ae8d",
+              "spanId": "d7fc9c29a9128c4f",
+              "parentSpanId": "ca5b4df7d4abceee",
+              "name": "execute_tool read",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "read"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.ref",
+                  "value": {
+                    "stringValue": "tool:read({\"path\":\"notes/c.md\"})"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.content_hash",
+                  "value": {
+                    "stringValue": "sha256:d1239d56"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.kind",
+                  "value": {
+                    "stringValue": "tool_result"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.tokens",
+                  "value": {
+                    "intValue": "33"
+                  }
+                },
+                {
+                  "key": "ctxvm.page.first_rendered_turn",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "events": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
