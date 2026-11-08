@@ -18,6 +18,7 @@
     "/tmp/w8/traces",
     "~/.local/state/ctxvm/traces"
   ],
-  "runs": "/tmp/w8/runs",
-  "runTimeoutSec": 3600
+  "runs": "~/.local/state/ctxvm/w8-runs",
+  "runTimeoutSec": 3600,
+  "_runsNote": "Captures are EVIDENCE and must survive a reboot. On 2026-11-07 the whole run tree lived under /tmp/w8/runs and was lost with /tmp, taking 24 traces (1,626,070 B) and the digests the W8 closure index cites. Runs now land in the state dir; /tmp is for throwaway probes only."
 }

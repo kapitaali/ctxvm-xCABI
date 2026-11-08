@@ -444,7 +444,12 @@ def main() -> int:
     grid["_price"] = _price
     tasks = (args.tasks.split(",") if args.tasks else grid["tasks"])
     rounds = args.rounds or grid["rounds"]
-    runs = Path(args.runs or grid["runs"])
+    # Expand, then refuse a relative path: a literal "~" or "$HOME" directory is how an
+    # evidence tree ends up somewhere nobody looks (2026-11-07, twice).
+    raw_runs = os.path.expandvars(os.path.expanduser(str(args.runs or grid["runs"])))
+    runs = Path(raw_runs)
+    if not runs.is_absolute():
+        die(f"runs dir must be absolute after expansion, got {raw_runs!r}", 2)
     runs.mkdir(parents=True, exist_ok=True)
     ledger = Path(args.ledger)
     if not ledger.exists():
