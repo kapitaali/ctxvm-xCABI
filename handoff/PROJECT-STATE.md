@@ -47,7 +47,7 @@ Part II revision per RR-WP2REV-20261107 (absorbs D13's sentence). Blocker: that 
 3. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% belongs to an external controller (AGENTS.md law 7).
 
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
-- Conformance gate: GREEN 2026-11-08 (nine-key `env -u` chain + `bash tools/run-ci.sh`; first run with the otel-export guard + mirror fixes); log `/tmp/opencode/otel/gate-d3c.log`; rerun for authority.
+- Conformance gate: GREEN 2026-11-08 (nine-key `env -u` chain + `bash tools/run-ci.sh`; otel guard + mirror fixes proven local AND on Actions run 42468046847, 4/4 in 52 s); log `/tmp/opencode/otel/gate-d3c.log`.
 - XERJ Hub listing UNVERIFIED — live `hub.xerj.org/llms.txt` re-check (RR-XERJ-20261029).
 - openai price row + cache-read nulls UNVERIFIED (`benchmarks/metrics/prices.json`) — owner source confirmation.
 - Pre-restart W8 pair arm attribution UNPROVEN — one 0.10.5 gateway per arm (RR-W8INDEX-20261107 (e)).

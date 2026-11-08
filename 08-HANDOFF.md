@@ -870,6 +870,15 @@ from the books as the rider (its own "keep this section current" duty). Gate:
 ALL GATES GREEN exit 0 under the nine-key chain on the final tree (first gate run
 to exercise exporter guard + both mirror fixes; the Actions equivalent lands with
 the owner's next push).
+**PUSH WITNESS E7BF6FF (2026-11-08, run 42468046847 = run №90, completed success in
+52 s, 09:38:35–09:39:27Z, all four jobs green):** the first Actions execution of ALL
+THREE steps this card added — "@ctxvm/ai-sdk tests" (the suite Actions has silently
+skipped since T15 B3 `801047c`) passed, "packages/node/LICENSE must match ..." passed
+(absent since the W10 build `72360f1`), and "otel-export drift guard (D3-c
+promotion: EXPORT_SPEC vs schema + golden bytes + OTLP structure + CLI)" passed —
+so the D3-c surface is CI-proven on the hosted side, the two mirror fixes hold on
+`ubuntu-latest`, and every job (hub rust ts schema, 4/4) is green at HEAD
+`e7bf6ff`. Jobs evidence retained in `/tmp/opencode/otel/run90-jobs.json`.
 **Next frontier 9 (D3-c landed; status 2026-11-08):** every agent-buildable card on
 the books is now landed or closed; remaining work is owner-gated — W8 reopen (D16 +
 the §12 amended conditions), W12 Steps 2+ (D7), publication (D17), the white-paper
