@@ -48,6 +48,7 @@ benchmarks/metrics           metrics suite + policy simulator
 hub/                         ODPS hub artefacts (byte-identity checked)
 tools/                       run-ci.sh, rehearsal, export round-trip, node-build parity
 reports/                     RR-<CARD>-<date>.md, LOG.md (append-only), RR-DAY-<date>.md
+docs/                        reader-facing docs (quickstart); added by A3, 2026-11-09
 ```
 
 ## 4. Laws. Breaking one is a bug even if the tests pass.

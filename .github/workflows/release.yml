@@ -1,0 +1,52 @@
+# Release workflow — DRAFT, disabled by default (workflow_dispatch only).
+# No push/PR trigger: this file never runs automatically. Publishing, tagging,
+# and index submission all require owner approval (08.1 §3 human-approval gates;
+# D17). See reports/RR-PKG-20261109.md §checklist for per-package pass/fail.
+name: release (draft, disabled-by-default)
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Package name"
+        required: true
+        type: choice
+        options:
+          - "@ctxvm/node"
+          - "ctxvm-codec"
+          - "ctxvm-tokenizer"
+          - "ctxvm-py"
+      dry_run:
+        description: "Run packaging dry-runs only (no publish)"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Dry-run: npm pack (packages/node, private packages are excluded by design)"
+        run: |
+          npm pack --dry-run --prefix packages/node
+      - name: "Dry-run: cargo publish (ctxvm-core/conformance still blocked on path-only deps)"
+        run: |
+          cd rust
+          cargo publish --dry-run -p ctxvm-codec
+          cargo publish --dry-run -p ctxvm-tokenizer
+      - name: "Dry-run: python build"
+        run: |
+          python3 -m build --sdist --wheel packages/py
+
+  publish:
+    needs: dry-run
+    if: github.event.inputs.dry_run == 'false' && github.ref == 'refs/tags/v0.1.0'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Publish gate"
+        run: |
+          echo "Draft: publish step is intentionally a stub. Owner must replace"
+          echo "with per-package publish commands from the release checklist."
+          exit 1
