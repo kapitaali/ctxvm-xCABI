@@ -736,24 +736,6 @@ class LiveAdapterTests(unittest.TestCase):
             else:
                 state["engine_obj"] = saved
 
-    def test_manifest_records_the_engine_config_that_decided_the_arm(self):
-        """The counter is shared across profiles through the flat sibling import (measured
-        2026-11-09: a -p w8-naive session read engineSelections 1 after a paged one). The arm
-        must therefore come from the profile's own config, which the host scopes per manager."""
-        import live as live_mod
-        state = live_mod._state()
-        saved = state.get("engine_config", "absent")
-        try:
-            state["engine_config"] = "ctxvm"
-            self.assertEqual(state["engine_config"], "ctxvm")
-            state["engine_config"] = "compressor"
-            self.assertEqual(state["engine_config"], "compressor")
-        finally:
-            if saved == "absent":
-                state.pop("engine_config", None)
-            else:
-                state["engine_config"] = saved
-
     def test_profile_is_the_serving_profile_not_the_host_home(self):
         """`os.environ["HERMES_HOME"]` is process-wide and names the HOST in a gateway, which
         is why a `-p w8-naive` cell recorded ".hermes". The host sets a contextvar per turn;

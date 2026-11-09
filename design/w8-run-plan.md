@@ -276,6 +276,123 @@ session immediately after a `-p w8-paged` one read `engineSelections: 1` on a ga
 the flat sibling import wins over the per-profile package namespace, exactly as F5 warned. The
 0.10.7 instance counter fixes it but only once a process loads it.
 
+**No in-capture witness is available on this host (0.10.9).** Two attempts, both falsified by a
+live probe:
+
+- the module-level counter is shared by both profiles through the flat sibling import (a
+  `-p w8-naive` session read `engineSelections: 1` right after a paged one);
+- `ctx.get_config("context.engine")` cannot carry the arm either: it reads
+  `plugins.entries.<plugin_id>.settings.<key>`, not the profile's top-level setting, and returned
+  null for a profile whose config says `ctxvm`.
+
+So the sidecar records `engine`/`engineSelections` as **information**, and the arm is attested by
+the runner: the `-p w8-<arm>` it passed, recorded in the ledger row, plus the profiles differing in
+exactly one key. A real cell — not a one-line probe — is what makes the counter meaningful: a trivial
+request never reaches `select_context`, so a probe cannot distinguish "engine active" from "engine
+idle". The cell's sidecar must show `engineSelections > 0` on the paged arm and `0` on the naive one;
+if it does not, the run is a pilot record, not a cell.
+
+Provider: `nous` (both profiles). The earlier `nvidia` values were stale copies and routed
+`openai/gpt-6-luna` to another vendor's free tier, which answered 429. `session.open.provider` stays
+`unknown` until the gateway serving the run is started after the identity fix; the payload for that
+hook carries no provider, so settings are the only source.
+
+## 4d. The metric, decided (2026-11-07) — receipts, not turn rows
+
+Cell 1 answered a question the plan had left open: a `-z` capture can arrive with **no
+`turn.render` and no `call.meta` at all** (721 events, 570 declares, 150 faults, zero turn
+rows), because the plugin's turn boundary is `on_pre_llm_call`, which does not fire for that
+path. Turn-level residency is therefore not derivable, and any metric defined on it would be
+silently empty for every cell.
+
+Decision:
+
+- **NTR is defined on the provider receipt**, per cell: `1 - (paged input) / (naive input)`,
+  where input = uncached + cached (plus cache-write when reported). It is the quantity the
+  experiment is about, it is billed, and it exists in every cell.
+- **Request-size evidence comes from `perApiRequest`** in the coverage sidecar: peak and
+  median approx tokens per call, per arm. The "paged request smaller than naive" gate is
+  read as *peak perApiRequest smaller*, with the quantile named in the report.
+- **`turn.render` is used when present and never imputed.** Its absence is recorded in the
+  cell row as a limitation; a cell with zero `perApiRequest` samples is an instrument
+  failure and stops the chunk.
+
+This keeps the headline number honest without changing the sealed wire: one render per user
+turn stays the model's meaning, and the experiment stops pretending it can read a series the
+capture does not contain.
+
+## 4e. The decision set after consultation (2026-11-08)
+
+A read-only consultant reviewed §4c, §4d and the three paid cells (brief:
+`design/W8-CONSULT-20261108.md`). The rulings below replace the ones they supersede; the
+superseded text stays in place so the reversal is visible.
+
+**D-A stands — one host gateway.** Per-arm gateways contradict the shipped topology
+(`hermes gateway migrate` converges to ONE host gateway) and would measure a configuration
+nobody runs, adding a second factor.
+
+**D-C is RETIRED — "one gateway per arm" was wrong.** It was inferred from activation being a
+process fact. It is not: the gateway scope-sets `hermes_constants.get_hermes_home()` per turn
+(`gateway/run.py:1779-1797`), each profile gets its own plugin manager and submodules
+(`hermes_cli/plugins.py:1643`), and the manifest's `.hermes` came from our own code reading
+`os.environ["HERMES_HOME"]` instead of the resolver (fixed in plugin 0.10.6).
+
+**D-B — attestation is scope equality, not a separate process.** A cell counts only when the
+profile recorded at hook time equals the `-p` the runner passed, and the sidecar's
+`plugin.engine`/`engineSelections` agree with the arm. Option (a) of the brief needed no
+upstream change: the accessor already exists.
+
+**D-D — restart only when plugin code changes**, between chunks, once. No per-run restarts.
+
+**D-E — vBudget from the plugin default (24,000).** The paged arm needs no environment.
+
+**D-F — NTR on the provider receipt**, accepted, with the conditions the consultant named:
+report that `turn.render` is absent on `-z` captures and that the sidecar sits outside the
+sealed wire and outside replay's guarantee; publish the sidecar's checksum and the extraction
+command; show the cached/uncached split, completion rates and the accuracy gate beside the
+ratio; use paired per-task ratios with bootstrap intervals; and reconcile the series against
+the receipts within a tolerance fixed BEFORE the run.
+
+**Grid validity (D-G, new).** The resume key becomes composite: fixture digest, plugin
+version, profile-config digest, model and provider id, toolset digest, vBudget, iteration
+ceiling, runner commit. A chunk is a statistical block; arm order inside it is randomised from
+a recorded seed. Declared as limits: time-of-day and provider drift, cache warmth induced by
+arm order (cache-read tokens recorded per cell), process carry-over, and tasks — not rounds —
+as the unit of generalisation.
+
+**Noise floor (D-H, new).** A few naive-versus-naive pairs, preregistered, before any paged
+cell is compared against anything.
+
+**Non-completion (D-I, new).** Completion is a primary outcome and is preregistered before the
+next paid cell. Tokens conditional on completion are reported as such: a survival-biased
+subset, never the headline.
+
+**Tool surface (D-J, new).** Task redesign first — two designs that complete inside the
+iteration ceiling on the naive arm, with the search/read mix recorded. A read/write-only MCP
+surface is the fallback, and it must also remove shell and terminal, or the claim is scoped to
+"reads were unavoidable, greps were not". Raising the ceiling is rejected: it only moves cost.
+
+**D-K RESOLVED (plugin 0.10.7) — the activation counter is per profile, and now per instance.**
+Two facts, because the first alone is not enough:
+
+1. The plugin *package* is namespaced per profile: `hermes_cli/plugins_loader.py`
+   `_directory_module_name` gives the first scope the bare `hermes_plugins.<slug>` and every other
+   scope a `__home_<digest>` suffix, and `_clear_plugin_submodules` purges the previous profile's
+   submodules with the docstring "otherwise a same-slug plugin in another profile reuses the
+   previous profile's submodule state" (`hermes_cli/plugins.py:1544-1557`).
+2. The *sibling* module is imported flat (`from context_engine import build_engine`), and a flat
+   import resolves by bare name through `sys.modules` — so a module-level counter could still be
+   shared. The counter now lives on the engine **instance** (`self._selections`), the plugin keeps
+   the reference it registered, and the manifest reads the instance first, the module global second.
+
+An instance attribute cannot be shared between profiles whatever the import machinery does.
+
+**Falsified the same day, and this is the interesting part.** The canary was run: a `-p w8-naive`
+session immediately after a `-p w8-paged` one read `engineSelections: 1` on a gateway running
+0.10.6, where the counter is still the module global. So the counter IS shared across profiles —
+the flat sibling import wins over the per-profile package namespace, exactly as F5 warned. The
+0.10.7 instance counter fixes it but only once a process loads it.
+
 **The witness that does not depend on a counter (0.10.8).** The sidecar now records
 `plugin.engineConfig`, read at registration from `ctx.get_config("context.engine")`. The host scopes
 that config per manager — the override exists so "a multi-profile process never consults the active

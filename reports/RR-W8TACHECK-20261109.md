@@ -201,3 +201,38 @@ in its place once the gateway next restarts for its own reasons.
 - Expected (per 1b0fbed): `engine null, engineSelections 0`.
 - **Result: falsified.** Naive also reads `engine ctxvm, engineSelections 1`. The 0.10.6 counter is **shared process-wide** (or per-process, not per-session): the first paged session incremented it and the naive session read the inherited count. As measured on this gateway (0.10.6, PID 4110 since 09:16, plugin file 0.10.7 on disk), `engineSelections` is **not** a complete arm witness — paged and naive are indistinguishable on this field.
 - Therefore 0.10.7's per-session/instance counter is necessary before `engineSelections` can witness an arm; it is written but not live. No restart performed.
+
+## Probe after the restart: 0.10.8 is live, and neither witness works (2026-11-09)
+
+Gateway restarted at 13:41:59; one `-p w8-paged` call, $0.001275.
+
+```
+plugin: {'version': '0.10.8', 'engine': None, 'engineSelections': 0,
+         'engineConfig': None, 'profile': 'default'}
+session.open: model openai/gpt-6-luna, provider unknown
+```
+
+**0.10.8 is running** — the version field proves the restart took, which is the one thing the probe
+needed to show. The other three fields failed for reasons worth recording, because each is a
+different trap:
+
+1. **`engineConfig` is null, and my code was wrong to expect otherwise.** `ctx.get_config(key)` reads
+   `plugins.entries.<plugin_id>.settings.<key>` (`hermes_cli/plugins.py`), not the profile's
+   top-level `context.engine`. For a profile whose config says `ctxvm`, the lookup returns nothing.
+   The field is withdrawn in 0.10.9; a sidecar must not carry a key that can only ever be null.
+2. **`engineSelections` is 0 on a paged profile, and that is not a contradiction.** The engine
+   registers (witness: `engine=ctxvm registered`, 11:42:04Z) but `select_context` is only called when
+   there is something to select. A one-line prompt never reaches it, so a probe cannot distinguish
+   "engine active" from "engine idle". The earlier `1` on 0.10.6 came from the shared counter, not
+   from this session's activity.
+3. **`profile` still reads `default`** — unchanged, and now formally a known-cosmetic defect.
+
+**What this settles.** No in-capture field on this host can attest an arm, and two attempts to
+manufacture one have been falsified by measurement. Attribution therefore rests on the runner: the
+`-p w8-<arm>` it passed, written into the ledger row, with the two profiles differing in exactly one
+key. The capture corroborates it on a **real cell** — the paged arm must show `engineSelections > 0`
+because a 14-read task does reach selection — and a cell that does not is a pilot record, not a cell.
+
+**Cost of the detour:** $0.00296 across three probes, and three plugin versions. The honest summary
+is that the instrument question took longer than the measurement it was protecting, and the
+resolution is the one the consultant ranked third: runner-side attribution with a config assertion.
