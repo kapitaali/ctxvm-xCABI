@@ -27,7 +27,15 @@ Write the result to `artefact.json` in the working directory. The artefact must 
 }
 ```
 
-Keys in `files` must be sorted ascending. All numbers are integers. No extra keys, no extra whitespace beyond 2-space indentation and a single trailing newline.
+Keys in `files` must be sorted ascending. All numbers are integers. No extra keys. Write it with
+2-space indentation and one trailing newline if you can; formatting is recorded but is not the gate
+(see below).
+
+**What the gate is** (ruled 2026-11-09, after a cell produced every value correctly with per-file
+objects written inline): the checker compares the **parsed** artefact — same keys, same values, same
+ordering — and reports canonical formatting separately as a non-gating observation. A byte-exact
+requirement turns JSON style into an accuracy result, and two arms failing on style is a null about
+indentation, not about context policy.
 
 You may read any file in the fixture directory. You may write only `artefact.json`. Do not run shell commands or access the network.
 
