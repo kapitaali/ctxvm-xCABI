@@ -48,6 +48,8 @@ benchmarks/metrics           metrics suite + policy simulator
 hub/                         ODPS hub artefacts (byte-identity checked)
 tools/                       run-ci.sh, rehearsal, export round-trip, node-build parity
 reports/                     RR-<CARD>-<date>.md, LOG.md (append-only), RR-DAY-<date>.md
+design/                      plans of record, one file per card (owner clears new ones)
+handoff/                     PROJECT-STATE, QUESTIONS, packets, LANES.md (lane ownership)
 docs/                        reader-facing docs (quickstart); added by A3, 2026-11-09
 ```
 
@@ -108,7 +110,9 @@ disagree, the file wins.
 - Never commit credentials, tokens, `.env` files, or unredacted traces. Use `[REDACTED]`.
 - Commits are attributed `kapitaali <teppo@kapitaali.com>`.
 - Do not stage unrelated work in progress — another agent may own it. Check `git status` and
-  `git log --oneline -5` before staging anything.
+  `git log --oneline -5` before staging anything, and read `handoff/LANES.md` for who owns which
+  paths. A shared file (`reports/LOG.md`, `handoff/PROJECT-STATE.md`) is claimed by a commit,
+  not by a message; never stage one that carries another lane's uncommitted row.
 - Note that `git rev-list --count origin/main..HEAD` reads the *local* tracking ref, which goes stale
   here. Use `git ls-remote --heads origin` to see the real remote head.
 

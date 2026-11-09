@@ -3,6 +3,10 @@
 > **You are a fresh AI agent continuing the CtxVM project.** Everything you need is in
 > `/home/theb/Documents/ctxvm/`. Read §0–§4 fully before doing anything. Then pick ONE task
 > card from §5, execute it, and report per §4. Do not skip ahead, do not re-plan.
+>
+> **Several lanes work here at once.** Read `handoff/LANES.md` before your first edit: it names
+> who owns which paths, and the rules for `reports/LOG.md`, `handoff/PROJECT-STATE.md`, the one
+> installed plugin copy and the gateway. A shared file is claimed by a commit, not by a message.
 
 *Last updated: 2026-10-30 · Maintainer rule: whoever completes a task MUST update its card
 status in §5 and append the report index line in `reports/LOG.md`. This file is always the
@@ -1245,3 +1249,4 @@ Actions green after push.
 
 Do NOT invent new scope. Write a report `RR-BOARD-COMPLETE-<date>.md` summarizing state and
 proposing the next three tasks for orchestrator approval. Then stop.
+
