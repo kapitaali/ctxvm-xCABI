@@ -1,4 +1,5 @@
 # Packet P4: umpire `ts` (R4) — consumer rule or additive mandate?
+STATUS: queued 2026-11-09 (registered in handoff/QUESTIONS.md; not yet pasted; resolves a D-U candidate from A6).
 
 Date: 2026-11-09. Requester: A2 adoption card. Related decision: none (D-U candidate for A6).
 

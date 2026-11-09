@@ -1,4 +1,5 @@
 # Packet P5: D-U1 calibration transfer — is n=180 enough?
+STATUS: queued 2026-11-09 (registered in handoff/QUESTIONS.md; not yet pasted; resolves D-U1).
 
 Date: 2026-11-09. Requester: A6. Related decision: D-U1.
 

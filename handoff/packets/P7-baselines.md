@@ -1,4 +1,5 @@
 # Packet P7: D-U2 baselines — add embedding-NN, logistic, small classifier, larger LLM?
+STATUS: queued 2026-11-09 (registered in handoff/QUESTIONS.md; not yet pasted; resolves D-U2).
 
 Date: 2026-11-09. Requester: A6. Related decision: D-U2.
 

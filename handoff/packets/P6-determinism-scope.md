@@ -1,4 +1,5 @@
 # Packet P6: D-U3 determinism scope — same-build only or cross-machine?
+STATUS: queued 2026-11-09 (registered in handoff/QUESTIONS.md; not yet pasted; resolves D-U3).
 
 Date: 2026-11-09. Requester: A6. Related decision: D-U3.
 
