@@ -11,7 +11,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. P3 (D14) answered; redaction card authored proposal-only, sidecar-first (`reports/RR-P3REDACT-20261109.md`); consent mends + citation rule routed.
+1. P3 (D14) answered; redaction card authored proposal-only, sidecar-first — `design/redaction-block.md` (owner-cleared).
 2. P2 answered; seq 7 located — source `identifier_scan`, swap-in cause active (`reports/RR-P2DEMO-20261108.md`).
 3. D3-c exporter promotion + drift guard; 2 ci.yml mirror defects fixed (`RR-D3COTEL-20261108`).
 
@@ -20,7 +20,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 
 ## Next three (ordered, one line each)
 1. Owner: ratify D13 + D14, route the white-paper bundle — SIX paper items: Pillar-1 split; `:635` echo sweep; the P2 demo sentence (`:333`/`:339`, `identifier_scan` cause); the R1 3-to-0 contrast; the consent-paragraph replacement (`white-paper.md:620–623`, index twin, Part II `:368`); Part II's card-citation rule — working-tree bytes, not HEAD.
-2. Owner: clear design/ placement of the redaction card (`RR-P3REDACT`) + ratify the release rule at D6/D17.
+2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
 3. Agent: un-gated queue is EMPTY (board + frontier 9) — next cards come from owner gates (D16, D17) or new reviewer verdicts.
 
 ## Decisions made (date, decision, reason)
@@ -33,7 +33,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 (Pkt 1) ANSWERED 2026-11-08: Pillar-1 splits (replayable + conformance-testable kept; "diffable" behind the consumer profile; "reconstructs any turn" narrowed; absence reworded). Card: `design/diff-normalisation.md`. Owner next: ratify + route with the six-item bundle.
-- D14 (Pkt 3) ANSWERED 2026-11-08: capture default-on in owner-run builds; release rule bound (no silent-default release; first-run notice minimum, opt-in stronger) — plugin card at D6, timing at D17; redaction card authored proposal-only, sidecar-first (`RR-P3REDACT`; block = assertion; keyed-hash deferred). Owner next: design/ placement + §4-LIST.
+- D14 (Pkt 3) ANSWERED 2026-11-08: capture default-on in owner-run builds; release rule bound (no silent-default release; first-run notice minimum, opt-in stronger) — plugin card at D6, timing at D17; redaction card authored proposal-only, sidecar-first (`RR-P3REDACT`; block = assertion; keyed-hash deferred). Card `design/redaction-block.md` (owner-cleared); owner next: §4-LIST.
 - D15 paper structure: keep Part I + II; merge only after D13/D14. Recommend keep.
 - D16 W8 amendment: (a) reopen with a task set whose floor < 24k; (b) amend arm value/budget + prereg first. Recommend (a) with (b) documented, under `design/W8-PROMPT-SLICE.md` gates.
 - D17 publication: (a) now; (b) after D13–D15; (c) hold. Recommend (b).

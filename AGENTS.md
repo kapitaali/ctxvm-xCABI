@@ -145,7 +145,7 @@ The gate prints the authoritative totals; do not hardcode counts in docs.
   splits; P2 demo keeps + `identifier_scan` cause located; D14 capture stays default-on in
   owner-run builds with the release rule bound at D6/D17 (no registry release ships silent
   default-on; first-run notice minimum) and the redaction card authored proposal-only,
-  sidecar-first (`reports/RR-P3REDACT-20261109.md`). The kit lives in `handoff/`;
-  `bash tools/check-handoff.sh` must stay green.
+  sidecar-first — `design/redaction-block.md`, owner-cleared carrier `RR-P3REDACT-20261109.md`.
+  The kit lives in `handoff/`; `bash tools/check-handoff.sh` must stay green.
 - `packages/hermes` capture is default-on at plugin 0.10.x; the installed copy lives in
   `~/.hermes/plugins/ctxvm-tracer/` and needs a gateway restart to take effect.
