@@ -84,3 +84,57 @@ byte-counting.
   not by running the author's own checker against the author's own reference.
 
 Recorded before any paged cell, so the failure is found at $0.0359 rather than after 48 of them.
+
+## Addendum — what the stopped capture shows (same day)
+
+The T-A session's trace was still on disk (`local-b7face87…`), and it answers the question §4
+left open plus one the report did not ask.
+
+**1. The instrument works, and the growth is real.** The sidecar carries the per-request series:
+
+```
+perApiRequest   16 samples
+call  1     2,475 approx tokens
+call  3    53,720          ← after the batched reads
+call 16    67,515          ← peak, against a 24,000 budget
+perCall         1 sample, residentTokens 65,963
+```
+
+A paged arm would have been selecting from call 3 onward. This is the series D-F was rewritten to
+use, and it exists for this cell.
+
+**2. Truncation is excluded.** Twenty `read_file` declares, each about 4.4k tokens — the whole of a
+16–18 KB file. The model saw every byte and still got `max_line` wrong. That closes the
+"truncated data" branch of the analysis: the error is arithmetic, not lost input.
+
+**3. The model's behaviour was not thrash.** 34 distinct refs across 43 declares:
+20 `read_file`, 17 `search_files`, 6 `patch`. It re-read some files, searched a little, and rewrote
+the artefact six times — which is why 43 tool invocations fit into 16 API calls. Compare cell A:
+686 searches. The task shape changed the behaviour, as designed.
+
+**4. The arm is still not attested.** The sidecar says:
+
+```
+plugin 0.10.6   profile "default"   engine null   engineSelections 0
+```
+
+for a run invoked as `-p w8-naive`. Two readings, and they have different consequences:
+
+- the run genuinely used the `default` profile — which is `context.engine: compressor`, so the cell
+  is naive by luck rather than by configuration; or
+- `_profile_runtime_scope` sets its contextvar only on the multiplexed path, so the witness still
+  reads the host home even when `-p` was honoured.
+
+Either way the field cannot yet be trusted, and **the paged arm cannot be attributed at all**. This
+is the same defect class as 0.10.4, one layer down: the profile is now read from the right resolver
+but the resolver is only correct under multiplexing.
+
+**5. `provider` is still `unknown`** in `session.open` while `usage.json` says `nous` — the hook
+payload for that path carries no provider, so settings are the only source and the settings that
+reach the plugin are the gateway's.
+
+**Next step, and it is one call.** A single trivial `-p w8-paged` request, then read its sidecar:
+if `profile` reads `w8-paged` and `engine` reads `ctxvm` with `engineSelections > 0`, the two-arm
+design is attributable and W8 can reopen on T-A minus the line measurements. If it still reads
+`default`/null, `-p` does not reach the serving process and no paged cell can be trusted — which is
+a blocker to fix before any grid, not after.
