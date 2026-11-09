@@ -43,6 +43,8 @@ research/uncommitted/
 # (review fix 6, 2026-11-08): untracked noise that can carry packet content.
 handoff/SESSION-START.md
 
-# Benchmark workspace (redline-16k). Condition B keeps the benchmark OUTSIDE this repo;
-# the copy under experiments/ is untracked scratch and must not be committed.
+# Benchmark workspace and run outputs. Deliberately ignored until there is enough data to
+# publish (owner decision, 2026-11-09): fixtures, venvs and logs stay off the record, and the
+# numbers that matter are carried in reports/RR-*.md. Do not commit this tree piecemeal; a
+# partial publish of an unfinished experiment is worse than none.
 experiments/

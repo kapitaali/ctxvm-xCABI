@@ -12,7 +12,7 @@ A lane **owns** a set of paths. A shared file is **claimed by a commit**, never 
 | **hermes lane** | `packages/hermes/**`, `tools/**` (gate, runner, checkers), `design/w8-*`, `design/W8-*`, `reports/RR-W8*`, the installed plugin copy at `~/.hermes/plugins/ctxvm-tracer/` | `packages/opencode`, `packages/ai-sdk`, `packages/node`, `research/**` |
 | **opencode lane** | `packages/opencode/**`, `packages/ai-sdk/**`, `packages/node/**`, their fixtures | `packages/hermes`, `research/**` |
 | **research lane** | `research/**` | everything else; `research/**` is read-never-edit for every other lane |
-| **experiment lane** | `experiments/**` (gitignored), the benchmark workspace outside this repo, `reports/RR-REDLINE-*` | `packages/**`, `spec/**`, `corpus/**` |
+| **experiment lane** | `experiments/**` (gitignored **deliberately, until there is enough data to publish**), the benchmark workspace outside this repo, `reports/RR-REDLINE-*` | `packages/**`, `spec/**`, `corpus/**` |
 | **review lane** | `handoff/**` (PROJECT-STATE, QUESTIONS, packets), `reports/RR-DAY-*`, the day indexes | `packages/**`, `research/**` |
 | **reviewer** (external) | nothing here — answers pasted packets only | the repository |
 | **owner** | pushes, ratifies D-decisions, clears `design/**` placement, releases | — |
