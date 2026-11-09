@@ -1,5 +1,8 @@
 # Packet 3: the redaction block proposal and the default-capture stance
 2026-11-08 · requester: ctxvm repo agent · related decisions: D14 (both halves), D17 (downstream)
+STATUS: answered 2026-11-08 (verdicts in handoff/QUESTIONS.md; verdict 2 executed 2026-11-09 —
+the redaction card authored proposal-only, sidecar-first, in reports/RR-P3REDACT-20261109.md;
+design/ placement awaits owner clearing; every citation verified).
 ## Question
 Two calls in one decision: (a) keep capture default-ON in the shipped plugins as-is? (b) should the paper's §18 session-level redaction block (policy id, rule-set version, stage, replaced-field count; identity+hashes kept on pages) be authored as an RFC-0.1 additive PROPOSAL-ONLY card now, or stay paper prose until a verifier exists?
 ## Excerpt or diff

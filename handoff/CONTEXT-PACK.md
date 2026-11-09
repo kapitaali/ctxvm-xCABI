@@ -8,8 +8,7 @@
 5. `ctxvm replay` re-derives the page table and checks embedded turn totals; divergence exits 1 (08-HANDOFF.md §5/T1d).
 6. Harness adapters capture real agents: OpenCode (`packages/opencode`), Hermes (`packages/hermes`, capture default-on), Vercel AI SDK (`packages/ai-sdk`), shared tracer `@ctxvm/node`.
 7. Measurement stack: metric formulas + fixtures + policy simulator (`benchmarks/metrics/`), packaged as ODPS data products (manifest + hub).
-8. Determinism boundary: no LLM, no embedding, no network in the core; semantic faults live in policy plugins, marked non-deterministic (research/white-paper/white-paper.md §5.2).
-9. W8's "does paging help?" is CLOSED FAILED on record: paging never bent the request curve; the task was search-bound (reports/RR-W8INDEX-20261107.md).
+8. W8's "does paging help?" is CLOSED FAILED on record: paging never bent the request curve; the task was search-bound (reports/RR-W8INDEX-20261107.md).
 
 ## 2. Glossary (one line each, from the repo)
 - page — content a tool result contributes to a turn, addressed without carrying its bytes (white-paper.md §4.1; RFC-0 event table).
@@ -44,7 +43,7 @@ W8's NTR (plan §4d): `1 − paged_input / naive_input` on provider receipts (`p
 5. Tier-2 model runs marked nonDeterministic always (design/W19); tier-1 monitors are zero-model-call functions of recorded traces.
 
 ## 6. Status vocabulary and evidence levels
-Workstream: LANDED/DONE (card + gate green), DRY-RUN LANDED, BLOCKED / NOT RUNNABLE, CLOSED. Claims: UNVERIFIED / UNVERIFIED-<date>, UNMEASURED, directional / single-corpus (08.1 §2). Data: prices.json observed | UNVERIFIED | null. Gates: preregistered PASS/FAIL with CIs (design/w8-run-plan.md M0; paired non-inferiority δ=10pp).
+Workstream: LANDED/DONE (card + gate green), DRY-RUN LANDED, BLOCKED / NOT RUNNABLE, CLOSED. Claims: UNVERIFIED / UNVERIFIED-<date>, UNMEASURED, directional / single-corpus (08.1 §2). Data: prices.json observed | UNVERIFIED | null. Gates: preregistered PASS/FAIL with CIs (w8-run-plan M0; paired non-inferiority δ=10pp).
 Papers: Part I "verified" only with locators; Part II (draft) grades every read (read-in-full / abstract / snippet / secondary) and refuses to run experiments — below full read cannot be asserted (RR-WP2REV-20261107).
 
 ## 7. Standing reviewer questions (ask of any change)

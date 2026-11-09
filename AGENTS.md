@@ -141,8 +141,11 @@ The gate prints the authoritative totals; do not hardcode counts in docs.
   2026-11-07; reopen conditions in RR-W8CHUNK-20261107-2 §12 + `design/W8-PROMPT-SLICE.md`), W12
   beyond Steps 0–1 (D7 hold), publication (D17). The OTLP exporter is promoted to the supported
   path with a field-set drift guard (D3-c, 2026-11-08, `reports/RR-D3COTEL-20261108.md`).
-- Review round: reviewer Packet 1 answered 2026-11-08 (D13 recorded in `handoff/QUESTIONS.md`);
-  P2/P3 pending. The session-continuity kit lives in `handoff/`; `bash tools/check-handoff.sh`
-  must stay green.
+- Review round: reviewer Packets 1–3 answered 2026-11-08 (`handoff/QUESTIONS.md`): D13 Pillar-1
+  splits; P2 demo keeps + `identifier_scan` cause located; D14 capture stays default-on in
+  owner-run builds with the release rule bound at D6/D17 (no registry release ships silent
+  default-on; first-run notice minimum) and the redaction card authored proposal-only,
+  sidecar-first (`reports/RR-P3REDACT-20261109.md`). The kit lives in `handoff/`;
+  `bash tools/check-handoff.sh` must stay green.
 - `packages/hermes` capture is default-on at plugin 0.10.x; the installed copy lives in
   `~/.hermes/plugins/ctxvm-tracer/` and needs a gateway restart to take effect.
