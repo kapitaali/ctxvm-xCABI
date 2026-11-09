@@ -50,10 +50,7 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
   ids) produces a session whose capture would satisfy `len({declare.turn}) >= 10`, and the design note
   states the prompt sequence verbatim.
 
-- [ ] **H6. Verify the driver's shape on one cheap real session.** Cheapest model that produces tool
-  calls; one arm, no artefact requirement.
-  *Done when:* the capture shows `len({declare.turn}) >= 10`, `engineSelections > 0`, and the session
-  id matches the one named. Cost ≈ $0.01.
+- [x] **H6. Verify the driver's shape on one cheap real session.** Verified 2026-11-09 on `w8-drv-paged-h6` (profile paged, budget 24000, model gpt-6-luna/nous, env sourced via `tools/w8-run-env.sh`): capture `local-8a98048c…` has 12 distinct turns, `engineSelections=48`, session id matches the named session. Trace: `~/.local/state/ctxvm/traces/local-8a98048c….jsonl`. Cost: ~\$0.03 (12 turns). **Side finding: 0 evictions across all 12 turns** (`evictedTokens=0` on every `turn.render`); T-A at 24000 does not pressure the budget (total ~19.6 k tokens < 24 k). H7's `evictedTokens>0` gate therefore cannot pass with this task/budget.
 
 - [ ] **H7. Run the first countable cell.** `w8-paged` vs the naive reference, `-t file`, budget
   24000, mid-session material, final question requiring it.
