@@ -31,7 +31,10 @@ Run these and stop if any line is wrong:
       # expect 0.10.7; if it is older, stop and say so — the counter semantics changed in 0.10.7
   hermes -p w8-naive config get context.engine     # expect: compressor
   hermes -p w8-paged config get context.engine     # expect: ctxvm
-  git status --short | grep -v research/           # must be empty; note any lines you see
+  git status --short -- tools packages/hermes benchmarks/w8 'design/w8-*'
+      # The EXPERIMENT surface must be clean. Do not look at the whole tree: research/ belongs to
+      # another lane and is permanently dirty, so it says nothing about this run; experiments/ is
+      # gitignored and never appears here. This run's results go to experiments/, not research/.
 
 Record the gateway PID and its start time:
 
