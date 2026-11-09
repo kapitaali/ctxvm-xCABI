@@ -294,6 +294,13 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         # `__home_<digest>` suffix), but this sibling module is imported flat, and a flat
         # import resolves through sys.modules by bare name. An instance attribute cannot be
         # shared between profiles, whatever the import machinery does.
+        # A MUTABLE meter, shared with every clone. The host deep-copies the engine per
+        # agent (`clone_for_agent()` defaults to deepcopy, agent_init.py:1828-1841), so an
+        # int attribute is copied and the clone's increments never reach the instance the
+        # plugin holds. Measured 2026-11-09: a 14-read paged cell reported
+        # `engineSelections: 0` while the host log showed no fallback, i.e. the engine was
+        # running and the witness was reading the wrong object.
+        self._meter: Dict[str, int] = {"select": 0}
         self._selections = 0
         # stock keep-law defaults (the host ABC's own class-level values)
         self._protect_first_n = int(protect_first_n)
@@ -360,6 +367,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         leave the request byte-identical; the returned list is request-only."""
         import datetime as _dt
         self._selections += 1
+        self._meter["select"] += 1
         ACTIVATIONS["select"] += 1
         _now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         ACTIVATIONS["firstTs"] = ACTIVATIONS["firstTs"] or _now
@@ -664,6 +672,9 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         fresh = CtxvmFaultPinEngine.__new__(CtxvmFaultPinEngine)
         memo[id(self)] = fresh
         fresh.__dict__.update(copy.deepcopy(self.__dict__, memo))
+        # The meter is the one attribute a clone must SHARE, not copy: the plugin holds the
+        # original, the host runs the clone, and the selection count has to be visible to both.
+        fresh._meter = self._meter
         return fresh
 
 

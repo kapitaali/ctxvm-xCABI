@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.10.9"
+PLUGIN_VERSION = "0.10.10"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -451,6 +451,9 @@ def _engine_selections_from_instance() -> Optional[int]:
     the sibling module is imported flat. The manifest prefers the instance.
     """
     engine = _state().get("engine_obj")
+    meter = getattr(engine, "_meter", None)
+    if isinstance(meter, dict) and isinstance(meter.get("select"), int):
+        return meter["select"]          # shared with every clone of this engine
     value = getattr(engine, "_selections", None)
     return value if isinstance(value, int) else None
 

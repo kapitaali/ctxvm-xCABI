@@ -773,6 +773,21 @@ class LiveAdapterTests(unittest.TestCase):
                 os.environ.pop(key, None)
             _clear_env_for_tests()
 
+    def test_selection_meter_survives_the_hosts_per_agent_clone(self):
+        """The host deep-copies the engine per agent (clone_for_agent defaults to deepcopy).
+        An int counter is copied with it, so the clone's selections never reach the instance
+        the plugin holds — measured 2026-11-09 as engineSelections 0 on an active engine.
+        The meter must be SHARED by the clone."""
+        import copy as _copy
+        import context_engine as ce
+        engine = ce.CtxvmFaultPinEngine()
+        clone = _copy.deepcopy(engine)
+        self.assertIsNot(clone, engine)
+        self.assertIs(clone._meter, engine._meter, "the meter must be shared, not copied")
+        clone._meter["select"] += 3
+        self.assertEqual(engine._meter["select"], 3,
+                         "a clone's selections must be visible on the original")
+
     def test_engine_field_records_activation_not_construction(self):
         """A -p w8-naive cell wrote "engine": "ctxvm" on 2026-11-07, because
         build_engine() runs unconditionally at plugin load. The field must mean the host
