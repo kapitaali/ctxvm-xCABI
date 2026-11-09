@@ -323,7 +323,7 @@ def main(argv: list) -> int:
             _fail(violations, "plugin", "plugin.version must be a non-empty string")
         if not (isinstance(plugin.get("harness"), str) and plugin["harness"].strip()):
             _fail(violations, "plugin", "plugin.harness must be a non-empty string")
-        for key in ("engine", "profile"):
+        for key in ("engine", "profile", "engineConfig"):
             if key in plugin:
                 value = plugin[key]
                 if value is not None and not (isinstance(value, str) and value.strip()):

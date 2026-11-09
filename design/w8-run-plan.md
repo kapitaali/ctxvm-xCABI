@@ -268,8 +268,27 @@ Two facts, because the first alone is not enough:
    shared. The counter now lives on the engine **instance** (`self._selections`), the plugin keeps
    the reference it registered, and the manifest reads the instance first, the module global second.
 
-An instance attribute cannot be shared between profiles whatever the import machinery does, so the
-isolation canary is now optional rather than a reopen condition. What is still wanted, when a paid
+An instance attribute cannot be shared between profiles whatever the import machinery does.
+
+**Falsified the same day, and this is the interesting part.** The canary was run: a `-p w8-naive`
+session immediately after a `-p w8-paged` one read `engineSelections: 1` on a gateway running
+0.10.6, where the counter is still the module global. So the counter IS shared across profiles —
+the flat sibling import wins over the per-profile package namespace, exactly as F5 warned. The
+0.10.7 instance counter fixes it but only once a process loads it.
+
+**The witness that does not depend on a counter (0.10.8).** The sidecar now records
+`plugin.engineConfig`, read at registration from `ctx.get_config("context.engine")`. The host scopes
+that config per manager — the override exists so "a multi-profile process never consults the active
+profile's config" — so the value names the arm directly:
+
+```
+engineConfig "ctxvm"        paged
+engineConfig "compressor"   naive
+```
+
+A W8 cell asserts on this field. `engine`/`engineSelections` stay in the sidecar as information, not
+as attestation. It needs one gateway restart to go live; after that, no further restarts are owed
+for arm attribution. What is still wanted, when a paid
 cell next runs: a paged capture with `plugin.engineSelections > 0` and a naive capture with `0`,
 in the same gateway. That is empirical confirmation of a property already true by construction.
 

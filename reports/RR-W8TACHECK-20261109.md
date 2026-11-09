@@ -190,3 +190,14 @@ the gateway runs 0.10.6 from 09:16).
 **No restart is needed to proceed.** The engine field works on 0.10.6 as measured; `plugin.profile` is
 known-unreliable and should be documented rather than fixed tonight, with the config value recorded
 in its place once the gateway next restarts for its own reasons.
+
+## Probe follow-up: -p w8-naive after -p w8-paged, 2026-11-09 (counter isolation)
+
+- Command (verbatim): `hermes -p w8-naive -z "Reply with the single word OK and nothing else." -m openai/gpt-6-luna --provider nous --usage-file /tmp/w8probe2/usage.json`
+- Usage: `calls 1 cost 0.00168305 provider nous`, session `local-1b02609cbd626d71c5e34e3199e8c9f3be105bc4f65443d77e0077613fcd68c3`
+- Sidecar: `/home/theb/.local/state/ctxvm/traces/local-1b02609cbd626d71c5e34e3199e8c9f3be105bc4f65443d77e0077613fcd68c3.coverage.json`
+- Sidecar `plugin` block (verbatim): `{'version': '0.10.6', 'harness': 'hermes-python-plugin', 'harnessVersion': None, 'engine': 'ctxvm', 'engineSelections': 1, 'profile': 'default'}`
+- Captures: turns 1, pages 0, declares 0, faults 0 (perApiRequest 1). `session.open`: `model openai/gpt-6-luna`, `provider unknown`.
+- Expected (per 1b0fbed): `engine null, engineSelections 0`.
+- **Result: falsified.** Naive also reads `engine ctxvm, engineSelections 1`. The 0.10.6 counter is **shared process-wide** (or per-process, not per-session): the first paged session incremented it and the naive session read the inherited count. As measured on this gateway (0.10.6, PID 4110 since 09:16, plugin file 0.10.7 on disk), `engineSelections` is **not** a complete arm witness — paged and naive are indistinguishable on this field.
+- Therefore 0.10.7's per-session/instance counter is necessary before `engineSelections` can witness an arm; it is written but not live. No restart performed.

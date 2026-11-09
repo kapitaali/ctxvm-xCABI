@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.10.7"
+PLUGIN_VERSION = "0.10.8"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -546,6 +546,9 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # either, and the runner must enforce the single-arm gateway.
             "engine": _engine_activated(),
             "engineSelections": _engine_selections(),
+            # The arm, from the profile's own config: "ctxvm" means paged, "compressor" naive.
+            # This is the field a W8 cell asserts on; the counter above is informational.
+            "engineConfig": _state().get("engine_config"),
             # Recorded when a hook ran (inside the turn's profile scope); reading the
             # environment at flush time would name the host again.
             "profile": _state().get("serving_profile") or _serving_profile(),
@@ -1737,6 +1740,17 @@ def register(ctx) -> None:
             ctx.register_context_engine(engine)
             state["engine_obj"] = engine
             state["engine_registered"] = engine.name
+            # The ARM, read from the profile config that decided it. `ctx.get_config` consults
+            # THIS manager's profile-scoped config (hermes_cli/plugins.py: the override exists so
+            # "a multi-profile process never consults the active profile's config"), so this value
+            # names the arm directly and needs no counter. The module-level ACTIVATIONS counter is
+            # shared by both profiles through the flat sibling import — measured 2026-11-09, a
+            # `-p w8-naive` session read 1 after a paged one — so a counter cannot attest an arm.
+            try:
+                value = ctx.get_config("context.engine")
+                state["engine_config"] = str(value).strip() if value else None
+            except Exception:  # noqa: BLE001 - a host without the getter is fail-open here
+                state["engine_config"] = None
             _witness(f"engine={engine.name} registered")
     except Exception as exc:  # noqa: BLE001 - fail-open is the design law here
         state["engine_registered"] = None
