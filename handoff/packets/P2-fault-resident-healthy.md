@@ -1,5 +1,7 @@
 # Packet 2: the `faultOfResidentPage` violation the healthy-fixture demo prints
 2026-11-08 · requester: ctxvm repo agent · related decision: none assigned (paper wording; ties to D15)
+STATUS: answered 2026-11-08 (verdicts in handoff/QUESTIONS.md; verdict 3 executed same day —
+seq 7 located: source `identifier_scan`, so the reviewer's cause swap-in applies).
 ## Question
 The paper's verified-commands block replays the healthy 16-event corpus trace and prints one `faultOfResidentPage` violation — the "healthy" demo showing a violation class. How should the paper frame this: (a) explain the class in one sentence next to the output (a model re-mentions an already-resident page; v0 logs it, replay stays green), (b) mark the output block "illustrative" like its sibling profile block, or (c) swap the demo for a v0.1 exemption example (umpire's A/B ledger went 3 violations -> 0 under R1)?
 ## Excerpt or diff

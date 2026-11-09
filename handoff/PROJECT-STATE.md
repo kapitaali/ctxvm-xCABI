@@ -1,4 +1,4 @@
-# State (updated 2026-11-08, by ctxvm repo agent (opencode), after the D3-c exporter promotion card)
+# State (updated 2026-11-09, by ctxvm repo agent (opencode), after P2's close-out: kit trim + two book-sourced corrections)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8 closed FAILED by the owner.
@@ -11,16 +11,16 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous, `~/.local/state/ctxvm/traces`, `ctxvm-dev`, budget 200000 — full values in RR-WP2REV §Verification.
 
 ## Done (last 3 items: one line each, with locators)
-1. D3-c exporter promotion: supported surface + field-set drift guard; 2 ci.yml mirror defects fixed (`reports/RR-D3COTEL-20261108.md`).
-2. P1 answered; diff-normalisation proposal authored (`design/diff-normalisation.md`; `reports/RR-DIFFNORM-20261108.md`; D13).
-3. W8 closure index after the FAILED ruling (`reports/RR-W8INDEX-20261107.md`).
+1. P2 answered; seq 7 located — source `identifier_scan`, swap-in cause active (`reports/RR-P2DEMO-20261108.md`).
+2. D3-c exporter promotion: supported surface + field-set drift guard; 2 ci.yml mirror defects fixed (`reports/RR-D3COTEL-20261108.md`).
+3. P1 answered; diff-normalisation card authored (`design/diff-normalisation.md`; D13).
 
 ## In progress (one item: what, blocker, next command)
 Part II revision per RR-WP2REV-20261107 (absorbs D13's sentence). Blocker: that lane's WIP + owner routing. Next: `git status --short research/`.
 
 ## Next three (ordered, one line each)
-1. Owner: ratify D13 + route the Part I edit to the white-paper lane (incl. `:635` + echo sweep) — working-tree bytes, not HEAD.
-2. Owner: answer packets P2/P3 (`handoff/QUESTIONS.md`) — P2 framing + D14.
+1. Owner: ratify D13 + route the white-paper edits — bundle: Pillar-1 split, `:635` echo sweep, and the P2 demo sentence (`:333`/`:339`, cause swap-in active: identifier_scan) + the R1 3-to-0 contrast in the RFC-0.1 section — working-tree bytes, not HEAD.
+2. Owner: answer packet P3 (`handoff/QUESTIONS.md`) — D14 (redaction + default-capture).
 3. Agent: un-gated queue is EMPTY (board + frontier 9) — next cards come from owner gates (D16, D17) or P2/P3 verdicts.
 
 ## Decisions made (date, decision, reason)
@@ -29,7 +29,7 @@ Part II revision per RR-WP2REV-20261107 (absorbs D13's sentence). Blocker: that 
 - 2026-11-01: D12 — est* estimates keep page-table semantics (RR-W8PREREG-20261101).
 - 2026-11-06: W8 keeps vBudget 24,000; only tasks with a floor below it measure (RR-ENGINEGAP-20261106 rec. 2).
 - 2026-11-07: W8 ruled FAILED; capture stays default-on; contract restored (RR-W8CHUNK-20261107-2b + RR-W8INDEX).
-- 2026-11-08: D3-c promotion approved (owner, in-session); D13 answered by the reviewer (P1).
+- 2026-11-08: D3-c approved (owner); D13 answered (P1); P2 answered + seq 7 located (`identifier_scan` swap-in).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 (Pkt 1) ANSWERED 2026-11-08: Pillar-1 splits — replayable + conformance-testable kept; "diffable" behind the consumer-side profile; "reconstructs any turn" narrowed; absence claim reworded (+ scope). Card: `design/diff-normalisation.md`. Owner next: ratify + route the paper edit (echo sweep incl. `:635`).
@@ -57,4 +57,4 @@ Part II revision per RR-WP2REV-20261107 (absorbs D13's sentence). Blocker: that 
 ## Blocked (item, what it waits for)
 - W8 reopen: owner go + `design/W8-PROMPT-SLICE.md` gates + USD 23.8459 left (reports/W8-SPEND.md).
 - Publication: owner (D17). W12 beyond Steps 0–1: D7 ruled hold (`design/runtime-abi/00-reconciliation-and-justification.md`).
-- `/tmp/w8` archive: owner action before reboot.
+- `/tmp/w8` run tree: DESTROYED by a `/tmp` clear — erratum in `reports/RR-W8INDEX-20261107.md` (a1d2efb); digests not re-verifiable; go-forward runs land in `~/.local/state/ctxvm/w8-runs`.

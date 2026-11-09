@@ -19,12 +19,9 @@
 - render — per-turn mirror of what the model sees as `turn.render`; totals embedded for replay (white-paper.md §5.1).
 - fault — `page.fault`: model re-requests resident/stubbed content; sources tool_recall | identifier_scan | explicit_api | semantic (RFC-0 fault taxonomy; white-paper.md §3.6).
 - stub — the recovery text an evicted page leaves; instructions only, never prompt pollution (`page.evict.stubText`).
-- harness — the upstream agent runtime captured (OpenCode, Hermes, ai-sdk apps); one plugin per harness.
-- intervention run — a tier-2 model run with one thing changed; sidecar artefact `<run>.intervention.json`; never in the deterministic boundary (design/W19-tier2-interventions.md).
 - protected floor — system prompt + protect_first_n=3 head + protect_last_n=6 tail + pins; over vBudget `_plan` returns early, no selection (context_engine.py:12,287–292; RR-ENGINEGAP-20261106).
 - touch ratio — touched_tokens / rendered_tokens; honestly "identifier-touched share", an upper bound (benchmarks/metrics/metrics.py:14; 08.1 W1).
 - fault recall — hard_fault_recall = explicit re-calls / hard faults (Pichay §3.2; metrics.py:159, W3); old recovered/evictions survives as refetch_rate (metrics.py:146).
-- net token reduction — `1 − (paged_net_tokens / naive_tokens)`; a ratio metric (metrics.py:124; saving claims violate law 7; W8 closed failed).
 
 ## 3. Repo map (directories)
 - `00-09 numbered docs` — plan, event draft, tracer API, ODPS manifest, llms.txt, integration findings, benchmark gates, handoff, update prompt.
