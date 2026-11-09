@@ -296,6 +296,14 @@ Rules that follow, and they are not negotiable on this host:
   witness is ever genuinely needed, the plugin has to be installed inside each profile's own
   `plugins/` directory so the manager namespaces it — that is a deployment change, not a patch.
 
+**The blocker is granularity, not the budget (measured 2026-11-09).** A `-z` session is ONE turn:
+every `page.declare` in the diagnostic capture carries `turn: 0`, 50 results and 63,713 tokens in a
+single turn. The keep law protects `protect_first_n=3` head turns and `protect_last_n=6` tail turns,
+so with one turn the protected set is the whole request and `_plan` returns early by design — at any
+`vBudget`. Cells under a one-turn protocol are therefore void before they are paid for. Two honest
+exits: a multi-turn driver (no policy change), or a re-preregistered message-granular keep law (a new
+policy, not poolable with existing cells). Do not buy another single-turn cell.
+
 **The budget is a PROFILE setting, and the pair proved why it must be.** The first pair ran at the
 plugin's 200,000 default in both arms — `resident + headroom` in each `turn.render` — because
 `CTXVM_BUDGET_TOKENS` was never set and no profile declared one. Plugin 0.10.11 reads

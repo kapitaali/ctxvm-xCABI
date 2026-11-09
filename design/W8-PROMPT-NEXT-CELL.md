@@ -1,3 +1,9 @@
+**STOP — read this before spending.** Under a `-z` one-shot session the whole workload is ONE turn,
+and the keep law protects the first 3 and last 6 turns, so the protected set is the entire request
+and `_plan` returns early at any `vBudget`. A single-turn cell is a guaranteed NO-OP
+(`RR-NOOP-20261109`). Do not run one. The next artefact is a multi-turn driver: same task, surface
+and budget, with the session spanning enough turns that a middle exists to select from.
+
 ROLE — W8 executor: run ONE diagnostic cell. Then stop.
 
 This cell answers a question four earlier cells could not: **does the ctxvm engine act at a
