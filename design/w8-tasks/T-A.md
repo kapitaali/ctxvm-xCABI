@@ -6,8 +6,6 @@ You are given a directory of text files. For every file, compute:
 
 - `lines`: number of lines (a line is terminated by `\n`; a final line without trailing `\n` still counts as one line)
 - `bytes`: total byte size of the file
-- `max_line`: length in bytes of the longest line, **the newline excluded** (the same rule as `lineShape.maxLineBytes` in T1; a final line without a trailing `\n` is measured the same way)
-- `min_line`: length in bytes of the shortest line, newline excluded
 - `long`: number of lines whose byte length (newline excluded) is **greater than 100**
 - `short`: number of lines whose byte length (newline excluded) is **less than 10**
 
@@ -21,7 +19,7 @@ Write the result to `artefact.json` in the working directory. The artefact must 
 ```json
 {
   "files": {
-    "<basename>": {"lines": N, "bytes": N, "max_line": N, "min_line": N, "long": N, "short": N},
+    "<basename>": {"lines": N, "bytes": N, "long": N, "short": N},
     ...
   },
   "widest_file": "<basename>",
@@ -32,6 +30,12 @@ Write the result to `artefact.json` in the working directory. The artefact must 
 Keys in `files` must be sorted ascending. All numbers are integers. No extra keys, no extra whitespace beyond 2-space indentation and a single trailing newline.
 
 You may read any file in the fixture directory. You may write only `artefact.json`. Do not run shell commands or access the network.
+
+**Why there is no `max_line` / `min_line`** (2026-11-09, measured): a naive cell produced the right
+`lines`, `bytes`, `long` and `short` for all fourteen files and the wrong maximum line length in every
+one of them — 119, then 116, then 115 against a ground truth of 120, across three artefacts. It is a
+measurement this model cannot make reliably from a tool result, and a gate it cannot meet measures
+arithmetic rather than context policy. The counts stay; the measurements go.
 
 ## Fixture specification
 

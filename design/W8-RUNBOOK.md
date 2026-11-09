@@ -92,7 +92,7 @@ STEP 1 — PRE-FLIGHT, zero spend, all of it recorded:
     git status --short                        (must be clean; if not, report and stop)
     for a in naive paged; do HERMES_HOME=~/.hermes/profiles/w8-$a \
         hermes config get model.provider; done          -> both must print nous
-    grep -m1 PLUGIN_VERSION ~/.hermes/plugins/ctxvm-tracer/__init__.py -> 0.10.5
+    grep -m1 PLUGIN_VERSION ~/.hermes/plugins/ctxvm-tracer/__init__.py -> 0.10.9 (the gateway may lag; record both)
     tail -3 reports/W8-SPEND.md               (running total vs the $25 cap)
     hermes gateway list                        (must show ONE profile per gateway: a
         multiplexer serving several profiles cannot attest an arm, plan 4c — refuse and stop)
@@ -146,8 +146,9 @@ STEP 4 — CLOSE THE CHUNK:
   run -> every earlier cell of that task becomes pilot evidence and no longer counts. The
   resume key carries the fixture digest, so `--skip-done` re-runs them; do not "fix" that by
   deleting rows.
-- A cell's capture reports `plugin.engine` that does not match its arm (paged must read
-  "ctxvm", naive must read null) -> stop: the arm did not run, whatever the ledger says.
+- A paged cell's capture reports `plugin.engineSelections: 0` -> the engine never engaged: the run
+  is a pilot record, not a cell. (The `profile` field is known-unreliable on this host; the arm is
+  attested by the runner's `-p` plus the ledger row.)
 - The checker fails on BOTH arms in a cell for the same reason -> stop: that is a fixture
   or checker defect, not an arm result.
 - The same cell aborts twice for the same infrastructure reason -> stop, report BLOCKED.

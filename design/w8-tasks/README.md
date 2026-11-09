@@ -6,12 +6,12 @@ Two tasks designed for the W8 paging experiment: does context selection (ctxvm a
 
 | | T-A: Cross-file line-length census | T-B: Cross-file category histogram |
 |---|---|---|
-| **What the agent produces** | `artefact.json` with per-file line/byte/length stats + `widest_file` + `total_long` | `artefact.json` with per-category count/sum/min_id/max_id + `top_category` + `top_file` + `grand_total` |
+| **What the agent produces** | `artefact.json` with per-file `lines`/`bytes`/`long`/`short` + `widest_file` + `total_long` (no line measurements — see T-A) | `artefact.json` with per-category count/sum/min_id/max_id + `top_category` + `top_file` + `grand_total` |
 | **Fixture** | 14 files, `part-01.txt` … `part-14.txt`, 200 lines each | 20 files, `data-01.csv` … `data-20.csv`, 300 data rows each |
 | **Floor (declared tokens)** | ≈ 56,000 (14 × 200 × ~80 bytes) | ≈ 60,200 (20 × 301 × ~40 bytes) |
 | **Estimated calls** | 16 (1 list + 14 read + 1 write) | 22 (1 list + 20 read + 1 write) |
 | **Anti-search property** | Byte length of a line is not a searchable property; aggregates (counts, sums, maxima) across files are not produced by search | Count/sum per category across files is not an aggregate search returns; per-file contribution to a category is not derivable from search hits |
-| **Falsifier (search shortcut)** | Would need per-file counts of lines >100 bytes and <10 bytes, plus per-file max/min line lengths and byte totals — no single search produces these | Would need per-category count and sum across 20 files plus per-file row counts for the top category — no search produces aggregates |
+| **Falsifier (search shortcut)** | Would need per-file counts of lines >100 bytes and <10 bytes plus byte totals — no search returns counts, and a truncated search dump gives wrong ones | Would need per-category count and sum across 20 files plus per-file row counts for the top category — no search produces aggregates |
 | **What PASS at 150 iterations proves** | A naive agent can read all files, compute per-line measurements, and aggregate cross-file — without search shortcutting, so token pressure is real and paging is exercised | A naive agent can read all files, parse all rows, and aggregate across files — search cannot shortcut, so the context grows and paging is exercised |
 
 ## Why previous attempts failed and how these differ

@@ -1,3 +1,6 @@
+> SUPERSEDED 2026-11-09 by `design/W8-PROMPT-NEXT-CELL.md` (T-A minus the line measurements,
+> runner-side attribution, no restart owed). Kept for the record; do not paste this one.
+
 ROLE — W8 executor, the vertical slice (NOT RUNNABLE until the reopen conditions hold)
 
 DO NOT START A PAID CELL from this prompt yet. W8 is BLOCKED (RR-W8CHUNK-20261107-2 §11,
