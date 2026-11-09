@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.10.10"
+PLUGIN_VERSION = "0.10.11"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -310,7 +310,7 @@ def _canon_meta(
         "pluginVersion": PLUGIN_VERSION,
         "model": (identity or {}).get("model") or os.environ.get("CTXVM_MODEL"),
         "provider": (identity or {}).get("provider") or os.environ.get("CTXVM_PROVIDER"),
-        "budgetTokens": _budget_from_env(),
+        "budgetTokens": _state().get("budget_tokens") or _budget_from_env(),
         "capturedAt": _rfc3339_z(datetime.now(timezone.utc)),
         "hookStats": {
             "contexts": hook_stats["pre_llm_calls"],
@@ -359,6 +359,32 @@ def _budget_from_env() -> int:
     except (TypeError, ValueError):
         return 200000
     return value if value > 0 else 200000
+
+
+def _budget_from_settings(ctx) -> tuple:
+    """Return (budget_tokens, source). Precedence: profile setting > env > 200000.
+
+    `ctx.get_config(key)` reads `plugins.entries.<plugin_id>.settings.<key>`, which lives in the
+    SERVING profile's config.yaml. That is the only per-arm declaration that survives a shared
+    gateway without an env ritual, and it is the reason this function exists: a W8 pair ran at the
+    200,000 default while the plan called for 24,000, because no env var was set and no setting
+    existed. The source is recorded so that defect cannot be silent again.
+    """
+    raw = None
+    try:
+        raw = ctx.get_config("budgetTokens")
+    except Exception:
+        raw = None
+    if raw is not None:
+        try:
+            value = int(raw)
+            if value > 0:
+                return value, "settings"
+        except (TypeError, ValueError):
+            pass
+    if os.environ.get("CTXVM_BUDGET_TOKENS"):
+        return _budget_from_env(), "env"
+    return 200000, "default"
 
 
 # W15 (RFC-0.1 §R7): the side-effect class is decided at tool REGISTRATION and
@@ -552,6 +578,8 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # Recorded when a hook ran (inside the turn's profile scope); reading the
             # environment at flush time would name the host again.
             "profile": _state().get("serving_profile") or _serving_profile(),
+            "budgetTokens": _state().get("budget_tokens") or _budget_from_env(),
+            "budgetSource": _state().get("budget_source") or "default",
         },
         "captures": {
             "turns": len(turns),
@@ -865,7 +893,7 @@ def _make_plugin() -> Optional[Any]:
         "agentId": os.environ.get("CTXVM_AGENT_ID", "hermes"),
         "model": identity.get("model") or os.environ.get("CTXVM_MODEL", "unknown/unknown"),
         "provider": identity.get("provider") or os.environ.get("CTXVM_PROVIDER", "unknown"),
-        "budgetTokens": _budget_from_env(),
+        "budgetTokens": _state().get("budget_tokens") or _budget_from_env(),
         "environmentId": _environment_id(),
     })
 
@@ -1735,11 +1763,14 @@ def register(ctx) -> None:
     # observer duties — the hooks above stay fully functional either way.
     try:
         from context_engine import build_engine  # live/-sibling, flat import
-        engine = build_engine()
+        v_budget, budget_source = _budget_from_settings(ctx)
+        engine = build_engine(v_budget=v_budget)
         if engine is not None and hasattr(ctx, "register_context_engine"):
             ctx.register_context_engine(engine)
             state["engine_obj"] = engine
             state["engine_registered"] = engine.name
+            state["budget_tokens"] = v_budget
+            state["budget_source"] = budget_source
             # NOTE (0.10.8, falsified the same day): `ctx.get_config(key)` reads
             # `plugins.entries.<plugin_id>.settings.<key>`, NOT the profile's top-level
             # `context.engine`. Measured on a live `-p w8-paged` probe: the field came back null

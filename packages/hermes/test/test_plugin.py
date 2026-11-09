@@ -20,7 +20,7 @@ for _p in (_HERMES_ROOT, _HERMES_SRC):
         sys.path.insert(0, _p)
 
 from plugin import CtxvmPlugin, create_ctxvm_plugin, Tracer, TraceInit, canonical_json, content_hash, tool_ref, identity_tokens, provider_usage_of  # noqa: E402
-from live import PLUGIN_VERSION, _canon_meta, _clear_env_for_tests, _state, register  # noqa: E402
+from live import PLUGIN_VERSION, _budget_from_settings, _canon_meta, _clear_env_for_tests, _state, register  # noqa: E402
 
 INIT = {
     "agentId": "hermes",
@@ -806,6 +806,54 @@ class LiveAdapterTests(unittest.TestCase):
         finally:
             ce.ACTIVATIONS.update(saved)
             live_mod._state()["engine_registered"] = None
+
+    def test_budget_comes_from_the_profile_setting(self):
+        """The budget is a profile setting, not an env ritual (0.10.11).
+
+        Measured need: a W8 pair ran at the 200,000 default while the plan called for 24,000,
+        because nothing declared the budget anywhere a process could read it. `ctx.get_config`
+        reads `plugins.entries.<plugin_id>.settings.<key>` in the SERVING profile's config, which
+        is exactly the scope a per-arm budget needs.
+        """
+        class _Ctx:
+            def get_config(self, key):
+                return 24000 if key == "budgetTokens" else None
+
+        self.assertEqual(_budget_from_settings(_Ctx()), (24000, "settings"))
+
+    def test_budget_falls_back_to_the_default_and_names_the_source(self):
+        class _Ctx:
+            def get_config(self, key):
+                return None
+
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("CTXVM_BUDGET_TOKENS", None)
+            self.assertEqual(_budget_from_settings(_Ctx()), (200000, "default"))
+
+    def test_budget_env_beats_the_default_and_is_labelled(self):
+        class _Ctx:
+            def get_config(self, key):
+                return None
+
+        with mock.patch.dict(os.environ, {"CTXVM_BUDGET_TOKENS": "12000"}):
+            self.assertEqual(_budget_from_settings(_Ctx()), (12000, "env"))
+
+    def test_budget_setting_beats_the_env(self):
+        class _Ctx:
+            def get_config(self, key):
+                return "24000"
+
+        with mock.patch.dict(os.environ, {"CTXVM_BUDGET_TOKENS": "12000"}):
+            self.assertEqual(_budget_from_settings(_Ctx()), (24000, "settings"))
+
+    def test_budget_rejects_a_nonsense_setting(self):
+        class _Ctx:
+            def get_config(self, key):
+                return "twenty-four-thousand"
+
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("CTXVM_BUDGET_TOKENS", None)
+            self.assertEqual(_budget_from_settings(_Ctx()), (200000, "default"))
 
     def test_over_budget_render_omits_headroom(self):
         """v0's `headroom` is UNSIGNED: a resident set above the declared budget has no

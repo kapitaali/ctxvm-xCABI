@@ -296,6 +296,14 @@ Rules that follow, and they are not negotiable on this host:
   witness is ever genuinely needed, the plugin has to be installed inside each profile's own
   `plugins/` directory so the manager namespaces it — that is a deployment change, not a patch.
 
+**The budget is a PROFILE setting, and the pair proved why it must be.** The first pair ran at the
+plugin's 200,000 default in both arms — `resident + headroom` in each `turn.render` — because
+`CTXVM_BUDGET_TOKENS` was never set and no profile declared one. Plugin 0.10.11 reads
+`plugins.entries.ctxvm-tracer.settings.budgetTokens` from the serving profile's config first
+(verified: `hermes config get … -p w8-paged` → 24000, `-p w8-naive` → not set), then the env var, then
+200000, and records `budgetTokens` **and** `budgetSource` in the coverage sidecar. A cell whose
+`budgetTokens` is not 24000 on the treatment arm is void at turn 0.
+
 **The first counted pair, and it is negative.** T-A, both arms `-t file`, one gateway:
 
 ```
