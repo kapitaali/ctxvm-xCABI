@@ -17,6 +17,38 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 log() { printf '[ctxvm-ci] %s\n' "$*"; }
 
+# Counts are DERIVED, never typed. The summary used to be a literal, so adding
+# five tests printed "177" while 182 ran (2026-11-09). A counted step keeps its
+# log and appends "count<TAB>kind<TAB>name"; the summary reads that file.
+CI_LOG_DIR="$(mktemp -d -t ctxvm-ci-logs-XXXXXX)"
+COUNTS="$CI_LOG_DIR/counts.tsv"
+: > "$COUNTS"
+count_of() { # kind file
+  case "$1" in
+    node)   grep -oE 'pass [0-9]+' "$2" | awk '{s+=$2} END{print s+0}' ;;
+    pytest) grep -oE '[0-9]+ passed' "$2" | tail -1 | awk '{print $1+0}' ;;
+
+    *)      echo 0 ;;
+  esac
+}
+run_counted() { # name kind cmd...
+  local name="$1" kind="$2"; shift 2
+  local out n
+  out="$CI_LOG_DIR/$(printf '%s' "$name" | tr -c 'A-Za-z0-9' '_').log"
+  if ! "$@" >"$out" 2>&1; then
+    printf '\n[ctxvm-ci] FAILED: %s\n' "$name" >&2
+    printf '[ctxvm-ci] last 40 lines of its output:\n' >&2
+    tail -n 40 "$out" >&2
+    printf '\n[ctxvm-ci] full output kept at %s\n' "$out" >&2
+    exit 1
+  fi
+  n="$(count_of "$kind" "$out")"
+  printf '%s\t%s\t%s\n' "$n" "$kind" "$name" >> "$COUNTS"
+}
+suite_line() { # kind -> "a + b + c"
+  awk -F'\t' -v k="$1" '$2==k {printf "%s%s", sep, $1; sep=" + "}' "$COUNTS"
+}
+
 # A red gate must say WHAT failed. Steps used to send their output to /dev/null,
 # so a failure produced one bare exit code and no name — that cost a full
 # investigation on 2026-11-03 when the gate went red on a docs-only commit.
@@ -82,15 +114,16 @@ log "release binaries green (UC2/UC1 golden parity)"
 
 # 2) typescript + python
 log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode + @ctxvm/ai-sdk; python — @ctxvm/hermes + @ctxvm/py binding"
-run_step "@ctxvm/node suite" bash -c 'cd packages/node && node --test test/' 
+run_counted "@ctxvm/node suite" node bash -c 'cd packages/node && node --test test/' 
 # W10 build: the source suite above proves the in-repo story; these two prove the
 # PUBLISHABLE artifact. Mirrors ci.yml's ts job step for step.
 run_step "npm ci (@ctxvm/node)" bash -c 'cd packages/node && npm ci --no-audit --no-fund' 
 bash tools/check-node-build.sh
-run_step "@ctxvm/opencode suite" bash -c 'cd packages/opencode && node --test test/' 
-run_step "@ctxvm/ai-sdk suite" bash -c 'cd packages/ai-sdk && node --test test/' 
-run_step "@ctxvm/hermes suite" bash -c 'cd packages/hermes && python -m pytest test/ -q' 
-run_step "@ctxvm/py suite" bash -c 'cd packages/py && python -m pytest test/ -q' 
+run_counted "@ctxvm/opencode suite" node bash -c 'cd packages/opencode && node --test test/' 
+run_counted "@ctxvm/ai-sdk suite" node bash -c 'cd packages/ai-sdk && node --test test/' 
+run_counted "@ctxvm/hermes suite" pytest bash -c 'cd packages/hermes && python -m pytest test/ -q' 
+run_counted "@ctxvm/py suite" pytest bash -c 'cd packages/py && python -m pytest test/ -q' 
+run_step "plugin.yaml version matches PLUGIN_VERSION" bash -c 'ver=$(sed -n "s/^version: *//p" packages/hermes/live/plugin.yaml); grep -q "PLUGIN_VERSION = \"$ver\"" packages/hermes/live/__init__.py'
 # W10 node build: the package ships a copy of the root LICENSE so `npm pack` carries it.
 # The copy must never drift from the single source of truth.
 run_step "packages/node/LICENSE must match the root LICENSE" cmp -s LICENSE packages/node/LICENSE
@@ -98,8 +131,8 @@ run_step "packages/node/LICENSE must match the root LICENSE" cmp -s LICENSE pack
 # field-set sync, golden bytes, OTLP structure and CLI determinism are the gate.
 run_step "otel-export drift guard (D3-c: schema sync + goldens + OTLP structure)" node --test tools/otel-export.test.mjs
 log "gate 2b: benchmarks/metrics — 07 reference suite + policy simulator"
-run_step "benchmarks/metrics suite" venvs/odps/bin/python -m pytest benchmarks/metrics -q
-log "ts suites green (22 + 62 + 46 tests); python suites green (182 + 66 + 8 tests)"
+run_counted "benchmarks/metrics suite" pytest venvs/odps/bin/python -m pytest benchmarks/metrics -q
+log "ts suites green ($(suite_line node) tests); python suites green ($(suite_line pytest) tests)"
 
 # 3) schema + corpus integrity + the T21 export round-trip
 log "gate 3/4: schema validator + corpus checksums + export round-trip"

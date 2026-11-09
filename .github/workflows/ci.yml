@@ -80,6 +80,10 @@ jobs:
       - name: "@ctxvm/py binding tests (byte-compare vs rust CLI on m1/m2 anchors)"
         run: python -m pytest test/ -q
         working-directory: packages/py
+      - name: plugin.yaml version must match PLUGIN_VERSION
+        run: |
+          ver=$(sed -n 's/^version: *//p' packages/hermes/live/plugin.yaml)
+          grep -q "PLUGIN_VERSION = \"$ver\"" packages/hermes/live/__init__.py
       - name: "benchmarks/metrics suite (07 formulas + UC3 policy sim)"
         run: python -m pytest benchmarks/metrics -q
 
