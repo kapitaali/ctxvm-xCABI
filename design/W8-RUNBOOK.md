@@ -28,7 +28,9 @@ Cells: 48 total, 0 completed (the two pilot cells are not grid cells; they are f
 validation and are reported separately).
 Spend so far: $0.5161 all day, of which $0.3207 is the corrected cost of one naive run.
 Cap: USD 25.00 hard. Grid projection at $0.3207/cell: about $15.39.
-Plugin: ctxvm-tracer 0.10.3, installed at ~/.hermes/plugins/ctxvm-tracer.
+Plugin: ctxvm-tracer **0.10.11 or newer**, installed at ~/.hermes/plugins/ctxvm-tracer. 0.10.11
+reads the budget from the profile setting (`plugins.entries.ctxvm-tracer.settings.budgetTokens`), so
+a gateway older than the plugin file leaves the treatment at its 200,000 default and voids the cell.
 Profiles: ~/.hermes/profiles/w8-naive (context.engine: compressor) and w8-paged (ctxvm),
 both provider "nous", both model.default "openai/gpt-6-luna".
 Model: openai/gpt-6-luna on provider nous, a PAID row ($0.10 in / $0.50 out / $0.01 cached).
@@ -92,7 +94,11 @@ STEP 1 — PRE-FLIGHT, zero spend, all of it recorded:
     git status --short                        (must be clean; if not, report and stop)
     for a in naive paged; do HERMES_HOME=~/.hermes/profiles/w8-$a \
         hermes config get model.provider; done          -> both must print nous
-    grep -m1 PLUGIN_VERSION ~/.hermes/plugins/ctxvm-tracer/__init__.py -> 0.10.9 (the gateway may lag; record both)
+    grep -m1 PLUGIN_VERSION ~/.hermes/plugins/ctxvm-tracer/__init__.py  (record; compare with the
+        gateway's start time — a process older than this file is running older code)
+    hermes config get plugins.entries.ctxvm-tracer.settings.budgetTokens -p w8-paged  -> 24000
+    hermes config get plugins.entries.ctxvm-tracer.settings.budgetTokens -p w8-naive  -> not set
+        (these two lines are the treatment condition; if they do not read this, no cell can count)
     tail -3 reports/W8-SPEND.md               (running total vs the $25 cap)
     hermes gateway list                        (must show ONE profile per gateway: a
         multiplexer serving several profiles cannot attest an arm, plan 4c — refuse and stop)
