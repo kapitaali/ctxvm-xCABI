@@ -706,6 +706,36 @@ class LiveAdapterTests(unittest.TestCase):
         finally:
             _clear_env_for_tests()
 
+    def test_engine_counter_is_read_from_the_instance_not_a_module_global(self):
+        """Two profiles share a flat sibling import (`from context_engine import …` resolves
+        by bare name through sys.modules), so a module-level counter can be process-wide.
+        The count must come from the engine THIS plugin registered."""
+        import live as live_mod
+        state = live_mod._state()
+        saved = state.get("engine_obj", "absent")
+
+        class FakeEngine:
+            name = "ctxvm"
+
+            def __init__(self, n):
+                self._selections = n
+
+        try:
+            state["engine_registered"] = "ctxvm"
+            state["engine_obj"] = FakeEngine(0)
+            self.assertEqual(live_mod._engine_selections(), 0)
+            self.assertIsNone(live_mod._engine_activated(),
+                              "an engine that never selected is not the arm")
+            state["engine_obj"] = FakeEngine(7)
+            self.assertEqual(live_mod._engine_selections(), 7)
+            self.assertEqual(live_mod._engine_activated(), "ctxvm")
+        finally:
+            state["engine_registered"] = None
+            if saved == "absent":
+                state.pop("engine_obj", None)
+            else:
+                state["engine_obj"] = saved
+
     def test_profile_is_the_serving_profile_not_the_host_home(self):
         """`os.environ["HERMES_HOME"]` is process-wide and names the HOST in a gateway, which
         is why a `-p w8-naive` cell recorded ".hermes". The host sets a contextvar per turn;

@@ -288,6 +288,13 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         super().__init__()
         self._v_budget, self._v_budget_source, self._v_budget_refused_lower = \
             _resolve_v_budget(v_budget)
+        # Selection count ON THE INSTANCE, not in a module global. The plugin package is
+        # namespaced per profile (hermes_cli/plugins_loader.py `_directory_module_name`
+        # gives the first scope `hermes_plugins.<slug>` and every other scope a
+        # `__home_<digest>` suffix), but this sibling module is imported flat, and a flat
+        # import resolves through sys.modules by bare name. An instance attribute cannot be
+        # shared between profiles, whatever the import machinery does.
+        self._selections = 0
         # stock keep-law defaults (the host ABC's own class-level values)
         self._protect_first_n = int(protect_first_n)
         self._protect_last_n = int(protect_last_n)
@@ -352,6 +359,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         """Per-request resident-set replacement (§3.3 item 2). Returns None to
         leave the request byte-identical; the returned list is request-only."""
         import datetime as _dt
+        self._selections += 1
         ACTIVATIONS["select"] += 1
         _now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         ACTIVATIONS["firstTs"] = ACTIVATIONS["firstTs"] or _now

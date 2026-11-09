@@ -255,10 +255,23 @@ iteration ceiling on the naive arm, with the search/read mix recorded. A read/wr
 surface is the fallback, and it must also remove shell and terminal, or the claim is scoped to
 "reads were unavoidable, greps were not". Raising the ceiling is rejected: it only moves cost.
 
-**Open, probe-decidable (D-K).** Whether `context_engine.ACTIVATIONS` is per profile or per
-process. The host evicts same-slug submodule state between profiles, which suggests per
-profile, but no probe has shown it. Until it does, the isolation canary stands: a paged cell
-followed by a naive cell in the same gateway, where the naive cell must show zero selections.
+**D-K RESOLVED (plugin 0.10.7) — the activation counter is per profile, and now per instance.**
+Two facts, because the first alone is not enough:
+
+1. The plugin *package* is namespaced per profile: `hermes_cli/plugins_loader.py`
+   `_directory_module_name` gives the first scope the bare `hermes_plugins.<slug>` and every other
+   scope a `__home_<digest>` suffix, and `_clear_plugin_submodules` purges the previous profile's
+   submodules with the docstring "otherwise a same-slug plugin in another profile reuses the
+   previous profile's submodule state" (`hermes_cli/plugins.py:1544-1557`).
+2. The *sibling* module is imported flat (`from context_engine import build_engine`), and a flat
+   import resolves by bare name through `sys.modules` — so a module-level counter could still be
+   shared. The counter now lives on the engine **instance** (`self._selections`), the plugin keeps
+   the reference it registered, and the manifest reads the instance first, the module global second.
+
+An instance attribute cannot be shared between profiles whatever the import machinery does, so the
+isolation canary is now optional rather than a reopen condition. What is still wanted, when a paid
+cell next runs: a paged capture with `plugin.engineSelections > 0` and a naive capture with `0`,
+in the same gateway. That is empirical confirmation of a property already true by construction.
 
 ## 5. The pilot before the grid
 

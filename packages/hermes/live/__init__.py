@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.10.6"
+PLUGIN_VERSION = "0.10.7"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -444,13 +444,27 @@ def _serving_profile() -> Optional[str]:
     return os.path.basename(home) if home else None
 
 
+def _engine_selections_from_instance() -> Optional[int]:
+    """Selections counted on the engine THIS plugin registered, if any.
+
+    An instance attribute cannot be shared across profiles; the module global can, because
+    the sibling module is imported flat. The manifest prefers the instance.
+    """
+    engine = _state().get("engine_obj")
+    value = getattr(engine, "_selections", None)
+    return value if isinstance(value, int) else None
+
+
 def _engine_activated() -> Optional[str]:
     """Engine name only if the host actually selected with it in this process."""
     try:
         from context_engine import ACTIVATIONS
     except Exception:  # noqa: BLE001 - outside the hermes runtime the module may not exist
         return None
-    return _state().get("engine_registered") if ACTIVATIONS.get("select", 0) > 0 else None
+    count = _engine_selections_from_instance()
+    if count is None:
+        count = ACTIVATIONS.get("select", 0)
+    return _state().get("engine_registered") if count > 0 else None
 
 
 def _engine_selections() -> int:
@@ -458,7 +472,8 @@ def _engine_selections() -> int:
         from context_engine import ACTIVATIONS
     except Exception:  # noqa: BLE001
         return 0
-    return int(ACTIVATIONS.get("select", 0))
+    count = _engine_selections_from_instance()
+    return int(count if count is not None else ACTIVATIONS.get("select", 0))
 
 
 def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
@@ -1720,6 +1735,7 @@ def register(ctx) -> None:
         engine = build_engine()
         if engine is not None and hasattr(ctx, "register_context_engine"):
             ctx.register_context_engine(engine)
+            state["engine_obj"] = engine
             state["engine_registered"] = engine.name
             _witness(f"engine={engine.name} registered")
     except Exception as exc:  # noqa: BLE001 - fail-open is the design law here
