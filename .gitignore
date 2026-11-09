@@ -30,6 +30,8 @@ research/white-paper/_build/
 
 # build output (npm package emit; never commit — rebuilt by `npm run build`/prepack)
 dist/
+packages/py/build/
+packages/py/ctxvm_py.egg-info/
 
 # Uncommitted research sources (2026-11-05): two independent safety-research notes
 # were written by different models and the owner asked for the SYNTHESIS to be the
