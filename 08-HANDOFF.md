@@ -887,6 +887,30 @@ pending owner answers (`handoff/QUESTIONS.md`), then any resulting cards; W9
 umpire-side quality items (cross-machine determinism; the W10 riders closed 2026-11-01)
 run in the umpire repo on owner coordination.
 
+**PUSH WITNESS CD43555 (2026-11-09, run 42589188792 = run №94, push event at head `cd43555`,
+completed success in 37 s, 08:53:14–08:53:51Z, all four jobs green — hub 9 s, schema 12 s,
+rust 28 s, ts 33 s):** the first hosted execution of the P3 stack — the Packet-3 answer card
+`ae46b63` (D14 recorded; release rule bound at D6; redaction card authored proposal-only,
+sidecar-first) and the placement follow-through `cd43555` (card of record
+`design/redaction-block.md`, owner-cleared) — plus the P2 close-out kit bytes `2761acc` carried in
+the same fast-forward (lineage through `e1281bd`, run №93's head). Facts from the hosted runs+jobs
+API; the kit did not change between push and witness. Logged `RR-PUSHP3-20261109` under the echo
+law as witnessed AND recorded (the stack carries real cards, not a books-echo).
+**Next frontier 10 (P3 landed + run №94 witnessed; status 2026-11-09):** the reviewer round is
+closed on the kit side — P1 (D13; `design/diff-normalisation.md`), P2 (demo keeps; `identifier_scan`
+cause located), P3 (D14; release rule bound at D6; `design/redaction-block.md`) are answered,
+recorded, and hosted-green at `cd43555`; the reviewer queue in turn does NOT stay empty — the adoption lane has
+queued the next batch, P4 (umpire `ts`: consumer rule vs additive mandate), P5 (calibration
+transfer, n=180), P6 (determinism scope: same-build vs cross-machine), P7 (baselines: embedding-NN
+and friends) — pending owner paste (packet files exist; `handoff/QUESTIONS.md` rows not yet
+written). What remains beyond it consumes no reviewer answer: owner
+ratification of D13 + D14 and the §4-LIST release rule (first-run-notice minimum) at D6/D17; routing the white-paper bundle (Pillar-1 split; `:635` echo sweep; the P2 sentence at `:333`/`:339`
+with the `identifier_scan` cause; the R1 3-to-0 contrast; the consent-paragraph replacement at
+`white-paper.md:620–623` + the index twin + Part II `:368`; Part II's card-citation rule) to the
+white-paper lane's working tree; then the owner gates D16 (W8 reopen) and D17 (publication); the
+adoption lane (A1–A6) continues per adoption prompt §4; W9 umpire-side quality items on owner
+coordination.
+
 ## §1. Workspace map
 
 ```

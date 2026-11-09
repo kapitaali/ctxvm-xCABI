@@ -1,4 +1,4 @@
-# State (updated 2026-11-09, by ctxvm repo agent (opencode), after P3's answer: D14 recorded, the redaction card authored proposal-only)
+# State (updated 2026-11-09, by ctxvm repo agent (opencode), after the P3 card's hosted-run witness: run №94 green at cd43555)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8 closed FAILED by the owner.
@@ -21,7 +21,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 ## Next three (ordered, one line each)
 1. Owner: ratify D13 + D14, route the white-paper bundle — SIX paper items: Pillar-1 split; `:635` echo sweep; the P2 demo sentence (`:333`/`:339`, `identifier_scan` cause); the R1 3-to-0 contrast; the consent-paragraph replacement (`white-paper.md:620–623`, index twin, Part II `:368`); Part II's card-citation rule — working-tree bytes, not HEAD.
 2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
-3. Agent: un-gated queue is EMPTY (board + frontier 9) — next cards come from owner gates (D16, D17) or new reviewer verdicts.
+3. Agent: reviewer queue NOT empty — P4–P7 queued by the adoption lane (owner to paste; kit rows pending); next cards from owner gates (D16, D17), new reviewer verdicts, or the A-queue.
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
@@ -47,7 +47,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 3. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% belongs to an external controller (AGENTS.md law 7).
 
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
-- Conformance gate: GREEN 2026-11-08 (nine-key `env -u` + `bash tools/run-ci.sh`; proven local AND on Actions run 42468046847, 4/4); log `/tmp/opencode/otel/gate-d3c.log`.
+- Conformance gate: GREEN 2026-11-08 (nine-key `env -u` + `bash tools/run-ci.sh`; proven local, run №90, AND hosted run №94 `42589188792` at `cd43555`, 4/4, 37 s, 2026-11-09); log `/tmp/opencode/otel/gate-d3c.log`. Snapshot dated; totals re-derivable via run-ci.
 - XERJ Hub listing UNVERIFIED — live `hub.xerj.org/llms.txt` re-check (RR-XERJ-20261029).
 - openai price row + cache-read nulls UNVERIFIED (`prices.json`) — owner source.
 - W8 arm-attribution rule SUPERSEDED by plan §4e (`b6aa2a3`: one host gateway, attestation-scope equality); UNPROVEN until a probe runs.
