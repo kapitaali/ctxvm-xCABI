@@ -1011,7 +1011,8 @@ def register(ctx) -> None:
         if vm is not None and trace_dir:
             _ensure_trace_dir(trace_dir)
             base = _flush_base()
-            for record in vm.finish_all():
+            finished = vm.finish_all()
+            for record in finished:
                 session_id = record["sessionID"]
                 trace = record["trace"]
                 file = _collision_safe_file(trace_dir, base or session_id, session_id)
@@ -1050,6 +1051,9 @@ def register(ctx) -> None:
                     + "\n",
                     encoding="utf-8",
                 )
+                # Drop the finished tracer so write-through partials cannot be
+                # recreated after the full flush (defect 4, RR-REVIEW-H6).
+                vm._tracers.pop(session_id, None)
         # A complete capture supersedes its partial snapshot, and the directory is
         # pruned so default-ON capture cannot grow without bound.
         if trace_dir:

@@ -55,9 +55,11 @@ export CTXVM_TRACE_WRITETHROUGH_EVERY=10
 export W8_PROVIDER="${W8_PROVIDER:-nous}"
 export W8_MODEL="${W8_MODEL:-openai/gpt-6-luna}"
 export CTXVM_MODEL="$W8_MODEL"
+export CTXVM_PROVIDER="$W8_PROVIDER"
 export CTXVM_BUDGET_TOKENS="${W8_BUDGET_TOKENS:-200000}"
-# CTXVM_PROVIDER is deliberately NOT set here: the plugin records "unknown" rather than
-# guessing, and the provider's own payload wins when it carries one.
+# CTXVM_PROVIDER: set from W8_PROVIDER (owner-attested, not guessed). The plugin
+# records "unknown" only when this is unset; the provider's own payload still wins
+# when it carries one (precedence: payload > settings > env > "unknown").
 
 # --- the factor -------------------------------------------------------------
 if [ "$ARM" = "paged" ]; then

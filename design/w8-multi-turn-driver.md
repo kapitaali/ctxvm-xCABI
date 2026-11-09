@@ -65,21 +65,21 @@ Turn 12 (final — depends on the early material):
 
 12 turns: reads in 1-3, 8 middle turns (4-11), final in 12. Satisfies reads-in-1-3, ≥6 middle, final-depends-on-early, and ≥10 distinct turns.
 
-## 4. Invocation shape
+## 4. Invocation shape (actual, 2026-11-09)
+
+The driver uses `hermes chat -q --oneshot -c <session_name>` (not `hermes -p ... -z`). Toolset is pinned
+in the profile (`platform_toolsets.cli: [file]`), not on the CLI, because resume refuses overrides.
 
 ```
 # turn 1 — creates the named session
-hermes -p w8-<arm> -z "<turn-1 prompt>" -m <model> --provider <provider> \
-    --in <workspace> --usage-file <run-dir>/usage-01.json -t file
-# capture session_id from usage-01.json, then:
-hermes sessions rename <session_id> <session_name>
+hermes chat -q "<turn-1 prompt>" --oneshot -c <session_name> --create-if-missing --in <workspace>
 # turns 2..N
-hermes -c <session_name> -p w8-<arm> -z "<turn-k prompt>" -m <model> --provider <provider> \
-    --in <workspace> --usage-file <run-dir>/usage-kk.json -t file
+hermes chat -q "<turn-k prompt>" --oneshot -c <session_name> --in <workspace>
 ```
 
-`-c` with no name is forbidden (shared host). The driver refuses to run if `--session-name`
-is empty.
+`-c` with no name is forbidden (shared host). The driver refuses to run if `--session-name` is empty.
+Model/provider/toolset come from the profile (gpt-6-luna / nous / file) — never passed on the CLI,
+because resume refuses `-m/--model/--provider` overrides.
 
 ## 5. Done when (H5)
 
