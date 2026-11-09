@@ -138,3 +138,55 @@ if `profile` reads `w8-paged` and `engine` reads `ctxvm` with `engineSelections 
 design is attributable and W8 can reopen on T-A minus the line measurements. If it still reads
 `default`/null, `-p` does not reach the serving process and no paged cell can be trusted — which is
 a blocker to fix before any grid, not after.
+
+## Probe: -p w8-paged, 2026-11-09
+
+- Command (verbatim): `hermes -p w8-paged -z "Reply with the single word OK and nothing else." -m openai/gpt-6-luna --provider nous --usage-file /tmp/w8probe/usage.json`
+- Usage: `calls 1 cost 0.0016823 provider nous` (total incl. auxiliary 0.0017159, 2 calls incl. title-gen; `turn_exit_reason: text_response(finish_reason=stop)`)
+- Sidecar: `/home/theb/.local/state/ctxvm/traces/local-bafef230b74f06b937a44343af5a09b056c6e5f20cde97af62fc116143d151a0.coverage.json`
+- Sidecar `plugin` block (verbatim): `{'version': '0.10.6', 'harness': 'hermes-python-plugin', 'harnessVersion': None, 'engine': 'ctxvm', 'engineSelections': 1, 'profile': 'default'}`
+- Sidecar captures: turns 1, pages 0, declares 0, faults 0 (perApiRequest samples: 1). Trace: `local-bafef230b74f06b937a44343af5a09b056c6e5f20cde97af62fc116143d151a0.jsonl`
+- `session.open`: `model openai/gpt-6-luna`, `provider unknown`, `environmentId env-2b4652ae9d98`
+- **Row C — FAIL(profile).** `-p` does not reach the process that ran the turn (profile reads `default`), though the engine is there (`engine ctxvm`, `engineSelections 1`); no paged cell can be trusted until profile attribution is fixed.
+- Gateway PID 4110 (started Mon Nov 9 09:16:19 2026); plugin file on disk 0.10.7 (mtime 12:25:36) — in-memory plugin (0.10.6 per sidecar) is older than the file.
+- Surprise: `provider unknown` in session.open while usage.json says `nous` (Row D separate finding); the OK turn made zero tool calls, so the sidecar proves engine activity via `engineSelections` only, not via page residency.
+
+### Correction of the verdict: Row C is arm PASS, label fail
+
+The probe wrote `engine: ctxvm, engineSelections: 1, profile: default` and was reported as Row C
+FAIL(profile). The engine field decides it, and it says the opposite of the row:
+
+- `select_context()` increments on entry, before any budget logic, so `engineSelections: 1` means the
+  host **called the engine** for that session.
+- The host activates the engine from the session's profile (`context.engine: ctxvm`); the default
+  profile is `compressor` and would never call it. The engine's construct-then-register is
+  unconditional, but *selection* is not.
+- Therefore the session was served under `w8-paged`. `-p` reached the process.
+
+What failed is the **label**: `plugin.profile` reads `get_active_profile_name()`, which derives from
+`get_hermes_home()`, and the per-turn contextvar is only set on the multiplexed path — so the field
+records the host home while the configuration that mattered did arrive.
+
+My decision table was too coarse: Row C conflated "the profile name is unknown" with "the profile was
+not applied". They are different failures, and only the second blocks the experiment.
+
+**Consequence for attribution, which is now better than before:** `engineSelections` is a complete
+arm witness on its own.
+
+```
+paged   engineSelections >= 1   always, because the counter runs on entry
+naive   engineSelections == 0   because the compressor profile never calls the engine
+```
+
+The ambiguity I worried about — "paged with an inert engine looks like naive" — does not exist: an
+inert engine is still *called*, and the call is what is counted.
+
+**What is still unproven** is only the isolation between profiles: this gateway had never served a
+paged session before this probe, so a process-wide counter would also have read 1. A single
+`-p w8-naive` call after this one settles it — expect `engine: null, engineSelections: 0`. If it
+reads 1, the counter is shared and 0.10.7's instance counter is required (it is written, not live:
+the gateway runs 0.10.6 from 09:16).
+
+**No restart is needed to proceed.** The engine field works on 0.10.6 as measured; `plugin.profile` is
+known-unreliable and should be documented rather than fixed tonight, with the config value recorded
+in its place once the gateway next restarts for its own reasons.
