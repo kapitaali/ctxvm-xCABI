@@ -6,10 +6,9 @@ STATUS: OPEN · 2026-11-09 · answer from this packet alone; do not ask for repo
 
 **Q1.** Given cached input billed at roughly a tenth of uncached, is there a page-selection strategy
 that bounds residency **without forfeiting the provider's prefix cache**? Rank these and say what each
-costs: (a) select only when the resident set actually changes, never per call; (b) select once for the
-run, then hold the page set fixed; (c) keep the head (system prompt, pinned pages) byte-identical and
-mutate only near the tail, so the common prefix stays maximal; (d) abandon selection as an intervention
-on any cache-billed provider.
+costs: (a) reselect only when the resident set changes, never per call; (b) select once and hold the
+set; (c) keep the head byte-identical and mutate only near the tail; (d) abandon selection on any
+cache-billed provider.
 
 **Q2.** If the answer is (c) or "not with this structure", should the primary metric move from tokens to
 dollars? They agree on this result but would diverge under a cache-stable policy. The token ratio is
@@ -21,7 +20,7 @@ measurement of the current engine, which is already known to forfeit the cache?
 
 ## Evidence
 
-First counted pair, one task, one tool surface (`file`), one gateway, both cells complete:
+First counted pair, one task, surface `file`, one gateway, both cells complete:
 
 ```
             calls   input        cache-read   cache-write   peak     cost
@@ -34,13 +33,17 @@ parsing, so accuracy is not the difference. The treatment selects a page set on 
 request prefix changes every call and the prefix cache — which hits on the longest common prefix —
 misses from the first changed page onward. Cache reads fell to a third; writes rose ninefold.
 
+Break-even from the naive receipt: a perfectly stable arm ties control only below **57,250** tokens per
+call at 14 calls (94,053 at 5; 45,405 at 20). The measured paged prefix was 65,488 — caching alone
+would still have lost. At 24,000 the cell would cost 42% of control. The engine currently makes the
+prefix larger: the protected floor exceeds the budget, so selection removes nothing and adds churn.
+
 ## Constraints
 
-Fixed and not negotiable: corpus, task, surface, model row, budget gate. The engine is ours and may
-change. We publish no cost-saving claim and will state none from these data. Attribution of an arm is
-runner-side, not in-capture: a plugin installed in the shared plugins directory is one module for
-every profile, so the two arms are separated by the profile each was invoked with and by nothing
-inside the trace.
+Fixed: corpus, task, surface, model row, budget gate. The engine is ours and may
+change. We publish no cost-saving claim and will state none from these data. Arm attribution is
+runner-side, not in-capture: a plugin in the shared plugins directory is one module for every profile,
+so the arms are separated by the profile each was invoked with and by nothing inside the trace.
 
 ## Output wanted
 
