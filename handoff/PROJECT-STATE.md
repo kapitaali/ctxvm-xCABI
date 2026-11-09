@@ -11,9 +11,9 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. P3 (D14) answered; redaction card authored proposal-only, sidecar-first — `design/redaction-block.md` (owner-cleared).
-2. P2 answered; seq 7 located — source `identifier_scan`, swap-in cause active (`reports/RR-P2DEMO-20261108.md`).
-3. D3-c exporter promotion + drift guard; 2 ci.yml mirror defects fixed (`RR-D3COTEL-20261108`).
+1. A1–A6 adoption batch (2026-11-09): RR-IMPL2/RR-FRICTION/RR-FINDING/RR-PKG/RR-CHANNELS/RR-UMPIRE + packets P4–P7.
+2. P3 (D14) answered; redaction card authored proposal-only, sidecar-first — `design/redaction-block.md` (owner-cleared).
+3. P2 answered; seq 7 located — source `identifier_scan`, swap-in cause active (`reports/RR-P2DEMO-20261108.md`).
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
@@ -21,7 +21,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 ## Next three (ordered, one line each)
 1. Owner: ratify D13 + D14, route the white-paper bundle — SIX paper items: Pillar-1 split; `:635` echo sweep; the P2 demo sentence (`:333`/`:339`, `identifier_scan` cause); the R1 3-to-0 contrast; the consent-paragraph replacement (`white-paper.md:620–623`, index twin, Part II `:368`); Part II's card-citation rule — working-tree bytes, not HEAD.
 2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
-3. Agent: reviewer queue NOT empty — P4–P7 queued by the adoption lane (owner to paste; kit rows pending); next cards from owner gates (D16, D17), new reviewer verdicts, or the A-queue.
+3. Agent: A1 A2 A5 A3 A4 A6 done (RR-IMPL2/RR-FRICTION/RR-FINDING/RR-PKG/RR-CHANNELS/RR-UMPIRE). Owner gates: D13/D14/D17 + umpire (A6) + P4–P7 verdicts.
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
