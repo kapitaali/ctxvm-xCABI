@@ -61,6 +61,8 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
   *Done when:* checks 1–7 of `design/W8-EXECUTOR-PROMPT.md` §5 pass **and** `evictedTokens > 0`.
   Cells counted goes 0 → 1. Budget: ask first; estimate $0.10–0.20.
 
+**W8 CLOSED 2026-11-10 (owner, option A): negative result, `design/W8-CLOSURE-20261110.md`. H7/H8 are withdrawn with it; the replacement is `design/W8B-FREE-PLAN.md` (free model, 20-part shape).**
+
 - [ ] **H8. Decide the 48-cell grid, with numbers.** After H7: if the cell evicted and the artefact
   held, price a grid from the measured per-cell cost; if it did not, write the negative finding and
   close the card.

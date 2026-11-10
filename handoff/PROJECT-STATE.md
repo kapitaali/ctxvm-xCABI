@@ -1,7 +1,7 @@
 # State (updated 2026-11-10, by ctxvm repo agent (opencode), after the P7 card: D-U2 answered — two zero-spend baselines first, margins preregistered before any run)
 
 ## Goal
-Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8: 0 CELL, 3 NO-OP, 1 DATA-INVALID; saving capped 5.3%; next = packet P9.
+Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8: CLOSED negative (`design/W8-CLOSURE-20261110.md`); next = W8B, free model (`design/W8B-FREE-PLAN.md`).
 
 ## Artifacts and versions
 - Wire: RFC-0 sealed (`spec/rfc-0/`, byte-frozen); RFC-0.1 additive landed (`spec/rfc-0.1/`, R0–R5).
@@ -56,6 +56,6 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 - Hard-fault-recall ≥95% gate UNMEASURED (n=4 < 30) — pooled runs.
 
 ## Blocked (item, what it waits for)
-- W8 reopen: owner go + packet P9. Remaining spend UNVERIFIED (>= $7.14 billed 11-10; store $9.16/3d; RR-SPEND-RECON2).
+- W8 spend: >= $7.14 billed 11-10; store $9.16/3d; remaining UNKNOWN (RR-SPEND-RECON2).
 - Publication: owner (D17). W12 beyond Steps 0–1: D7 ruled hold (`design/runtime-abi/00-reconciliation-and-justification.md`).
 - `/tmp/w8` run tree: DESTROYED (a `/tmp` clear; erratum `RR-W8INDEX-20261107` @ `a1d2efb`); go-forward runs → `~/.local/state/ctxvm/w8-runs`.

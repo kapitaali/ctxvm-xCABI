@@ -1,6 +1,7 @@
 # PACKET P9 — close W8 with a negative result, or buy one mechanism test?
 
-STATUS: OPEN · 2026-11-10 · answer from this packet alone; do not ask for repo access.
+STATUS: ANSWERED 2026-11-10 — owner chose **A** (close with the negative result). Outcome:
+`design/W8-CLOSURE-20261110.md`; replacement run planned in `design/W8B-FREE-PLAN.md`.
 
 ## Question
 
