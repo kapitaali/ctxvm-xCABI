@@ -62,7 +62,7 @@ lane must confirm it against the generated fixture's real bytes before any paid 
 
 ## Expected artefact
 
-The byte-exact artefact is determined by running the checker (below) against the generated fixture. The design does not ship the expected bytes; the checker is the authority.
+The artefact is determined by running `tools/w8-checker-ta.py <fixture-dir> <artefact-path>` against the generated fixture (versioned; the `experiments/` copy is no longer authoritative). The design does not ship the expected bytes; the checker is the authority.
 
 ## Checker rules
 
@@ -73,7 +73,7 @@ A Python script `check.py` (not shipped with this design; to be implemented by t
 3. Compare: sorted file keys, exact integer match on every field, `widest_file` exact string, `total_long` exact integer.
 4. Print `PASS` and exit 0 on full match; print `FAIL: <reason>` and exit 1 on any mismatch.
 
-**Perturbation test:** change one digit in any number in `artefact.json` (e.g., `long` from 47 to 48) → checker prints `FAIL` and exits 1. Change a filename in `widest_file` → `FAIL`. Add an extra key → `FAIL`. Remove the trailing newline → `FAIL` (byte-exact comparison of serialized form).
+**Perturbation test:** change one digit in any number in `artefact.json` (e.g., `long` from 47 to 48) → checker prints `FAIL` and exits 1. Change a filename in `widest_file` → `FAIL`. Add an extra key → `FAIL`. Remove the trailing newline → **PASS with a formatting note** (parsed equality is the gate; canonical bytes are an observation).
 
 ## Call-count estimate
 

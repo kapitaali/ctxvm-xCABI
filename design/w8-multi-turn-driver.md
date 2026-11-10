@@ -1,93 +1,84 @@
 # W8 multi-turn driver — design note
 
-**Status:** H5 of `design/ROADMAP-HERMES-LANE.md`. Free (no model spend). Critical path:
-H4 (done) → **H5** → H6 (shape, ~$0.01) → H7 (first cell, ~$0.10–0.20, owner gate).
+Status: revised 2026-11-10 by the senior review of H6 (`RR-REVIEW-H6-20261109`). Code:
+**`tools/w8-driver.py`** (versioned — it produces evidence, so it is gated). Run outputs are not.
 
-## 1. Why
+## 1. Why a multi-turn driver
 
-A `-z` one-shot cell is void before it is paid for: every `page.declare` carries
-`turn: 0`, the keep law protects first-3 + last-6, and on a one-turn session the
-protected set is the whole request, so `_plan` returns early at any budget. A
-multi-turn session must put the material to be paged in the **middle** and the final
-answer must *depend* on it. Reads early, question late, tool results in between.
+A `-z` one-shot is ONE turn: every `page.declare` carries `turn: 0`, and the keep law protects the
+first 3 and last 6 turns, so the protected set is the whole request and `_plan` returns early at any
+`vBudget`. The session must span enough turns for a middle to exist, and the material to be paged must
+sit in that middle.
 
-## 2. Requirements (from the roadmap)
+## 2. Prompt sequence (verbatim in `PROMPTS`)
 
-- reads in turns 1–3;
-- ≥ 6 middle turns of other work;
-- a final question that needs the early material;
-- deterministic prompts;
-- one named session (`--continue <name>`, never unnamed — an unnamed `-c` can
-  adopt another agent's session on this shared host);
-- every prompt through `-p <arm> -t file`.
+Twelve prompts. Reads in 1–3, parts 04–12 through the middle, artefact on prompt 12. Prompt 12 states
+that parts 01–03 are sealed and cannot be read. Prompt text and the note are kept in sync by
+`validate_prompts()`, which fails the driver if either drifts.
 
-## 3. Prompt sequence (verbatim)
+## 3. Four guarantees the driver enforces (each bought with a measured defect)
 
-Workspace cwd is the run workspace (contains `fixture/part-*.txt`, 14 parts). Arm is
-`w8-<arm>` (naive | paged). Model/provider come from the grid (H6 uses the cheapest
-model that produces tool calls; H7 uses `openai/gpt-6-luna` / `nous`).
+| guarantee | why |
+|---|---|
+| `HERMES_HOME` must resolve to the arm's profile | otherwise the session row lands in the everyday profile: seven empty `w8h6*` sessions did exactly that |
+| toolset limited to `file` in the profile | `-t` is refused on resume, and the H6 run shelled out 16 times because the profile default (`hermes-cli`) includes `terminal` |
+| parts 01–03 **physically removed** after prompt 3 | H6's prompt only asked politely; the model re-read them twice and produced a wrong artefact (`widest_file` part-09 vs part-12) |
+| `--max-turns 8` per prompt | three unbounded attempts made 440 API calls and cost $3.14 |
 
-Turn 1:
-> Read fixture/part-01.txt. Report its line count, byte size, number of lines longer than 100 bytes, and number of lines shorter than 10 bytes. Do not write any file.
+The toolset pin is the root `toolsets: [file]` key in each arm profile, not `-t` on the command line
+and not `platform_toolsets`. `_set_chat_arg_defaults` passes `toolsets=None` and the agent resolves the
+config value, so the profile is the only place that survives a resume. The proof is the refs in the
+capture — the verifier fails the run if `terminal` or `execute_code` appears.
 
-Turn 2:
-> Read fixture/part-02.txt. Report the same four statistics (lines, bytes, long, short).
+## 4. Budget: 55,000, and the window it sits in
 
-Turn 3:
-> Read fixture/part-03.txt. Report the same four statistics (lines, bytes, long, short).
-
-Turn 4:
-> Read fixture/part-04.txt. Report its four statistics (lines, bytes, long, short). Also state the running total of 'long' across parts 01 through 04.
-
-Turn 5:
-> Read fixture/part-05.txt. Report its four statistics and the running total of 'long' across parts 01 through 05.
-
-Turn 6:
-> Read fixture/part-06.txt. Report its four statistics and the running total of 'long' across parts 01 through 06.
-
-Turn 7:
-> Read fixture/part-07.txt. Report its four statistics and the running total of 'long' across parts 01 through 07.
-
-Turn 8:
-> Read fixture/part-08.txt. Report its four statistics and the running total of 'long' across parts 01 through 08.
-
-Turn 9:
-> Read fixture/part-09.txt. Report its four statistics and the running total of 'long' across parts 01 through 09.
-
-Turn 10:
-> Read fixture/part-10.txt. Report its four statistics and the running total of 'long' across parts 01 through 10.
-
-Turn 11:
-> Read fixture/part-11.txt and fixture/part-12.txt. Report each file's four statistics and the running total of 'long' across parts 01 through 12.
-
-Turn 12 (final — depends on the early material):
-> You read parts 01-03 at the start of this session and parts 04-12 in the middle. Now read fixture/part-13.txt and fixture/part-14.txt, compute all four statistics for every one of the 14 parts, and write artefact.json in the working directory per the task specification: sorted file keys, canonical 2-space indentation, per-file keys lines/bytes/long/short, top-level keys files/widest_file/total_long, and a single trailing newline. The artefact must include all 14 parts. Use the early parts (01-03) you read at the start — do not re-read them unless needed.
-
-12 turns: reads in 1-3, 8 middle turns (4-11), final in 12. Satisfies reads-in-1-3, ≥6 middle, final-depends-on-early, and ≥10 distinct turns.
-
-## 4. Invocation shape (actual, 2026-11-09)
-
-The driver uses `hermes chat -q --oneshot -c <session_name>` (not `hermes -p ... -z`). Toolset is pinned
-in the profile (`platform_toolsets.cli: [file]`), not on the CLI, because resume refuses overrides.
+Measured inputs: 14 parts, 223,634 bytes ≈ 55,913 tokens (~15,973 B each); system prompt 21,151 B ≈
+5,288 tokens; keep law = system + first 3 turns + last 6 turns.
 
 ```
-# turn 1 — creates the named session
-hermes chat -q "<turn-1 prompt>" --oneshot -c <session_name> --create-if-missing --in <workspace>
-# turns 2..N
-hermes chat -q "<turn-k prompt>" --oneshot -c <session_name> --in <workspace>
+floor  = 5,288 + 12,196 (parts 01-03) + 31,935 (parts 07-14) = 49,419
+naive end-of-run resident                                   ≈ 61,201
 ```
 
-`-c` with no name is forbidden (shared host). The driver refuses to run if `--session-name` is empty.
-Model/provider/toolset come from the profile (gpt-6-luna / nous / file) — never passed on the CLI,
-because resume refuses `-m/--model/--provider` overrides.
+Any budget below ~49,400 is a guaranteed no-op — the H6 run was one at 24,000, and the profile had
+been changed to 28,000 afterwards, which is equally void. Any budget above ~61,200 creates no pressure
+against the control. **55,000** leaves ~5,600 tokens of selectable middle and stays below the control's
+request size. This is a raise, which plan §7 permits ("confirmed or raised, never lowered"), and it is
+recorded before the cell.
 
-## 5. Done when (H5)
+## 5. Invocation shape
 
-- Driver exists at `experiments/w8/driver/run.py` (gitignored tree).
-- `--dry-run` (no model call) validates the prompt sequence (≥ 10 turns, reads in 1-3,
-  ≥ 6 middle turns, final turn present) and writes a manifest `session.json` recording
-  the session name and turn count. Exit 0.
-- The design note above states the prompt sequence verbatim (this file).
-- Gate green, check-handoff green.
+```
+hermes chat -q "<prompt 1>" --oneshot -c <session> --create-if-missing --in <ws> --max-turns 8
+hermes chat -q "<prompt k>" --oneshot -c <session>                 --in <ws> --max-turns 8
+```
 
-The real capture shape is verified in H6 (~$0.01).
+`-c` without a name is forbidden (shared host: an unnamed continue can adopt another lane's session).
+Model, provider and toolset come from the profile; CLI overrides are refused on resume and are
+therefore not passed.
+
+## 6. Acceptance is mechanical
+
+```
+python3 tools/w8-driver.py --capture <capture.jsonl> --expect-budget 55000
+```
+
+Seven checks, one verdict:
+
+```
+CELL    budget/source, selections, spread >= 10, surface clean, no sealed read, coverage 0,
+        replay 0 — AND evictions > 0
+NO-OP   record sound, evictedTokens == 0: the engine could not act (a finding, not a failure)
+VOID    any structural check fails
+```
+
+## 7. Known limits
+
+- `--max-turns 8` bounds a prompt, not the session: twelve prompts is still a 96-call ceiling. A clean
+  session used 13 calls.
+- The driver does not price the run. Cost comes from the provider export (`debited_usd`, key delta
+  around the cell), per `RR-SPEND-VERIFY-20261110`.
+- `patch` stays in the `file` toolset. The verifier tolerates it, but a `patch` on a fixture part shows
+  in the refs and must be read by the operator, not assumed away.
+- Sealing changes the fixture during the run; the driver restores it in a `finally` block. If the
+  process is killed, `sealed/` in the run directory holds the three parts.
