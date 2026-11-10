@@ -297,8 +297,11 @@ def verify(args) -> int:
     checks: list[tuple[str, bool, str]] = []
     checks.append(("session id single", len({session.get("sessionID")}) == 1, session.get("sessionID", "")[:16]))
     checks.append(("turn spread >= 10", len(turns) >= 10, f"{len(turns)} distinct: {sorted(turns)}"))
-    checks.append(("budget from settings",
-                   str(plugin.get("budgetTokens")) == str(args.expect_budget) and plugin.get("budgetSource") == "settings",
+    expect = str(args.expect_budget)
+    budget_ok = (expect == "any") or (
+        str(plugin.get("budgetTokens")) == expect and plugin.get("budgetSource") == "settings")
+    checks.append(("budget from settings" if expect != "any" else "budget recorded",
+                   budget_ok,
                    f"{plugin.get('budgetTokens')} / {plugin.get('budgetSource')}"))
     checks.append(("engine selections > 0", (plugin.get("engineSelections") or 0) > 0, str(plugin.get("engineSelections"))))
     checks.append(("no code/shell tools",

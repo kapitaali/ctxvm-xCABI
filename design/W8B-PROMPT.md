@@ -7,9 +7,10 @@ it before touching anything.
 
 ## 0. Role and authority
 
-You run a two-arm context-policy experiment on a **free-tier model**, in three phases, each needing an
-explicit go from the owner. You do not redesign the experiment, do not touch `spec/**`, `corpus/**`,
-`research/**`, and do not spend beyond the phase you were given.
+You run a two-arm context-policy experiment on a **free-tier model**. It is **one command** now — the
+runner does both arms and verifies them. You stop and report if the preflight refuses, if an arm returns
+NO RECORD, or if any charge appears. You do not redesign the experiment, do not touch `spec/**`,
+`corpus/**`, `research/**`, and do not edit the runner during a run.
 
 Repo: `/home/theb/Documents/ctxvm`. Branch `main`. Gate: `bash tools/run-ci.sh` (run it UNPIPED and
 capture `$?`). Handoff: `bash tools/check-handoff.sh`.
@@ -43,61 +44,65 @@ catalogue price                        $0.15/1M input, $0.50/1M output, NO cache
 context window (the provider's model row carries none), and whether "unpaid" holds for this account.
 The catalogue prices the model, so *free is an account state (NIM credits), not a model property.*
 
-## 3. Build what is missing (before any model call)
-
-1. **Fixture T-A2** — 20 parts, same generator and shape as `design/w8-tasks/T-A.md` (250 lines per
-   part, line lengths uniform in [5,120] bytes, seed 42), materialised into two workspaces
-   `experiments/w8b/{ws-naive,ws-paged}`. Do not hand-edit generated files.
-2. **Checker** — reuse `tools/w8-checker-ta.py` unchanged: parsed equality is the gate, canonical bytes
-   are an observation. It takes `<fixture-dir> <artefact-path>` and prints what it read.
-3. **Profiles** — `~/.hermes/profiles/w8b-naive` and `w8b-paged`, copied from the w8 pair, differing in
-   exactly two keys: `context.engine` (compressor vs ctxvm) and `plugins.entries.ctxvm-tracer.settings.budgetTokens`
-   (absent vs **70000**). Both carry `toolsets: [file]`, `agent.max_turns: 12`, and
-   `model.default: nvidia/nemotron-3.5-super-vl-120b-a12b`, `model.provider: nvidia`.
-   Verify: `hermes config get toolsets -p w8b-paged` → `- file`.
-4. **Driver** — extend `tools/w8-driver.py`: 20 PROMPTS (reads 1–18, parts 19–20 on prompt 19, artefact
-   on prompt 20), seal parts 01–03 after prompt 3, `--profile-prefix w8b`, `--expect-budget 70000`,
-   and a `prompt digest` (sha256 of the prompt list + artefact spec, 12 hex) stamped into the run dir.
-
-Model, provider and toolset are **profile** settings. Never pass `-m`, `--provider`, `-t` or
-`--max-turns` on a named session: the gateway refuses creation overrides on resume
-(`Resume retains gateway session policy`), and `--max-turns` fails even on a fresh name.
-
-## 4. Phase 0 — capability (ONE call, ~$0.00–0.001)
+## 3. What is already built (do not rebuild, do not edit)
 
 ```
-source tools/w8-run-env.sh w8b-paged "$HOME/.local/state/ctxvm/traces" w8b-probe >/dev/null 2>&1
-hermes chat -q "Use the read_file tool to read fixture/part-01.txt and reply with its byte count." \
-    --oneshot -c w8b-probe-cap-$(date +%H%M%S) --create-if-missing --in experiments/w8b/ws-paged
+experiments/w8b/ws-{naive,paged}/fixture/   20 parts, 250 lines each, parts 01-10 identical to W8
+~/.hermes/profiles/w8b-{naive,paged}        model nemotron, provider nvidia, toolsets [file],
+                                            agent.max_turns 12; paged carries budgetTokens 70000
+tools/w8-driver.py                          20 prompts, seal of parts 01-03 after prompt 3,
+                                            preflight asserts, --capture verifier
+tools/w8-checker-ta.py                      parsed-equality gate, argv only
+tools/w8b-run.py                            THE RUNNER: both arms, verification, bundle
 ```
 
-Record: the reply, the tool calls, the session row, and the provider export delta for the key.
+If you believe one of these is wrong, stop and report it. Do not fix it inside a run.
 
-**Stop and report if:** no tool call is made (the model cannot drive the surface), an auth or rate-limit
-error appears, or a charge appears that the owner has not approved.
-
-## 5. Phase 1 — shape (THREE prompts, ~$0.02)
-
-Three prompts on one named session: read part-01, read part-02, then "state the running total of long
-lines so far".
-
-**Stop and report if:** `len({page.declare.turn}) < 3`, every declare is `turn: 0`, or a request near
-90 k tokens is refused for context length. Phase 1 also confirms the real floor; record it.
-
-## 6. Phase 2 — paired cells (4–6 pairs, budget 70,000)
-
-Shape arithmetic you are testing (apx4 estimate, not a measurement):
+## 4. The run
 
 ```
-parts 20 × ~15,973 B = 319,460 B ≈ 79,865 tokens
-floor ≈ 42,420   (system 5,483 + parts 01-03 11,979 + parts 15-20 24,958)
-middle ≈ 43,923  (turns 4-14, parts 04-14)
-peak request ≈ 90k  ->  needs a >=128k window (Phase 1 decides)
-budget 70,000 -> ~21k evictable, ≈23% of the peak request
+cd /home/theb/Documents/ctxvm
+python3 tools/w8b-run.py --dry-run          # preflight + the exact commands, no model calls
+python3 tools/w8b-run.py                    # naive then paged, 120 s per prompt
 ```
 
-One cell = one 20-prompt session, `hermes chat -q ... --oneshot -c <name>` per prompt, all via the
-driver. Naive and paged run in the same sitting, same model, same surface.
+The preflight is not advisory. It refuses, correctly, if any of these is true:
+
+```
+profile missing, toolsets != [file], model != nemotron, provider != nvidia
+paged budget != 70000
+fixture does not have exactly 20 parts
+a stale artefact.json is in place   (it is ARCHIVED to the run bundle, never deleted)
+gateway started before the installed plugin file
+```
+
+A stale artefact is moved to `~/.local/state/ctxvm/w8-runs/<run-id>/stale/` — the previous run's output
+is evidence.
+
+## 5. Verdicts the runner prints
+
+```
+| session | calls | in | out | cost | verdict | wall |
+```
+
+- **NO RECORD** — the session never flushed. Nothing to verify; not evidence of anything.
+- **DATA-INVALID** — a record exists but cannot be trusted: multiple session ids, a shell/code tool
+  used, a **successful** sealed-part read, budget ≠ 70000 or source ≠ settings, coverage/replay
+  non-zero.
+- **NO-OP** — record sound, `evictedTokens == 0`. An **outcome**; it stays in the denominator.
+- **ARTEFACT-FAIL / CEILING** — also outcomes.
+- **CELL** — evictions > 0 **and** a parsed-equal artefact.
+
+The naive arm is the control: expect **NO-OP** (no engine) and a checker PASS. The paged arm is the
+treatment: **CELL** requires evictions, which the previous naive run makes plausible (87,578 resident
+against a 70,000 budget).
+
+## 6. Cost
+
+Free tier, measured at $0.00 for a full 20-prompt session. The catalogue rate is a fallback
+($0.15/$0.50 per 1M). If a charge ever appears, stop — the run is not authorised to spend. Read cost
+from the session row and the provider export, never from `providerUsage` in the trace (it reads 3 on a
+50k request).
 
 ## 7. Acceptance and taxonomy
 
