@@ -19,7 +19,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
 
 ## Next three (ordered, one line each)
-1. Owner: ratify D13 + D14, route the white-paper bundle — SIX paper items: Pillar-1 split; `:635` echo sweep; the P2 demo sentence (`:333`/`:339`, `identifier_scan` cause); the R1 3-to-0 contrast; the consent-paragraph replacement (`white-paper.md:620–623`, index twin, Part II `:368`); Part II's card-citation rule — working-tree bytes, not HEAD.
+1. Owner: ratify D13 + D14 and route the SIX-item white-paper bundle (items listed in full in RR-DAY-20261109) — working-tree bytes, not HEAD.
 2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
 3. Agent: A1 A2 A5 A3 A4 A6 done (RR-IMPL2/RR-FRICTION/RR-FINDING/RR-PKG/RR-CHANNELS/RR-UMPIRE). Owner gates: D13/D14/D17 + umpire (A6) + P4–P7 verdicts.
 
@@ -29,7 +29,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 - 2026-11-06: W8 keeps vBudget 24,000; only tasks with a floor below it measure (RR-ENGINEGAP-20261106 rec. 2).
 - 2026-11-07: W8 ruled FAILED; capture stays default-on; contract restored (RR-W8CHUNK-20261107-2b + RR-W8INDEX).
 - 2026-11-08: D3-c approved (owner); D13 answered (P1); P2 answered + seq 7 located (`identifier_scan` swap-in).
-- 2026-11-09: D14 answered (P3 verdicts recorded); redaction card authored proposal-only (sidecar-first); consent mends + Part II card-citation rule routed.
+- 2026-11-09: D14 answered (P3 verdicts recorded); consent mends + card-citation rule routed. P4 answered: ts stays optional; ordering clause PROPOSED for umpire §2 (RR-P4TS-20261109), D-number outstanding.
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 (Pkt 1) ANSWERED 2026-11-08: Pillar-1 splits (replayable + conformance-testable kept; "diffable" behind the consumer profile; "reconstructs any turn" narrowed; absence reworded). Card: `design/diff-normalisation.md`. Owner next: ratify + route with the six-item bundle.
