@@ -70,8 +70,20 @@ python3 tools/w8b-run.py --provider openrouter          # nemotron-3.5-lightning
 `--provider` decides three things and nothing else:
 
 ```
+nous         model stepfun/step-3.7-flash:free   or --model meituan/longcat-2.5:free
+                                                       profiles w8bn-{naive,paged}   (OAuth)
 nvidia       model nvidia/nemotron-3.5-super-vl-120b-a12b   profiles w8b-{naive,paged}
 openrouter   model nvidia/nemotron-3.5-lightning:free       profiles w8bo-{naive,paged}
+```
+
+On the Nous free tier, **`meituan/longcat-2.5:free` is the recommended subject**: it passed the
+tool-calling probe in 22 s where `stepfun/step-3.7-flash:free` took 167 s for the same call. Both
+returned the correct byte count at $0.00.
+
+A capability probe before a full run is one command:
+
+```
+python3 tools/w8b-run.py --provider nous --model meituan/longcat-2.5:free --probe
 ```
 
 Each provider has its own profile pair, because model and provider are PROFILE settings (the gateway

@@ -51,6 +51,7 @@ PROVIDERS = {
         "provider": "nvidia",
         "prefix": "w8b",
         "key": "NVIDIA_API_KEY",
+        "auth": "env",
         "note": "the run of 2026-11-10: tool-calling works, $0.00, naive arm completed",
     },
     "openrouter": {
@@ -58,7 +59,16 @@ PROVIDERS = {
         "provider": "openrouter",
         "prefix": "w8bo",
         "key": "OPENROUTER_API_KEY",
+        "auth": "env",
         "note": "free tier via OpenRouter; capability unproven, prompt 1 decides",
+    },
+    "nous": {
+        "model": "stepfun/step-3.7-flash:free",
+        "provider": "nous",
+        "prefix": "w8bn",
+        "key": None,
+        "auth": "oauth",
+        "note": "Nous Portal free models (stepfun/step-3.7-flash:free, meituan/longcat-2.5:free); --model picks",
     },
 }
 
@@ -126,6 +136,16 @@ def sync_profile_keys(spec: dict) -> None:
 
 
 def check_key(spec: dict) -> str | None:
+    if spec.get("auth") == "oauth":
+        auth = Path.home() / ".hermes" / "auth.json"
+        try:
+            d = json.loads(auth.read_text())
+            tok = (d.get("providers", {}).get(spec["provider"]) or {}).get("access_token")
+        except Exception:
+            tok = None
+        if not tok:
+            return f"no OAuth access token for {spec['provider']} in ~/.hermes/auth.json (run hermes auth add {spec['provider']})"
+        return None
     """Presence is not validity. A 401 from the provider costs one free request; discovering it at
     prompt 1 of a 20-prompt session costs the session (measured 2026-11-10: OPENROUTER_API_KEY was
     set and dead — 401 "User not found")."""
@@ -152,6 +172,34 @@ def check_key(spec: dict) -> str | None:
         return f"key check could not reach {url}: {type(exc).__name__} (use --skip-key-check offline)"
 
 
+def _set_model_provider(cfgp: Path, model: str, provider: str) -> bool:
+    """Rewrite the model.default / model.provider lines, line-wise.
+
+    String replacement failed the first time a third model id appeared (it only knew the ids
+    hard-coded in the loop). Reading the two lines under `model:` is stable regardless of which
+    model the profile currently carries.
+    """
+    lines = cfgp.read_text().splitlines()
+    changed = False
+    in_model = False
+    for i, line in enumerate(lines):
+        if line.startswith("model:"):
+            in_model = True
+            continue
+        if in_model and line.startswith("  default:"):
+            new = f'  default: "{model}"'
+            changed |= lines[i] != new
+            lines[i] = new
+        elif in_model and line.startswith("  provider:"):
+            new = f'  provider: "{provider}"'
+            changed |= lines[i] != new
+            lines[i] = new
+            in_model = False
+    if changed:
+        cfgp.write_text("\n".join(lines) + "\n")
+    return changed
+
+
 def ensure_profiles(spec: dict) -> None:
     """Create <prefix>-{naive,paged} from w8b-* when they do not exist yet.
 
@@ -164,16 +212,14 @@ def ensure_profiles(spec: dict) -> None:
     for arm in ("naive", "paged"):
         dst = PROFILES / f"{spec['prefix']}-{arm}"
         if dst.exists():
+            if _set_model_provider(dst / "config.yaml", spec["model"], spec["provider"]):
+                print(f"updated {dst} -> model={spec['model']} provider={spec['provider']}")
             continue
         src = PROFILES / f"{src_prefix}-{arm}"
         if not src.exists():
             continue
         shutil.copytree(src, dst)
-        cfgp = dst / "config.yaml"
-        text = cfgp.read_text()
-        text = text.replace('default: "nvidia/nemotron-3.5-super-vl-120b-a12b"', f'default: "{spec["model"]}"')
-        text = text.replace('provider: "nvidia"', f'provider: "{spec["provider"]}"')
-        cfgp.write_text(text)
+        _set_model_provider(dst / "config.yaml", spec["model"], spec["provider"])
         print(f"provisioned {dst} (model={spec['model']}, provider={spec['provider']})")
 
 
@@ -309,8 +355,50 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict) -> dict:
     return out
 
 
+
+PROBE_PROMPT = ("Use the read_file tool to read fixture/part-01.txt and reply with its byte count. "
+                "You have exactly three tools: read_file, search_files, write_file. "
+                "Do not ask for any other tool.")
+
+
+def probe(spec: dict, run_id: str) -> dict:
+    """One prompt: can this model drive the read_file surface? Nothing else is measured."""
+    arm = "paged"
+    title = f"{run_id}-probe-{arm}"
+    ws = ROOT / "experiments" / "w8b" / f"ws-{arm}"
+    env = dict(os.environ)
+    env["HERMES_HOME"] = str(PROFILES / f"{spec['prefix']}-{arm}")
+    started = time.time()
+    cmd = ["hermes", "chat", "-q", PROBE_PROMPT, "--oneshot", "-c", title,
+           "--create-if-missing", "--in", str(ws)]
+    r = subprocess.run(cmd, text=True, capture_output=True, env=env, timeout=300)
+    out = {"probe": True, "model": spec["model"], "provider": spec["provider"],
+           "rc": r.returncode, "wall_s": round(time.time() - started, 1), "tool_calls": 0,
+           "tools": {}, "reply": "", "cost": None, "verdict": "NO TOOL CALLS"}
+    sid = session_id(arm, title, spec["prefix"])
+    if sid:
+        db = PROFILES / f"{spec['prefix']}-{arm}" / "state.db"
+        c = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+        for role, content, tool in c.execute(
+                "select role,content,tool_name from messages where session_id=? order by rowid", (sid,)):
+            if tool or role == "tool":
+                out["tools"][tool or "?"] = out["tools"].get(tool or "?", 0) + 1
+                out["tool_calls"] += 1
+            if role == "assistant" and content:
+                out["reply"] = content.strip()[:200]
+        row = c.execute("select estimated_cost_usd from sessions where id=?", (sid,)).fetchone()
+        out["cost"] = row[0] if row else None
+    if out["tool_calls"] and any(t in ("read_file", "search_files", "write_file") for t in out["tools"]):
+        out["verdict"] = "TOOL CALLS OK"
+    print(json.dumps(out, indent=2))
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default=None, help="override the provider's default model id")
+    ap.add_argument("--probe", action="store_true",
+                    help="one capability prompt on the paged arm, then stop (no cells)")
     ap.add_argument("--provider", choices=sorted(PROVIDERS), default="nvidia",
                     help="nvidia = nemotron-3.5-super-vl-120b-a12b via NIM; "
                          "openrouter = nemotron-3.5-lightning:free via OpenRouter")
@@ -323,7 +411,9 @@ def main() -> int:
                     help="do not call the provider's free key endpoint (offline use only)")
     args = ap.parse_args()
     arms = [a.strip() for a in args.arms.split(",") if a.strip()]
-    spec = PROVIDERS[args.provider]
+    spec = dict(PROVIDERS[args.provider])
+    if args.model:
+        spec["model"] = args.model
     print(f"provider {args.provider}: model {spec['model']} ({spec['note']})")
     ensure_profiles(spec)
     sync_profile_keys(spec)
@@ -344,6 +434,10 @@ def main() -> int:
             dst = bundle0 / f"{arm}-artefact.json"
             shutil.move(str(art), str(dst))
             print(f"archived stale artefact: {art} -> {dst}")
+
+    if args.probe:
+        probe(spec, args.run_id)
+        return 0
 
     if args.dry_run:
         for arm in arms:
