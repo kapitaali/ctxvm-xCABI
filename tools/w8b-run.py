@@ -78,16 +78,51 @@ KEY_PROBES = {
 }
 
 
-def _env_key(name: str) -> str | None:
-    envfile = Path.home() / ".hermes" / ".env"
-    if not envfile.exists():
+def _env_key_from(path: Path, name: str) -> str | None:
+    if not path.exists():
         return None
-    for line in envfile.read_text(errors="ignore").splitlines():
+    for line in path.read_text(errors="ignore").splitlines():
         if line.strip().startswith(f"{name}="):
             val = line.split("=", 1)[1].strip().strip('"').strip("'")
             if val:
                 return val
     return None
+
+
+def _env_key(name: str) -> str | None:
+    return _env_key_from(Path.home() / ".hermes" / ".env", name)
+
+
+def sync_profile_keys(spec: dict) -> None:
+    """Copy the root key into each arm profile's .env when they differ.
+
+    A profile is its own HERMES_HOME, and the loader reads `<home>/.env`
+    (hermes_cli/env_loader.py:216). So a profile created by copying another one carries a
+    SNAPSHOT of the key: updating ~/.hermes/.env alone leaves the run using the old key, and the
+    failure surfaces as an auth error at prompt 1. Measured 2026-11-10.
+    """
+    root = _env_key_from(Path.home() / ".hermes" / ".env", spec["key"])
+    if not root:
+        return
+    for arm in ("naive", "paged"):
+        f = PROFILES / f"{spec['prefix']}-{arm}" / ".env"
+        if not f.exists():
+            continue
+        lines = f.read_text().splitlines()
+        cur = next((l.split("=", 1)[1].strip() for l in lines if l.startswith(spec["key"] + "=")), None)
+        if cur == root:
+            continue
+        out, replaced = [], False
+        for line in lines:
+            if line.startswith(spec["key"] + "=") and not replaced:
+                out.append(f"{spec['key']}={root}")
+                replaced = True
+            else:
+                out.append(line)
+        if not replaced:
+            out.append(f"{spec['key']}={root}")
+        f.write_text("\n".join(out) + "\n")
+        print(f"synced {spec['key']} into {f} (a profile .env shadows the root .env)")
 
 
 def check_key(spec: dict) -> str | None:
@@ -291,6 +326,7 @@ def main() -> int:
     spec = PROVIDERS[args.provider]
     print(f"provider {args.provider}: model {spec['model']} ({spec['note']})")
     ensure_profiles(spec)
+    sync_profile_keys(spec)
 
     errs = preflight(arms, spec)
     if errs:
