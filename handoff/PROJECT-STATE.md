@@ -11,9 +11,10 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. A1–A6 adoption batch (2026-11-09): RR-IMPL2/RR-FRICTION/RR-FINDING/RR-PKG/RR-CHANNELS/RR-UMPIRE + packets P4–P7.
+1. P4 answered (RR-P4TS-20261109): ts OPTIONAL, ordering clause DRAFTED proposal-only; both UNKNOWNs resolved (0.1 stamping; no ordering consumer).
+2. A1–A6 batch + H1–H6 (2026-11-09): six adoption cards + packets P4–P7 (+P8); hermes 0.10.11.
 2. P3 (D14) answered; redaction card authored proposal-only, sidecar-first — `design/redaction-block.md` (owner-cleared).
-3. P2 answered; seq 7 located — source `identifier_scan`, swap-in cause active (`reports/RR-P2DEMO-20261108.md`).
+3. P2 answered; seq 7 located (`identifier_scan` active; `RR-P2DEMO`); P3 lands via `design/redaction-block.md` + run №94.
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
