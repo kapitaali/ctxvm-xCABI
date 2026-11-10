@@ -126,7 +126,10 @@ def build_cmd(i: int, prompt: str, args) -> list[str]:
     cmd = ["hermes", "chat", "-q", prompt, "--oneshot", "-c", args.session_name, "--in", args.workspace]
     if i == 1:
         cmd.insert(5, "--create-if-missing")
-    cmd += ["--max-turns", str(args.max_turns)]
+    # --max-turns is REFUSED on this flow: a named session with --create-if-missing
+    # rejects it as a creation override even on a fresh name (measured 2026-11-10).
+    # The call ceiling is `agent.max_turns` in the profile instead, which survives
+    # resume because it is not a CLI override.
     return cmd
 
 

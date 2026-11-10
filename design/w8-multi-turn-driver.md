@@ -23,7 +23,7 @@ that parts 01–03 are sealed and cannot be read. Prompt text and the note are k
 | `HERMES_HOME` must resolve to the arm's profile | otherwise the session row lands in the everyday profile: seven empty `w8h6*` sessions did exactly that |
 | toolset limited to `file` in the profile | `-t` is refused on resume, and the H6 run shelled out 16 times because the profile default (`hermes-cli`) includes `terminal` |
 | parts 01–03 **physically removed** after prompt 3 | H6's prompt only asked politely; the model re-read them twice and produced a wrong artefact (`widest_file` part-09 vs part-12) |
-| `--max-turns 8` per prompt | three unbounded attempts made 440 API calls and cost $3.14 |
+| `agent.max_turns: 12` in the profile | three unbounded attempts made 440 API calls and cost $3.14. The CLI flag `--max-turns` is **refused** on a named session ("creation overrides are unsupported on resume", measured 2026-11-10 even on a fresh name), so the ceiling lives in the profile like the toolset |
 
 The toolset pin is the root `toolsets: [file]` key in each arm profile, not `-t` on the command line
 and not `platform_toolsets`. `_set_chat_arg_defaults` passes `toolsets=None` and the agent resolves the
@@ -49,8 +49,8 @@ recorded before the cell.
 ## 5. Invocation shape
 
 ```
-hermes chat -q "<prompt 1>" --oneshot -c <session> --create-if-missing --in <ws> --max-turns 8
-hermes chat -q "<prompt k>" --oneshot -c <session>                 --in <ws> --max-turns 8
+hermes chat -q "<prompt 1>" --oneshot -c <session> --create-if-missing --in <ws>
+hermes chat -q "<prompt k>" --oneshot -c <session>                 --in <ws>
 ```
 
 `-c` without a name is forbidden (shared host: an unnamed continue can adopt another lane's session).
@@ -74,8 +74,8 @@ VOID    any structural check fails
 
 ## 7. Known limits
 
-- `--max-turns 8` bounds a prompt, not the session: twelve prompts is still a 96-call ceiling. A clean
-  session used 13 calls.
+- `agent.max_turns: 12` bounds a prompt, not the session: twelve prompts is still a 144-call ceiling. A
+  clean session used 13 calls in total, and the one-prompt probe used 1.
 - The driver does not price the run. Cost comes from the provider export (`debited_usd`, key delta
   around the cell), per `RR-SPEND-VERIFY-20261110`.
 - `patch` stays in the `file` toolset. The verifier tolerates it, but a `patch` on a fixture part shows
