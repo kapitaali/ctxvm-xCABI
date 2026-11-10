@@ -12,7 +12,7 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
 
 ## 0. Truth first — the record is behind the code (all free, do these today)
 
-- [ ] **H1. Rotate `handoff/PROJECT-STATE.md`.** It says plugin **0.10.6** and "W8 closed FAILED";
+- [x] **H1. (done 2026-11-10, `ab486a6`) Rotate `handoff/PROJECT-STATE.md`.** It says plugin **0.10.6** and "W8 closed FAILED";
   the tree is at **0.10.11** and W8 resumed with 0 cells counted and a session-shape blocker.
   *Why:* every lane reads this file first; a stale version sends the next agent to the wrong code.
   *Fix text:* `Plugins: hermes 0.10.11`; W8 line → `0 cells counted (5 void/no-op), blocker = one-turn
@@ -21,13 +21,13 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
   `grep -c "0.10.6" handoff/PROJECT-STATE.md` returns 0.
   *Owner:* the lane that next commits PROJECT-STATE (shared file, claim by commit).
 
-- [ ] **H2. Day-file section for today's four cards.** `reports/RR-DAY-20261109.md` has no section
+- [x] **H2. (done 2026-11-10, `d916212`) Day-file section for today's four cards.** `reports/RR-DAY-20261109.md` has no section
   for `0.10.11` (budget provenance), `RR-DRIFT` (derived counts + version guard), `RR-NOOP`
   (granularity), or the two master prompts.
   *Done when:* the file contains four headings naming those cards and `bash tools/check-handoff.sh`
   still passes.
 
-- [ ] **H3. Reconcile this lane's uncommitted rows.** Working tree carries other lanes' edits
+- [x] **H3. (done 2026-11-10, `d48012e`) Reconcile this lane's uncommitted rows.** Working tree carries other lanes' edits
   (`08-HANDOFF.md`, `handoff/QUESTIONS*.md`, `P4-ts-umpire.md`, `RR-DAY`, `RR-P4TS`) and this lane's
   `reports/RR-W8CELL-20261109.md`, `reports/W8-CHUNKLOG.md`, `reports/W8-SPEND.md`.
   *Done when:* `git status --short` lists only the other lanes' files, and this lane's three are in a
@@ -42,7 +42,7 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
 
 ## 1. Unblock the experiment (the only path to a countable cell)
 
-- [ ] **H5. Write the multi-turn driver.** `experiments/w8/driver/` (gitignored) + a design note in
+- [x] **H5. (done 2026-11-10; code moved to `tools/w8-driver.py`) Write the multi-turn driver.** `experiments/w8/driver/` (gitignored) + a design note in
   `design/`. Requirements, in order: reads in turns 1–3; ≥6 middle turns of other work; a final
   question that needs the early material; deterministic prompts; one named session
   (`--continue <name>`, never unnamed); every prompt through `-p <arm> -t file`.
@@ -50,10 +50,14 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
   ids) produces a session whose capture would satisfy `len({declare.turn}) >= 10`, and the design note
   states the prompt sequence verbatim.
 
-- [x] **H6. Verify the driver's shape on one cheap real session.** Verified 2026-11-09 on `w8-drv-paged-h6` (profile paged, budget 24000, model gpt-6-luna/nous, env sourced via `tools/w8-run-env.sh`): capture `local-8a98048c…` has 12 distinct turns, `engineSelections=48`, session id matches the named session. Trace: `~/.local/state/ctxvm/traces/local-8a98048c….jsonl`. Cost: ~\$0.03 (12 turns). **Side finding: 0 evictions across all 12 turns** (`evictedTokens=0` on every `turn.render`); T-A at 24000 does not pressure the budget (total ~19.6 k tokens < 24 k). H7's `evictedTokens>0` gate therefore cannot pass with this task/budget.
+- [x] **H6. Shape yes, surface no (2026-11-09, `local-8a98048c`).** Twelve distinct turns
+  and one session id proved `--continue` works; but 16 `terminal` calls, 2 sealed reads and
+  0 evictions made the run VOID (`RR-REVIEW-H6`). Its "T-A is ~19.6 k tokens" note was wrong:
+  the fixture is 223,634 B ≈ 55,909 tokens. Cost $0.0030 from the capture's receipts.
 
-- [ ] **H7. Run the first countable cell.** `w8-paged` vs the naive reference, `-t file`, budget
-  24000, mid-session material, final question requiring it.
+- [ ] **H7. First countable cell.** Attempted 2026-11-10, **VOID** (`RR-W8CELL2`): budget 55,000
+  sat under floor 53,790 + scaffold, so 0 evictions; prompt 12 never defined `widest_file`, so
+  the artefact failed. Fixed: budget 72,000, field definitions in the prompt. Next run is the test.
   *Done when:* checks 1–7 of `design/W8-EXECUTOR-PROMPT.md` §5 pass **and** `evictedTokens > 0`.
   Cells counted goes 0 → 1. Budget: ask first; estimate $0.10–0.20.
 
