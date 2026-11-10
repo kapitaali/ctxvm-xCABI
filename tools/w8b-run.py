@@ -28,6 +28,8 @@ import os
 import shutil
 import sqlite3
 import subprocess
+import urllib.error
+import urllib.request
 import sys
 import time
 from pathlib import Path
@@ -68,6 +70,51 @@ def sh(cmd: list[str], timeout: int | None = None) -> subprocess.CompletedProces
 def cfg(key: str, arm: str, prefix: str) -> str:
     r = sh(["hermes", "config", "get", key, "-p", f"{prefix}-{arm}"])
     return (r.stdout if r.returncode == 0 else r.stderr).strip()
+
+
+KEY_PROBES = {
+    "nvidia": "https://integrate.api.nvidia.com/v1/models",
+    "openrouter": "https://openrouter.ai/api/v1/key",
+}
+
+
+def _env_key(name: str) -> str | None:
+    envfile = Path.home() / ".hermes" / ".env"
+    if not envfile.exists():
+        return None
+    for line in envfile.read_text(errors="ignore").splitlines():
+        if line.strip().startswith(f"{name}="):
+            val = line.split("=", 1)[1].strip().strip('"').strip("'")
+            if val:
+                return val
+    return None
+
+
+def check_key(spec: dict) -> str | None:
+    """Presence is not validity. A 401 from the provider costs one free request; discovering it at
+    prompt 1 of a 20-prompt session costs the session (measured 2026-11-10: OPENROUTER_API_KEY was
+    set and dead — 401 "User not found")."""
+    key = _env_key(spec["key"])
+    if not key:
+        return f"{spec['key']} is not set in ~/.hermes/.env"
+    url = KEY_PROBES.get(spec["provider"])
+    if not url:
+        return None
+    try:
+        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {key}"})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            if 200 <= r.status < 300:
+                return None
+            return f"{spec['provider']} returned HTTP {r.status} for the key"
+    except urllib.error.HTTPError as exc:
+        body = ""
+        try:
+            body = exc.read()[:120].decode("utf-8", "replace")
+        except Exception:
+            pass
+        return f"{spec['provider']} rejected the key: HTTP {exc.code} {body}"
+    except Exception as exc:
+        return f"key check could not reach {url}: {type(exc).__name__} (use --skip-key-check offline)"
 
 
 def ensure_profiles(spec: dict) -> None:
@@ -113,15 +160,10 @@ def preflight(arms: list[str], spec: dict) -> list[str]:
                 pass
         else:
             errs.append("no hermes gateway process found")
-    envfile = Path.home() / ".hermes" / ".env"
-    key = spec["key"]
-    found = False
-    if envfile.exists():
-        for line in envfile.read_text(errors="ignore").splitlines():
-            if line.strip().startswith(f"{key}=") and line.split("=", 1)[1].strip():
-                found = True
-    if not found:
-        errs.append(f"{key} is not set in ~/.hermes/.env (provider {spec['provider']})")
+    if not (len(sys.argv) > 1 and "--skip-key-check" in sys.argv):
+        key_err = check_key(spec)
+        if key_err:
+            errs.append(key_err)
     for arm in arms:
         prof = PROFILES / f"{spec['prefix']}-{arm}"
         if not prof.is_dir():
@@ -242,6 +284,8 @@ def main() -> int:
     ap.add_argument("--run-id", default=time.strftime("w8b-%Y%m%d-%H%M%S"))
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--record", action="store_true", help="append the chunklog rows (repo edit)")
+    ap.add_argument("--skip-key-check", action="store_true",
+                    help="do not call the provider's free key endpoint (offline use only)")
     args = ap.parse_args()
     arms = [a.strip() for a in args.arms.split(",") if a.strip()]
     spec = PROVIDERS[args.provider]
