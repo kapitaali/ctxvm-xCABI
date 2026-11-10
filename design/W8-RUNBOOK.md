@@ -175,3 +175,13 @@ STEP 4 — CLOSE THE CHUNK:
 
 START by printing the --plan output and the six drift checks, then ask Q1 and Q2 from
 STEP 0. The first paid call happens only after the owner answers both and says go.
+
+## Prediction block (C4, 2026-11-10)
+
+Before any paid cell, fill and commit the block in `reports/W8-SPEND.md` §Prediction: cell id, budgets,
+prompt and fixture digests, expected evictions with their turns, expected cache-write share, expected
+cost range at a stated per-call rate, expected artefact result, and the verdict that would mean an
+instrument bug. A cell without it does not start. Recorded prediction for the next cell if B is chosen:
+at 60,000, evictions on turns 9-11 totalling <= 12,827 tokens, artefact parsed-equal in both arms,
+paged receipt >= control's; cost $2.2-3.0 for 4-6 pairs at $0.0063-0.00861 per call.
+

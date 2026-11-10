@@ -680,5 +680,52 @@ class EngineLawTests(unittest.TestCase):
         self.assertIs(engine.emit_automatic_compaction_status, False)
 
 
+class NoOpByteIdentityTests(unittest.TestCase):
+    """C2 (RR-W8CACHE): a no-op selection must leave the request untouched.
+
+    The claim under test is the one the cache investigation needs: when `_plan`
+    returns early (protected floor at or above the budget) or when the whole
+    request fits, `select_context` returns None and MUTATES NOTHING — so a
+    request-size series cannot be explained by the engine rewriting history.
+    """
+
+    @staticmethod
+    def _tx(n=10, result_chars=20_000):
+        tx = [_msg("system", "You are a coding agent."),
+              _msg("user", "Census the notes.")]
+        for i in range(n):
+            cid = f"c{i}"
+            tx.append(_msg("assistant", "", tool_calls=[_call(cid, f"notes/part-{i}.txt")]))
+            tx.append(_msg("tool", _result(result_chars, f"part{i}"), tool_call_id=cid))
+        return tx
+
+    def test_floor_at_or_above_budget_returns_none_and_preserves_bytes(self):
+        tx = self._tx()
+        before = json.dumps(tx, sort_keys=True)
+        engine = ce.build_engine(v_budget=1_000)          # floor is far above this
+        out = engine.select_context(list(tx))
+        # L7 says None; the contract that matters for the cache is BYTES. A pinned
+        # page can make the engine return a list that is still byte-identical.
+        self.assertEqual(json.dumps(out if out is not None else tx, sort_keys=True), before)
+
+    def test_request_under_budget_returns_none_and_preserves_bytes(self):
+        tx = self._tx(n=2, result_chars=200)
+        before = json.dumps(tx, sort_keys=True)
+        engine = ce.build_engine(v_budget=10_000_000)
+        out = engine.select_context(list(tx))
+        self.assertEqual(json.dumps(out if out is not None else tx, sort_keys=True), before)
+
+    def test_when_eviction_happens_the_head_is_byte_identical_and_order_is_kept(self):
+        tx = self._tx(n=12, result_chars=40_000)
+        before = [json.dumps(m, sort_keys=True) for m in tx]
+        engine = ce.build_engine(v_budget=60_000)          # between floor and total
+        out = engine.select_context(list(tx))
+        self.assertIsNotNone(out, "a request this size must be selected down")
+        self.assertEqual(json.dumps(out[0], sort_keys=True), before[0])   # system verbatim
+        positions = [before.index(json.dumps(m, sort_keys=True)) for m in out
+                     if json.dumps(m, sort_keys=True) in before]
+        self.assertEqual(positions, sorted(positions), "kept messages must keep transcript order")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

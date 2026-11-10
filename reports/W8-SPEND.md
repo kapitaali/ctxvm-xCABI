@@ -90,3 +90,22 @@ W8-shaped sessions, multi-day     $8.98  (default 2.45 / naive 1.69 / paged 4.83
 Two rules follow: cost is read from `debited_usd`, never from `providerUsage` (whose `inputTokens`
 reads 36 across 13 calls and prices a session at $0.003) and never from this hand-kept table alone;
 and a per-cell call ceiling goes in the driver, because at $0.0086 per request the calls are the cost.
+
+
+## Prediction block — mandatory before any paid cell (C4)
+
+A cell does not start until this block is filled, committed, and matches the verifier afterwards.
+A mismatch means the instrument is wrong, not that the engine surprised us.
+
+```
+cell id            <e.g. w8-cell-02>
+arm pair           <naive|paged>
+budget             <tokens, from the measured floor + middle, never hand-picked>
+prompt digest      <12 hex of the 12 prompts + artefact spec>
+fixture digest     <12 hex>
+predicted evictions      <tokens, and which turns>
+predicted cache-write share  <write/input, from the provider export band $0.125-0.164/1M>
+predicted cost           <low-high USD at $0.0063-0.00861 per call, calls stated>
+predicted artefact       <PASS parsed-equal | FAIL, and which field>
+verdict if it differs    INSTRUMENT-BUG  (stop, do not book the cell)
+```
