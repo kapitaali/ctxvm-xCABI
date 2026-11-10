@@ -20,7 +20,7 @@ for _p in (_HERMES_ROOT, _HERMES_SRC):
         sys.path.insert(0, _p)
 
 from plugin import CtxvmPlugin, create_ctxvm_plugin, Tracer, TraceInit, canonical_json, content_hash, tool_ref, identity_tokens, provider_usage_of  # noqa: E402
-from live import PLUGIN_VERSION, _budget_from_settings, _canon_meta, _clear_env_for_tests, _state, register  # noqa: E402
+from live import PLUGIN_VERSION, _budget_from_settings, _canon_meta, _clear_env_for_tests, _evict_stale_tracers, _state, register  # noqa: E402
 
 INIT = {
     "agentId": "hermes",
@@ -806,6 +806,34 @@ class LiveAdapterTests(unittest.TestCase):
         finally:
             ce.ACTIVATIONS.update(saved)
             live_mod._state()["engine_registered"] = None
+
+    def test_a_flushed_session_keeps_its_tracer_so_turns_accumulate(self):
+        """Defect 4 (RR-REVIEW-H6): popping the tracer reset a 12-prompt session to one turn."""
+        state = _state()
+        state.setdefault("flushed_sessions", set()).add("s1")
+        state.setdefault("flushed_at", {})["s1"] = __import__("time").time()
+
+        class _VM:
+            _tracers = {"s1": object()}
+
+        vm = _VM()
+        self.assertEqual(_evict_stale_tracers(vm), 0)
+        self.assertIn("s1", vm._tracers)
+
+    def test_a_quiet_session_is_released_after_the_window(self):
+        state = _state()
+        state.setdefault("flushed_sessions", set()).add("old")
+        state.setdefault("flushed_at", {})["old"] = 0.0
+
+        class _VM:
+            _tracers = {"old": object(), "fresh": object()}
+
+        vm = _VM()
+        self.assertEqual(_evict_stale_tracers(vm), 1)
+        self.assertNotIn("old", vm._tracers)
+        self.assertIn("fresh", vm._tracers)
+        self.assertNotIn("old", state.get("flushed_sessions") or set())
+        self.assertNotIn("old", state.get("flushed_at") or {})
 
     def test_budget_comes_from_the_profile_setting(self):
         """The budget is a profile setting, not an env ritual (0.10.11).

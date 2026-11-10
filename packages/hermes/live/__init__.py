@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.10.11"
+PLUGIN_VERSION = "0.10.12"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -216,8 +216,11 @@ def _maybe_write_through(vm: Any, stats: Dict[str, int]) -> None:
     _ensure_trace_dir(trace_dir)
     base = _flush_base()
     written = 0
+    flushed = state.get("flushed_sessions") or set()
     for record in vm.finish_all():
         session_id = record["sessionID"]
+        if session_id in flushed:
+            continue
         trace = record["trace"]
         file = base or session_id
         jsonl_path, meta_path = _partial_paths(trace_dir, file)
@@ -233,6 +236,33 @@ def _maybe_write_through(vm: Any, stats: Dict[str, int]) -> None:
     state["last_written_events"] = events
     if written:
         _witness(f"write-through events={events} traces={written} (partial)")
+
+
+
+def _evict_stale_tracers(vm: Any) -> int:
+    """Release tracers for sessions that have finished and gone quiet.
+
+    Keeping a tracer after its full flush is what lets a multi-turn session
+    accumulate into one capture (defect 4, RR-REVIEW-H6: popping it reset the
+    session every prompt). Keeping it FOREVER is the price: every later flush
+    rewrites every tracer's trace, and the process grows with the session count.
+    So a flushed session is retained for CTXVM_TRACER_RETAIN_MINUTES (default 30)
+    and then dropped; the trace on disk is already complete.
+    """
+    state = _state()
+    now = time.time()
+    window = _env_int("CTXVM_TRACER_RETAIN_MINUTES", 30) * 60
+    flushed_at = state.setdefault("flushed_at", {})
+    dropped = 0
+    for session_id, stamp in list(flushed_at.items()):
+        if now - float(stamp) < window:
+            continue
+        tracers = getattr(vm, "_tracers", {})
+        tracers.pop(session_id, None)
+        (state.get("flushed_sessions") or set()).discard(session_id)
+        flushed_at.pop(session_id, None)
+        dropped += 1
+    return dropped
 
 
 def _prune_traces(trace_dir: str, keep: Optional[str] = None) -> int:
@@ -676,6 +706,7 @@ def _state() -> Dict[str, Any]:
             },
             "register_calls": 0,
             "last_written_events": 0,
+            "flushed_sessions": set(),
         }
         setattr(sys, _STATE_ATTR, state)
     return state
@@ -1051,9 +1082,11 @@ def register(ctx) -> None:
                     + "\n",
                     encoding="utf-8",
                 )
-                # Drop the finished tracer so write-through partials cannot be
-                # recreated after the full flush (defect 4, RR-REVIEW-H6).
-                vm._tracers.pop(session_id, None)
+                # Track flushed sessions so write-through partials are not recreated.
+                # The tracer is intentionally kept so multi-turn sessions accumulate;
+                # _evict_stale_tracers releases it once the session has gone quiet.
+                state.setdefault("flushed_sessions", set()).add(session_id)
+                state.setdefault("flushed_at", {})[session_id] = time.time()
         # A complete capture supersedes its partial snapshot, and the directory is
         # pruned so default-ON capture cannot grow without bound.
         if trace_dir:
@@ -1065,6 +1098,7 @@ def register(ctx) -> None:
                     except OSError:
                         pass
             _prune_traces(trace_dir, keep=keep_name)
+        _evict_stale_tracers(vm)
         # UC stubs flush (no-op for current stubs; real UCs write artefacts)
         for uc in _enabled_stubs(features):
             uc.flush()
