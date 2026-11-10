@@ -16,3 +16,24 @@ the answer detail is also in each packet's STATUS header and the RR named in the
 
 **answered 2026-11-08**. Keep capture default-on in owner-run builds; no registry release ships silent default-on — first-run notice minimum, opt-in stronger; consent plugin card bound at D6 (covers publish), D17 = timing. Author the redaction card proposal-only, sidecar-first: stage list (capture/flush/export) with policy id + rule-set version + replaced-field count, "absent = unknown", ref-policy entry (raw/keyed-hashed/dropped), and the block is an assertion without tamper evidence; keyed-hash emission deferred until a rule passes the golden vectors (consistent with `page_id` = `(logical_ref, content_hash)` minting within an artifact; breaks cross-drop joins and the N1 raw-ref diffs); falsifiers: seeded-canary recall; the no-docs user blind to the trace. Mend the consent paragraph (stored contents, discoverability, the 0700 limit) — replacement text in `RR-P3REDACT-20261109`; Part II cites the card id until the field name is ratified. Card: `design/redaction-block.md` (owner-cleared 2026-11-09).
 
+## P4 — umpire `ts` (R4): consumer rule or additive mandate?
+
+**answered 2026-11-09**. Verdict (a)+(c): leave `ts` optional in umpire ledgers and record ONE
+ordering clause — within a ledger, line order governs, an absent `ts` means **unknown, never
+zero**, and no order across ledgers/sessions is implied. Do NOT mandate: (b) works against D9
+(default-ON `ts` with the `CTXVM_TRACE_TS=0` reproducibility opt-out — the frozen corpus carries
+zero `ts` keys, so a regen under the default would mutate pinned bytes, AGENTS law 6), and the
+sweep verified the structural half: RFC-0.1 makes `ts` optional (`:34`), all four umpire ledgers
+are `schemaVersion: "0.1"`-stamped and carry no `ts` key, and a v0-only emitter could never
+comply (v0 has no `ts`; unknown fields are hard errors). No 5-touchpoint card (`ts` already
+exists in RFC-0.1). Both UNKNOWNs resolved: ledgers DO stamp `schemaVersion "0.1"` (5/5 grep
+hits, fixtures + live ledger), and no current consumer orders events across sessions (W14 = the
+per-environment key; the A5 analysis is a single everyday session, n=347; `latency_ms` rides the
+records sidecar, not the ledger). Executed: the ordering clause DRAFTED in
+`reports/RR-P4TS-20261109.md` as a PROPOSAL for `umpire/00-SPEC.md` §2 (after the L1–L5 block;
+documentation-only, deliberately not validator-enforced so it cannot claim an L number), pending
+owner approval + a fresh D-number — the A6 register's D-U1–D-U9 contain no ts candidate, so this
+is a new decision, not a ratification. Falsifier: a consumer that must order events across
+sessions and cannot — then revisit (b) as an emitter profile ("SHOULD emit `ts`") or evaluate the
+per-session sequence number with the full five touchpoints.
+

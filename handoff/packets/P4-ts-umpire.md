@@ -1,5 +1,8 @@
 # Packet P4: umpire `ts` (R4) — consumer rule or additive mandate?
-STATUS: queued 2026-11-09 (registered in handoff/QUESTIONS.md; not yet pasted; resolves a D-U candidate from A6).
+STATUS: answered 2026-11-09 (verdict in handoff/QUESTIONS.md; full record reports/RR-P4TS-20261109.md:
+(a)+(c) — ts stays optional, the ordering clause DRAFTED for umpire 00-SPEC.md §2 proposal-only (owner-approval + D-number outstanding), (b) refused (0.1 makes ts optional; four 0.1-stamped
+fixtures carry none; v0-only emitters could never comply), no 5-touchpoint card, both UNKNOWNs
+resolved: ledgers DO stamp schemaVersion "0.1"; no current cross-session-ordering consumer).
 
 Date: 2026-11-09. Requester: A2 adoption card. Related decision: none (D-U candidate for A6).
 

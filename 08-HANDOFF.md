@@ -915,6 +915,16 @@ white-paper lane's working tree; then the owner gates D16 (W8 reopen) and D17 (p
 adoption lane (A1–A6) continues per adoption prompt §4; W9 umpire-side quality items on owner
 coordination.
 
+**Frontier 10 addendum (2026-11-09, P4 answered):** Packet P4 is answered and recorded — verdict
+(a)+(c): umpire `ts` stays optional; the one-clause ordering rule (line order governs; absent
+`ts` = unknown, never zero; no cross-ledger order) is DRAFTED PROPOSAL-ONLY for
+`umpire/00-SPEC.md` §2 in `reports/RR-P4TS-20261109.md`, awaiting owner approval + fresh
+D-number; (b) refused on D9 + 0.1/v0 grounds verified in the card (the freeze's zero-`ts` corpus
+is the mechanism). No 5-touchpoint card. Remaining reviewer queue: P5 (D-U1 calibration
+transfer), P6 (D-U3 determinism scope), P7 (D-U2 baselines) — pastes pending. The AGENT-PROMPT
+§1 session-state block predates `227beb0` and needs its one-line refresh at the next policy
+touch (proposed, not edited).
+
 ## §1. Workspace map
 
 ```
