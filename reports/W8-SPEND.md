@@ -66,3 +66,27 @@ The earlier $15.39 projection came from a 150-call thrashing cell and no longer 
 What would blow the cap is not token economics but an uncapped driver: 440 calls across three
 attempts is the risk, so a per-cell call ceiling belongs in the driver, and every session's cost
 belongs in this file on the day it runs.
+
+## SUPERSEDED 2026-11-10 — the provider bill, not this table
+
+The reconciliation above (total $4.5752, per-cell $0.016–$0.112) is wrong and is kept only as a
+record of the error. The provider's own export
+(`experiments/usage-day-summary-a93f8b06-2026-11-10.csv`) bills **$7.1377** for the day
+(Luna $7.0519 across 819 requests; DeepSeek $0.0858 for the assistant's own session), and it shows
+what the table omits: **33.5 M cache-write tokens, 29% of input**, billed at an implied
+**$0.125–0.164 per 1M**.
+
+Corrected rate and projections (`RR-SPEND-VERIFY-20261110`):
+
+```
+blended Luna rate                 $0.00861 per request
+one cell, 13 calls                $0.112
+one cell, 20 calls                $0.172
+48 cells x 2 arms x 13 calls      $10.75
+48 cells x 2 arms x 20 calls      $16.53
+W8-shaped sessions, multi-day     $8.98  (default 2.45 / naive 1.69 / paged 4.83)
+```
+
+Two rules follow: cost is read from `debited_usd`, never from `providerUsage` (whose `inputTokens`
+reads 36 across 13 calls and prices a session at $0.003) and never from this hand-kept table alone;
+and a per-cell call ceiling goes in the driver, because at $0.0086 per request the calls are the cost.
