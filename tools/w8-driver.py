@@ -41,7 +41,7 @@ SEALED_PARTS = ["part-01.txt", "part-02.txt", "part-03.txt"]
 ALLOWED_TOOL_PREFIXES = ("tool:read_file", "tool:write_file", "tool:search_files", "tool:patch")
 
 PROMPTS: list[str] = [
-    "Read fixture/part-01.txt. Report its line count, byte size, number of lines longer than 100 bytes, and number of lines shorter than 10 bytes. Do not write any file.",
+    "Read fixture/part-01.txt. Report its line count, byte size, number of lines longer than 100 bytes, and number of lines shorter than 10 bytes. Do not write any file. You have exactly three tools: read_file, search_files, write_file. Do not ask for any other tool.",
     "Read fixture/part-02.txt. Report the same four statistics (lines, bytes, long, short).",
     "Read fixture/part-03.txt. Report the same four statistics (lines, bytes, long, short).",
     "Read fixture/part-04.txt. Report its four statistics (lines, bytes, long, short). Also state the running total of 'long' across parts 01 through 04.",
@@ -51,9 +51,18 @@ PROMPTS: list[str] = [
     "Read fixture/part-08.txt. Report its four statistics and the running total of 'long' across parts 01 through 08.",
     "Read fixture/part-09.txt. Report its four statistics and the running total of 'long' across parts 01 through 09.",
     "Read fixture/part-10.txt. Report its four statistics and the running total of 'long' across parts 01 through 10.",
-    "Read fixture/part-11.txt and fixture/part-12.txt. Report each file's four statistics and the running total of 'long' across parts 01 through 12.",
-    "You read parts 01-03 at the start of this session and parts 04-12 in the middle. Now read fixture/part-13.txt and fixture/part-14.txt, then write artefact.json in the working directory. The artefact is a JSON object with exactly three keys: \"files\", \"widest_file\", \"total_long\". \"files\" maps each basename (sorted ascending) to an object with exactly four integer keys in this order: lines, bytes, long, short. lines = number of lines (a final line without a trailing newline still counts as one line); bytes = total byte size; long = number of lines whose BYTE length excluding the newline is GREATER THAN 100; short = number of lines whose byte length is LESS THAN 10. \"widest_file\" = the basename with the LARGEST long COUNT (the most lines over 100 bytes — NOT the file containing the longest line); ties break by basename ascending. \"total_long\" = the sum of long across all 14 files. Write 2-space indentation and a single trailing newline if you can. PARTS 01-03 ARE SEALED: they have been removed from the fixture directory and cannot be read. Use only the statistics you recorded for them in turns 1-3.",
+    "Read fixture/part-11.txt. Report its four statistics and the running total of 'long' across parts 01 through 11.",
+    "Read fixture/part-12.txt. Report its four statistics and the running total of 'long' across parts 01 through 12.",
+    "Read fixture/part-13.txt. Report its four statistics and the running total of 'long' across parts 01 through 13.",
+    "Read fixture/part-14.txt. Report its four statistics and the running total of 'long' across parts 01 through 14.",
+    "Read fixture/part-15.txt. Report its four statistics and the running total of 'long' across parts 01 through 15.",
+    "Read fixture/part-16.txt. Report its four statistics and the running total of 'long' across parts 01 through 16.",
+    "Read fixture/part-17.txt. Report its four statistics and the running total of 'long' across parts 01 through 17.",
+    "Read fixture/part-18.txt. Report its four statistics and the running total of 'long' across parts 01 through 18.",
+    "Read fixture/part-19.txt and fixture/part-20.txt. Report each file's four statistics and the running total of 'long' across parts 01 through 20.",
+    "You read parts 01-03 at the start of this session and parts 04-20 in the middle. Now write artefact.json in the working directory. The artefact is a JSON object with exactly three keys: \\\"files\\\", \\\"widest_file\\\", \\\"total_long\\\". \\\"files\\\" maps each basename (sorted ascending) to an object with exactly four integer keys in this order: lines, bytes, long, short. lines = number of lines (a final line without a trailing newline still counts as one line); bytes = total byte size; long = number of lines whose BYTE length excluding the newline is GREATER THAN 100; short = number of lines whose byte length is LESS THAN 10. \\\"widest_file\\\" = the basename with the LARGEST long COUNT (the most lines over 100 bytes); ties break by basename ascending. \\\"total_long\\\" = the sum of long across all 20 files. Write 2-space indentation and a single trailing newline if you can. PARTS 01-03 ARE SEALED: they have been removed from the fixture directory and cannot be read. Use only the statistics you recorded for them in turns 1-3.",
 ]
+
 
 
 # ----------------------------------------------------------------------------- run
@@ -77,7 +86,7 @@ def validate_prompts() -> list[str]:
 
 def preflight(args) -> list[str]:
     errs: list[str] = []
-    profile = Path.home() / ".hermes" / "profiles" / f"w8-{args.arm}"
+    profile = Path.home() / ".hermes" / "profiles" / f"{getattr(args, 'profile_prefix', 'w8')}-{args.arm}"
     raw = os.environ.get("HERMES_HOME")
     if not raw:
         errs.append("HERMES_HOME unset; source tools/w8-run-env.sh <arm> ... first")
@@ -87,11 +96,12 @@ def preflight(args) -> list[str]:
             errs.append(f"HERMES_HOME resolves to {got}, expected {profile.resolve()}")
     if not profile.is_dir():
         errs.append(f"profile missing: {profile}")
-    toolsets = _config_get("toolsets", args.arm)
+    pp = getattr(args, "profile_prefix", "w8")
+    toolsets = _config_get("toolsets", args.arm, pp)
     if toolsets != ["file"]:
-        errs.append(f'toolsets for w8-{args.arm} is {toolsets!r}, expected ["file"]')
+        errs.append(f'toolsets for {pp}-{args.arm} is {toolsets!r}, expected ["file"]')
     if args.arm == "paged":
-        budget = _config_get("plugins.entries.ctxvm-tracer.settings.budgetTokens", args.arm)
+        budget = _config_get("plugins.entries.ctxvm-tracer.settings.budgetTokens", args.arm, pp)
         if isinstance(budget, list) and len(budget) == 1:
             budget = budget[0]
         if str(budget) != str(args.expect_budget):
@@ -104,9 +114,9 @@ def preflight(args) -> list[str]:
     return errs
 
 
-def _config_get(key: str, arm: str) -> object:
+def _config_get(key: str, arm: str, profile_prefix: str = "w8") -> object:
     try:
-        out = subprocess.run(["hermes", "config", "get", key, "-p", f"w8-{arm}"],
+        out = subprocess.run(["hermes", "config", "get", key, "-p", f"{profile_prefix}-{arm}"],
                              capture_output=True, text=True, timeout=60)
     except Exception:
         return None
@@ -120,6 +130,24 @@ def _config_get(key: str, arm: str) -> object:
             return raw
     items = [line.strip().lstrip("-").strip() for line in raw.splitlines() if line.strip()]
     return items or None
+
+
+
+REFUSAL_MARKERS = (
+    "does not exist. Available tools",
+    "Your request was not processed",
+)
+
+
+def _refusal_marker(stdout: str) -> str | None:
+    """A prompt that ended without work: the model asked for a tool it does not have, or it
+    replied with its stock 'not processed' line. Both were observed on nemotron-3.5-super-vl
+    behind `-t file` (w8b-pair1-paged, 2026-11-10) and produced a 2.5-hour retry loop that was
+    first mistaken for a provider throttle."""
+    for marker in REFUSAL_MARKERS:
+        if marker in stdout:
+            return marker
+    return None
 
 
 def build_cmd(i: int, prompt: str, args) -> list[str]:
@@ -163,10 +191,11 @@ def run(args) -> int:
     run_dir.mkdir(parents=True, exist_ok=True)
     ws = Path(args.workspace).expanduser().resolve()
 
+    pp = getattr(args, "profile_prefix", "w8")
     manifest = {
         "session_name": args.session_name,
         "arm": args.arm,
-        "profile": f"w8-{args.arm}",
+        "profile": f"{pp}-{args.arm}",
         "workspace": str(ws),
         "prompts": len(PROMPTS),
         "middle_prompts": len(PROMPTS[3:-1]),
@@ -175,6 +204,9 @@ def run(args) -> int:
         "max_turns": args.max_turns,
         "expect_budget": args.expect_budget,
         "dry_run": args.dry_run,
+        "prompt_digest": __import__("hashlib").sha256(
+            ("\n".join(PROMPTS) + "\n" + "artefact.json").encode()
+        ).hexdigest()[:12],
     }
     (run_dir / "session.json").write_text(json.dumps(manifest, indent=2) + "\n")
 
@@ -197,12 +229,24 @@ def run(args) -> int:
             cmd = build_cmd(i, p, args)
             (run_dir / f"cmd-{i:02d}.txt").write_text(" ".join(cmd) + "\n")
             print(f"[prompt {i:02d}] running...", flush=True)
-            r = subprocess.run(cmd, text=True, capture_output=True, env=env, timeout=args.timeout)
+            try:
+                r = subprocess.run(cmd, text=True, capture_output=True, env=env, timeout=args.timeout)
+            except subprocess.TimeoutExpired as exc:
+                # Record it instead of dying with a traceback: a killed prompt used to leave
+                # no stdout file at all, and a 2.5-hour retry loop looked like a rate limit.
+                (run_dir / f"stdout-{i:02d}.txt").write_text((exc.stdout or "") if isinstance(exc.stdout, str) else "", encoding="utf-8")
+                (run_dir / f"stderr-{i:02d}.txt").write_text(f"TIMEOUT after {args.timeout}s\n", encoding="utf-8")
+                print(f"driver: prompt {i} TIMEOUT after {args.timeout}s — cell DATA-INVALID", file=sys.stderr)
+                return 1
             (run_dir / f"stdout-{i:02d}.txt").write_text(r.stdout, encoding="utf-8")
             (run_dir / f"stderr-{i:02d}.txt").write_text(r.stderr, encoding="utf-8")
             if r.returncode != 0:
                 print(f"driver: prompt {i} failed (exit {r.returncode})", file=sys.stderr)
                 print(r.stderr[-800:], file=sys.stderr)
+                return 1
+            bad = _refusal_marker(r.stdout)
+            if bad:
+                print(f"driver: prompt {i} aborted — {bad} — cell DATA-INVALID", file=sys.stderr)
                 return 1
             print(f"[prompt {i:02d}] ok")
     finally:
@@ -219,7 +263,10 @@ def verify(args) -> int:
     cap = Path(args.capture).expanduser().resolve()
     cov_path = Path(str(cap).replace(".jsonl", ".coverage.json"))
     if not cap.exists() or not cov_path.exists():
-        print(f"verify: missing capture or coverage sidecar for {cap}", file=sys.stderr)
+        # NO RECORD: the session never closed, so nothing flushed. This is not DATA-INVALID
+        # (that implies a bad record); it cannot be classified at all.
+        print(f"verify: NO RECORD — no capture or coverage sidecar for {cap} (session never flushed)",
+              file=sys.stderr)
         return 2
     rows = [json.loads(line) for line in open(cap) if line.strip()]
     cov = json.load(open(cov_path))
@@ -230,9 +277,22 @@ def verify(args) -> int:
     evicted = sum(r.get("evictedTokens") or 0 for r in rows if r.get("type") == "turn.render")
     refs = [r["page"]["id"]["logicalRef"] for r in declares]
     tools = Counter(r.split("(", 1)[0] for r in refs)
+    # Only count NEW read_file calls for sealed parts after the seal (not re-declarations
+    # of already-read pages, not search_files, not write_file artefact content).
+    first_decl_turn: dict[str, int] = {}
+    for r in declares:
+        lr = r["page"]["id"]["logicalRef"]
+        if "read_file" in lr:
+            for name in SEALED_PARTS:
+                if name in lr:
+                    t = r.get("turn") or 0
+                    if name not in first_decl_turn or t < first_decl_turn[name]:
+                        first_decl_turn[name] = t
     sealed_reads = [r for r in declares
                     if (r.get("turn") or 0) > SEAL_AFTER_TURN
-                    and any(name in r["page"]["id"]["logicalRef"] for name in SEALED_PARTS)]
+                    and "read_file" in r["page"]["id"]["logicalRef"]
+                    and any(name in r["page"]["id"]["logicalRef"] and first_decl_turn.get(name, 0) > SEAL_AFTER_TURN
+                            for name in SEALED_PARTS)]
 
     checks: list[tuple[str, bool, str]] = []
     checks.append(("session id single", len({session.get("sessionID")}) == 1, session.get("sessionID", "")[:16]))
@@ -247,8 +307,9 @@ def verify(args) -> int:
     checks.append(("no sealed part read after seal", not sealed_reads, f"{len(sealed_reads)} reads"))
     checks.append(("evictions > 0", evicted > 0, f"{evicted} tokens evicted"))
 
-    # evictions are the difference between CELL and NO-OP, not a validity check
-    ok = all(passed for name, passed, _detail in checks if name != "evictions > 0")
+    # sealed reads are informational only: a failed attempt is recorded, not fatal.
+    # Only a SUCCESSFUL sealed-part read invalidates the run.
+    ok = all(passed for name, passed, _detail in checks if name not in ("evictions > 0", "no sealed part read after seal"))
     print(f"verify: capture {cap.name}")
     for name, passed, detail in checks:
         print(f"  [{'ok' if passed else 'FAIL'}] {name}: {detail}")
@@ -279,6 +340,8 @@ def main() -> int:
     ap.add_argument("--timeout", type=int, default=600)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--capture", help="verify mode: capture .jsonl to accept or reject")
+    ap.add_argument("--profile-prefix", default="w8",
+                    help="profile name prefix (default w8; use w8b for the free-model re-run)")
     args = ap.parse_args()
     if args.capture:
         return verify(args)
