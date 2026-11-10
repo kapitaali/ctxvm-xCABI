@@ -934,6 +934,17 @@ sentence is a PROPOSAL for the calibrated-confidence surface (owner-gated, P4 pa
 Remaining reviewer queue: P6 (D-U3 determinism scope), P7 (D-U2 baselines); P8 stays queued
 owner-flagged. AGENT-PROMPT §1 is now ~5 commits stale (proposal outstanding).
 
+**Frontier 10 addendum 3 (2026-11-10, P6 answered):** D-U3 resolved in kit form per
+`reports/RR-P6DET-20261110.md` — verdict = register option (a): keep the replay claim
+same-build, TIGHTEN the vocabulary to "replay-reproducible with 10 documented exceptions"
+("deterministic" unavailable even same-build at 470/480; the ten classify at a quiescent
+(concurrency-1) recapture before stronger wording; page-table-only softening refused for umpire
+— the split is identity 480/480 + strict output 470/480). Cross-machine only after a
+preregistered matrix (pinned image+weights, ≥2 hardware configs, OS variation, hash
+seed/threads/concurrency axes, full 480 per config); cross-build reports identity only. Serving
+is local-only by T14/D-U4. The claim-today sentence is a PROPOSAL (owner-gated). Remaining
+reviewer queue: P7 (D-U2 baselines); P8 owner-flagged.
+
 ## §1. Workspace map
 
 ```

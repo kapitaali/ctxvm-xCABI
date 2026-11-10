@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-10, HEAD `4326930` (master prompt + LOG tail repair). This is the lane's
+State of record: 2026-11-10, HEAD `6ec6501` (roadmap committed). This is the lane's
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -77,15 +77,15 @@ pin true every card close.
   *Done when (met):* `grep -c RR-P5CAL reports/LOG.md` = 1 and QUESTIONS row P5 shows
   `**answered 2026-11-10**`.
 
-- [ ] **P6 (D-U3 determinism scope) — awaiting the owner's paste.** My actions once pasted:
-  verify-then-record per prompt §4 (intake, book-check every claim, resolve UNKNOWNs, card, kit
-  rows, A/B commits, report).
-  *Done when:* QUESTIONS row `| P6 |` marked answered and `reports/RR-P6*-<date>.md` exists.
-  *Owner:* paste the answer.
+- [x] **P6 (D-U3 determinism scope) answered 2026-11-10.** Verify sweep + verdicts recorded in
+  `reports/RR-P6DET-20261110.md`: keep same-build (register option (a)); vocabulary tightened to
+  "replay-reproducible with 10 documented exceptions"; both UNKNOWNs resolved (RR-M3FULL:19-23;
+  local-only serving T14/D-U4).
+  *Done when (met):* QUESTIONS row `| P6 |` reads answered and the card exists in a commit.
 
-- [ ] **P7 (D-U2 baselines) — queued behind P6.** Same pipeline.
-  *Done when:* QUESTIONS row `| P7 |` marked answered + card file.
-  *Owner:* paste (after P6).
+- [ ] **P7 (D-U2 baselines) — the owner's next paste.** The nine-step pipeline is the contract.
+  *Done when:* QUESTIONS row `| P7 |` marked answered + `reports/RR-P7*-<date>.md` exists.
+  *Owner:* paste (P6 consumed).
 
 - [ ] **P8 (cache-stable selection) — OWNER DISPOSITION FIRST.** Owner hinted the gist is already
   answered by the research lane's cache-stable-selection work. Two exits:
@@ -210,6 +210,15 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
   routes a dev card there, its pipeline mirrors §4 of my prompt with uom-per-card kit rules in
   that repo. Standing: proposals only until a D-number lands.
   *Done when:* first routed card lands with its own `RR-*` row in the umpire repo's books.
+
+- [ ] **U4. D-U3 falsifier run: quiescent (concurrency-1) recapture + ten-row classification.**
+  From P6 (`RR-P6DET-20261110`): the capture-co-traffic attribution (`RR-M3FULL:72-97`) is
+  recorded but unproven. The run: recapture the suspect band (or full 480) on the same build,
+  quiescently, then classify the ten as concurrency / numerical-order / other.
+  *Falsifier outcomes:* persist ⇒ intrinsic, claim stays 470/480; recapture-clean ⇒ ten become
+  documented capture-side exceptions and the vocabulary strengthens.
+  *Owner:* route the compute (it burns llama-server wall-time, ~2 h for 480 at 13.2 s median);
+  the pass rule freezes BEFORE the run.
 
 ## 6. Owner's next-cue list (what unblocks the most)
 

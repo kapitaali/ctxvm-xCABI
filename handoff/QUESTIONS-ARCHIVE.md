@@ -59,3 +59,51 @@ n=180 = test ∪ validation amendment (`:103-105`; train excluded to protect the
 `cal-v1:057a5a35a9d4ec71`, bootstrap n=2000 seed 42, 10-bin ECE, test n=120, committed `47e0ee0`.
 Rows-per-scope: per-scope rows beyond this one scope do not exist yet — why the transfer claim
 cannot stand. Full: `reports/RR-P5CAL-20261110.md`.
+
+## P6 — D-U3 determinism scope: same-build only or cross-machine?
+
+**answered 2026-11-10**. KEEP the claim same-build (the D-U3 register's own option (a),
+`design/umpire-design-choices.md:15-17`), do not expand; TIGHTEN the vocabulary instead of
+softening to page-table-only: "deterministic" is not available even same-build (470/480 is not
+480/480 until the ten non-strict rows are explained by test, not assumption) — say
+"**replay-reproducible with 10 documented exceptions**" (law 8 supports it). Page-table-only is
+the wrong softening FOR UMPIRE: that scoping belongs to the ctxvm core; the umpire split is
+identity (480/480) vs strict output (470/480), stated together. Needs: one run of the same 480
+rows on the same build at concurrency 1 — quiescent recapture of the suspect band — with the ten
+exceptions classified (concurrency / numerical order / other). Falsifier (both directions): if
+the non-strict rows persist at concurrency 1 the cause is intrinsic to the build and the claim
+stays 470/480; if they recapture clean the ten become documented capture-side exceptions.
+
+**Cross-machine machine set** (preregistered before run): same container image digest, same model
+weights, fixed decoding; ≥2 hardware configurations differing in CPU microarchitecture or
+instruction set (and GPU if any); ≥1 different host OS or kernel; axes to vary: hash seed, thread
+count, concurrency; full 480 rows per configuration; the pass rule preregistered (strict equality
+with the baseline on every row except the documented exceptions). It proves only the factors
+varied — never "any machine". Cross-build is a separate axis: expect non-strict equality; REPORT
+IDENTITY there and measure the strict rate.
+
+**Claimable today (PROPOSAL, verbatim):** "On one machine and one build, replaying the 480-row
+corpus reproduced 470 rows exactly and all 480 by identity; reproducibility across machines or
+builds has not been measured, and no claim is made about model-output determinism in general."
+The identity claim stays separate from RR-IMPL2 (the minting second-implementation result,
+"byte-identical Python↔TS … minting layer only", `RR-IMPL2-20261109:100`).
+
+**UNKNOWNs resolved from the books:** strict/identity definitions were the reviewer's exact
+assumption — `RR-M3FULL-20261024.md:19-23` (strict ok = every field incl. contentHash +
+probabilities = 470/480; identity_ok = ref+key+model_pin = 480/480); what is replayed = the full
+480-row M3 corpus via `harness/replay_audit.py --corpus calibration/corpus-v2.jsonl` (`:9`);
+local-vs-hosted = DECIDED local-only by T14 (`RR-T14-20261023.md`; register D-U4: pinned
+llama-server + model files only (current); a hosted redeploy is an option NOT taken — so
+provider-side machine claims are out of scope from this side). The concurrency attribution is
+recorded but NOT yet proven: `RR-M3FULL:72-97` (co-traffic window; 7/10 suspect rows
+latency-elevated; other slow episodes never diverged; the 10-row quiescent rerun reproduced
+10/10 distribution-only, proving replay-path stability), with the decisive quiescent-recapture
+run still to be made. `spec/determinism.py` + `tools/determinism-matrix.sh` exist, unevidenced on
+cross-machine. Full: `reports/RR-P6DET-20261110.md`.
+
+## Errata (2026-11-10): QUESTIONS.md row compaction for the 3,072 B cap
+
+The P4, P5 and P6 chart rows grew past the cap when P6's answer landed
+(3,759 > 3,072; P4's row was 1,102 B of it). Their verdict texts COMPACTED to pointers — every fact retained here in the
+full P4/P5/P6 sections above; nothing recorded was rewritten or lost. Committed-row law intact:
+the LOG keeps the claims; this chart just points.

@@ -313,17 +313,18 @@ these reports.
 Keep this section TRUE with one edit per stale line when you close a card; an out-of-date pin
 disqualifies this file from prompt duty:
 
-- Packet queue: P6 (D-U3 determinism scope) and P7 (D-U2 baselines) queued for owner paste; P8
+- Packet queue: P7 (D-U2 baselines) is the only queued paste; P8
   (cache-stable selection; 3,059/3,072 B margin) owner-flagged drop-or-keep — the owner hinted its
-  gist is answered by the research lane's cache-stable-selection work.
+  gist is answered by the research lane's cache-stable-selection work. P4/P5/P6 answered
+  (RR-P4TS / RR-P5CAL / RR-P6DET); umpire gates G1 (ordering clause), G2 (caller sentence), G3
+  (equivalence prereg), U4 (quiescent recapture classification) await owner ratification/routing.
 - Owner gates outstanding: the umpire ordering clause (P4) and the calibrated-confidence caller
   sentence (P5) — both carried VERBATIM as PROPOSAL in their cards; ratification + fresh
   D-numbers needed (A6's register has NO ts candidate; D-U1 IS registered, so P5 ratifies into it).
 - Paste composition (2026-11-10 tree): state ~6,140 B + CONTEXT-PACK ~7,468 B + the Nth packet
   decides paste-N; a PROJECT delta over ~100 B likely re-breaks paste-3. Pre-measure; trim
   glossary rows (never headings) if over.
-- Day files: 2026-11-09 (sealed, append-only), 2026-11-10 (current). LOG row count 217 as of this
-  pin + roadmap close (design/ROADMAP-OPENCODE-LANE.md); verify with `grep -c '^| RR-' reports/LOG.md`
-  before trusting it.
+- Day files: 2026-11-09 (sealed, append-only), 2026-11-10 (current). LOG row count 218 as of the
+  P6 close; verify with `grep -c '^| RR-' reports/LOG.md` before trusting it.
 - AGENT-PROMPT §1 staleness: refresh PROPOSED, not edited (policy-file law, §0).
 - Watcher baselines reset for free; never treat "quiet" as "no collision".
