@@ -1,5 +1,12 @@
 # Packet P7: D-U2 baselines — add embedding-NN, logistic, small classifier, larger LLM?
-STATUS: queued 2026-11-09 (registered in handoff/QUESTIONS.md; not yet pasted; resolves D-U2).
+STATUS: answered 2026-11-10 (verdict in handoff/QUESTIONS.md; full record reports/RR-P7BASE-20261110.md:
+two cheap baselines first (majority-class + logistic-on-embeddings for accuracy/calibration;
+zero-shot embedding similarity for caller-labels); stronger model only before a product claim with
+a spend packet; same-split protocol (240 fit / 120 calibration / 120 test, paired bootstrap,
+preregistered margin); positioning outcomes preregistered. Both reviewer UNKNOWNs resolved from
+the books (480-row = 240/120/120 split at 4 labels of 120; labels still caller-supplied per call) — AND the sweep caught an erratum on the committed P6 card: the
+quiescent concurrency-1 recapture already exists (RR-M3V3, attribution CONFIRMED), so Roadmap U4
+ticks.
 
 Date: 2026-11-09. Requester: A6. Related decision: D-U2.
 

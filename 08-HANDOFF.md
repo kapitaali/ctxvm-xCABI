@@ -945,6 +945,21 @@ seed/threads/concurrency axes, full 480 per config); cross-build reports identit
 is local-only by T14/D-U4. The claim-today sentence is a PROPOSAL (owner-gated). Remaining
 reviewer queue: P7 (D-U2 baselines); P8 owner-flagged.
 
+**Frontier 10 addendum 4 (2026-11-10, P7 answered + P6 erratum):** D-U2 resolved in kit form per
+`reports/RR-P7BASE-20261110.md` — two zero-spend baselines FIRST (majority-class + logistic-on-
+embeddings for the accuracy AND calibration claims; zero-shot embedding similarity for the
+caller-labels claim — a fixed-label classifier cannot take a new label set), stronger model only
+before a product claim WITH a spend packet, fine-tuned deferred; the same-split protocol (same
+**240 fit / 120 calibration / 120 test** rows of the 480-row 4-label corpus — reviewer UNKNOWNs
+resolved: `RR-M2V2` "240/120/120 split, test n=120") with preregistered margins (~8-point
+half-width at n=120; <5-point differences unresolvable). Positioning flips preregistered as
+PROPOSALS (ledger-layer vs accuracy-case vs "cheap and local", logistic-ECE ≤ 0.0302 triggers
+the calibration wording's own recalibration). ERRATUM: the committed P6 card's Limitations were
+wrong — the quiescent concurrency-1 recapture exists (`RR-M3V3-20261024`: **capture-time-
+concurrency attribution CONFIRMED**; ten rows = documented capture-side exceptions at 5/4/1
+splits) — Roadmap U4 ticks, P6's falsifier stands resolved recapture-clean; erratum recorded as
+appended blocks, no committed text rewritten. Remaining reviewer queue: P8 owner-flagged.
+
 ## §1. Workspace map
 
 ```

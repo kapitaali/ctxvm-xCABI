@@ -104,6 +104,73 @@ cross-machine. Full: `reports/RR-P6DET-20261110.md`.
 ## Errata (2026-11-10): QUESTIONS.md row compaction for the 3,072 B cap
 
 The P4, P5 and P6 chart rows grew past the cap when P6's answer landed
-(3,759 > 3,072; P4's row was 1,102 B of it). Their verdict texts COMPACTED to pointers — every fact retained here in the
+(3,759 > 3,072; P4's row was 1,102 B of it).
+
+A second pass (2026-11-10, P7 close): the P7 chart row was written large (1,289 B) and
+pushed QUESTIONS.md to 3,892 — it compacted to the pointer form the same way, with 47+ B
+left under the cap. The full P7 verdicts live in the `A third and fourth shave in the same pass: the P7 row compacted again, the statuses line, the
+queue-law paragraph and the standing-questions closing sentence trimmed (wording only: the
+reviewer's answer-summary rule and 'a change that cannot answer (1) or (2) from repo evidence
+is not ready for review' restated here once — no fact dropped), the P1 chart row compacted the
+same way (full P1–P3 section intact above; 'N3 turn unit' lost no ground — it is D13/RR-DIFFNORM
+detail retained in the section), and stray typographic quotes/dashes normalised. No fact
+dropped from any compaction; every removed word survives in the sections above this note or in
+the cited RR cards.
+
+## P7 —` section above.
+
+A third shave in the same pass: the statuses line, the queue-law paragraph and the
+standing-questions closing sentence trimmed (wording only, no fact dropped — the replaced
+sentences' full meaning is boilerplate, restated here once: the reviewer's answer-summary
+rule, and 'a change that cannot answer (1) or (2) from repo evidence is not ready for
+review'). Their verdict texts COMPACTED to pointers — every fact retained here in the
 full P4/P5/P6 sections above; nothing recorded was rewritten or lost. Committed-row law intact:
 the LOG keeps the claims; this chart just points.
+
+## P7 — D-U2 baselines: which one must run before a claim ships?
+
+**answered 2026-11-10**. Run TWO cheap baselines FIRST (both zero model spend), never all four:
+majority-class + ONE cheap learned baseline — and WHICH learned one depends on the claim:
+**logistic regression on embeddings** for the corpus-accuracy claim AND the calibration claim
+(logistic is usually well calibrated unaided; if its ECE lands at/below the calibrated 0.0302 the
+calibration layer's marginal value is small and its wording moves to "makes confidence
+interpretable for an uncalibrated LLM," not "better calibration"); **zero-shot embedding
+similarity between text and label names** for caller-labels claims (a fixed-label classifier
+cannot take a new label set — like-for-like only on the corpus's own labels). LATER, not first:
+the stronger model (structured output + logprobs) only before a product/accuracy-leadership claim
+AND only with a spend packet; the small fine-tuned classifier answers a different question (is
+the LLM needed given labelled data?) — DEFERRED. Falsifier: if baseline results change when the
+preprocessing changes (tokenisation, embedding model, label wording), the comparison is not
+stable enough to carry a positioning claim.
+
+**Same-split protocol (PROPOSAL, verbatim):** "Every baseline trains or fits on the same fit
+rows, is calibrated by the same procedure on the same calibration rows, is scored on the same 120
+test rows for accuracy, Brier, and ECE with paired bootstrap CIs, and reports cost and latency
+per row, with the comparison margin preregistered." At n=120, 0.7083 accuracy (85/120) has a
+≈8-point half-width (artifact CI [0.625, 0.791667]); paired comparisons shrink it, but differences
+under ~5 points stay unresolved — conclusions are "clearly better," "clearly worse," or
+"indistinguishable at this n," always "on umpire's corpus."
+
+**Positioning outcomes preregistered (proposals):** (a) cheap baseline matches/beats 0.7083 within
+CI at near-zero cost/latency ⇒ value = ledger + determinism scope + audit trail ⇒ "demo of xCABI"
+over product; (b) every cheap baseline clearly worse beyond the paired CI ⇒ the accuracy case for
+the LLM path stands; (c) logistic ECE ≤ 0.0302 already ⇒ the calibration layer's marginal value is
+small ⇒ the claim's own wording recalibrates; (d) stronger model much more accurate at acceptable
+cost ⇒ the 1.7B needs cost/latency/local justification ⇒ "cheap and local"; (e) zero-shot
+embeddings clearly fail on new label sets ⇒ caller-owned-labels = genuine differentiator.
+
+**UNKNOWNs resolved from the books:** label space = FOUR (`billing/other/sales/technical`, 480
+examples at 120/label — `reports/LOG.md:14` RR-M2V2; `W9-TRANSFER.md:36` names the four); splits
+= **240 fit / 120 calibration (validation, selects isotonic vs temperature) / 120 test**
+(`RR-M2V2` "240/120/120 split, test n=120"; `RR-M3V3:51` "Test split (n=120, untouched)");
+labels remain caller-supplied per decision call (the MCP decide contract takes labels each
+invocation; caller-owned sets are the W9 feature). ECE-claim numbers verified in the artifact
+(cal-precision-v3.json: accuracy point 0.708333 CI [0.625, 0.791667]; ece_calibrated point
+0.030163).
+
+**ERRATUM carried (P6 committed card):** the P6 recording said the concurrency-1 classification
+run "has not been run" — FALSE per `RR-M3V3-20261024` (the quiescent FULL 480 recapture,
+6,060.5 s, zero MCP decide writes, 10 rows relaxed to replay-path values with 5/4/1 splits,
+capture-time page-table byte-identical ⇒ **capture-time-concurrency attribution CONFIRMED**).
+P6's falsifier therefore RESOLVED recapture-clean; Roadmap U4 ticks with `RR-M3V3` as its
+locator; the P6 vocabulary line stays a PROPOSAL (owner-gated). Full: `reports/RR-P7BASE-20261110.md`.

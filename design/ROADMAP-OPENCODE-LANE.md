@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-10, HEAD `6ec6501` (roadmap committed). This is the lane's
+State of record: 2026-11-10, HEAD `990d517` (P6 PROJECT delta; P7 kit in flight, committing on top). This is the lane's
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -83,9 +83,11 @@ pin true every card close.
   local-only serving T14/D-U4).
   *Done when (met):* QUESTIONS row `| P6 |` reads answered and the card exists in a commit.
 
-- [ ] **P7 (D-U2 baselines) — the owner's next paste.** The nine-step pipeline is the contract.
-  *Done when:* QUESTIONS row `| P7 |` marked answered + `reports/RR-P7*-<date>.md` exists.
-  *Owner:* paste (P6 consumed).
+- [x] **P7 (D-U2 baselines) answered 2026-11-10.** Verify sweep + verdicts recorded in
+  `reports/RR-P7BASE-20261110.md`: two zero-spend baselines first; both UNKNOWNs resolved
+  (240/120/120 at 4 labels ×120; labels caller-supplied per call); five prereg-positioning
+  outcomes; the card carries the P6 U4 erratum.
+  *Done when (met):* QUESTIONS row `| P7 |` reads answered and the card exists in a commit.
 
 - [ ] **P8 (cache-stable selection) — OWNER DISPOSITION FIRST.** Owner hinted the gist is already
   answered by the research lane's cache-stable-selection work. Two exits:
@@ -211,14 +213,16 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
   that repo. Standing: proposals only until a D-number lands.
   *Done when:* first routed card lands with its own `RR-*` row in the umpire repo's books.
 
-- [ ] **U4. D-U3 falsifier run: quiescent (concurrency-1) recapture + ten-row classification.**
-  From P6 (`RR-P6DET-20261110`): the capture-co-traffic attribution (`RR-M3FULL:72-97`) is
-  recorded but unproven. The run: recapture the suspect band (or full 480) on the same build,
-  quiescently, then classify the ten as concurrency / numerical-order / other.
-  *Falsifier outcomes:* persist ⇒ intrinsic, claim stays 470/480; recapture-clean ⇒ ten become
-  documented capture-side exceptions and the vocabulary strengthens.
-  *Owner:* route the compute (it burns llama-server wall-time, ~2 h for 480 at 13.2 s median);
-  the pass rule freezes BEFORE the run.
+- [x] **U4. D-U3 falsifier run: quiescent (concurrency-1) recapture + ten-row classification.**
+  RAN ALREADY by the books: `RR-M3V3-20261024` = the quiescent FULL 480 recapture (6,060.5 s,
+  zero MCP decide writes in-window, same pin/seed/corpus sha) where the ten suspect rows relaxed
+  to the replay-path values (splits 5/4/1 train/validation/test) and the capture-time page-table
+  came out byte-identical — "**capture-time-concurrency attribution CONFIRMED**" (the locator
+  printed by `grep -n 'CONFIRMED' ~/Documents/umpire/reports/LOG.md`). Discovered while
+  processing P7; the committed P6 card's Limitations wrongly said it hadn't run — erratum block
+  appended there, U4 ticks here.
+  *Done when (met):* the box's snake-locator command prints the RR-M3V3 row; falsifier outcome =
+  recapture-clean.
 
 ## 6. Owner's next-cue list (what unblocks the most)
 
