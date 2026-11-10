@@ -1,4 +1,4 @@
-# State (updated 2026-11-10, by ctxvm repo agent (opencode), after the P5 card: D-U1 answered — calibration publishes WITH the caveat; no transfer claim yet)
+# State (updated 2026-11-10, by ctxvm repo agent (opencode), after the P6 card: D-U3 answered — replay same-build, vocab tightened)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8: 0 cells counted (5 void/no-op), blocker = one-turn sessions, next = multi-turn driver.
@@ -11,9 +11,9 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. P5 answered (RR-P5CAL-20261110): per-corpus calibration publishes WITH the caveat; no transfer claim until a preregistered ≥5-new-label-set equivalence test; both UNKNOWNs resolved (arms = `W9-TRANSFER.md:36-38`).
-2. P4 answered (RR-P4TS-20261109): ts OPTIONAL, ordering clause DRAFTED proposal-only for umpire §2; both UNKNOWNs resolved.
-3. A1–A6 batch + H1–H6 (2026-11-09): six adoption cards + packets P4–P8; hermes 0.10.11.
+1. P6 answered (RR-P6DET-20261110): replay stays SAME-BUILD (option (a)); vocabulary = replay-reproducible with 10 documented exceptions.
+2. P5 answered (RR-P5CAL-20261110): calibration WITH the caveat; transfer needs the ≥5-set preregistered equivalence test.
+3. P4 answered (RR-P4TS-20261109): ts stays optional; ordering clause DRAFTED proposal-only (umpire §2).
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
@@ -21,7 +21,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 ## Next three (ordered, one line each)
 1. Owner: ratify D13 + D14 and route the SIX-item white-paper bundle (items listed in full in RR-DAY-20261109) — working-tree bytes, not HEAD.
 2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
-3. Agent: P5 answered; P6–P7 pastes pending, P8 owner-flagged (or drop). Umpire gates: ordering clause (P4) + caller sentence (P5) D-numbers.
+3. Agent: P6 answered; P7 paste pending, P8 drop-or-keep. Umpire gates: D-ordering (P4), caller sentence (P5), vocab line (P6); U4 recapture run.
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
@@ -30,7 +30,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 - 2026-11-07: W8 ruled FAILED; capture stays default-on; contract restored (RR-W8CHUNK-20261107-2b + RR-W8INDEX).
 - 2026-11-08: D3-c approved (owner); D13 answered (P1); P2 answered + seq 7 located (`identifier_scan` swap-in).
 - 2026-11-09: D14 answered (P3 verdicts recorded); consent mends + card-citation rule routed. P4 answered: ts stays optional; ordering clause PROPOSED for umpire §2 (RR-P4TS-20261109), D-number outstanding.
-- 2026-11-10: D-U1 answered (P5): calibration with caveat; transfer needs a preregistered ≥5-set equivalence test (RR-P5CAL-20261110).
+- 2026-11-10: D-U1 answered (P5): calibration with caveat; transfer needs a preregistered ≥5-set equivalence test (RR-P5CAL-20261110). D-U3 (P6): keep same-build; ten classify at concurrency-1 recapture (RR-P6DET-20261110).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 (Pkt 1) ANSWERED 2026-11-08: Pillar-1 splits (replayable + conformance-testable kept; "diffable" behind the consumer profile; "reconstructs any turn" narrowed; absence reworded). Card: `design/diff-normalisation.md`. Owner next: ratify + route with the six-item bundle.
