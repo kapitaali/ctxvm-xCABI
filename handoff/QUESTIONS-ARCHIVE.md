@@ -37,3 +37,25 @@ is a new decision, not a ratification. Falsifier: a consumer that must order eve
 sessions and cannot — then revisit (b) as an emitter profile ("SHOULD emit `ts`") or evaluate the
 per-session sequence number with the full five touchpoints.
 
+
+## P5 — D-U1 calibration transfer: is n=180 enough?
+
+**answered 2026-11-10**. Publish per-corpus calibration WITH the caveat; NO transfer claim until
+a held-out corpus with several NEW label sets (the unit is the label set, not the row; fewer than
+~5 would not convince) passes a PREREGISTERED equivalence test — margin ±2 points, Brier/log-loss
+primary (ECE secondary: small-sample bin-occupancy bias), cross-fitting, cluster bootstrap
+across sets. Sizing: from the existing-rows paired bootstrap half-width h, n ≈ 180 × (h/2)²
+(h=4 → ~720; h=6 → ~1,620). "No detectable degradation" is not "no degradation": CIs include
+zero, and the POINT estimates worsened (A1 7.5→12.2% ECE = +4.7, already above the 2-point
+effect to exclude; A2 4.9→6.8% = +1.9). Caller sentence (proposed verbatim):
+"Calibrated confidence was fitted on umpire's own label sets and has not been shown to transfer,
+so treat it as an uncalibrated score for your labels until you check it on a sample of your own
+labelled rows." Falsifier: held-out new-label-set evaluation where calibrated ECE exceeds raw by
+more than the margin ⇒ never ship the transfer claim; equivalence inside the margin ⇒ ship it.
+UNKNOWNs resolved by the books: the reviewer's assumed arm definitions = the design's exact
+table (`design/W9-TRANSFER.md:36-38`: A0 baseline 4-label; A1 drops `other`; A2 drops `billing`);
+n=180 = test ∪ validation amendment (`:103-105`; train excluded to protect the isotonic fit
+`:109-110`); artifact `cal-precision-v3.json` = `umpire-calibration-precision/0.1`,
+`cal-v1:057a5a35a9d4ec71`, bootstrap n=2000 seed 42, 10-bin ECE, test n=120, committed `47e0ee0`.
+Rows-per-scope: per-scope rows beyond this one scope do not exist yet — why the transfer claim
+cannot stand. Full: `reports/RR-P5CAL-20261110.md`.

@@ -925,6 +925,15 @@ transfer), P6 (D-U3 determinism scope), P7 (D-U2 baselines) — pastes pending. 
 §1 session-state block predates `227beb0` and needs its one-line refresh at the next policy
 touch (proposed, not edited).
 
+**Frontier 10 addendum 2 (2026-11-10, P5 answered):** D-U1 resolved in kit form per
+`reports/RR-P5CAL-20261110.md` — publish per-corpus calibration WITH the caveat; NO transfer
+claim until a preregistered equivalence test on ≥5 held-out new label sets (±2 pt margin,
+Brier/log-loss primary, cluster bootstrap, sizing n ≈ 180×(h/2)²). Point estimates worsened on
+transfer scopes (A1 7.5→12.2, A2 4.9→6.8 ECE, `RR-W9TRANSFER-20261101:136`). The caller
+sentence is a PROPOSAL for the calibrated-confidence surface (owner-gated, P4 pattern).
+Remaining reviewer queue: P6 (D-U3 determinism scope), P7 (D-U2 baselines); P8 stays queued
+owner-flagged. AGENT-PROMPT §1 is now ~5 commits stale (proposal outstanding).
+
 ## §1. Workspace map
 
 ```

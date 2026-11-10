@@ -1,5 +1,9 @@
 # Packet P5: D-U1 calibration transfer — is n=180 enough?
-STATUS: queued 2026-11-09 (registered in handoff/QUESTIONS.md; not yet pasted; resolves D-U1).
+STATUS: answered 2026-11-10 (verdict in handoff/QUESTIONS.md; full record reports/RR-P5CAL-20261110.md:
+publish per-corpus calibration WITH the caveat, no transfer claim until a preregistered held-out
+corpus of new label sets passes equivalence (±2 pt margin, Brier/log-loss primary, ≥5 sets,
+cluster bootstrap); point estimates worsened (A1 +4.7, A2 +1.9). The reviewer's UNKNOWN arm
+definitions RESOLVED from the books: A0/A1/A2 = design/W9-TRANSFER.md:36-38's exact table.
 
 Date: 2026-11-09. Requester: A6. Related decision: D-U1.
 
