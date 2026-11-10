@@ -322,7 +322,8 @@ disqualifies this file from prompt duty:
 - Paste composition (2026-11-10 tree): state ~6,140 B + CONTEXT-PACK ~7,468 B + the Nth packet
   decides paste-N; a PROJECT delta over ~100 B likely re-breaks paste-3. Pre-measure; trim
   glossary rows (never headings) if over.
-- Day files: 2026-11-09 (sealed, append-only), 2026-11-10 (current). LOG row count 216 as of this
-  pin; verify with `grep -c '^| RR-' reports/LOG.md` before trusting it.
+- Day files: 2026-11-09 (sealed, append-only), 2026-11-10 (current). LOG row count 217 as of this
+  pin + roadmap close (design/ROADMAP-OPENCODE-LANE.md); verify with `grep -c '^| RR-' reports/LOG.md`
+  before trusting it.
 - AGENT-PROMPT §1 staleness: refresh PROPOSED, not edited (policy-file law, §0).
 - Watcher baselines reset for free; never treat "quiet" as "no collision".

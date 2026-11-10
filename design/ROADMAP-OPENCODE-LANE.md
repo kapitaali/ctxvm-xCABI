@@ -1,0 +1,223 @@
+# ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
+
+State of record: 2026-11-10, HEAD `4326930` (master prompt + LOG tail repair). This is the lane's
+own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
+are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
+(`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
+what the box says; an unticked box is either future work or an owner gate, and says which.
+
+Lane boundaries: this lane owns the kit surfaces it is routed (`handoff/` deltas, `08-HANDOFF.md`
+§0 addenda, `reports/` for its cards), reviewer-packet processing, and PROPOSAL-side umpire work.
+It does not own `research/**`, `packages/hermes/**`, `corpus/**`, `spec/**`, `AGENTS.md` /
+`handoff/AGENT-PROMPT.md` / `handoff/LANES.md` (policy), packet content, or `tools/run-ci.sh`.
+Prompts for this lane: `design/OPENCODE-LANE-DEVELOPER-PROMPT.md` (operating law) — keep its §14
+pin true every card close.
+
+---
+
+## 0. Standing lane upkeep (machinery that keeps the books honest)
+
+- [x] **R1. Lane master prompt authored and committed.**
+  `design/OPENCODE-LANE-DEVELOPER-PROMPT.md` exists, 321+ lines, family format.
+  *Done when:* `grep -c '^## ' design/OPENCODE-LANE-DEVELOPER-PROMPT.md` >= 14 and the file is in
+  a commit (`git log -1 --format='%h' -- design/OPENCODE-LANE-DEVELOPER-PROMPT.md` → `4326930`).
+  *Status:* LANDED 2026-11-10.
+
+- [x] **R2. LOG tail format fault repaired.** The `RR-ENVLEAK-20261110` row had committed with a
+  literal backslash-n terminator; repair + erratum row `RR-LOGERR-20261110` + prompt §6/§12 rules.
+  *Done when:* `grep -c '^| RR-' reports/LOG.md` prints ≥ 216, the file's final byte is a newline
+  (`tail -c 1 reports/LOG.md` prints a blank/`\n`), and no line contains a backslash-n followed by
+  `| RR-` (`grep -c 'n| RR-' reports/LOG.md` prints 0).
+
+- [x] **R3. Day files current.** `reports/RR-DAY-20261110.md` carries sections for P5, the gates
+  run, the master prompt, and the LOG fault.
+  *Done when:* `grep -c '^## ' reports/RR-DAY-20261110.md` >= 5.
+
+- [ ] **R4. `handoff/AGENT-PROMPT.md` §1 session-state refresh.** PROPOSED, not edited — policy
+  file (owner gate). The §1 block predates the P4/P5 chain; the proposal is a one-line Done whose
+  text lives in the P4/P5 cards.
+  *Done when:* owner approves AND `grep -n "0.10.11\|P5 answered" handoff/AGENT-PROMPT.md` shows
+  the refreshed line.
+  *Owner:* owner D-number/wording approval.
+
+- [ ] **R5. Capture-env leak guard for the deciding command.** PROPOSED (RR-ENVLEAK-20261110):
+  `tools/run-ci.sh` warns (or scrubs) when `CTXVM_TRACE_TS` / `CTXVM_HERMES_VERSION` are exported,
+  since Actions carries neither and a capture-env shell documented two false reds.
+  *Done when:* owner approves AND a red-substitute repro (`CTXVM_TRACE_TS=0 bash tools/run-ci.sh 2>&1 | head -2`)
+  prints the guard's warning line.
+  *Owner:* owner (the one deciding command).
+
+- [ ] **R6. Paste-budget standing check.** Pre-measure the three pastes BEFORE any PROJECT-STATE
+  delta commit; trim CONTEXT-PACK glossary rows (never headings) if any paste exceeds 16,384 B.
+  Standing discipline, not a one-shot: the box stays unticked until two consecutive card closes
+  pass without a trim.
+  *Done when:* on two later cards, `bash tools/check-handoff.sh` + `for n in 1 2 3; do bash
+  tools/session-start.sh $n --with-context >/dev/null 2>&1; printf "%s=$? " $n; done` all exit 0
+  with no CONTEXT-PACK edit between.
+
+## 1. The review packet board (P1–P8; reviewer's answers → my verify-then-record pipeline)
+
+- [x] **P1 (D13) cross-harness claim.** Answered 2026-11-08;
+  `handoff/QUESTIONS-ARCHIVE.md §P1`.
+  *Done when (met):* `grep -c '^## P1' handoff/QUESTIONS-ARCHIVE.md` = 1.
+
+- [x] **P2 fault-resident/healthy demo sentence.** Answered 2026-11-08 (seq 7 → `identifier_scan`,
+  swap-in cause active); `RR-P2DEMO-20261108`.
+
+- [x] **P3 (D14) redaction default-capture.** Answered 2026-11-08; redaction card authored
+  proposal-only sidecar-first (`design/redaction-block.md`, carrier `RR-P3REDACT-20261109`).
+
+- [x] **P4 (R4/`ts`) answered 2026-11-09.** `ts` stays optional; ordering clause DRAFTED
+  proposal-only; both UNKNOWNs resolved. Report `reports/RR-P4TS-20261109.md`; commits `89d02b6`
+  → `d2b6b1c`.
+
+- [x] **P5 (D-U1 calibration transfer) answered 2026-11-10.** Publish per-corpus WITH caveat; no
+  transfer claim until the preregistered ≥5-set equivalence test. Report
+  `reports/RR-P5CAL-20261110.md`; commit `43d73bb` (+ `42ed013`, `7f9f4ae`).
+  *Done when (met):* `grep -c RR-P5CAL reports/LOG.md` = 1 and QUESTIONS row P5 shows
+  `**answered 2026-11-10**`.
+
+- [ ] **P6 (D-U3 determinism scope) — awaiting the owner's paste.** My actions once pasted:
+  verify-then-record per prompt §4 (intake, book-check every claim, resolve UNKNOWNs, card, kit
+  rows, A/B commits, report).
+  *Done when:* QUESTIONS row `| P6 |` marked answered and `reports/RR-P6*-<date>.md` exists.
+  *Owner:* paste the answer.
+
+- [ ] **P7 (D-U2 baselines) — queued behind P6.** Same pipeline.
+  *Done when:* QUESTIONS row `| P7 |` marked answered + card file.
+  *Owner:* paste (after P6).
+
+- [ ] **P8 (cache-stable selection) — OWNER DISPOSITION FIRST.** Owner hinted the gist is already
+  answered by the research lane's cache-stable-selection work. Two exits:
+  (a) DROP — then one kit commit removes `handoff/packets/P8-cache-stable-selection.md`, its
+  QUESTIONS row, and the PROJECT-STATE agent-line mention;
+  (b) KEEP — owner pastes and the P6 pipeline runs.
+  *Done when:* `grep -c 'P8' handoff/QUESTIONS.md` shows either no row (dropped) or an answered
+  row (kept). Packet currently at 3,059/3,072 B (13 B margin) — the paste-budget strain driver.
+  *Owner:* drop-or-keep.
+
+## 2. Owner-gated proposals this lane authored (ratification turns text into bytes)
+
+- [ ] **G1. Umpire ordering clause (from P4).** The one-clause rule (line order governs; absent
+  `ts` = unknown, never zero; no cross-ledger order) — verbatim text in
+  `reports/RR-P4TS-20261109.md`; insertion point `umpire/00-SPEC.md` §2, after the L1–L5 block,
+  documentation-only. Needs owner approval + a FRESH D-number (the A6 D-U register has no ts
+  candidate).
+  *Done when:* the clause is IN a committed `umpire/00-SPEC.md` §2 AND the new D-number appears in
+  the umpire decision register.
+  *Owner:* approval + D-number.
+
+- [ ] **G2. Calibrated-confidence caller sentence (from P5).** Verbatim text in
+  `reports/RR-P5CAL-20261110.md`; insertion point: wherever `calibrate()`'s contract text lives
+  (MCP tool description / umpire spec). Ratifies INTO registered D-U1.
+  *Done when:* sentence committed into the umpire books AND `handoff/QUESTIONS-ARCHIVE.md` P5
+  updated with the ratification locator.
+  *Owner:* approval (D-U1 exists already).
+
+- [ ] **G3. Equivalence-test preregistration (W9 follow-on).** BEFORE any new capture run:
+  margin ±2 points; Brier/log-loss primary, ECE secondary; ≥5 held-out NEW label sets with cluster
+  bootstrap; cross-fitting; sizing n ≈ 180×(h/2)² from the existing rows' paired bootstrap
+  half-width. Criteria recorded in `RR-P5CAL-20261110`; nothing is preregistered yet, and nothing
+  runs before it is.
+  *Done when:* a preregistration card exists (umpire-side, referee-checkable, with frozen
+  thresholds + parse code) dated AFTER the owner approves the design.
+  *Owner:* approve the design + fund the run.
+
+- [ ] **G4. Redaction carrier.** `design/redaction-block.md` (owner-cleared placement,
+  sidecar-first, P3's D14 answered) — build starts only at the owner's word; the silent
+  default-on release rule stays bound at D6/D17.
+  *Done when:* implementation card exists (`RR-REDACT*` with a passing kit+CI gate) OR the owner
+  rules it further-deferred in writing.
+  *Owner:* go/defer.
+
+- [ ] **G5. D13/D14 ratification + white-paper bundle routing.** The six paper items
+  (Pillar-1 split; `:635` echo sweep; the P2 demo sentence; the R1 3-to-0 contrast;
+  the consent-paragraph replacement; Part II's card-citation rule) live in
+  `reports/RR-DAY-20261109.md`; they are owner-routed white-paper lane work.
+  *Done when:* PROJECT-STATE Next-three line 1 rotates away (i.e., the bundle is routed/executed).
+  *Owner:* ratify + route.
+
+- [ ] **G6. Publication (D17).** W10 prepare-only; publish/submit/tag only with approval.
+  *Done when:* an orchestrated publication task appears with D17 resolved.
+  *Owner:* D17.
+
+- [ ] **G7. W8 reopen.** Ruled FAILED 2026-11-07; reopen conditions recorded
+  (`RR-W8CHUNK-20261107-2 §12` + `design/W8-PROMPT-SLICE.md`). Cells are the hermes/W8 lane's to
+  run; MY lane's obligations: process any resulting reviewer packets and record day-close lines.
+  *Done when:* the owner reopens AND first counted cell lands (or the owner rules it closed for
+  good).
+  *Owner:* D16/decision.
+
+## 3. W workstreams — the board as it bears on THIS lane
+
+(Their definitions live in `08.1-UPDATE-PROMPT.md` §W; statuses quoted from `08-HANDOFF.md` §5
+row lines, noted per item. Boxes below are MY lane's actionable obligations, not other lanes' work.)
+
+- [x] **W1 dogfood** — dry-run landed (`RR-DOGFOOD-20261029`, §5 :1057). My part: none open;
+  live runs are the capture lanes'.
+- [x] **W2 real tokenization** — v0 landed; W2b cleared on all four lanes; emitter chain closed
+  (§5 :1056, frontier 3).
+- [x] **W3 metrics falsifiability** — landed (`RR-W3-20261029`, :1058).
+- [x] **W4 / W4b hermes adapter + capture-surface fix** — landed per :1059–:1060; plugin lane owns
+  the rest (their roadmap).
+- [x] **W6 OTel decision** — D3-c landed and promoted to the supported path 2026-11-08
+  (`RR-D3COTEL-20261108`), drift guard in place (frontier 9).
+- [x] **W7 RFC-0.1 chain** — closed 2026-10-31 (:1065).
+- [x] **W10 packaging (prepare-only)** — node build + CI wiring landed (:1067, W10NODE); anything
+  beyond is D17 (§2 G6).
+- [x] **W11 + W11b scope discipline + external correction** — done (:1063, :1068).
+- [x] **W13 `turn.render.prefix` / W14 environment key / W15 `toolEffect` / W17 coverage manifest
+  / W18 monitor replay tier 1 / W21 collide-proof filenames** — LANDED 2026-11-05…07
+  (AGENTS §9). My part: regression upkeep via the gates; nothing open.
+- [x] **W12 Steps 0–1** — done; Steps 2+ are D7 hold (:1064, :110 of frontier 9). My part:
+  none until D7 lifts.
+- [ ] **W8 the decisive experiment** — FAILED ruling 2026-11-07, reopen owner-gated (G7). My
+  actionable boxes: process results into the review lane when they exist. Landed side-records I
+  keep aware of: `RR-W8PAIR-20261109` (first counted pair, negative), `RR-BUDGET-20261109`
+  (200,000 vs 24,000 provenance), `RR-DRIFT-20261109` (gate printed numbers it didn't measure),
+  `RR-W8H6-20261109` + review follow-up (`shape verified, surface fails`, toolset pinned to
+  `[file]`).
+- [ ] **W9 umpire hardening/positioning** — alive on the umpire side; THIS lane's named pieces are
+  exactly G1–G3 above. Nothing else until owner route.
+- [ ] **W16 causal edges / W19 tier-2 interventions / W20 trace-surface extensions** — design
+  notes only, owner-gated (`design/causal-edges.md`, W19/W20 sections in `08.1`).
+  *Done when:* owner opens one → first touchpoint-touching card follows the five-touchpoint law
+  (prompt §8) BEFORE any wire change.
+  *Owner:* open/defer per workstream.
+
+## 4. The pre-W board (T0–T25 + support rows) — closed before the workstreams existed
+
+- [x] **T-board verified DONE.** T0–T25 (incl. the umpire-side T13/T14, T15/T22–T24 adapter
+  chain, T17 hermes chain) plus W11b and SUPPORT-1: all `| T`-rows and the two support rows read
+  DONE/LANDED/CLOSED.
+  *Done when (met):* `grep -c '^| T' 08-HANDOFF.md` = 33 and
+  `grep '^| T' 08-HANDOFF.md | grep -ciE 'DONE|LANDED|CLOSED'` = 33; every
+  `open|undone|queued`-matching row is a false positive on the substring "Open" inside DONE rows
+  (T7/T9/T12 "OpenCode", T22/T24/T25 "gated/inject" prose). No pre-W work remains on my ledger;
+  anything resurfacing enters as a NEW card, never a reopened T row.
+
+## 5. Umpire-repo hygiene (sibling repo, read/proposal lane)
+
+- [x] **U1. Artifact + books identity verified.** `cal-precision-v3.json`
+  (schema `umpire-calibration-precision/0.1`, `cal-v1:057a5a35a9d4ec71`, corpus sha `54e39733…`,
+  bootstrap n=2000 seed 42, 10-bin ECE, test n=120, committed `47e0ee0`) verified on disk during
+  P5.
+- [ ] **U2. MCP health re-check before any umpire MCP consumer work.** Server was DOWN at P5
+  verification (`urlopen Errno 111`); the disk artifact carried the record.
+  *Done when:* `tools.umpire.health()` (or the pinned URL check) returns ok on a fresh session
+  that needs the surface.
+- [ ] **U3. Umpire-side lane tools.** The umpire repo has its own AGENTS.md books; if the owner
+  routes a dev card there, its pipeline mirrors §4 of my prompt with uom-per-card kit rules in
+  that repo. Standing: proposals only until a D-number lands.
+  *Done when:* first routed card lands with its own `RR-*` row in the umpire repo's books.
+
+## 6. Owner's next-cue list (what unblocks the most)
+
+1. Paste P6 (then P7) — the review roadblock for D-U3/D-U2.
+2. Rule P8 drop-or-keep (frees paste budget pressure at its 13 B margin).
+3. Ratify G1 (ordering clause, fresh D-number) and G2 (caller sentence, D-U1).
+4. Rule the redaction go/defer (G4) and W8's fate (G7); D13/D14 + D17 remain the big gates.
+
+Update law: tick a box only with the command's output in hand; on every card close, re-date the
+state-of-record line and revise §14 of the operating prompt (not this file) for volatile facts
+(counts, margins). If a chat summary and a book disagree, the book wins.
