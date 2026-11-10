@@ -12,9 +12,15 @@ sit in that middle.
 
 ## 2. Prompt sequence (verbatim in `PROMPTS`)
 
-Twelve prompts. Reads in 1–3, parts 04–12 through the middle, artefact on prompt 12. Prompt 12 states
-that parts 01–03 are sealed and cannot be read. Prompt text and the note are kept in sync by
-`validate_prompts()`, which fails the driver if either drifts.
+Twelve prompts. Reads in 1–3, parts 04–12 through the middle, artefact on prompt 12.
+
+**Prompt 12 carries the full artefact definition**, because the model never sees `T-A.md`: the field
+list, the byte-length rules, and `widest_file` defined as the largest `long` COUNT, explicitly "not the
+file containing the longest line". Two runs failed that field by reading "widest" as a line width — a
+task-label defect, not an arm effect.
+
+Prompt text and this note are kept in sync by `validate_prompts()`, which fails the driver if either
+drifts.
 
 ## 3. Four guarantees the driver enforces (each bought with a measured defect)
 
@@ -30,15 +36,21 @@ and not `platform_toolsets`. `_set_chat_arg_defaults` passes `toolsets=None` and
 config value, so the profile is the only place that survives a resume. The proof is the refs in the
 capture — the verifier fails the run if `terminal` or `execute_code` appears.
 
-## 4. Budget: 55,000, and the window it sits in
+## 4. Budget: 72,000, and the window it sits in
 
-Measured inputs: 14 parts, 223,634 bytes ≈ 55,913 tokens (~15,973 B each); system prompt 21,151 B ≈
-5,288 tokens; keep law = system + first 3 turns + last 6 turns.
+The first measurement beat the estimate. `w8-cell-01` at 55,000 evicted nothing, and the capture says
+why: system prompt 21,932 B ≈ 5,483 tokens, first three turns 13,240, last six turns (6–11) 35,067.
 
 ```
-floor  = 5,288 + 12,196 (parts 01-03) + 31,935 (parts 07-14) = 49,419
-naive end-of-run resident                                   ≈ 61,201
+floor        ≈ 53,790
++ scaffold     (assistant messages that are neither kept nor pages; 29 requests of it)
+budget 55,000 -> protected mass passes the budget -> _plan returns early (L5), 0 evictions
+request peak  79,960
 ```
+
+So the window is (floor + scaffold, peak) ≈ (58k, 80k). **72,000** sits inside it; the first estimate
+of 49,419 was computed from 4,000-token parts and missed both the 4,400-token reality and the
+scaffold.
 
 Any budget below ~49,400 is a guaranteed no-op — the H6 run was one at 24,000, and the profile had
 been changed to 28,000 afterwards, which is equally void. Any budget above ~61,200 creates no pressure
