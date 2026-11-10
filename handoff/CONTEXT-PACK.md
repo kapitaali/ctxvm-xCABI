@@ -56,7 +56,7 @@ Papers: Part I "verified" only with locators; Part II (draft) grades every read 
 Agents apply all five to their own work BEFORE asking; an item that cannot answer (1) or (2) from repo evidence is not ready for review.
 
 ## 8. Labels (how to read the books)
-- W-numbers: workstream IDs, defined in `08.1-UPDATE-PROMPT.md` §W (e.g. W1 touch ratio, W5 the cross-harness pair, W8 does-paging-help, W19 tier-2 interventions).
+- W-numbers: workstream IDs, defined in `08.1-UPDATE-PROMPT.md` §W (e.g. W8 does-paging-help, W19 tier-2 interventions).
 - W8 vocabulary: cell = one preregistered task×page-family measurement point; slice = the two-cell restart prompt (`design/W8-PROMPT-SLICE.md`); arm = the naive-vs-paged half of a paired run; arm witness = the plugin's in-trace arm record, broken in 0.10.4 (it recorded the observer), fixed in 0.10.5.
 - D-numbers: the decision ledger — D1–D12 owner-ruled (e.g. D9 ts opt-out, D11 signing); D13–D17 tracked in PROJECT-STATE.
 - RR-<slug>-<date>[-n]: one card's report file under `reports/`; `reports/LOG.md` rows `| card | area | summary |` are the append-only ledger. Some cards exist only as a LOG row beside the commit carrying them: RR-W8BOOK-20261107 → `89ff8e4`, RR-W8SLICE-20261107 → `3dd1f52`, RR-W8CHUNK-20261107-2b → `4d08da5`, -2c → `9947bf0`.
