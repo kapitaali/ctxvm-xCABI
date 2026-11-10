@@ -62,9 +62,22 @@ If you believe one of these is wrong, stop and report it. Do not fix it inside a
 
 ```
 cd /home/theb/Documents/ctxvm
-python3 tools/w8b-run.py --dry-run          # preflight + the exact commands, no model calls
-python3 tools/w8b-run.py                    # naive then paged, 120 s per prompt
+python3 tools/w8b-run.py --dry-run                      # preflight + the exact commands, no calls
+python3 tools/w8b-run.py --provider nvidia              # nemotron-3.5-super-vl-120b-a12b via NIM
+python3 tools/w8b-run.py --provider openrouter          # nemotron-3.5-lightning:free via OpenRouter
 ```
+
+`--provider` decides three things and nothing else:
+
+```
+nvidia       model nvidia/nemotron-3.5-super-vl-120b-a12b   profiles w8b-{naive,paged}
+openrouter   model nvidia/nemotron-3.5-lightning:free       profiles w8bo-{naive,paged}
+```
+
+Each provider has its own profile pair, because model and provider are PROFILE settings (the gateway
+refuses creation overrides on resume). The pair for a new provider is provisioned on first use by
+copying the other one, so the two differ in model and provider only — which is the only reason their
+results can be compared at all. The runner prints every profile it provisions.
 
 The preflight is not advisory. It refuses, correctly, if any of these is true:
 
@@ -99,10 +112,11 @@ against a 70,000 budget).
 
 ## 6. Cost
 
-Free tier, measured at $0.00 for a full 20-prompt session. The catalogue rate is a fallback
-($0.15/$0.50 per 1M). If a charge ever appears, stop — the run is not authorised to spend. Read cost
-from the session row and the provider export, never from `providerUsage` in the trace (it reads 3 on a
-50k request).
+Free tier on both providers: $0.00 measured for a full 20-prompt session on NIM, and a `:free` model on
+OpenRouter. The NIM catalogue rate is a fallback ($0.15/$0.50 per 1M). If a charge ever appears, stop —
+the run is not authorised to spend. Read cost from the session row and the provider export, never from
+`providerUsage` in the trace (it reads 3 on a 50k request). OpenRouter free models throttle by
+requests-per-minute: a 429 there is real, and the driver's abort will show it as DATA-INVALID.
 
 ## 7. Acceptance and taxonomy
 
