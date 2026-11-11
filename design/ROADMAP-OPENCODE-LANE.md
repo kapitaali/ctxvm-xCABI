@@ -276,6 +276,17 @@ pin true every card close.
   tree, not HEAD: the committed fixture had 20 lines with two identifier_scan faults and needed the
   regeneration their commit carried; the no-law-5-exposure conclusion survives because the package
   fixture is not checksum-pinned and the two frozen ones are protected).
+  *HOSTED CI RED (2026-11-11, `reports/RR-CIRED-20261111.md`):* the hosted gate failed for three
+  pushes (`97c4902`, `70df8d5`, `0ba4f8f`; the last green was `52b09a9`) - the `ts` job's hermes step,
+  2 failures, **one file**: the committed `packages/hermes/test/generate_traces.py` still asserts the
+  pre-0.12.0 behaviour (the live-shape trace must carry an `identifier_scan` fault) and the observer is
+  now aligned, so the generator trips that guard. The other lane has the fix written and uncommitted;
+  this lane does not stage another lane's path. **THE TOOLING GAP IS NOW CLOSED:**
+  `tools/ci-rehearsal.py --committed` rehearses the COMMITTED tree alone (what actions/checkout gives the
+  runner) and reproduces the hosted failure in one command - the default mode overlays the dirty tree
+  ("what would be pushed"), which is why it was green while the hosted run was red.
+  **THE STANDING RULE: a green local gate is evidence about the WORKING TREE; the gate that decides the
+  PUSHED COMMIT is `ci-rehearsal.py --committed`.**
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND

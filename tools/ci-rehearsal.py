@@ -8,6 +8,12 @@ dist/ — exactly what actions/checkout gives you), then executes each job's `ru
 order, with a throwaway virtualenv per job, stopping a job at its first failure the way
 Actions does.
 
+By DEFAULT it also overlays the dirty working tree (tracked edits + untracked files) and
+commits that inside the clone, because it rehearses *what would be pushed*. That overlay is
+also why it can be green while the hosted run is red: a fix that was never committed is
+carried by the overlay. Use `--committed` to rehearse the committed tree alone — exactly
+what actions/checkout gives the runner — which is the mode that reproduces such a failure.
+
 What it does NOT do: execute `uses:` steps. The runners they install (node 26, python 3.14,
 rust stable) are whatever the host has; the script prints those versions so the record says
 what was actually exercised. A green rehearsal means "the step text is self-sufficient on
@@ -120,6 +126,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--job", default=None)
     ap.add_argument("--keep", action="store_true")
+    ap.add_argument("--committed", action="store_true",
+                    help="rehearse the COMMITTED tree only (no working-tree overlay) - this is "
+                         "what actions/checkout gives the runner, so it is the mode that can "
+                         "reproduce a hosted failure caused by an uncommitted fix")
     args = ap.parse_args()
 
     jobs = load_jobs()
@@ -142,8 +152,15 @@ def main():
     # (tracked edits + untracked non-ignored files) and commit it inside the clone. The
     # hub job runs `git diff --exit-code hub/`, so the overlay has to be a commit or that
     # step would fail on an uncommitted tree rather than on a real hub drift.
-    dirty = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
-                           capture_output=True, text=True).stdout.strip()
+    #
+    # `--committed` SKIPS the overlay: the clone then holds exactly the committed tree,
+    # which is what actions/checkout gives the runner. That is the mode that reproduces a
+    # hosted failure caused by a fix that was never committed - the case this flag was added
+    # for (2026-11-11: the hosted ci failed for three pushes while the local gate and this
+    # rehearsal were green, because the default overlay carried the uncommitted fix).
+    dirty = "" if args.committed else subprocess.run(
+        ["git", "status", "--porcelain"], cwd=ROOT,
+        capture_output=True, text=True).stdout.strip()
     if dirty:
         diff = subprocess.run(["git", "diff", "HEAD", "--binary"], cwd=ROOT,
                               capture_output=True, text=True).stdout
