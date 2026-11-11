@@ -232,7 +232,7 @@ def ensure_profiles(spec: dict) -> None:
               f"({', '.join(p.name for p in found)})")
 
 
-def preflight(arms: list[str], spec: dict) -> list[str]:
+def preflight(arms: list[str], spec: dict, budget: int = 70000) -> list[str]:
     # The owner's rule: exactly one pair. A third profile under this prefix means something
     # provisioned one; refuse rather than run against an ambiguous arm.
     found = profiles_for(spec["prefix"])
@@ -276,8 +276,8 @@ def preflight(arms: list[str], spec: dict) -> list[str]:
             errs.append(f"{spec['prefix']}-{arm} provider is {prov!r}; expected {spec['provider']}")
         if arm == "paged":
             b = cfg("plugins.entries.ctxvm-tracer.settings.budgetTokens", arm, spec["prefix"])
-            if str(BUDGET) not in b:
-                errs.append(f"w8b-paged budget is {b!r}; expected {BUDGET}")
+            if str(budget) not in (b or ""):
+                errs.append(f"w8b-paged budget is {b!r}; expected {budget}")
         ws = ROOT / "experiments" / "w8b" / f"ws-{arm}"
         fixture = ws / "fixture"
         if not fixture.is_dir():
@@ -318,7 +318,7 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict) -> dict:
     print(f"\n[{arm}] driver -> {run_dir}")
     r = subprocess.run([sys.executable, str(DRIVER), "--arm", arm, "--session-name", title,
                         "--workspace", str(ws), "--run-dir", str(run_dir),
-                        "--profile-prefix", spec["prefix"], "--expect-budget", str(BUDGET),
+                        "--profile-prefix", spec["prefix"], "--expect-budget", str(args.budget),
                         "--timeout", str(timeout)],
                        text=True, capture_output=True, env=env, timeout=PARTS * timeout + 300)
     (run_dir / "driver.out").write_text(r.stdout, encoding="utf-8")
@@ -456,6 +456,8 @@ def main() -> int:
                          "openrouter = nemotron-3.5-lightning:free via OpenRouter")
     ap.add_argument("--arms", default="naive,paged")
     ap.add_argument("--timeout", type=int, default=120, help="seconds per prompt (naive averages 4-7)")
+    ap.add_argument("--budget", type=int, default=70000,
+                    help="the paged arm's vBudget; must match the committed prediction block")
     ap.add_argument("--run-id", default=time.strftime("w8b-%Y%m%d-%H%M%S"))
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--record", action="store_true", help="append the chunklog rows (repo edit)")
@@ -472,7 +474,7 @@ def main() -> int:
         ensure_profiles(spec)
         sync_profile_keys(spec)
 
-    errs = preflight(arms, spec)
+    errs = preflight(arms, spec, args.budget)
     if errs:
         print("PREFLIGHT FAILED — nothing ran:", file=sys.stderr)
         for e in errs:
@@ -505,7 +507,7 @@ def main() -> int:
         for arm in arms:
             print(f"[{arm}] python3 tools/w8-driver.py --arm {arm} --session-name {args.run_id}-{arm} "
                   f"--workspace experiments/w8b/ws-{arm} --run-dir <state>/w8-runs/{args.run_id}/{arm} "
-                  f"--profile-prefix {spec['prefix']} --expect-budget {BUDGET} --timeout {args.timeout}")
+                  f"--profile-prefix {spec['prefix']} --expect-budget {args.budget} --timeout {args.timeout}")
         print(f"dry-run OK — provider {args.provider}, {len(arms)} arm(s), {PARTS} prompts each, "
               f"{args.timeout}s cap, model {spec['model']}")
         return 0

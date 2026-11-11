@@ -27,8 +27,14 @@ done
 
 diff <(grep -v '^_config_version' "$DIR/${PREFIX}-naive/config.yaml") \
      <(grep -v '^_config_version' "$DIR/${PREFIX}-paged/config.yaml") > /tmp/w8b_profile_diff.$$
-if [ "$(grep -c '^>' /tmp/w8b_profile_diff.$$)" -ne 6 ] || \
-   [ "$(grep -c '^<' /tmp/w8b_profile_diff.$$)" -ne 1 ]; then
+# Content, not counts: the left side must be exactly the engine line, the right side the engine
+# line plus a budget block. Counting lines broke the first time a `plugins.enabled` block sat above
+# the entries subtree.
+left_ok=$([ "$(grep -c '^<' /tmp/w8b_profile_diff.$$)" -eq 1 ] && \
+          grep -q '^< *engine: *"compressor"' /tmp/w8b_profile_diff.$$ && echo yes)
+right_ok=$(grep -q '^> *engine: *"ctxvm"' /tmp/w8b_profile_diff.$$ && \
+           grep -q '^> *budgetTokens:' /tmp/w8b_profile_diff.$$ && echo yes)
+if [ "$left_ok" != "yes" ] || [ "$right_ok" != "yes" ]; then
   echo "WARN: the pair differs by more than context.engine + the paged budget block; review:"
   cat /tmp/w8b_profile_diff.$$
 else
