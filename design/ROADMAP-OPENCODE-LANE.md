@@ -142,7 +142,14 @@ pin true every card close.
   *HANDOFF WRITTEN (2026-11-11):* `design/W8B-LANE-PROMPT.md` - a small prompt for that lane with the
   measured state, the owner's ruled decisions (subject order; new subject = new digests = re-commit the
   block first; the arm-attribution precondition) and four items it owes (level-2 assert, the shape
-  erratum, the W8SIM 5.3% scoping, the "C3" rename).
+  erratum, the W8SIM 5.3% scoping, the "C3" rename). **PARTLY LANDED (their `6ae0d38`):** their
+  master prompt now carries the two-profile rule and a precondition section (probe
+  `tools/w8b-run.py --provider nous --probe`; `engineSelections > 0`; READY/NOT READY; the finding that
+  the CLI path never calls `select_context` because plugins load in the gateway - `PLG-7`). **THE ONE
+  HALF STILL MISSING: the PROFILE attribution** - the precondition must also assert the sidecar's
+  recorded profile IS the arm's profile (`w8bn-paged`, not "default"), because that is exactly the
+  defect that voided their first pair (`profile "default"` under profile `w8bn-paged`); the arms are
+  separated by the profile each was invoked with and by nothing inside the trace.
   *OWNER-RULED (2026-11-11):* the subject fallback order - **nvidia** (nemotron-super, the tested path) ->
   **stepfun** -> accept longcat too slow for the 120 s cap only if both fail.
   question; a consumer that cannot dispatch on event type).
