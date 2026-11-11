@@ -287,6 +287,24 @@ pin true every card close.
   ("what would be pushed"), which is why it was green while the hosted run was red.
   **THE STANDING RULE: a green local gate is evidence about the WORKING TREE; the gate that decides the
   PUSHED COMMIT is `ci-rehearsal.py --committed`.**
+  *CHECKPOINT A PASSED - AND THE ATTRIBUTION IS A PROPERTY OF THE LAST FLUSH (2026-11-11, their
+  `cf7fdbe`, `reports/RR-W8CATTR-20261111.md`):* the probe on the 0.12.1 gateway returns CONTRAST OK and
+  EVERY arm field matches this lane's checklist (naive: engine null, 0 selections, `w8cn-naive`,
+  200000/default; paged: engine ctxvm, 8 selections, `w8cn-paged`, 60000/settings), and the liveness is
+  now on live bytes (a two-prompt diagnostic: `proseMentions` 1, total 1, `faultsBySource` all zero,
+  sidecar key byte-identical to the trace's `logicalRef`). **One correction to this lane's checklist:** a
+  ONE-PROMPT PROBE CANNOT SHOW MENTIONS (the final reply never enters a later request, so no
+  `pre_llm_call` scans it) - liveness is observable on the two-prompt diagnostic only. **THE FINDING:
+  THE PAGED ARM'S OWN CAPTURE ON DISK RIGHT NOW ATTESTS THE CONTROL ARM** (profile `default`, arm
+  `control`, `engineSetting compressor`, 0 selections, 200000/default) although that session ran in the
+  paged profile (20 log hits there, 0 in the naive profile's) - because the arm fields are still
+  PROCESS-GLOBAL and are read AT FLUSH TIME: the probe read the sidecar at ~20:04 (right after the
+  flush, so its verdict was right), and at 20:05:44 a gateway restart's re-flush rewrote ALL SIX
+  captures with the then-current global values. **Consequences: the attribution evidence must be read
+  at RUN TIME and copied into the record** (their LOG row does), and any later reading of a capture's
+  `plugin` block can see another session's arm and call a correct cell VOID - the still-open fix
+  (key the arm fields by session id, `reports/RR-W8BARMSTATE-20261111.md`) is now observably
+  load-bearing for step 5 (the block) and step 6 (the pair).
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
