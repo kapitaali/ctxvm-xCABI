@@ -186,6 +186,28 @@ pin true every card close.
   much longer window, and the operator's chat (default profile) fires hooks in the same gateway.
   Before a pair counts as a CELL, the recording must be keyed per session (and the counters reported as
   a per-session delta), or the pair is a pair attempt again.
+  *CLOSURE (2026-11-11, their `163787a` + `c466eb7`, card `reports/RR-W8BCLOSURE-20261111.md`):*
+  **W8B is CLOSED NEGATIVE — a PROPER negative, not a harness limit.** The paged arm made 43
+  selections at BOTH budgets (70,000 and 90,000) and evicted **zero** tokens, with a parsed-equal
+  artefact; the naive arm made 0 selections under its own profile; provider receipts agree within
+  0.2 % (input 181,963 vs 181,632). The cause is in the **policy**, not the budget: 21 pages
+  declared, **19 fault** (each part demanded again after its first declaration) => 19 pinned => the
+  pinned block alone meets the budget => `_plan` returns early on every selection (L5). **This lane's
+  earlier caveat is SUPERSEDED** (`reports/RR-W8BCONTRAST-20261111.md` said a no-contrast run is a
+  harness limit): the instrument now engages, the arms differ by profile and budget, and the outcome
+  is confirmed provider-side and capture-side, not by the sidecar's label. The negative was
+  **preregistered**: the committed cell-02 block pre-registered the reading of a zero-eviction outcome
+  ("a second measured data point pointing at (c) - NOT a reason to raise the budget again"). **No cell
+  is booked** (five voids, then two NO-OPs, $0.00) and no cost claim is available. **One mechanism
+  correction, checked in code:** tool-result bodies are NOT a demand surface at all
+  (`_demand_text`, `context_engine.py:151-165`) and identical text is credited once
+  (`_credit_demand`, `:508-511`), so the pinning comes from NEW PROSE NAMING THE PAGE (the model's
+  reply and the next prompt), not from the harness re-sending tool results — their W8C plan already
+  states it correctly. **Two ceilings must not be conflated:** W8's scoped 5.3 % (policies keeping
+  the first three turns, the last six, the system prompt) is not W8B's ~0 evictable share at a
+  read-once shape. **Next owner decision: W8C** (`design/W8C-PLAN.md`, proposed, approval required
+  before any instrument change; its falsifier: with the new signal and a floor-sized budget the paged
+  arm still evicts zero => the FLOOR is binding, not the signal).
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
@@ -336,8 +358,9 @@ pin true every card close.
   now answered by the P8/P9 answers: a different shape (longer session, more unprotected middle) or a
   different keep law is a **FRESH preregistration, not W8** — and at the measured shape the break-even
   is n\* ≈ 34 calls against 41 measured (`RR-W8BBLOCK-20261111`), so a paid cell at this shape is
-  preregistrable while W8 itself is not. The live thread is the W8B free-model replacement
-  (`design/W8B-FREE-PLAN.md`), the other lane's to run.
+  preregistrable while W8 itself is not. The live thread moved on: **W8B is closed negative** (their
+  `163787a`; `reports/RR-W8BCLOSURE-20261111.md`), and the successor question is **W8C**
+  (`design/W8C-PLAN.md`) — owner-gated, no money, four tests.
 
 ## 3. W workstreams — the board as it bears on THIS lane
 
@@ -461,12 +484,13 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
    still STAGED, NOT COMMITTED (0 `order-*` vectors in `HEAD`), so the note's C2 locator names an
    uncommitted file, and the test's third level (the derived page table) is still unasserted - the
    one-call patch is in `reports/RR-P11GAP-20261111.md` §7.
-2. **The W8B cell is READY to run** (their `4566c4b`: CONTRAST OK, digests re-verified) - one
-   review-side precondition is still unmet: the arm attribution is recorded in process-global state, so
-   it must be keyed per session before a 20-prompt pair counts as a cell
-   (`reports/RR-W8BARMSTATE-20261111.md`). The other lane's four items stand
-   (`design/W8B-LANE-PROMPT.md`): assert the P11 test's third level (one-call `derive_projection` patch),
-   the shape erratum in `design/W8B-FREE-PLAN.md`, the W8SIM "5.3%" scoping, and the "C3" rename.
+2. **W8B is closed NEGATIVE** (their `163787a`; `reports/RR-W8BCLOSURE-20261111.md`): the policy's
+   demand signal pins nearly every page on a read-once shape (19 of 21 fault), so nothing is ever
+   eligible; no cell was booked and no cost claim exists. The live owner decision is **W8C**
+   (`design/W8C-PLAN.md`): approve or decline the plan (two checkpoints, four tests, one pair, no
+   money) - its falsifier is stated. The other lane's remaining items stand
+   (`design/W8B-LANE-PROMPT.md`): the shape erratum in `design/W8B-FREE-PLAN.md`, the W8SIM "5.3%"
+   scoping, and the "C3" rename (the P11 third level is done - `reports/RR-P11LEVEL2-20261111.md`).
 3. Ratify G1 (ordering clause, fresh D-number) and G2 (caller sentence, D-U1).
 4. Rule the redaction go/defer (G4); D13/D14 + D17 remain the big gates. W8's fate is settled (G7
    closed: negative, 2026-11-10).
