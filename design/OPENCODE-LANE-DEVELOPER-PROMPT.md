@@ -325,9 +325,10 @@ disqualifies this file from prompt duty:
   Rust unit test; the note is a compatibility statement only; two divergences measured today (astral
   key order, number forms) trigger the third falsifier, so the note needs a canonical form for hash
   inputs only.
-  Still owner-routed: the P10+P11 note file (one D-number, two lines), the P10 vector + the P11 order pair
-  and its Rust unit test, P8's W8 subject choice, and U6 (the MCP's default calibration artifact = the
-  superseded v2 map). U4 TICKED against RR-M3V3; U5 (page-id) answered; U2 re-measured -
+  Still owner-routed: the P10+P11 note file (one D-number, two lines) and its canonical-form choice,
+  P8's W8 subject choice, and U6 (the MCP's default calibration artifact = the superseded v2 map).
+  LANDED and green: the P11 order pair (four vectors + tests/key_order.rs, 3/3 pass, verified by this
+  lane) and the P10 negative vector's fact (the v0.1 validator rejects a flat page.declare). U4 TICKED against RR-M3V3; U5 (page-id) answered; U2 re-measured -
   the model server is still DOWN (port 8081 free), the offline MCP surface answers.
 - PROJECT-STATE cap (standing): the file sits at 6,044/6,144 B - 100 B of headroom (measured
   2026-11-11, after a measured shave pass). Any lane

@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-11, HEAD `b8e1d3b` (the P11 ruling card in flight, committing on top).
+State of record: 2026-11-11, HEAD `77168a1` (the P11-pair landing verification in flight, committing on top).
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -170,8 +170,12 @@ pin true every card close.
   astral-plane KEY names (code point vs UTF-16 code-unit ordering) and on number text forms in four of
   six cases — and umpire's ref digest IS a digest over serialised bytes, so the note needs a normative
   canonical form FOR HASH INPUTS ONLY. Duplicate keys: accepted by the validator, unspecified anywhere.
-  *Owner-routed next:* the conformance pair + Rust unit test, and the note's two clauses under one
-  D-number. *Done when (met):* the packet STATUS reads answered, the card exists in a commit, and the
+  *LANDED (2026-11-11, verified by this lane):* the conformance pair — four vectors under
+  `rust/crates/ctxvm-conformance/vectors/` (`order-{struct,sorted}-{ts,nots}.jsonl`) plus
+  `rust/crates/ctxvm-conformance/tests/key_order.rs`; the pairs are true byte-order twins (parsed equal,
+  bytes differ), `ts` is LAST in the struct form and BEFORE `type` in the sorted form (law 3's divergence
+  exercised), and `cargo test -p ctxvm-conformance` → 3 passed, 0 failed. *Still owner-routed:* the note
+  file (two lines, one D-number) and the canonical-form choice for its C3 clause. *Done when (met):* the packet STATUS reads answered, the card exists in a commit, and the
   QUESTIONS row `| P11 |` reads answered.
 
 ## 2. Owner-gated proposals this lane authored (ratification turns text into bytes)
