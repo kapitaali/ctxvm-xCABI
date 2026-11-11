@@ -18,29 +18,38 @@ twenty-one pages pinned that way in a session where the model read every file ex
 evicts zero tokens. That would say the floor, not the signal, is the binding constraint, and the next
 question would be about the head/tail protection rather than about paging.
 
-## 2. The change, stated as one factor
+## 2. The change, and a correction to this plan's first framing
+
+**Correction (review, `RR-W8CREVIEW-20261111`, verified in the code).** An earlier draft of this
+section called "pin on a model-initiated re-read" the new rule. It is not new: the engine already pins
+on a re-read through the re-render path. `_update_page_state` (`context_engine.py:459-495`) treats the
+same page key arriving on a **new result message** as one more demand, deduped per
+`(key, result_index)`, and pins at `demand_count >= 2`. W8B never exercised it — each file was read
+exactly once — so the nineteen pins there came from the text signal alone.
+
+So the delta has **two parts, both about what counts as a demand**:
 
 ```
-today    demand = a new message text that mentions a page's identifier token
-         (model prose counts, the harness re-sending the tool result does not)
-
-W8C      demand = the model issues a NEW tool call for a logicalRef that was already
-         declared in an EARLIER turn
-
-unchanged  the keep law (head 3 turns, tail 6 turns, pinned block frozen in first-pin order),
-           the budget mechanism, selection as a pure function of (page-table state, vBudget),
-           the seven laws, the artefact, the fixture, the pair design
+part 1  REMOVE the text signal      _credit_demand stops pinning on prose that names a page.
+                                    This is the load-bearing change: it is what pinned 19 of 21
+                                    pages in a session where every file was read once, and it is
+                                    what pins every part on the artefact prompt.
+part 2  MOVE the re-read pin        from result time to call time, via an explicit
+        earlier                    note_refault(logical_ref) fed by pre_tool_call. A timing
+                                    refinement: the pin happens before the result arrives, and it
+                                    fires even if the result never does.
 ```
 
-The signal is available where the plugin already stands: `pre_tool_call` sees every tool call with its
-arguments, so a second `read_file` of the same path in a later turn is observable without reading the
-model's prose. The engine takes it as an explicit call (`note_refault(logical_ref)`) instead of
-inferring it from text.
+Unchanged: the keep law (head 3 turns, tail 6 turns, pinned block frozen in first-pin order), the
+budget mechanism, selection as a pure function of (page-table state, vBudget), the seven laws, the
+artefact, the fixture, the pair design.
 
-Two properties matter and both must be tested:
+Two properties must hold after part 1, and they are the ones that matter:
 
-- **No prose inference.** The model's summary of a file it read must not pin that file.
-- **No harness inference.** The same tool result appearing in the next request must not pin anything.
+- **no prose pinning** — the model's summary of a file it read, and the artefact prompt that names all
+  twenty parts, must pin nothing;
+- **no harness pinning** — a tool result re-sent in the next request must pin nothing (already true:
+  `_demand_text` returns empty for `role in ("tool", "system")`).
 
 ## 3. What the floor becomes, and the budget that follows
 
@@ -60,9 +69,21 @@ turns above 60,000       14-19
 turns above 70,000       13-19
 ```
 
-**Proposed budget: 60,000.** It sits above the estimated floor and below the residency of turns 14-19,
-which gives six turns in which eviction is possible and measurable. The number is a prediction, not a
-decision: the first diagnostic run measures the floor and the block is written from that measurement.
+**The budget must be stated as floor + margin, with the margin named.** A budget a hair above the
+measured floor makes "zero evictions" the expected outcome rather than an informative one — the plan's
+own falsifier becomes untestable. The margin has to be big enough that the late turns' growth can
+cross it: measured growth is ~4,700 tokens per turn, so a margin of two turns' growth is the minimum
+worth running.
+
+```
+estimated floor            48,650
+candidate budget           60,000        margin 11,350  ≈ 2.4 turns of growth
+residency above 60,000     turns 14-19  (measured, pinned ceiling)
+```
+
+The 60,000 figure is a placeholder for the diagnostic. **The block states floor + margin explicitly**,
+with both numbers derived from the diagnostic capture, and the margin is a decision the owner sees at
+checkpoint B.
 
 ## 4. What has to be built before any pair
 
@@ -71,8 +92,16 @@ plugin 0.12.0    pre_tool_call records (logicalRef, turn) for read_file/patch/se
                  a second sighting in a LATER turn calls engine.note_refault(ref)
 engine           note_refault(ref) pins that page; _credit_demand stops pinning (the text signal is
                  removed, not merely weakened); the engine reports pins by source in its status
-tests            prose mention does not pin; re-sent tool result does not pin; a second read_file
-                 in a later turn does; the existing seven laws still hold
+tests            four, with their BEFORE behaviour stated so the set can falsify the change:
+                 (1) prose mention does not pin            FAILS today (it pins) -> discriminating
+                 (2) re-sent tool result does not pin       passes today -> invariant guard
+                 (3) a second read_file in a later turn pins passes today (re-render path) ->
+                                                           regression guard for part 2: proves the
+                                                           explicit signal REPLACES the removed text
+                                                           signal instead of vanishing with it
+                 (4) the seven laws still hold              passes today -> invariant guard
+                 Only (1) can fail before the change; a test that passes on both sides is not
+                 evidence, it is a guard, and it is labelled as one.
 probe            unchanged — --arm both must return CONTRAST OK before a pair
 profiles         recreate `w8cn-{naive,paged}` from the configs recorded in the W8B closure,
                  with budgetTokens 60000 on the paged arm; two profiles, never more
