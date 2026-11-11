@@ -266,7 +266,12 @@ pin true every card close.
   invisible in the capture** (`prose_mentions`/`refaults` are engine-internal), so a capture can no longer
   distinguish "the scan sees the prose and does not pin" from "the scan is blind" - the B1-class death
   the identifier_scan fault used to expose. **Recommendation: report the mention count in the SIDECAR**
-  (never inside a v0 event), so the diagnostic can assert both halves. This lane's earlier
+  (never inside a v0 event), so the diagnostic can assert both halves. **GAP CLOSED (their `366e693`,
+  `reports/RR-W8CVERIFY-20261111.md` section 5):** the sidecar now carries `proseMentions` +
+  `proseMentionsTotal` (`live/__init__.py:680-685`) and `tools/coverage_check.py` makes it a GATE -
+  every key must name a page the trace declared, and the total must match the sum; sidecar-only, no v0
+  event gains a field; the key format was checked here (the observer's `_declared` key IS the trace's
+  `logicalRef`). Gate green at that commit. This lane's earlier
   "byte-identical" fixture claim is corrected by an appended erratum (the comparison used the working
   tree, not HEAD: the committed fixture had 20 lines with two identifier_scan faults and needed the
   regeneration their commit carried; the no-law-5-exposure conclusion survives because the package

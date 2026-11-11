@@ -83,3 +83,33 @@ useful pair for anyone reading the history.
 - Kit: this card + the erratum block on `reports/RR-W8CSTEP1-20261111.md` + LOG row + a day-file line +
   the roadmap's W8C pointer. No file of the other lane's was edited; no spec, schema, corpus, vector or
   umpire byte changed; nothing pushed.
+
+## 5. Outcome (2026-11-11): the gap is CLOSED — the sidecar keeps the proof that the scan still sees prose
+
+Their `366e693` ("W8C: the sidecar keeps the proof that the scan still sees prose") implements this
+lane's recommendation, and the implementation was verified at the committed bytes:
+
+- **The plugin side** (`packages/hermes/live/__init__.py:680-685`) emits, inside the coverage
+  manifest's `captures`: `"proseMentions": dict(sorted((prose_mentions or {}).items()))` and
+  `"proseMentionsTotal": sum(int(v) for v in (prose_mentions or {}).values())` — the per-page counts
+  come from the observer's own page table (`_prose_mentions`), and the total is the sum the checker
+  compares against.
+- **The checker side** (`tools/coverage_check.py`) turns the number into a **gate, not a decoration**:
+  `proseMentions` must map `logicalRef -> integer`, **every key must name a page the trace declared**
+  (so a mention count for an undeclared page fails the check), and `proseMentionsTotal` must equal
+  `sum(proseMentions)`.
+- **The key format was checked here, because the checker's rule depends on it**: the observer's
+  `_declared` is keyed by the same `ref` string that `_declare_page` writes as
+  `page.id.logicalRef` (`packages/hermes/src/plugin.py:308`), so the sidecar's keys and the trace's
+  declared refs are the same strings ✓ — no mismatch for the new rule to trip on.
+- **Laws 1–2 respected**: the number is **sidecar-only**; no v0 event gains a field. The comment in the
+  commit says so, and the code confirms it.
+- **Gate witness at that commit**: `env -u CTXVM_TRACE_TS -u CTXVM_HERMES_VERSION bash tools/run-ci.sh`
+  → **ALL GATES GREEN**, exit 0 (TS 24 + 62 + 46; python **196 + 8 + 66**; `SCHEMA CONFORMANCE: PASS
+  (682 checks)`; export round-trip OK; hub byte-identity green).
+
+So the diagnostic (step 4) can now assert **both** halves with numbers the capture carries: *"no prose
+pin"* (`faultsBySource` has no `identifier_scan`) **and** *"the scan still sees the prose"*
+(`proseMentions` non-empty, every key declared, the total matching). **This lane's gap finding is
+closed** — the recommendation was taken, implemented on the sidecar rather than in the trace, and
+backed by a checker rule that fails loudly.
