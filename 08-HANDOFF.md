@@ -1268,6 +1268,23 @@ field, says nothing normative about a trace line's key order (law 3), and touche
 verified (the manifest pins no `spec/` inventory) and the full CI is **ALL GATES GREEN** with the note
 present (schema PASS 682 checks; hub byte-identity green). Card `reports/RR-NOTE-20261111.md`.
 
+**Frontier 11 addendum 22 (2026-11-11, two owner rulings recorded + the level-2 patch drafted):** the
+owner confirmed the note's content as proposed (including **C3's ordering rule** — Unicode code
+point, not UTF-16 code unit), so the note's status line now records the confirmation and its C2 cites
+the exact doc wording — `derive_projection` is "pure derive from a raw event slice — **identical
+bytes for identical inputs, guaranteed**" — which is stronger than the earlier paraphrase and is what
+lets C2 speak of replay without the test asserting that level directly. And decision 2 of the
+six-item list is now **owner-ruled**: the subject fallback order — **nvidia** (nemotron-super, the
+tested path) → **stepfun** → accept longcat too slow for the 120 s cap only if both fail; recorded in
+PROJECT-STATE's decisions ledger and in `reports/RR-TADEC-20261111.md` §8, which also states what the
+ruling does NOT fix: the arm-attribution precondition (assert `engineSelections > 0` AND profile
+`w8bn-paged`) sits in front of the next attempt — a subject change does not repair a mis-attributed
+arm — and the free tier still cannot speak to dollars (no cache price; law 7). The P11 pair's third
+level is now a **drafted patch** (`reports/RR-P11GAP-20261111.md` §7): a per-turn `assert_eq` on
+`derive_projection(&a, turn)` vs `(&b, turn)` (`TurnProjection` derives `PartialEq`), or else correct
+the two comments that claim the report carries the page table; the owner's in-flight test file is
+not touched by this lane. Card `reports/RR-NOTE-20261111.md` + `reports/RR-TADEC-20261111.md` §8.
+
 ## §1. Workspace map
 
 ```

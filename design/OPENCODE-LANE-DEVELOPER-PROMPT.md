@@ -326,9 +326,10 @@ disqualifies this file from prompt duty:
   key order, number forms) trigger the third falsifier, so the note needs a canonical form for hash
   inputs only.
   Still owner-routed: U6 (the MCP's default calibration artifact = the superseded v2 map); the hub $ref edit (revert,
-  or change the generator + re-hash the baseline); the P11 pair's missing third level (assert the
-  derived page table via `derive_projection`, or drop the claim); and T-A's arm-attribution precondition
-  (assert `engineSelections > 0` AND profile `w8bn-paged`).
+  or change the generator + re-hash the baseline); the P11 pair's third level (patch drafted - assert
+  the derived page table via `derive_projection`, or drop the claim); T-A's arm-attribution precondition
+  (assert `engineSelections > 0` AND profile `w8bn-paged`); and the w8b lane's free-plan shape erratum.
+  OWNER-RULED since: the subject fallback order (nvidia -> stepfun -> accept longcat too slow).
   CLOSED since: the T-A prediction block (filled and committed for w8b-cell-01), and the RFC-0.1
   compatibility note (LANDED as spec/rfc-0.1/COMPATIBILITY.md under D18 — C1 dispatch, C2 key-order +
   test pointer, C3 canonical form for hash inputs; CI green with it present).

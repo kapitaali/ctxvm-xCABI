@@ -1,6 +1,6 @@
 # xCABI 0.1 — compatibility notes
 
-**Status:** applied 2026-11-11 — **D18**. Scope: companion to `RFC-0.1-xCABI.md`; that document and
+**Status:** applied 2026-11-11 — **D18** (the owner confirmed the content as proposed on 2026-11-11, including C3's ordering rule; the D-number may be renumbered). Scope: companion to `RFC-0.1-xCABI.md`; that document and
 the sealed `spec/rfc-0/` are unchanged by this file. The three clauses below are the **P10 and P11
 answers verbatim in substance** (page-identity dispatch, and the key-order compatibility statement
 plus its pointer to the conformance test); C3 is the reviewer's own conditional — "if one [a digest or
@@ -30,8 +30,9 @@ MUST ACCEPT, never about what an emitter MUST EMIT: `ts` rides last in the emitt
 byte forms therefore differ by construction), and no byte-identical-lines claim is made across
 crates.
 
-The page table is a **pure function of the parsed model** (`ctxvm_core::render::derive_projection`:
-"Pure function of decisions fed"), so equal parsed models entail equal derived page tables. The
+The page table is a **pure function of the parsed model** — `ctxvm_core::render::derive_projection`
+is documented as a "pure derive from a raw event slice — **identical bytes for identical inputs,
+guaranteed**" — so equal parsed models entail equal derived page tables. The
 conformance test is the executable form of this clause: the vector pair
 `rust/crates/ctxvm-conformance/vectors/order-{struct,sorted}-{ts,nots}.jsonl` (the same event set
 written twice, with and without `ts`) with the expected report

@@ -110,9 +110,6 @@ pin true every card close.
   reports (`total_lines`, `file_size`) — and the subject choice stays the owner's.
   Q2's five-condition
   metric-replacement rule is adopted as a standing lane rule.
-  *Done when (met):* the packet STATUS reads answered, the card exists in a commit, and the
-  QUESTIONS row `| P8 |` reads answered.
-
 - [x] **P9 (close W8 or buy a mechanism test) answered 2026-11-10; reviewer confirmed 2026-11-11.**
   Verdict A (close with the negative result) — an independent confirmation, not a new decision; the
   closure (`design/W8-CLOSURE-20261110.md`, owner Option A) stands and needs NO edit: its items 3–5
@@ -130,25 +127,6 @@ pin true every card close.
   *Done when (met):* the packet STATUS carries the confirmation, the card exists in a commit, and the
   QUESTIONS row `| P9 |` reads answered.
 
-- [x] **P10 (page-id asymmetry: flat vs nested page identity) answered 2026-11-11.** The reviewer's
-  ruling: **(b) + (a) — ONE RFC-0.1 compatibility-note line stating the type-dispatch rule, plus
-  prose docs, and NO field** (sealed v0 data keeps both shapes forever, so a field would add a third;
-  (d) is out — code comments are not a record; (a) alone is weaker — a workaround in two repos does not
-  tell a new implementer the rule exists). The rule is verified WORD FOR WORD against both schemas
-  (sealed v0: `page.declare.page` -> `pageRef{id: pageId{logicalRef,contentHash}, kind, tokens}`;
-  `page.render`/`page.evict`/`page.fault`/`page.pin`/`page.unpin` -> `pageId{logicalRef,contentHash}`;
-  RFC-0.1 unchanged; no verb carries both shapes). Two of the reviewer's three UNKNOWNs resolved from
-  the books: `schemaVersion` is on the `session.open` line ONLY and optional (RFC-0.1:8), so their
-  "if every v0.1 line carried schemaVersion" premise is false; and a conformance vector is a FIXTURE
-  (`rust/crates/ctxvm-conformance/vectors/`), not a spec edit.
-  *LANDED 2026-11-11 (D18):* the note is `spec/rfc-0.1/COMPATIBILITY.md` — a new file under
-  `spec/rfc-0.1/` (that document's declared scope), carrying **C1** the type-dispatch rule, **C2** the
-  key-order compatibility statement plus its pointer to the conformance test, and **C3** the canonical
-  form for hash inputs (code-point ordering, integers only) — the reviewer's own conditional, triggered
-  by umpire's ref digest and the two measured divergences. No field, no sealed byte, no gate moved (CI
-  ALL GATES GREEN with it present). The D-number is renumberable by the owner.
-  *Owner-routed next:* nothing for the note itself except the renumbering; the P11 test's third level
-  (assert level 2 or drop the claim) remains, per the earlier gap.
   *Follow-on (2026-11-11):* the owner's T-A classification was applied and verified
   (`reports/RR-W8BBLOCK-20261111.md`): probe/smoke = diagnostic, the 13:46 pair = PAIR ATTEMPT (not
   bookable: block unfilled), and the next block is filled and committed. **Finding A:** at that shape the
@@ -161,11 +139,47 @@ pin true every card close.
   line per shape AND a negative (a `page.declare` with a flat `page.logicalRef`, which a sniffing
   reader would accept and the validator must reject). Falsifiers adopted verbatim (a valid line where
   type-dispatch misreads identity; a verb mixing both shapes; a new verb with a third shape — a v0.2
+  *OWNER-RULED (2026-11-11):* the subject fallback order - **nvidia** (nemotron-super, the tested path) ->
+  **stepfun** -> accept longcat too slow for the 120 s cap only if both fail.
   question; a consumer that cannot dispatch on event type).
   *ERRATUM:* this lane's blast-radius framing for an additive field was overstated (a strict v0 consumer
   already rejects a v0.1 trace at its `session.open` line); the marginal costs are (i) every v0.1-aware
   consumer must be updated, (ii) two identity sources per line, (iii) a consistency rule between them.
   The ruling is unchanged; the reasoning is corrected (erratum block on `reports/RR-UGATE-20261111.md`).
+  *Done when (met):* the packet STATUS reads answered, the card exists in a commit, and the
+  QUESTIONS row `| P8 |` reads answered.
+
+- [x] **P10 (page-id asymmetry: flat vs nested page identity) answered 2026-11-11.** The reviewer's
+  ruling: **(b) + (a) — ONE RFC-0.1 compatibility-note line stating the type-dispatch rule, plus prose
+  docs, and NO field** — the trigger was met by two codebases in two languages, and (c) is out because
+  SEALED v0 traces exist that will not change (every consumer of them keeps the type-dispatch rule
+  forever, and a field would add a THIRD shape without removing either old one); (d) is out (a third
+  consumer would find the rule only in code comments); (a) alone is weaker (a workaround in two repos
+  does not tell a new implementer the rule exists).
+  **The rule is verified WORD FOR WORD against both schemas**: sealed v0's `page.declare.page` ->
+  `$defs/pageRef` = `{id: pageId{logicalRef,contentHash}, kind, tokens}` (nested) while
+  `page.render`/`page.evict`/`page.fault`/`page.pin`/`page.unpin` -> `$defs/pageId` =
+  `{logicalRef,contentHash}` (flat); RFC-0.1 keeps the same `$defs` and the same nine verbs, so the
+  asymmetry is inherited and unchanged; **no verb carries both shapes**. Two of the reviewer's three
+  UNKNOWNs resolved from the books: `schemaVersion` is on the `session.open` line ONLY and optional
+  (RFC-0.1:8), so their "if every v0.1 line carried schemaVersion" premise is false; and a
+  conformance vector is a FIXTURE (`rust/crates/ctxvm-conformance/vectors/`), not a spec edit.
+  **LANDED 2026-11-11 (D18):** the note is `spec/rfc-0.1/COMPATIBILITY.md` — a new file under
+  `spec/rfc-0.1/` (that document's declared scope: "new files under `spec/rfc-0.1/` only"), carrying
+  **C1** the type-dispatch rule, **C2** the key-order compatibility statement plus its pointer to the
+  conformance test (one line per shape AND a negative — a `page.declare` with a flat `page.logicalRef`,
+  which a sniffing reader would accept and the validator must reject), and **C3** the canonical form
+  for hash inputs (code-point ordering, integers only) — the reviewer's own conditional, triggered by
+  umpire's ref digest and the two measured divergences. No field, no sealed byte, no gate moved (CI
+  ALL GATES GREEN with it present). The D-number is renumberable by the owner.
+  **ERRATUM:** this lane's blast-radius framing for an additive field was overstated (a strict v0
+  consumer already rejects a v0.1 trace at its `session.open` line); the marginal costs are (i) every
+  v0.1-aware consumer must be updated, (ii) two sources of identity per line, (iii) a consistency rule
+  between them. The ruling is unchanged; the reasoning is corrected (erratum block on
+  `reports/RR-UGATE-20261111.md`).
+  **Falsifiers adopted verbatim** (a valid line where type-dispatch misreads identity; a verb mixing
+  both shapes; a new verb with a third shape — a v0.2 question; a consumer that cannot dispatch on
+  event type).
   *Done when (met):* the packet STATUS reads answered, the card exists in a commit, and the QUESTIONS
   row `| P10 |` reads answered.
 
