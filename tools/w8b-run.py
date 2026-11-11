@@ -36,7 +36,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DRIVER = ROOT / "tools/w8-driver.py"
-CHECKER = ROOT / "tools/w8-checker-ta.py"
+CHECKER = ROOT / "tools/w8-checker-ta-v2.py"   # T-A v2: tool-reported values only
 PROFILES = Path.home() / ".hermes" / "profiles"
 TRACES = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "ctxvm" / "traces"
 BUDGET = 70000

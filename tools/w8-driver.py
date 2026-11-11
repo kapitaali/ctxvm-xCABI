@@ -45,28 +45,29 @@ RULE_FINAL = " Use read_file and write_file only; do not use search_files."
 SEALED_PARTS = ["part-01.txt", "part-02.txt", "part-03.txt"]
 ALLOWED_TOOL_PREFIXES = ("tool:read_file", "tool:write_file", "tool:search_files", "tool:patch")
 
+ARTEFACT_PROMPT = (
+    "You read parts 01-03 at the start of this session and parts 04-20 in the middle. Now write "
+    "artefact.json in the working directory. The artefact is a JSON object with exactly three keys: "
+    "\"files\", \"widest_file\", \"marker_line\". \"files\" maps each basename (sorted ascending) to "
+    "an object with exactly two integer keys in this order: lines, bytes. lines and bytes are the "
+    "values read_file reported for that file (total_lines and file_size). \"widest_file\" = the "
+    "basename with the LARGEST bytes; ties break by basename ascending. \"marker_line\" = the exact "
+    "text of line 137 of part-12.txt, with no line number and no quotes of your own. Write 2-space "
+    "indentation and a single trailing newline if you can. PARTS 01-03 ARE SEALED: they have been "
+    "removed from the fixture directory and cannot be read. Use only the values you recorded for "
+    "them in turns 1-3."
+)
+
+# T-A v2: ask only for values read_file reports (total_lines, file_size) plus one exact line.
+# Counting bytes per line was the v1 task and it is what stalled every free model: the tool does not
+# report character or word counts, so the model counted by reproducing the file and truncated its own
+# output. Measured 2026-11-11: counting prompt 180 s (nvidia) and 283 s of silence (longcat);
+# extractive prompt 4 s on the same fixture and profile.
 PROMPTS: list[str] = [
-    "Read fixture/part-01.txt. Report its line count, byte size, number of lines longer than 100 bytes, and number of lines shorter than 10 bytes. Do not write any file. You have exactly three tools: read_file, search_files, write_file. Do not ask for any other tool.",
-    "Read fixture/part-02.txt. Report the same four statistics (lines, bytes, long, short).",
-    "Read fixture/part-03.txt. Report the same four statistics (lines, bytes, long, short).",
-    "Read fixture/part-04.txt. Report its four statistics (lines, bytes, long, short). Also state the running total of 'long' across parts 01 through 04.",
-    "Read fixture/part-05.txt. Report its four statistics and the running total of 'long' across parts 01 through 05.",
-    "Read fixture/part-06.txt. Report its four statistics and the running total of 'long' across parts 01 through 06.",
-    "Read fixture/part-07.txt. Report its four statistics and the running total of 'long' across parts 01 through 07.",
-    "Read fixture/part-08.txt. Report its four statistics and the running total of 'long' across parts 01 through 08.",
-    "Read fixture/part-09.txt. Report its four statistics and the running total of 'long' across parts 01 through 09.",
-    "Read fixture/part-10.txt. Report its four statistics and the running total of 'long' across parts 01 through 10.",
-    "Read fixture/part-11.txt. Report its four statistics and the running total of 'long' across parts 01 through 11.",
-    "Read fixture/part-12.txt. Report its four statistics and the running total of 'long' across parts 01 through 12.",
-    "Read fixture/part-13.txt. Report its four statistics and the running total of 'long' across parts 01 through 13.",
-    "Read fixture/part-14.txt. Report its four statistics and the running total of 'long' across parts 01 through 14.",
-    "Read fixture/part-15.txt. Report its four statistics and the running total of 'long' across parts 01 through 15.",
-    "Read fixture/part-16.txt. Report its four statistics and the running total of 'long' across parts 01 through 16.",
-    "Read fixture/part-17.txt. Report its four statistics and the running total of 'long' across parts 01 through 17.",
-    "Read fixture/part-18.txt. Report its four statistics and the running total of 'long' across parts 01 through 18.",
-    "Read fixture/part-19.txt and fixture/part-20.txt. Report each file's four statistics and the running total of 'long' across parts 01 through 20.",
-    "You read parts 01-03 at the start of this session and parts 04-20 in the middle. Now write artefact.json in the working directory. The artefact is a JSON object with exactly three keys: \\\"files\\\", \\\"widest_file\\\", \\\"total_long\\\". \\\"files\\\" maps each basename (sorted ascending) to an object with exactly four integer keys in this order: lines, bytes, long, short. lines = number of lines (a final line without a trailing newline still counts as one line); bytes = total byte size; long = number of lines whose BYTE length excluding the newline is GREATER THAN 100; short = number of lines whose byte length is LESS THAN 10. \\\"widest_file\\\" = the basename with the LARGEST long COUNT (the most lines over 100 bytes); ties break by basename ascending. \\\"total_long\\\" = the sum of long across all 20 files. Write 2-space indentation and a single trailing newline if you can. PARTS 01-03 ARE SEALED: they have been removed from the fixture directory and cannot be read. Use only the statistics you recorded for them in turns 1-3.",
-]
+    f"Read fixture/part-{i:02d}.txt with read_file. Reply with exactly three things and nothing else: "
+    f"total_lines, file_size, and the exact text of line 137."
+    for i in range(1, 20)
+] + [ARTEFACT_PROMPT]
 
 
 
@@ -276,7 +277,7 @@ def run(args) -> int:
             print(f"[prompt {i:02d}] ok")
     finally:
         unseal(ws, run_dir)
-    print(f"driver: done — {len(PROMPTS)} prompts, session={args.session_name}")
+    print(f"driver: done — {len(prompts)} prompts, session={args.session_name}")
     print(f"driver: next is `--verify` on the newest capture; a run is not a cell until it passes")
     return 0
 
