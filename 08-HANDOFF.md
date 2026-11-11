@@ -1125,6 +1125,25 @@ vector (one line per shape plus a NEGATIVE — a `page.declare` carrying a flat 
 a sniffing reader would accept and the validator must reject). No spec, schema or vector byte was
 written. Card `reports/RR-P10ID-20261111.md`.
 
+**Frontier 11 addendum 14 (2026-11-11, correction to addendum 11):** the w8b lane's own erratum to
+their W8B2 card (`reports/RR-W8B2-ERRATUM-20261111.md`, in flight) corrects a figure **this lane**
+quoted in addendum 11 and in the P8 erratum block: "**0 calls**" is FALSE. The profile stores say
+naive 9 API calls / 31 messages / 21 tool calls, paged 5 / 17 / 11 (a third session 2), each session
+~4 minutes long (13:02:46 -> 13:06:26 and 13:04:49 -> 13:09:19) and ending
+`end_reason = ws_orphan_reap` — the gateway reaped them because the driver killed the CLI. So the arms
+RAN, the model answered, the driver's 120 s per-prompt cap cut them mid-turn, and the capture never
+flushed (a killed session is never closed). The OUTCOME (both arms NO RECORD, nothing in the
+denominator) stands; the CAUSE is a task-and-cap failure with a WORKING model, and the deeper blocker
+is the task's counting questions — `read_file` reports `total_lines` and `file_size` only, so T-A's
+per-line byte counts cannot be read off the tool, while the extractive control question (same fixture,
+profile, model, tool) completes in 4 s with 2 tool calls. Their lane has landed the fixes (SIGTERM
+first so a timeout flushes; a `--limit N` smoke check; `max_turns` 12 -> 6; prompt rules;
+`--expect-budget any`; verified 1 tool call instead of 21 with `--limit 1`), so the W8 thread's next
+step is now CONCRETE — rewrite the questions to the values the tool reports — rather than abstract.
+**No P8 verdict changes** (ranking, w/r = 10, the 5.3% evictable share, n\* ~ 189 calls, the (d)
+amendment, the Q2 rule, Q3-executed — none depends on the W8B2 call count). The committed LOG row
+never claimed "0 calls", so no committed row needs an erratum. Card `reports/RR-W8B2CORR-20261111.md`.
+
 ## §1. Workspace map
 
 ```

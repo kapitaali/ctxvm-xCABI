@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-11, HEAD `ce9d9b0` (the P10 ruling card in flight, committing on top).
+State of record: 2026-11-11, HEAD `f1e068c` (the W8B2-figure correction card in flight, committing on top).
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -101,7 +101,13 @@ pin true every card close.
   already passes (`RR-W8NOOPBYTES`). Q3 was already executed (`design/W8-CLOSURE-20261110.md`,
   owner Option A / packet P9); the replacement run is `design/W8B-FREE-PLAN.md` — and it has now
   run to NO RECORD (both arms, `nous/longcat-2.5:free`, prompt-1 timeout at 120 s, $0.0000;
-  `RR-W8B2-20261111`), so the blocker is a model-side timeout and the subject choice is the owner's.
+  `RR-W8B2-20261111`) — and the w8b lane's own erratum (`RR-W8B2-ERRATUM-20261111`) corrects the
+  cause: the arms DID run (naive 9 API calls / 21 tool calls, paged 5 / 11, both reaped as
+  `ws_orphan_reap` because the driver killed the CLI), so the blocker is the TASK's counting
+  questions against a 120 s per-prompt cap, not a model or transport failure. Their lane has landed
+  SIGTERM-first termination, a `--limit N` smoke check, `max_turns` 6, prompt rules and
+  `--expect-budget any`; the next step is now CONCRETE — rewrite the questions to the values the tool
+  reports (`total_lines`, `file_size`) — and the subject choice stays the owner's.
   Q2's five-condition
   metric-replacement rule is adopted as a standing lane rule.
   *Done when (met):* the packet STATUS reads answered, the card exists in a commit, and the
