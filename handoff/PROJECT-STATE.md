@@ -1,4 +1,4 @@
-# State (updated 2026-11-11, by ctxvm repo agent (opencode), Hub-$ref + T-A; queue EMPTY
+# State (updated 2026-11-11, by ctxvm repo agent (opencode), P11 gap + CI green; hub-$ref + T-A
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8: CLOSED negative (`design/W8-CLOSURE-20261110.md`); next = W8B, free model (`design/W8B-FREE-PLAN.md`).
@@ -11,9 +11,9 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. Hub $ref edit (RR-HUBREF-20261111): the bare-$ref change is UNDONE by the generator; both forms validate - revert it, or change the generator + re-hash the baseline.
-2. T-A (RR-TADEC/W8BBLOCK): classification applied; block filled; open blocker = ARM ATTRIBUTION (profile must be w8bn-paged).
-3. P11 answered (RR-P11CANON-20261111): (c) owner, (a) pointer, TEST FIRST; note = compatibility only; divergences measured -> canonical form.
+1. P11 gap + CI (RR-P11GAP-20261111): CI GREEN here; the pair asserts TWO levels (no page table in the report) - assert level 2 or drop the claim.
+2. Hub $ref edit (RR-HUBREF-20261111): the bare-$ref change is UNDONE by the generator - revert it, or change the generator + re-hash the baseline.
+3. T-A (RR-TADEC/W8BBLOCK): classification applied; block filled; open blocker = ARM ATTRIBUTION (profile = w8bn-paged).
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
