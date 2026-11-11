@@ -305,6 +305,22 @@ pin true every card close.
   `plugin` block can see another session's arm and call a correct cell VOID - the still-open fix
   (key the arm fields by session id, `reports/RR-W8BARMSTATE-20261111.md`) is now observably
   load-bearing for step 5 (the block) and step 6 (the pair).
+  *CELL-01: THE TREATMENT ACTS (2026-11-11, `reports/RR-W8CCELL01-20261111.md`):* the first run in the
+  card where the policy visibly acts, **independently recomputed from the captures**: the paged arm's
+  request **flattens at ~61 k from turn 11/12** (sum 922,911, final 60,781) while the control keeps
+  growing (sum 1,108,214, final 102,967) - ratios 0.833x / 0.590x, exactly their numbers. But the
+  **trace cannot see it** (0 `page.evict` rows, `evictedTokens` 0 in both arms) so the verifier says
+  NO-OP, the control is labelled VOID by a check that does not know the control arm, and the block's
+  rule makes it INSTRUMENT-BUG - **no cell is booked**. **The cost consequence, from the DB's own usage
+  counters**: the paged arm's uncached input is **4.77x** the control's (1,071,090 vs 224,455) and its
+  **cache_read 0.64x** (2,870,144 vs 4,461,568) - it sends fewer tokens and pays with cache misses on
+  BOTH sides of the cache, which is the cache-stability question the P8 packet raised; no saving may be
+  claimed (law 7). **This lane's attribution finding extends to the budget**: the paged arm's capture
+  attests `200000/default` while the run used 60,000, so a capture's `plugin` block is not a record of
+  the arm's configuration - take it from the run, never from the capture afterwards. Both arms show
+  `proseMentions` 190, which is the strongest statement yet that the prose signal was REMOVED rather
+  than DISABLED. Two instrument fixes are prerequisites for the next pair: engine -> observer
+  reporting (evict rows + `evictedTokens`) and an arm-aware verifier.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
