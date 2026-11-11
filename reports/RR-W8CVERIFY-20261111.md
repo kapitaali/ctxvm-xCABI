@@ -113,3 +113,28 @@ pin"* (`faultsBySource` has no `identifier_scan`) **and** *"the scan still sees 
 (`proseMentions` non-empty, every key declared, the total matching). **This lane's gap finding is
 closed** — the recommendation was taken, implemented on the sidecar rather than in the trace, and
 backed by a checker rule that fails loudly.
+
+## 6. The checkpoint-A reading list (what the probe's verdict must carry, checked when it lands)
+
+Checkpoint A is the owner's step 2: `--probe --arm both` returns **CONTRAST OK** and the paged arm
+**READY**. The review side's reading of that verdict, written down now so it is a checklist rather than
+an impression:
+
+| arm | must show | must NOT show |
+|---|---|---|
+| `w8cn-naive` (control) | `engine` null · `engineSelections` **0** · `profile` = `w8cn-naive` · `budgetTokens` 200000/`default` · `faultsBySource` with **no** `identifier_scan` · **`proseMentions` non-empty** | any selection, any paged budget, a `profile` of `w8bn-paged`/`default` |
+| `w8cn-paged` (treatment) | `engine` = `ctxvm` · `engineSelections` **> 0** · `profile` = `w8cn-paged` · `budgetTokens` 60000/`settings` · `faultsBySource` with **no** `identifier_scan` · **`proseMentions` non-empty** | `identifier_scan` faults (the prose signal is gone), a budget source of `default`/`env` |
+
+**Two additions that only exist because of the 0.12.0 change**, and both are checkable in the sidecar:
+
+1. **`proseMentions` must be non-empty in BOTH arms.** The scan lives in the *observer*, so it runs
+   whatever the engine does — the control arm's capture is the cleanest place to prove the scan is
+   still alive (and it is the arm that has no engine to blame). A non-empty `proseMentions` in the
+   control arm's sidecar is the strongest single statement that the signal was *removed* rather than
+   *disabled*.
+2. **`faultsBySource` must contain no `identifier_scan` in either arm**, and the control arm's
+   `faultsBySource` should be empty altogether — the control arm has no re-reads to report.
+
+**And the honest note that belongs with the verdict:** these checks say the *instrument* is in and
+attributed. They say nothing about whether the policy will now evict anything — that is the
+diagnostic's question (step 4) and the pair's (step 6). A READY probe is a precondition, not a result.
