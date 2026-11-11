@@ -161,6 +161,22 @@ pin true every card close.
   preregistration of a longer-session paid variant (n\* ~ 34 calls vs 41 measured) or the
   capability-mismatch verdict. The contrast gate should also assert WHICH difference it expects (the
   naive arm's budget vs the paged arm's; the sidecar's profile vs the arm's).
+  *ARM RECORDING (2026-11-11, `reports/RR-W8BARMSTATE-20261111.md`):* their `3455f01` (plugin
+  0.11.0) is the right DESIGN - the arm is resolved per CALL from the gateway's per-turn contextvar and
+  the engine declines to select when the profile says `compressor` - but the RECORDING is still
+  process-global: the resolved arm is written into the tracer's `sys`-held state at hook time and read
+  back at flush time, so another session in the same gateway (the operator's own chat) can overwrite
+  it, and the engine's counters are cumulative over every session the instance served (a paged arm's
+  sidecar can show `skippedControl > 0` from another session's declines). Three changes, each with an
+  existing precedent in the file: key the arm fields by `session_id`; report the counters as a
+  per-session delta; gate on the ARM fields (`arm`, `engineSetting`, `budgetTokens`+`budgetSource`,
+  `skippedControl`) and never on `engine` (process-level by design, reads `ctxvm` in both arms). With
+  the new fields the PROFILE half of the precondition can become a gate rather than a reading.
+  *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
+  had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
+  reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
+  commit a blob anchored at HEAD, re-sync the tree after the commit (`git checkout HEAD --
+  reports/LOG.md`), and before staging, the diff against HEAD must show only ADDED rows.
   *OWNER-RULED (2026-11-11):* the subject fallback order - **nvidia** (nemotron-super, the tested path) ->
   **stepfun** -> accept longcat too slow for the 120 s cap only if both fail.
   question; a consumer that cannot dispatch on event type).

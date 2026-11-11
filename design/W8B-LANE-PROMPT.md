@@ -79,3 +79,29 @@ Repo `/home/theb/Documents/ctxvm`, branch `main`. Gates: `bash tools/run-ci.sh` 
 - Report what happened, including NO RECORD, as the outcome; do not promote a diagnostic to a result.
 - Nothing pushed; the owner pushes. The kit (`handoff/`, `reports/LOG.md`, `08-HANDOFF.md`) is
   append-only: append, never rewrite a committed row.
+
+## 5. Addendum (2026-11-11, after your `3455f01`): one item, and one shared-file warning
+
+**Item 5 — record the arm per session, not per process.** Plugin 0.11.0's *design* is right and the
+review side confirms it (`reports/RR-W8BARMSTATE-20261111.md`): the arm is resolved per call from the
+gateway's per-turn contextvar, and the engine declines to select when the session's profile says
+`compressor`. But the resolved arm is written into the tracer's **process-global** state (the dict on
+`sys`) at hook time and read back at **flush** time, so another session served by the same gateway — the
+operator's own chat, with the default profile's plugin enabled — can overwrite `arm`, `profile`,
+`engineSetting` and `budgetTokens` between an arm session's hook and its flush, and `engineSelections` /
+`skippedControl` come from an engine meter that counts every session that instance served (a **paged**
+arm's sidecar can show `skippedControl > 0` from another session's declines). Cheapest first: (1) key the
+arm fields by `session_id` — the hook has it in its kwargs, the flush path has it, and the file already
+has the per-session-dict precedent (`state["flushed_at"][session_id]`); (2) report the counters as a
+per-session delta (snapshot the meter at the session's first hook, subtract at flush); (3) gate on the
+**arm** fields — `arm`, `engineSetting`, `budgetTokens` + `budgetSource`, `skippedControl` — and never on
+`engine`, which is process-level by design and reads `ctxvm` in both arms. With 0.11.0's new fields the
+**profile half** of the precondition (§2 above) can become a gate rather than a reading, provided the
+recording is keyed per session.
+
+**Shared-file warning (read before you stage anything).** `reports/LOG.md` is the append-only ledger and
+it is a **shared** file. This lane found the working-tree copy *behind* the commit by ten rows (the
+committed rows would have been dropped by a plain `git add reports/LOG.md`) and restored it. So, before
+you stage the LOG: `diff <(git show HEAD:reports/LOG.md) reports/LOG.md` must show **only added rows** —
+if it shows deletions or a changed row, restore the tree first (`git checkout HEAD -- reports/LOG.md`),
+then append yours and commit. Never rewrite a committed row; append an erratum block instead.
