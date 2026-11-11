@@ -1939,17 +1939,26 @@ class CoverageManifestTests(unittest.TestCase):
             session_open = next(r for r in rows if r.get("type") == "session.open")
             self.assertEqual(manifest["session"]["environmentId"],
                              session_open.get("environmentId"))
-            self.assertEqual(manifest["captures"], {
+            expected_counts = {
                 "turns": 1,
                 "pages": 2,
                 "declares": 2,
                 "declaresByClass": {"READ_ONLY": 1, "MUTATING": 1},
-                # The pre-LLM scan attributes the history path token to the
-                # just-declared tool page → one identifier_scan fault.
+                # W8C: prose is telemetry, so the scan contributes no fault.
                 "faults": 0,
                 "faultsBySource": {"tool_recall": 0, "identifier_scan": 0,
                                    "explicit_api": 0, "semantic": 0},
-            })
+            }
+            for key, value in expected_counts.items():
+                self.assertEqual(manifest["captures"][key], value, key)
+            # ... but the capture must still prove the scan SAW the prose: without this number a
+            # blind scan and a correctly non-pinning scan are identical in the bytes (W8C).
+            self.assertGreaterEqual(
+                manifest["captures"]["proseMentionsTotal"], 1,
+                "the scan must still see prose even though it no longer pins")
+            self.assertEqual(
+                manifest["captures"]["proseMentionsTotal"],
+                sum(manifest["captures"]["proseMentions"].values()))
             # Arm identity: the sidecar must say which profile served the session and
             # which engine, if any, was registered. Without it a capture cannot be
             # attributed to an arm after the fact — the pilot's sidecars carried neither,
@@ -1960,6 +1969,16 @@ class CoverageManifestTests(unittest.TestCase):
                               "no engine registers outside the hermes runtime")
             result = self._checker(tmp, "cov.jsonl", "cov.coverage.json")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            # The new keys are gated, not decorative: a mention count naming a page the trace never
+            # declared must fail the checker (W8C).
+            manifest_path = Path(tmp, "cov.coverage.json")
+            tampered = json.loads(manifest_path.read_text())
+            tampered["captures"]["proseMentions"]["tool:never-declared"] = 1
+            tampered["captures"]["proseMentionsTotal"] += 1
+            manifest_path.write_text(json.dumps(tampered, indent=2) + "\n")
+            bad = self._checker(tmp, "cov.jsonl", "cov.coverage.json")
+            self.assertNotEqual(bad.returncode, 0,
+                                "a proseMentions key that names no declared page must fail")
         finally:
             for key in ("CTXVM_TRACE_DIR", "CTXVM_TRACE_NAME"):
                 os.environ.pop(key, None)

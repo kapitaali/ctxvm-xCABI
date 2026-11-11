@@ -223,6 +223,28 @@ def main(argv: list) -> int:
         for row in faults:
             if row.get("source") in by_source:
                 by_source[row["source"]] += 1
+        # W8C: the observer's prose-mention counts. They cannot be derived from the trace — prose is
+        # telemetry, not an event — so the checker validates shape, that every key names a page the
+        # trace declared, and that the total agrees. This is what lets a diagnostic prove the scan
+        # still SEES prose while pinning nothing.
+        pm = captures.get("proseMentions")
+        if pm is not None:
+            if not isinstance(pm, dict) or not all(
+                    isinstance(k, str) and _int(v) for k, v in pm.items()):
+                _fail(violations, "captures", "proseMentions must map logicalRef -> integer")
+            else:
+                declared_refs = {r["page"]["id"]["logicalRef"] for r in declares
+                                 if isinstance(r.get("page"), dict)
+                                 and isinstance(r["page"].get("id"), dict)}
+                unknown = sorted(set(pm) - declared_refs)
+                if unknown:
+                    _fail(violations, "captures",
+                          f"proseMentions names pages the trace never declared: {unknown[:3]}")
+                if captures.get("proseMentionsTotal") != sum(pm.values()):
+                    _fail(violations, "captures",
+                          f"proseMentionsTotal {captures.get('proseMentionsTotal')!r} "
+                          f"!= sum(proseMentions) {sum(pm.values())!r}")
+
         expected = {
             "turns": len(turns),
             "pages": len(pages),

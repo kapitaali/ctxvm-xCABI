@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.12.0"
+PLUGIN_VERSION = "0.12.1"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -569,8 +569,28 @@ def _engine_selections() -> int:
     return int(count if count is not None else ACTIVATIONS.get("select", 0))
 
 
+def _prose_mentions(tracer: Any) -> Dict[str, int]:
+    """Per-page prose-mention counts from the observer's own page table (W8C).
+
+    The trace cannot carry them — v0 events are sealed and laws 1-2 leave no room for a new field —
+    but the sidecar can, and without them a diagnostic cannot tell "the scan saw the text and did not
+    pin" from "the scan is blind".
+    """
+    out: Dict[str, int] = {}
+    try:
+        declared = getattr(tracer, "_declared", {}) or {}
+        for ref, page in declared.items():
+            n = page.get("mentions") if isinstance(page, dict) else None
+            if isinstance(n, int) and n > 0:
+                out[str(ref)] = n
+    except Exception:  # noqa: BLE001 - observability must never break a flush
+        return {}
+    return out
+
+
 def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
-                       api_samples: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+                       api_samples: Optional[List[Dict[str, Any]]] = None,
+                       prose_mentions: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
     """Build the W17 `<file>.coverage.json` body for one flushed capture.
 
     Session facts (environmentId/model/provider) come from the trace's own
@@ -656,6 +676,12 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             "declares": len(declares),
             "declaresByClass": by_class,
             "faults": len(faults),
+            # W8C: the observer's proof that the scan still SEES prose. Without this, a capture in
+            # which the scan is blind and one in which it sees but does not pin are identical — the
+            # B1-class death the identifier_scan fault used to expose. Kept OUT of the v0 events
+            # (laws 1-2 leave no room there) and verified by tools/coverage_check.py.
+            "proseMentions": dict(sorted((prose_mentions or {}).items())),
+            "proseMentionsTotal": sum(int(v) for v in (prose_mentions or {}).values()),
             "faultsBySource": by_source,
         },
         # The per-turn resident series, read straight out of the trace rows this sidecar
@@ -1115,6 +1141,7 @@ def register(ctx) -> None:
                             api_samples=(vm.tracer_for(session_id).api_samples()
                                          if hasattr(vm.tracer_for(session_id), "api_samples")
                                          else None),
+                            prose_mentions=_prose_mentions(vm.tracer_for(session_id)),
                         ),
                         indent=2,
                     )
