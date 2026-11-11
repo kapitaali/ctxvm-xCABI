@@ -4,27 +4,35 @@
 
 **A trace format and replay engine for LLM agent context.** `xCABI` records what an agent
 put in its context window — as pages, faults and a replayable page table — and `ctxvm`
-replays that record deterministically. Rust core, four harness adapters (OpenCode, Hermes,
-Vercel AI SDK, Node), and a public trace corpus. `ctxvm` / `xCABI` are working names.
+replays that record deterministically. Rust core (codec, page table, renderer, CLIs), a
+host-side paging engine in the Hermes adapter (`packages/hermes/live/context_engine.py`),
+four harness adapters (OpenCode, Hermes, Vercel AI SDK, Node), and a public trace corpus.
+`ctxvm` / `xCABI` are working names.
 
-> **v0 is a read-only flight recorder.** Nothing is evicted, rewritten, or injected into a
-> prompt by the tracer. The trace is the product; paging control is not built.
+> **v0 tracing is read-only: the tracer evicts, rewrites, and injects nothing.** The paging
+> engine is a separate, opt-in host-side layer that selects and drops pages under a token
+> budget; the trace records what the engine dropped (`turn.render.evictedTokens`). The first
+> counted W8 pair is measured — see [Measured limitations](#measured-limitations-2026-11-11).
 
 ## Adoption status (read this first)
 
 - **One author, one machine.** Every trace in `corpus/` was captured by the same person on
   the same laptop. No outside contributor has sent a trace, a bug report, or a patch.
-- **One external index selection — pending.** [XERJ](https://xerj.org/) selected the
+- **One external index selection — live.** [XERJ](https://xerj.org/) selected the
   [W3 metrics implementation](https://github.com/kapitaali/ctxvm-xCABI/commit/7a4f499765da082f7b5d5a2c05fc896b5b6a8988)
   ([report](reports/RR-W3-20261029.md)) for inclusion in its public
-  [Corpus Hub](https://hub.xerj.org/) index, under Apache-2.0 with attribution (XERJ
-  founder email to the maintainer, 2026-10-29). The listing is **pending — UNVERIFIED**:
-  at the 2026-10-29 check, neither the Hub catalogue
-  (`https://hub.xerj.org/llms.txt`, 530 corpora) nor the `corpus-hub` registry in
-  [`xerj-org/xerj`](https://github.com/xerj-org/xerj) contained a `ctxvm` or `xcabi`
-  entry. This is a reference-index selection of one artifact, not adoption of xCABI: no
-  XERJ trace in `corpus/`, no second implementation, and no outside downstream xCABI
-  reader is public.
+  [Corpus Hub](https://hub.xerj.org/) index, under Apache-2.0 with attribution. **Both pages verified
+  live on 2026-11-11**, and XERJ's founder confirmed the same day that the contributor page carries the
+  attribution: contributor page
+  [`hub.xerj.org/contributors/kapitaali`](https://hub.xerj.org/contributors/kapitaali) and
+  corpus page [`hub.xerj.org/corpus/kapitaali--ctxvm-xcabi`](https://hub.xerj.org/corpus/kapitaali--ctxvm-xcabi)
+  (1 corpus, 1 selected commit, 5 source files / 494 lines, Apache-2.0, 1 GitHub star).
+  [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/kapitaali/badge.svg)](https://hub.xerj.org/contributors/kapitaali)
+  This is a reference-index selection of one artifact, not adoption of xCABI: no XERJ
+  trace in `corpus/`, no second implementation, and no outside downstream xCABI reader
+  is public. One discrepancy: the Hub pages say the author "agreed by email on
+  2026-10-29", but the repo's record shows no reply had been sent as of that date
+  (`reports/RR-XERJ-20261029.md`); the agreement came later.
 - **Not published.** Nothing is on npm, crates.io, or PyPI. The only *runtime* consumer
   outside this repo is [`umpire`](https://github.com/kapitaali/umpire), which is also this
   author's.
@@ -53,7 +61,7 @@ cargo build --release
 ```
 
 `profile` prints every page's decision history, faults and the per-turn residency for any
-RFC-0 trace. `stream` groups trace files by `environmentId` (W14) and orders them by start. **A file is a process slice, not a whole conversation:** each restart builds a new tracer and each stop truncates, so one long session can appear as several rows — era copies (`tools/snapshot-capture.sh`) are the only way to keep the earlier segments
+RFC-0 trace. `stream` groups trace files by `environmentId` (W14) and orders them by start. **A file is a process slice, not a whole conversation:** each restart builds a new tracer and each stop truncates, so one long session can appear as several rows — era copies (`tools/snapshot-capture.sh`) are the only way to keep the earlier segments over
 time, which is the only way the cross-session questions become observable: how many
 declarations repeat across sessions of one repository, and how many a render never showed.
 Row fields are counts of DISTINCT keys — `turns` counts distinct turn boundaries (one turn
@@ -94,31 +102,35 @@ Either way, profile the result with
 [`packages/opencode/live/README.md`](packages/opencode/live/README.md) and
 [`packages/hermes/live/README.md`](packages/hermes/live/README.md).
 
-## Measured limitations (2026-10-29)
+## Measured limitations (2026-11-11)
 
 These are the numbers the repo can currently defend. Anything not listed here is not
 measured, and the docs say so where it matters.
 
 | Limitation | Evidence |
 |---|---|
-| **No real session has ever paged.** All 4 `page.evict` events in the corpus sit on one *synthetic* trace (`m1/session-thrashing`); the 10 real captures have zero evictions. | `page.evict` census over `corpus/m1`–`m8` (17 traces: 10 real, 7 synthetic) |
-| **The paging gate is unmeasured.** The v0 gate is hard-fault recall ≥ 95 % (95 % CI lower bound, n ≥ 30). Real captures carry **n = 4** hard faults. | `reports/RR-W3-20261029.md` |
-| **Token counts are estimates.** `apx4-char` = ⌈characters / 4⌉; `tiktoken` BPE backends exist behind a feature but are not what the corpus used. **0 of 85** `call.meta` records carry provider-reported usage. | `benchmarks/metrics/prices.json`, `corpus/*/` census |
-| **Fault counts depend on the capture surface.** The Hermes `identifier_scan` surface is dead on live payloads (the adapter reads a shape Hermes does not send), so `m4`/`m7` under-report faults to zero. Fix proposed, not landed. | `packages/hermes/OBSERVABILITY.md`, `reports/RR-W4-20261029.md` |
+| **The corpus has no real evictions; the experiment does.** All 4 `page.evict` events in `corpus/` sit on one *synthetic* trace (`m1/session-thrashing`); the 10 real captures have zero. Live W8C runs page, but this engine drops rather than stubs, so the count rides `turn.render.evictedTokens` and no `page.evict` row is emitted. | `page.evict` census over `corpus/m1`–`m8` (17 traces: 10 real, 7 synthetic); `reports/RR-W8CEVICT-20261111.md` |
+| **The paging gate is unmeasured under the new fault semantics.** The v0 gate is hard-fault recall ≥ 95 % (95 % CI lower bound, n ≥ 30). Plugin 0.12.0 redefined a fault as "the model asked for the same page again" (`tool_recall`), so the corpus's n = 4 hard faults no longer maps to the gate's definition. | `reports/RR-W3-20261029.md`, `reports/RR-W8C-INSTRUMENT-20261111.md` |
+| **Token counts are estimates in the corpus; the experiment now has provider usage.** `apx4-char` = ⌈characters / 4⌉; `tiktoken` BPE backends exist behind a feature but are not what the corpus used. **0 of 85** `call.meta` records carry provider-reported usage. W8C cell-01 reads provider usage from the Hermes DB sessions table (`cache_read`/`cache_write`), outside the corpus. | `benchmarks/metrics/prices.json`, `corpus/*/` census, `reports/RR-W8CCELL01-20261111.md` |
+| **Fault counts depend on the capture surface — fix landed in plugin 0.12.0.** The Hermes `identifier_scan` surface no longer emits faults (it was a second, independent rule); prose mentions are telemetry (`page["prose_mentions"]`), and `page.fault` now has two honest producers: `tool_recall` and `explicit_api`. | `packages/hermes/OBSERVABILITY.md`, `reports/RR-W8C-INSTRUMENT-20261111.md` |
 | **Cross-harness comparisons are not yet apples-to-apples.** A Hermes "turn" is a user turn; an OpenCode/AI-SDK turn is a model request. | `design/`, `corpus/m7` vs `m8` |
-| **Single corpus, free tiers.** Captures used free-tier or locally-shaped models at USD 0; the corpus is small (17 traces, 118 pages) and does not represent production traffic. | `corpus/*/provenance.json` |
-| **The control-plane claim is untested.** The plan's 1.5× net-token-reduction milestone has no experiment behind it yet. | `01-PLAN.md` M0 gate, `07-benchmarks-go-no-go.md` |
+| **Single corpus, free tiers.** Captures used free-tier or locally-shaped models at USD 0; the corpus is small (17 traces, 112 distinct `page.declare` keys) and does not represent production traffic. | `corpus/*/provenance.json` |
+| **The control-plane effect is measured; the cell is not booked, and no saving may be claimed.** W8C cell-01: at budget 60,000 the paged arm's request stops growing at ~61 k from turn 12 (final 60,781 vs control 102,967, 0.59×; sum 0.833×) with a parsed-equal artefact — but the trace could not witness the evictions (`evictedTokens` 0 until plugin 0.13.0) and its uncached provider input was 4.77× the control's with cached input 0.64×, so fewer tokens were bought with cache misses. An instrument bug, not a cell; law 7: no cost-saving claim. | `reports/RR-W8C-CELL01-20261111.md`, `reports/RR-W8CCELL01-20261111.md` |
+| **The first counted W8 pair is negative.** Naive 5 calls / $0.0175 vs paged 14 / $0.1264 — 3.14× input tokens and 7.2× dollars; mechanism = prefix-cache forfeiture, not selection quality. | `design/w8-cache-stable-selection.md` |
 
-## Status (2026-10-29)
+## Status (2026-11-11)
 
 | track | state |
 |---|---|
-| **engine (M0)** | `rust/` — codec (strict JSONL, byte-identical vectors) + page table + deterministic renderer + replay/profile/diff/export/stream CLIs · **73 tests** (74 with `--features tiktoken`), 0 warnings |
+| **engine (M0)** | `rust/` — codec (strict JSONL, byte-identical vectors) + page table + deterministic renderer + replay/profile/diff/export/stream CLIs · **77 tests** (78 with `--features tiktoken`), 0 warnings |
+| **paging engine** | `packages/hermes/live/context_engine.py` — host-side page selection/drop under a token budget; reports `turn.render.evictedTokens`; plugin **0.13.0** |
 | **standard (RFC-0)** | `spec/rfc-0/` — normative semantics + strict JSON Schema; conformance **PASS (682 checks)** over 27 fixtures, 17 of them corpus traces |
-| **measurement** | `corpus/m1`–`m8` (17 traces: seed, live OpenCode, Hermes, resume pairs, AI-SDK) each with `provenance.json` + `checksums.sha256` · `benchmarks/metrics/` reference impl (44 tests) + eviction-policy simulator · ODPS manifest `productVersion 0.8.0` validated by SDK 0.4.0 |
-| **instrumentation** | `packages/node` (13 tests) · `packages/opencode` live v2 plugin (58) · `packages/hermes` plugin (80) · `packages/ai-sdk` middleware/tap (45) · `packages/py` binding (8) |
-| **CI** | `tools/run-ci.sh` mirrors `.github/workflows/ci.yml` — 4 jobs (rust / ts / schema+corpus / hub parity) |
-| **design** | `design/` — MCP tool-shim, harness adapters (pinned contracts), UC1 pause/resume, **OTel mapping + a working OTLP/JSON projector** (`tools/otel-export.mjs`) |
+| **standard (RFC-0.1)** | `spec/rfc-0.1/` — additive shape + validator (`validate_schema_v0_1.py`); CI runs it as a separate gate |
+| **measurement** | `corpus/m1`–`m8` (17 traces: seed, live OpenCode, Hermes, resume pairs, AI-SDK) each with `provenance.json` + `checksums.sha256` · `benchmarks/metrics/` reference impl (66 tests) + eviction-policy simulator · ODPS manifest `productVersion 0.8.0` validated by SDK 0.4.0 |
+| **instrumentation** | `packages/node` (24 tests) · `packages/opencode` live v2 plugin (62) · `packages/hermes` plugin (200) · `packages/ai-sdk` middleware/tap (46) · `packages/py` binding (8) |
+| **CI** | `tools/run-ci.sh` mirrors `.github/workflows/ci.yml` — 4 jobs (rust / ts / schema+corpus / hub parity) · pre-push check: `python3 tools/ci-rehearsal.py --committed` (the committed tree only) |
+| **design** | `design/` — MCP tool-shim, harness adapters (pinned contracts), UC1 pause/resume, **OTel mapping + a working OTLP/JSON projector** (`tools/otel-export.mjs`), W8B/W8C plans, **cache-stable selection** (`w8-cache-stable-selection.md`), RFC-0.1 |
+| **experiment (W8)** | naive-vs-paged cells; first counted pair measured (see limitations); spend ledger `reports/W8-SPEND.md` |
 
 ## Verify it yourself
 
@@ -126,12 +138,12 @@ measured, and the docs say so where it matters.
 tools/run-ci.sh            # local mirror of the Actions workflow
 ```
 
-Output of the witness run on 2026-10-29 (local mirror; the same four gates run in Actions):
+Output of the witness run on 2026-11-11 (local mirror; the same four gates run in Actions):
 
 ```text
 [ctxvm-ci] rust suite green
 [ctxvm-ci] tokenizer tiktoken feature green (real BPE backends)
-[ctxvm-ci] ts suites green (13 + 58 + 45 tests); python suites green (80 + 44 + 8 tests)
+[ctxvm-ci] ts suites green (24 + 62 + 46 tests); python suites green (200 + 8 + 66 tests)
 positive: 677 event lines validated across 27 fixtures
 negative: 5 engineered bad cases correctly rejected
 SCHEMA CONFORMANCE: PASS (682 checks)
@@ -142,8 +154,10 @@ SCHEMA CONFORMANCE: PASS (682 checks)
 **What those gates prove:** the codec round-trips byte-identically, replay is
 divergence-free on every committed trace, the schema rejects engineered bad input, the
 corpus checksums match, and the published hub regenerates byte-identically.
-**What they do not prove:** that paging helps, that the token counts are the provider's,
-or that the format transfers between people. Those are the open items above, not CI's job.
+**What they do not prove:** that paging helps (the first counted W8 pair is negative — see
+[Measured limitations](#measured-limitations-2026-11-11)), that the token counts are the
+provider's, or that the format transfers between people. Those are the open items above,
+not CI's job.
 
 ## Governance
 
@@ -156,17 +170,19 @@ Roadmap, in the order the evidence allows:
 
 1. Reproduce the portability claim (one task, two harnesses, `ctxvm diff`) before any
    standards claim — workstream W5.
-2. Fix the capture surface so a fault count means the same thing in every harness.
-3. Only then propose RFC-0.1 (clock, provider usage, turn on `page.declare`) and publish a
-   conformance kit.
+2. Fix the capture surface so a fault count means the same thing in every harness —
+   landed in plugin 0.12.0 (see [Measured limitations](#measured-limitations-2026-11-11)).
+3. RFC-0.1 is applied (owner decision D4, 2026-10-30) and runs as an additive CI gate; the
+   conformance kit for third-party implementers is the open item.
 4. Governance changes (a second maintainer, a foundation, a versioned change policy) follow
    the first *external* implementer — not before.
 
 ## Support this project
 
-Every number here was measured on free-tier models — which is also why the decisive
-paging experiment (W8) is still unmeasured and the corpus stays small. Donations buy
-model compute for larger measurement corpora and fund development.
+Every number here was measured on free-tier models — which is why the corpus stays small.
+The decisive paging experiment (W8) is now measured, and its first counted pair is negative
+(see [Measured limitations](#measured-limitations-2026-11-11)); donations buy model compute
+for larger measurement corpora and fund development.
 
 Bitcoin: `bc1qrdah46qfwkd03nqv88d9rw9mpgqat3ymhv0268` (bech32 P2WSH)
 
@@ -184,12 +200,13 @@ Curated details live in [`00-README.md`](00-README.md) (file index + locked-deci
 | [`01-PLAN.md`](01-PLAN.md) | full plan — thesis, prior art (locators at first mention), architecture, milestones |
 | [`02-xcabi-events-v0.md`](02-xcabi-events-v0.md) | event vocabulary + log invariants (spec source) |
 | [`spec/rfc-0/`](spec/rfc-0/) | **xCABI RFC-0** + `x-cabi.schema-v0.json` + conformance validator |
+| [`spec/rfc-0.1/`](spec/rfc-0.1/) | **xCABI RFC-0.1** (additive) + `x-cabi.schema-v0.1.json` + validator |
 | [`rust/`](rust/) | cargo workspace: `ctxvm-core`, `ctxvm-codec`, `ctxvm-tokenizer`, `ctxvm-conformance` (vectors + CLIs) |
-| [`packages/`](packages/) | `@ctxvm/node` · `@ctxvm/opencode` · `@ctxvm/ai-sdk` · Hermes plugin · Python binding |
+| [`packages/`](packages/) | `@ctxvm/node` · `@ctxvm/opencode` · `@ctxvm/ai-sdk` · Hermes plugin (+ host-side paging engine) · Python binding |
 | [`corpus/`](corpus/) | 8 drops, `provenance.json` + `checksums.sha256` each |
 | [`benchmarks/metrics/`](benchmarks/metrics/) | metric definitions executable + tested, policy simulator, pinned price model |
-| [`design/`](design/) | MCP shim, harness adapters, UC1 pause/resume, **OTel mapping** |
-| [`reports/`](reports/) | per-task reports + append-only `LOG.md` index |
+| [`design/`](design/) | MCP shim, harness adapters, UC1 pause/resume, **OTel mapping**, W8B/W8C plans, **cache-stable selection** |
+| [`reports/`](reports/) | per-task reports + append-only `LOG.md` index + W8 spend ledger |
 | [`08-HANDOFF.md`](08-HANDOFF.md) | **agent entry point** — rules of engagement, task board, protocol |
 
 ## For agents
