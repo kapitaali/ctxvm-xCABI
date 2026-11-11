@@ -17,6 +17,22 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 log() { printf '[ctxvm-ci] %s\n' "$*"; }
 
+# Hermetic environment: this script's job is to be a MIRROR of .github/workflows/ci.yml,
+# and that workflow sets no CTXVM_* variable at all - but an interactive shell does
+# (`.bashrc` exports CTXVM_BUDGET_TOKENS=200000, CTXVM_TRACE_TS=0, CTXVM_TRACE_DIR,
+# CTXVM_FEATURES, CTXVM_AGENT_ID, CTXVM_MODEL, CTXVM_PROVIDER, CTXVM_TRACE_NAME,
+# CTXVM_HERMES_VERSION). A leaked variable has broken the gate twice, both times by
+# making a test assert about a value the test did not set:
+#   - CTXVM_TRACE_TS=0 broke `node --test` (RR-ENVLEAK-20261110);
+#   - CTXVM_BUDGET_TOKENS=200000 made the arm-policy test read 'env' where it means
+#     'default' (2026-11-11, RR-CTXVMENV-20261111).
+# Unsetting them here is what makes the local gate a mirror of CI rather than of
+# whichever shell happened to run it. The steps below are unchanged.
+for _v in CTXVM_TRACE_TS CTXVM_HERMES_VERSION CTXVM_BUDGET_TOKENS CTXVM_TRACE_DIR \
+          CTXVM_TRACE_NAME CTXVM_FEATURES CTXVM_AGENT_ID CTXVM_MODEL CTXVM_PROVIDER; do
+  unset "$_v" || true
+done
+
 # Counts are DERIVED, never typed. The summary used to be a literal, so adding
 # five tests printed "177" while 182 ran (2026-11-09). A counted step keeps its
 # log and appends "count<TAB>kind<TAB>name"; the summary reads that file.
