@@ -218,6 +218,13 @@ pin true every card close.
   pin from result-time to call-time. **(b) a stated margin** over the measured floor in the block:
   floor ~48,650 (arithmetic checks out), candidate budget 60,000 => ~11,350 tokens of room, and a
   budget a hair above the floor would make "zero evictions" expected rather than informative.
+  **BOTH ASKS ACCEPTED (their `5c0a8aa`):** the plan now carries the correction itself (a "Correction
+  (review, `RR-W8CREVIEW-20261111`, verified in the code)" paragraph), names the delta as TWO parts
+  (remove the text signal - load-bearing; move the re-read pin to call time - a timing refinement),
+  states each test's BEFORE behaviour (only "prose mention does not pin" fails today), and requires
+  the block to read floor + margin with the margin NAMED (candidate 60,000 against an estimated 48,650
+  floor = 11,350 ~ 2.4 turns of growth). The plan is OWNER-READY: checkpoint A is the approval,
+  checkpoint B is the block with its measured floor and its named margin.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
@@ -497,8 +504,10 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
 2. **W8B is closed NEGATIVE** (their `163787a`; `reports/RR-W8BCLOSURE-20261111.md`): the policy's
    demand signal pins nearly every page on a read-once shape (19 of 21 fault), so nothing is ever
    eligible; no cell was booked and no cost claim exists. The live owner decision is **W8C**
-   (`design/W8C-PLAN.md`): approve or decline the plan (two checkpoints, four tests, one pair, no
-   money) - its falsifier is stated. The other lane's remaining items stand
+   (`design/W8C-PLAN.md`): approve or decline the plan - **checkpoint A** is the approval and
+   **checkpoint B** is the block with its MEASURED floor and its NAMED margin (floor + margin, per
+   this lane's review, which their `5c0a8aa` accepted); four tests, one pair, no money. The other
+   lane's remaining items stand
    (`design/W8B-LANE-PROMPT.md`): the shape erratum in `design/W8B-FREE-PLAN.md`, the W8SIM "5.3%"
    scoping, and the "C3" rename (the P11 third level is done - `reports/RR-P11LEVEL2-20261111.md`).
 3. Ratify G1 (ordering clause, fresh D-number) and G2 (caller sentence, D-U1).

@@ -94,3 +94,30 @@ is written ✓.
   implied by the proposed 60,000 budget was derived (≈ 11,350 tokens).
 - Kit: this card + LOG row + a day-file line + the roadmap's W8C pointer. No file of the other lane's was
   edited; no spec, schema, corpus, vector or umpire byte changed; nothing pushed.
+
+## 6. Outcome (2026-11-11): both asks accepted, the plan's framing corrected — the plan is owner-ready
+
+The other lane's `5c0a8aa` ("W8C plan: the re-read pin already exists, so the change is the text
+signal") takes this review's finding and rewrites the plan accordingly. Verified at the committed bytes:
+
+- **The framing is corrected in the plan itself** (its §2 now carries a "Correction (review,
+  `RR-W8CREVIEW-20261111`, verified in the code)" paragraph): the re-read pin is **not** a new rule, the
+  delta has **two named parts** — *part 1, remove the text signal* (load-bearing: what pinned 19 of 21
+  pages) and *part 2, move the re-read pin from result time to call time* (a timing refinement, "it
+  fires even if the result never does") — and "both deltas are now named as one mechanism".
+- **Ask (a), the falsification set, is in** as a test table with each test's BEFORE behaviour: only
+  "prose mention does not pin" **fails today** (discriminating); "re-sent tool result does not pin" and
+  "the seven laws still hold" **pass today** (invariant guards); "a second `read_file` in a later turn
+  pins" **passes today via the re-render path** and is labelled a **regression guard** for part 2 —
+  "proving the explicit signal replaces the removed text signal rather than vanishing with it".
+- **Ask (b), the margin, is in** and quantified: "**The budget must be stated as floor + margin, with
+  the margin named** … measured growth is ~4,700 tokens per turn, so a margin of two turns' growth is the
+  minimum worth running", with estimated floor 48,650, candidate budget 60,000, **margin 11,350 ≈ 2.4
+  turns of growth**; "the 60,000 figure is a placeholder for the diagnostic. **The block states floor +
+  margin explicitly**, with both numbers derived from the diagnostic capture, and the margin is a
+  decision the owner sees at **checkpoint B**."
+
+Their LOG row (`W8C-PLAN-FIX-20261111`) names this review, re-derives the floor arithmetic
+(4,350 + 14,100 + 28,200 + 2,000 = 48,650) and agrees with it. **This review's two asks are met, and
+the plan is now owner-ready**: checkpoint A is the approval of the plan, checkpoint B is the block with
+its measured floor and its named margin. Nothing further is owed by this lane before the owner rules.
