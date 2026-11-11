@@ -328,9 +328,10 @@ disqualifies this file from prompt duty:
   compact the longest index line (keep its card ids), shave this lane's own lines, never drop a
   heading or a locator, and log the compaction as an erratum.
 - Paste budget (standing): a session paste = PROJECT-STATE + CONTEXT-PACK + packet + 4 <= 16,384 B.
-  As of 2026-11-11 (`RR-CTXPACK-20261111`): 6,137 + 6,837, so ANY packet the checker accepts (<= 3,072)
-  fits (worst case 16,057 B). If PROJECT-STATE grows, trim CONTEXT-PACK — glossary rows, excerpt
-  lines, label rows; NEVER a heading — and re-measure every packet's paste.
+  As of 2026-11-11 (`RR-CTXPACK2-20261111`, after two trims): 6,123 + 6,440 = 3,817 B left for
+  the packet against a 3,072 B cap, so ANY packet the checker accepts fits (worst case 15,660 B;
+  P8 = 15,626 B today). If PROJECT-STATE grows, trim CONTEXT-PACK — glossary rows, excerpt lines,
+  label rows; NEVER a heading — and re-measure EVERY packet's paste, not just the one you ran.
 - Naming rule (standing): friction points use the F-series (F1…F9) and NEVER an R-number —
   RFC-0.1's R0…R5 are revision ids, and one input labelled the page-id residual "R1", colliding with
   R1 = `intentional_rerun`. Friction cards also carry the date, the locator and the gate output.

@@ -1022,6 +1022,24 @@ repair, umpire-residue sweep; this lane's umpire-gates line rotated out with its
 PROJECT-STATE must re-run `check-handoff.sh` BEFORE committing — 21 B of headroom is thin, and a
 long index line turns the whole kit red. Card `reports/RR-KITCAP-20261111.md`.
 
+**Frontier 11 addendum 9 (2026-11-11, second CONTEXT-PACK cut):** the owner's paste of the tool's
+cut instruction ("cut from CONTEXT-PACK (largest part, 6837 bytes)") pins the overflow's
+arithmetic: that error came from a run AFTER the first trim but BEFORE the PROJECT-STATE repair,
+i.e. while the w8b lane's 549 B line was still in the file — 6,686 + 6,837 + 3,059 + 4 = **16,586 B
+> 16,384** (over by 202), CONTEXT-PACK correctly named the largest part. Both terms are now fixed.
+Second trim (glossary rows / excerpt lines / label rows, never a heading): CONTEXT-PACK 6,837 →
+**6,440 B** (-397; heading set byte-identical, 9 = 9) — the `fault recall` glossary row dropped
+(its formula is §4's `metrics.py:159`, the `refetch_rate` successor §4's `:146`), the `protected
+floor` row shortened, §4's `thrash_index` excerpt lost a path but kept its rule + locator, §8's
+W8-vocabulary row lost the arm-witness clause, plus citation trims in §1/§3/§6; no fact left the
+file that is not in the repo or a sibling section. Re-measured: every packet's with-context paste
+≤ **15,626 B** (P8; 758 B spare), worst theoretical case 15,660 B; arithmetic now 16,384 − 6,123 −
+6,440 − 4 = 3,817 B for the packet against a 3,072 B cap, so ANY packet the checker accepts fits.
+Checker ALL PASS; the three standing pastes exit 0. Both overflows had one shape: a shared file
+grew inside the kit's caps and the paste budget (a paste rule, not a checker rule) absorbed it until
+it did not — the kit checker never flagged it, `session-start.sh` did, and the owner felt it first.
+Card `reports/RR-CTXPACK2-20261111.md`.
+
 ## §1. Workspace map
 
 ```
