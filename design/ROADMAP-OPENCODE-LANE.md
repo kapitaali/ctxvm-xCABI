@@ -245,6 +245,17 @@ pin true every card close.
   be made on the engine's pin count. The W8B closure's outcome is untouched; only its evidence line is
   read more sharply (19 pages were prose-demanded, visible as faults in the control arm too, and the
   engine pinned those pages).
+  *STEP-1 VERIFICATION LIST (2026-11-11, `reports/RR-W8CSTEP1-20261111.md`):* a fixed six-item list for
+  the instrument commit, each item with the command that checks it (text signal removed not weakened;
+  `note_refault` exists and is fed by `pre_tool_call`; **pins by source** reported; the observer aligned;
+  the four tests carry their before-behaviour; the gate green with a CLEAN env - `CTXVM_BUDGET_TOKENS`
+  must be unset, or `ArmPolicyTests` fails for an unrelated reason). **The frozen-fixture hazard is
+  CLEARED by measurement**: the committed live fixture is reproduced ts-stripped byte-identical by the
+  in-flight code (18 events, fault source `tool_recall`), the two m3 sources are protected by the
+  generator's own refusal, and the test suite never regenerates them - so no law-5 exposure. Two watch
+  items: the healthy fixture's turn count moved ([0,1,2,3] -> [0,1,2,3,4]), so the W8C capture may not
+  be shape-comparable with W8B's and the block must be written from the diagnostic's capture; and the
+  mention telemetry must stay in the SIDECAR/engine status, never inside a v0 event.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
