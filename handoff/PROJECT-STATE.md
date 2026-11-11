@@ -11,7 +11,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. U2 + U6 verified live (RR-U2LIVE): health ok; a decide runs on the record's map (cal-v1:057a5a35a9d4ec71); the gateway wrapper awaits a restart.
+1. U2 + U6 verified live (RR-U2LIVE): health ok; a decide runs on the record's map (cal-v1:057a5a35a9d4ec71); the gateway restart is DONE (both surfaces v3).
 2. RFC-0.1 note + C3 enforced (D18): code-point comparator + vector; no digest moved; CI green.
 3. P11 gap (RR-P11GAP-20261111): the pair asserts TWO levels; level-2 patch drafted.
 
