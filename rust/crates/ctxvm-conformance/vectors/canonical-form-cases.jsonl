@@ -1,0 +1,12 @@
+{"name":"ascii","input":"{\"b\":1,\"a\":{\"d\":1,\"c\":2}}","expect":"canonical","canonical":"{\"a\":{\"c\":2,\"d\":1},\"b\":1}","digest":"sha256:b6cb1b7b"}
+{"name":"astral-key","input":"{\"\\ud834\\udd1e\":1,\"\\uff00\":2}","expect":"canonical","canonical":"{\"\uff00\":2,\"\ud834\udd1e\":1}","digest":"sha256:3f695c5a"}
+{"name":"nested-astral","input":"{\"b\":{\"\\ud834\\udd1e\":1,\"\\uff00\":2}}","expect":"canonical","canonical":"{\"b\":{\"\uff00\":2,\"\ud834\udd1e\":1}}","digest":"sha256:bac1b39d"}
+{"name":"prefix-key","input":"{\"a\\ud834\\udd1e\":1,\"a\\uff00\":2}","expect":"canonical","canonical":"{\"a\uff00\":2,\"a\ud834\udd1e\":1}","digest":"sha256:88a850c1"}
+{"name":"max-safe-int","input":"{\"n\":9007199254740991}","expect":"canonical","canonical":"{\"n\":9007199254740991}","digest":"sha256:e1da48c6"}
+{"name":"control-chars","input":"{\"k\":\"a\\u0000b\"}","expect":"canonical","canonical":"{\"k\":\"a\\u0000b\"}","digest":"sha256:c899e625"}
+{"name":"nfc","input":"{\"k\":\"\\u00e9\"}","expect":"canonical","canonical":"{\"k\":\"\u00e9\"}","digest":"sha256:0ca09f1d"}
+{"name":"nfd","input":"{\"k\":\"\\u00e9\\u0301\"}","expect":"canonical","canonical":"{\"k\":\"\u00e9\u0301\"}","digest":"sha256:eed5dc86"}
+{"name":"beyond-2^53","input":"{\"n\":9007199254740992}","expect":"reject"}
+{"name":"integral-float","input":"{\"n\":1.0}","expect":"reject"}
+{"name":"negative-zero","input":"{\"n\":-0.0}","expect":"reject"}
+{"name":"lone-surrogate","input":"{\"k\":\"\\ud800\"}","expect":"reject"}

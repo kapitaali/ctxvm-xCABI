@@ -164,6 +164,15 @@ pin true every card close.
   UNKNOWNs resolved from the books: `schemaVersion` is on the `session.open` line ONLY and optional
   (RFC-0.1:8), so their "if every v0.1 line carried schemaVersion" premise is false; and a
   conformance vector is a FIXTURE (`rust/crates/ctxvm-conformance/vectors/`), not a spec edit.
+  **C3 ENFORCED (2026-11-11, `reports/RR-C3FIX-20261111.md`):** the review found C3 was FALSE for
+  ctxvm itself - `ident.ts:20` sorted by UTF-16 code units while Python sorts by code points, so the
+  same input canonicalises differently in the two implementations (silently). Fixed with a code-point
+  comparator + two TS tests + a 12-case Python-generated vector file
+  (`rust/crates/ctxvm-conformance/vectors/canonical-form-cases.jsonl`: input text + expected canonical
+  bytes + expected digest; NFC vs NFD differ; reject cases beyond 2^53 / integral float / -0 / lone
+  surrogate); `validateHashInput` added (exported, not wired into the minting path - owner-routed, blast
+  radius named). No digest moved: 44 hashed input files scanned, 0 non-BMP keys, 0 astral values; CI
+  ALL GATES GREEN after the change (`check-node-build: OK - 16 events byte-identical`).
   **LANDED 2026-11-11 (D18):** the note is `spec/rfc-0.1/COMPATIBILITY.md` — a new file under
   `spec/rfc-0.1/` (that document's declared scope: "new files under `spec/rfc-0.1/` only"), carrying
   **C1** the type-dispatch rule, **C2** the key-order compatibility statement plus its pointer to the
