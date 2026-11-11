@@ -1200,6 +1200,14 @@ call session) — so do not buy one without resizing the session, which is a fre
 slow for the 120 s cap). T-A v2 is a different task shape, so the W8 closure stands untouched and its
 cells cannot be compared with W8's numbers. Card `reports/RR-TADEC-20261111.md`.
 
+**Frontier 11 addendum 18 (2026-11-11, hub `$ref` edit):** the uncommitted `hub/catalog.yaml` edit
+(bare `$ref` instead of the hub-relative `../04-…`) will be **undone by the generator** —
+`tools/build-hub.sh` step 3 rewrites it back on every run, and step 5 checks the result against the
+baseline hashed from the hub-relative form. Both forms validate against the owner's own SDK (checked
+today: `valid: true` each), so the edit buys no validity, and the failure mode is silent (a `hub/`
+diff after every gate run). Either revert it, or change the generator's rewrite AND re-hash
+`hub/hub.sha256` together. This lane wrote no hub byte. Card `reports/RR-HUBREF-20261111.md`.
+
 ## §1. Workspace map
 
 ```
