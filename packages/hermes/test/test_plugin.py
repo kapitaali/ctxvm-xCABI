@@ -1862,6 +1862,43 @@ class CanonicalSidecarParity(unittest.TestCase):
         self.assertEqual(meta["provider"], "test")
 
 
+class SessionAttributionTests(unittest.TestCase):
+    """One process, two arms: a sidecar must attest the SESSION, not whoever was stamped last.
+
+    Measured 2026-11-11: the paged arm's capture attested `profile: default, arm: control,
+    engineSetting: compressor, engineSelections: 0, budget 200000/default` because the arm fields were
+    read from a process-global slot at flush time. A verifier reading that capture days later would
+    call a correctly attributed cell VOID.
+    """
+
+    def _trace(self):
+        rows = [
+            {"type": "session.open", "agentId": "hermes", "model": "m", "provider": "p",
+             "budgetTokens": 60000, "tokenizerId": "apx4-char"},
+            {"type": "turn.render", "turn": 0, "residentTokens": 10, "evictedTokens": 0, "headroom": 0},
+        ]
+        return "".join(json.dumps(r) + "\n" for r in rows)
+
+    def test_each_sidecar_carries_its_own_session_arm(self):
+        from live import _coverage_manifest
+        _clear_env_for_tests()
+        _state()["policy_by_session"] = {
+            "sess-naive": {"profile": "w8cn-naive", "arm": "control", "engine": "compressor",
+                           "budget": 200000, "budgetSource": "default", "home": "/tmp/x"},
+            "sess-paged": {"profile": "w8cn-paged", "arm": "paged", "engine": "ctxvm",
+                           "budget": 60000, "budgetSource": "settings", "home": "/tmp/y"},
+        }
+        trace = self._trace()
+        naive = _coverage_manifest("sess-naive", "a.jsonl", trace)["plugin"]
+        paged = _coverage_manifest("sess-paged", "b.jsonl", trace)["plugin"]
+        self.assertEqual((naive["profile"], naive["arm"], naive["engineSetting"]),
+                         ("w8cn-naive", "control", "compressor"))
+        self.assertEqual((paged["profile"], paged["arm"], paged["engineSetting"]),
+                         ("w8cn-paged", "paged", "ctxvm"))
+        self.assertNotEqual(naive["arm"], paged["arm"],
+                            "the two arms must never collapse into one attribution")
+
+
 class CoverageManifestTests(unittest.TestCase):
     """W17 — the coverage sidecar rides every FULL flush and answers to ONE
     authoritative checker (tools/coverage_check.py), invoked here through

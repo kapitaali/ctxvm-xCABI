@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.12.1"
+PLUGIN_VERSION = "0.12.2"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -514,6 +514,14 @@ def _engine_selections_from_instance() -> Optional[int]:
     return value if isinstance(value, int) else None
 
 
+def _engine_activated_for(profile: Optional[str] = None) -> Optional[str]:
+    """Engine name only if the engine actually selected for THIS profile's sessions."""
+    try:
+        return _state().get("engine_registered") if _engine_selections_for(profile) > 0 else None
+    except Exception:  # noqa: BLE001
+        return _engine_activated()
+
+
 def _engine_activated() -> Optional[str]:
     """Engine name only if the host actually selected with it in this process."""
     try:
@@ -545,6 +553,25 @@ def _current_profile_name() -> Optional[str]:
         return policy().get("profile")
     except Exception:  # noqa: BLE001
         return None
+
+
+def _engine_selections_for(profile: Optional[str]) -> int:
+    """Selections the engine made FOR one profile's sessions (0.11.1's per-profile buckets)."""
+    engine = _state().get("engine_obj")
+    meter = getattr(engine, "_meter", None)
+    if isinstance(meter, dict) and isinstance(meter.get("by_profile"), dict):
+        bucket = meter["by_profile"].get(profile or "")
+        return int(bucket.get("select", 0)) if isinstance(bucket, dict) else 0
+    return _engine_selections()
+
+
+def _engine_skipped_control_for(profile: Optional[str]) -> int:
+    engine = _state().get("engine_obj")
+    meter = getattr(engine, "_meter", None)
+    if isinstance(meter, dict) and isinstance(meter.get("by_profile"), dict):
+        bucket = meter["by_profile"].get(profile or "")
+        return int(bucket.get("skip", 0)) if isinstance(bucket, dict) else 0
+    return int(_engine_skipped_control() or 0)
 
 
 def _engine_selections() -> int:
@@ -593,12 +620,18 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
                        prose_mentions: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
     """Build the W17 `<file>.coverage.json` body for one flushed capture.
 
+    The arm fields come from THIS session's stamped policy (``policy_by_session``), never from a
+    process-global slot: one gateway serves every arm, and a flush runs after the turn's profile scope
+    has been reset, so the global slot holds whichever session was stamped last (measured 2026-11-11).
+
     Session facts (environmentId/model/provider) come from the trace's own
     session.open row — never from env — so the claims are byte-true by
     construction and the checker verifies them against the same bytes. The
     instrumentation dict is lane-fixed: the hermes reference lane has no
     per-run toggles (parity test pins the constants).
     """
+    _session_policy = (_state().get("policy_by_session") or {}).get(session_id or "")
+    _session_profile = (_session_policy or {}).get("profile") or _state().get("serving_profile")
     rows = [json.loads(line) for line in trace_jsonl.splitlines() if line.strip()]
     open_note = [r for r in rows if r.get("type") == "session.open"]
     session_open = open_note[0] if open_note else {}
@@ -657,16 +690,16 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # the only behavioural evidence the plugin can offer. It is meaningful only when
             # one gateway serves one arm (plan 4c); a multiplexer serving both cannot attest
             # either, and the runner must enforce the single-arm gateway.
-            "engine": _engine_activated(),
-            "engineSelections": _engine_selections(),
+            "engine": _engine_activated_for(_session_profile),
+            "engineSelections": _engine_selections_for(_session_profile),
             # The arm this SESSION belongs to, resolved from its home at hook time, and the
             # engine that profile declares. `engine` above says the process used the engine;
             # `engineSetting` says which arm asked for it. A control session with engine ctxvm
             # still shows `skippedControl > 0` and no selections.
-            "profile": _state().get("serving_profile") or _serving_profile(),
-            "arm": _state().get("arm"),
-            "engineSetting": _state().get("engine_setting"),
-            "skippedControl": _engine_skipped_control(),
+            "profile": _session_profile or _serving_profile(),
+            "arm": (_session_policy or {}).get("arm"),
+            "engineSetting": (_session_policy or {}).get("engine"),
+            "skippedControl": _engine_skipped_control_for(_session_profile),
             "budgetTokens": _state().get("budget_tokens") or 200000,
             "budgetSource": _state().get("budget_source") or "default",
         },
@@ -1197,6 +1230,10 @@ def register(ctx) -> None:
         # A policy whose home is not on disk is not a session (the plugin's own tests, or a host
         # that has not created the home yet); fall back to what the hook reported.
         if pol and os.path.isdir(pol.get("home") or ""):
+            # Keyed by session: one process serves every arm, and a flush happens after the turn's
+            # scope is gone. A single global slot meant the LAST session to be stamped wrote the arm
+            # into every sidecar — measured 2026-11-11: the paged arm's capture attested the control.
+            st.setdefault("policy_by_session", {})[session_id or ""] = pol
             st["serving_profile"] = pol["profile"]
             st["budget_tokens"] = pol["budget"]
             st["budget_source"] = pol["budgetSource"]
