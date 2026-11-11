@@ -115,6 +115,14 @@ disagree, the file wins.
   not by a message; never stage one that carries another lane's uncommitted row.
 - Note that `git rev-list --count origin/main..HEAD` reads the *local* tracking ref, which goes stale
   here. Use `git ls-remote --heads origin` to see the real remote head.
+- **Commit through a private index when lanes share a tree, then reset the shared one.** `GIT_INDEX_FILE=/tmp/idx
+  git read-tree HEAD && git update-index … && git commit` keeps another lane's staging out of your commit.
+  A private-index commit leaves the shared `.git/index` pointing at an older tree, so `git status` later
+  shows your newly committed files as *staged deletions with untracked twins* — the shape of a
+  delete-then-rewrite — and a commit of that index drops them from history. After every private-index
+  commit run `git read-tree HEAD` on the shared index, and run `bash tools/git-hygiene.sh` before
+  staging a shared file; it exits 1 and names the paths when the index is stale.
+
 
 ## 8. Test commands, by package
 
