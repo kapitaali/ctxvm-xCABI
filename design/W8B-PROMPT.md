@@ -2,9 +2,12 @@
 
 Give this to the agent running W8B. It assumes no memory of W8 and no access to our chat.
 
-**Status 2026-11-11:** the eight `w8*` profiles were deleted on the owner's instruction, and the
-runner no longer provisions pairs. A run therefore refuses at preflight until a pair is deliberately
-restored. Nothing else about the design changed.
+**Status 2026-11-11:** exactly one pair exists — `w8bn-naive` (engine `compressor`) and `w8bn-paged`
+(engine `ctxvm`, `budgetTokens: 70000`), both on `meituan/longcat-2.5:free` via `nous`, `toolsets: [file]`,
+`agent.max_turns: 6`. The eight earlier profiles were deleted on the owner's instruction. **Two is the
+rule**: the runner refuses to create a profile and preflight fails if the count under the prefix is not
+exactly 2. `bash tools/w8b-profiles.sh` prints the pair and checks that the only difference is
+`context.engine` plus the paged budget block.
 
 The work is **one command**. Everything the earlier agents built by hand — fixture, profiles, driver
 prompts, seal, verification — is in the repo, and the runner refuses to start if any of it is wrong.
@@ -95,8 +98,8 @@ The runner refuses, correctly, when any of these is true:
 
 ```
 profile missing, or its model/provider differ from the selected provider's spec
-                          NOTE 2026-11-11: the w8* profile pairs no longer exist — the owner pruned
-                          all eight. The runner refuses and names them; it must never create one.
+                          NOTE 2026-11-11: exactly two profiles exist by design. The runner refuses
+                          to create one, and a third under the prefix fails the count check.
 toolsets != [file]        (no shell, no code execution — the H6 run shelled out 16 times without it)
 paged budget != 70000     (a budget default is not a treatment)
 fixture does not have exactly 20 parts

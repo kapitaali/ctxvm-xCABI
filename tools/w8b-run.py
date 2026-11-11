@@ -63,7 +63,7 @@ PROVIDERS = {
         "note": "free tier via OpenRouter; capability unproven, prompt 1 decides",
     },
     "nous": {
-        "model": "stepfun/step-3.7-flash:free",
+        "model": "meituan/longcat-2.5:free",
         "provider": "nous",
         "prefix": "w8bn",
         "key": None,
@@ -200,6 +200,13 @@ def _set_model_provider(cfgp: Path, model: str, provider: str) -> bool:
     return changed
 
 
+PROFILE_COUNT = 2   # one pair: naive + paged. Not one per provider, not one per model.
+
+
+def profiles_for(prefix: str) -> list[Path]:
+    return sorted(p for p in PROFILES.glob(f"{prefix}-*") if p.is_dir())
+
+
 def ensure_profiles(spec: dict) -> None:
     """Never create a profile. Refuse and say what is missing.
 
@@ -218,9 +225,19 @@ def ensure_profiles(spec: dict) -> None:
             print(f"updated {dst} -> model={spec['model']} provider={spec['provider']}")
     if missing:
         print("refusing to create profiles (the owner's rule): " + ", ".join(missing))
+    found = profiles_for(spec["prefix"])
+    if len(found) > PROFILE_COUNT:
+        print(f"note: {len(found)} profiles match {spec['prefix']}-* — only {PROFILE_COUNT} are wanted "
+              f"({', '.join(p.name for p in found)})")
 
 
 def preflight(arms: list[str], spec: dict) -> list[str]:
+    # The owner's rule: exactly one pair. A third profile under this prefix means something
+    # provisioned one; refuse rather than run against an ambiguous arm.
+    found = profiles_for(spec["prefix"])
+    if len(found) != PROFILE_COUNT:
+        return [f"expected exactly {PROFILE_COUNT} profiles matching {spec['prefix']}-*, "
+                f"found {len(found)}: {', '.join(p.name for p in found) or 'none'}"]
     errs: list[str] = []
     plugin = Path.home() / ".hermes" / "plugins" / "ctxvm-tracer" / "__init__.py"
     if not plugin.exists():
@@ -412,8 +429,10 @@ def main() -> int:
     if args.model:
         spec["model"] = args.model
     print(f"provider {args.provider}: model {spec['model']} ({spec['note']})")
-    ensure_profiles(spec)
-    sync_profile_keys(spec)
+    # A dry run must not write anything, including a model/provider rewrite of a live profile.
+    if not args.dry_run:
+        ensure_profiles(spec)
+        sync_profile_keys(spec)
 
     errs = preflight(arms, spec)
     if errs:
