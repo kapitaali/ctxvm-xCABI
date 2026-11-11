@@ -1173,6 +1173,17 @@ duplicate-key check exists in the codec or either validator (last value wins in 
 uniform by accident, specified nowhere). No spec, schema or vector byte was written. Card
 `reports/RR-P11CANON-20261111.md`.
 
+**Frontier 11 addendum 16 (2026-11-11, late additions):** the P11 conformance pair is DRAFTED in
+`reports/RR-P11CANON-20261111.md` §9 — the exact generator for the sorted twin, the first three lines
+of the new vector file (`ts` before `type`, the discriminating case) and the Rust test sketch (equal
+parsed model -> equal page table -> equal replay report; never equal bytes) — because the existing
+`events-v0-1.jsonl` is already struct-ordered and umpire's ledger is sorted-ordered (both byte forms
+exist, never of the same trace), and the vectors are compiled in with `include_str!`, so a pair is ONE
+new file plus ONE test. **No vector or test byte was written; the owner's (c) is the only step.** The
+lane prompt now also carries the COLD-START path (the session is not the memory; the kit is) and the
+environment dependencies that do not survive a reboot (the pinned model server on 8081 is the owner's
+to start; the watcher is per-session).
+
 ## §1. Workspace map
 
 ```
