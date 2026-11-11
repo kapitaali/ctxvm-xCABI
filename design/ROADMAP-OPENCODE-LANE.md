@@ -99,7 +99,10 @@ pin true every card close.
   $0.0175 = 4.4× (`RR-NOOP-20261109`), so "no worse than control" is falsified — the driver is
   session growth plus output volume, not selection. The no-op byte check the reviewer demands
   already passes (`RR-W8NOOPBYTES`). Q3 was already executed (`design/W8-CLOSURE-20261110.md`,
-  owner Option A / packet P9); the replacement run is `design/W8B-FREE-PLAN.md`. Q2's five-condition
+  owner Option A / packet P9); the replacement run is `design/W8B-FREE-PLAN.md` — and it has now
+  run to NO RECORD (both arms, `nous/longcat-2.5:free`, prompt-1 timeout at 120 s, $0.0000;
+  `RR-W8B2-20261111`), so the blocker is a model-side timeout and the subject choice is the owner's.
+  Q2's five-condition
   metric-replacement rule is adopted as a standing lane rule.
   *Done when (met):* the packet STATUS reads answered, the card exists in a commit, and the
   QUESTIONS row `| P8 |` reads answered.

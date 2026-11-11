@@ -1065,6 +1065,19 @@ W8 negative with no further paid cells; the replacement run is `design/W8B-FREE-
 compaction engine does NOT exist yet (`selectionMode` appears only in the design card). No paid
 cache-stable cell is justified by the books' numbers as they stand — the next step is owner-routed.
 
+**Frontier 11 addendum 11 (2026-11-11, erratum on the P8 card):** the replacement run that card
+named as the live next step HAS NOW RUN and produced **NO RECORD** — `RR-W8B2-20261111` (commit
+`9ddbf31`): both arms NO RECORD on `nous/longcat-2.5:free`, prompt 1 TIMEOUT after 120 s, no capture
+flushed, $0.0000, 0 calls, wall 123 s / 125 s; preflight green, `[-t file]` surface pinned, budget
+70,000 from settings, 20-part fixture intact, runner timeout path verified. Their card's rule —
+"nothing goes in the denominator — no paging, eviction or artefact claim" — matches the discipline
+this lane's P8 card adopted from the design card. **No P8 verdict changes** (ranking, w/r = 10, the
+5.3 % evictable share, n\* ≈ 189 calls, the (d) amendment, the Q2 rule, Q3-executed all stand). What
+changes: the blocker is now a MODEL-SIDE TIMEOUT, and the owner must choose an alternative subject
+(stepfun fallback, nvidia, or accept longcat is too slow for the 120 s cap) with both arms on prompt
+v2. Recorded as an appended erratum block on `reports/RR-P8CACHE-20261111.md` — no new LOG row
+(errata are blocks; the card already has its row) and no PROJECT-STATE rotation (no new card).
+
 ## §1. Workspace map
 
 ```
