@@ -27,6 +27,7 @@ import json
 import os
 import shutil
 import sqlite3
+import re
 import subprocess
 import urllib.error
 import urllib.request
@@ -331,7 +332,12 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict) -> dict:
         print(f"[{arm}] driver stopped: {r.stderr.strip().splitlines()[-1] if r.stderr.strip() else 'rc=' + str(r.returncode)}")
         return out
 
-    sid = session_id(arm, title, spec["prefix"])
+    # Prefer the id the CLI printed ("Session: local-…"); it equals the capture filename. The DB row
+    # id is not always the same value, and the "newest sidecar" fallback is polluted by any other
+    # session writing at the same time — including the operator's own chat.
+    m = re.search(r"^Session:\s+(local-[0-9a-f]{64})", r.stdout or "", re.M)
+    printed_sid = m.group(1) if m else None
+    sid = printed_sid or session_id(arm, title, spec["prefix"])
     cap = capture_for(sid) if sid else None
     out["session_id"] = sid
     out["capture"] = str(cap) if cap else None
@@ -375,9 +381,8 @@ PROBE_PROMPT = ("Use the read_file tool to read fixture/part-01.txt and reply wi
                 "Do not ask for any other tool.")
 
 
-def probe(spec: dict, run_id: str) -> dict:
+def probe(spec: dict, run_id: str, arm: str = "paged") -> dict:
     """One prompt: can this model drive the read_file surface? Nothing else is measured."""
-    arm = "paged"
     title = f"{run_id}-probe-{arm}"
     ws = ROOT / "experiments" / "w8b" / f"ws-{arm}"
     env = dict(os.environ)
@@ -406,16 +411,17 @@ def probe(spec: dict, run_id: str) -> dict:
         # The capture name is not guaranteed to equal the DB session id, so look for the newest
         # sidecar written during this probe rather than deriving a path that may not exist.
         traces = Path.home() / ".local" / "state" / "ctxvm" / "traces"
-        sidecars = [f for f in traces.glob("*.coverage.json") if f.stat().st_mtime >= started - 2]
-        sidecars.sort(key=lambda f: f.stat().st_mtime)
         plug = {}
         out["sidecar"] = None
-        if sidecars:
+        candidates = ([traces / f"{sid}.coverage.json"] if sid else []) +                      sorted((f for f in traces.glob("*.coverage.json")
+                             if f.stat().st_mtime >= started - 2), key=lambda f: f.stat().st_mtime)
+        for cand in candidates:
             try:
-                plug = json.loads(sidecars[-1].read_text()).get("plugin", {})
-                out["sidecar"] = sidecars[-1].name
+                plug = json.loads(cand.read_text()).get("plugin", {})
+                out["sidecar"] = cand.name
+                break
             except Exception:
-                plug = {}
+                continue
         out["engine"] = plug.get("engine")
         out["engineSelections"] = plug.get("engineSelections")
         out["profile"] = plug.get("profile")
@@ -433,6 +439,8 @@ def probe(spec: dict, run_id: str) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=None, help="override the provider's default model id")
+    ap.add_argument("--arm", choices=["naive", "paged", "both"], default="paged",
+                    help="which arm the probe uses (both = the contrast check)")
     ap.add_argument("--probe", action="store_true",
                     help="one capability prompt on the paged arm, then stop (no cells)")
     ap.add_argument("--provider", choices=sorted(PROVIDERS), default="nvidia",
@@ -474,7 +482,15 @@ def main() -> int:
             print(f"archived stale artefact: {art} -> {dst}")
 
     if args.probe:
-        probe(spec, args.run_id)
+        arms = ["naive", "paged"] if args.arm == "both" else [args.arm]
+        results = [probe(spec, args.run_id, a) for a in arms]
+        if len(results) == 2:
+            same = (results[0].get("engine"), results[0].get("engineSelections") is not None and
+                    (results[0].get("engineSelections") or 0) > 0) ==                    (results[1].get("engine"), (results[1].get("engineSelections") or 0) > 0)
+            print(json.dumps({"contrast": "NO CONTRAST — both arms look identical" if same
+                              else "CONTRAST OK", "arms": [{k: r.get(k) for k in
+                              ("model", "engine", "engineSelections", "profile", "budget", "precondition")}
+                              for r in results]}, indent=2))
         return 0
 
     if args.dry_run:
