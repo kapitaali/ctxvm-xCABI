@@ -117,6 +117,13 @@ detail retained in the section), and stray typographic quotes/dashes normalised.
 dropped from any compaction; every removed word survives in the sections above this note or in
 the cited RR cards.
 
+
+Fifth pass (2026-11-11, the umpire-gates card): the P4/P5/P6/P7 chart rows compacted once more to
+pointers so the P10 row (QUEUED 2026-11-11 - the page-id asymmetry ruling, whose full text is the packet
+file `handoff/packets/P10-page-id-asymmetry.md`, not a section here) fits the cap. Every fact removed from
+a chart row survives in that packet's own section above and in the cited RR cards; the cap is the only
+reason a row is a pointer.
+
 ## P7 —` section above.
 
 A third shave in the same pass: the statuses line, the queue-law paragraph and the

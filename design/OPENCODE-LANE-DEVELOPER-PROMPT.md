@@ -313,20 +313,21 @@ these reports.
 Keep this section TRUE with one edit per stale line when you close a card; an out-of-date pin
 disqualifies this file from prompt duty:
 
-- Packet queue: EMPTY of owner pastes — P7 answered; P8 (cache-stable selection; 3,059/3,072 B
-  margin) owner-flagged drop-or-keep — the owner hinted its gist is answered by the research
-  lane's cache-stable-selection work. P4/P5/P6/P7 answered (RR-P4TS / RR-P5CAL / RR-P6DET /
-  RR-P7BASE); umpire gates G1 (ordering clause), G2 (caller sentence), G3 (equivalence prereg)
-  unchanged; U4 TICKED against RR-M3V3 — the P7 sweep caught the erratum (the quiescent
-  concurrency-1 recapture already CONFIRMED the attribution). The P8 ruling is the last open
-  review-side item.
+- Packet queue: P10 QUEUED 2026-11-11 (page-id asymmetry: flat vs nested page identity — the
+  second-consumer trigger ALREADY FIRED: umpire's Python and ctxvm's own OTLP exporter both
+  branch; ruling owner-gated, agent recommends (a)/(b) over (c) because a declare-side field
+  would invalidate EVERY declare line for strict v0 consumers). P8 (cache-stable selection;
+  3,059/3,072 B margin) still owner-flagged drop-or-keep. P4/P5/P6/P7 answered (RR-P4TS /
+  RR-P5CAL / RR-P6DET / RR-P7BASE); umpire gates G1 (ordering clause), G2 (caller sentence),
+  G3 (equivalence prereg) unchanged; U4 TICKED against RR-M3V3; U5 (page-id ruling) added.
 - Owner gates outstanding: the umpire ordering clause (P4) and the calibrated-confidence caller
   sentence (P5) — both carried VERBATIM as PROPOSAL in their cards; ratification + fresh
   D-numbers needed (A6's register has NO ts candidate; D-U1 IS registered, so P5 ratifies into it).
 - Paste composition (2026-11-10 tree): state ~6,140 B + CONTEXT-PACK ~7,468 B + the Nth packet
   decides paste-N; a PROJECT delta over ~100 B likely re-breaks paste-3. Pre-measure; trim
   glossary rows (never headings) if over.
-- Day files: 2026-11-09 (sealed, append-only), 2026-11-10 (current). LOG row count 219 as of the
-  P7 close; verify with `grep -c '^| RR-' reports/LOG.md` before trusting it.
+- Day files: 2026-11-09 (sealed), 2026-11-10 (sealed, append-only), 2026-11-11 (current).
+  LOG row count 242 COMMITTED as of the umpire-gates card (the worktree shows 244: two rows
+  belong to other lanes and stay unstaged); verify with `grep -c '^| RR-' reports/LOG.md`.
 - AGENT-PROMPT §1 staleness: refresh PROPOSED, not edited (policy-file law, §0).
 - Watcher baselines reset for free; never treat "quiet" as "no collision".

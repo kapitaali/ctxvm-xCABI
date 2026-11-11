@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-10, HEAD `990d517` (P6 PROJECT delta; P7 kit in flight, committing on top). This is the lane's
+State of record: 2026-11-11, HEAD `c8aa370` (w8b lane; my umpire-gates card in flight, committing on top). This is the lane's
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -97,6 +97,19 @@ pin true every card close.
   *Done when:* `grep -c 'P8' handoff/QUESTIONS.md` shows either no row (dropped) or an answered
   row (kept). Packet currently at 3,059/3,072 B (13 B margin) — the paste-budget strain driver.
   *Owner:* drop-or-keep.
+
+- [ ] **P10 (page-id asymmetry: flat vs nested page identity) — QUEUED 2026-11-11.** Cut by
+  `reports/RR-UGATE-20261111.md` after the umpire gates re-ran against the books. The asymmetry
+  (`page.declare` nests `page.id`, the other page-carrying verbs are flat) is inherited from
+  SEALED v0 and is NOT in the friction card of record (`design/umpire-friction-vs-rfc01.md`,
+  whose residuals are F8 + F9 only). The "second consumer" trigger has ALREADY fired: umpire's
+  Python (`ledger_tools.py:85`, `validate_ledger.py:228`) and ctxvm's own OTLP exporter
+  (`tools/otel-export.mjs:72-73` nested vs `:86/:96/:106/:116/:125` flat) both branch.
+  Options in the packet: (a) workaround + prose, (b) one RFC-0.1 compatibility-note line,
+  (c) additive field (five touchpoints; sealed-v0 blast radius = EVERY declare line invalid for
+  strict v0 consumers), (d) accept. Agent recommendation: (a)/(b) over (c).
+  *Done when:* the owner pastes the ruling; the verdict lands in QUESTIONS + a card.
+  *Owner:* paste the packet (D-number in the umpire register).
 
 ## 2. Owner-gated proposals this lane authored (ratification turns text into bytes)
 
@@ -224,9 +237,22 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
   *Done when (met):* the box's snake-locator command prints the RR-M3V3 row; falsifier outcome =
   recapture-clean.
 
+- [ ] **U5. Page-id asymmetry ruling (the one friction item still open).** From
+  `reports/RR-UGATE-20261111.md`: the asymmetry is real and sealed-v0-inherited; TWO in-repo
+  consumers already branch on it, so the standing "revisit if a second consumer hits it"
+  recommendation's trigger has fired. What U5 needs from the owner: the ruling among (a)/(b)/(c)/
+  (d) and, if (c), which side gets the field plus acceptance of the blast radius. The agent's
+  recommendation is (a)/(b) over (c): sealed v0 rejects unknown fields under
+  `additionalProperties:false`, so a declare-side field invalidates EVERY declare line for
+  strict v0 consumers, against R1's rerun-only addition. Packet P10 carries the question.
+  *Done when:* P10 is answered in QUESTIONS + a card lands; if (b), the RFC-0.1 compatibility-note
+  line is drafted proposal-only for the owner.
+  *Owner:* paste P10 (D-number in the umpire register).
+
 ## 6. Owner's next-cue list (what unblocks the most)
 
-1. Paste P6 (then P7) — the review roadblock for D-U3/D-U2.
+1. Paste P10 (page-id asymmetry ruling) — the one friction item still open; its "second consumer"
+   trigger has already fired.
 2. Rule P8 drop-or-keep (frees paste budget pressure at its 13 B margin).
 3. Ratify G1 (ordering clause, fresh D-number) and G2 (caller sentence, D-U1).
 4. Rule the redaction go/defer (G4) and W8's fate (G7); D13/D14 + D17 remain the big gates.

@@ -960,6 +960,22 @@ concurrency attribution CONFIRMED**; ten rows = documented capture-side exceptio
 splits) — Roadmap U4 ticks, P6's falsifier stands resolved recapture-clean; erratum recorded as
 appended blocks, no committed text rewritten. Remaining reviewer queue: P8 owner-flagged.
 
+**Frontier 11 addendum 5 (2026-11-11, umpire gates run):** the umpire↔xCABI friction list was
+verified against the books and the gates re-run (umpire `validate_ledger.py` PASS 130 checks,
+negatives 14/14; ctxvm replay of the ab-demo ledger 6 events / 0 divergences / 0 violations; the
+SEALED v0 validator rejects the same ledger's four v0.1 lines while the v0.1 validator accepts it;
+`check-handoff.sh` + three pastes green). Result: F1/F2/F3/F4/F5/F6/F7 closed (F2's norm for `seed`
+is umpire's 00-SPEC, not RFC-0.1 — R2 names `model_pin` only; F4 was missing from the pasted list);
+F8 is P4-answered (awaiting ratification); F9 is accepted but its documentation line has NO packet
+and no owner. The one open item is the flat-vs-nested `page.id` asymmetry — REAL, inherited from
+sealed v0 (`spec/rfc-0/RFC-0-xCABI.md:61-62`), absent from the friction card, and its "second
+consumer" trigger has ALREADY fired: umpire's Python (`ledger_tools.py:85`,
+`validate_ledger.py:228`) and ctxvm's own OTLP exporter (`tools/otel-export.mjs:72-73` nested vs
+`:86/:96/:106/:116/:125` flat) both branch. Packet **P10** cut and registered (queued); the agent's
+recommendation is (a)/(b) over (c) because an additive declare-side field would make EVERY declare
+line invalid for strict v0 consumers. Card `reports/RR-UGATE-20261111.md`; ruling is owner-gated
+(D-number in the umpire register). Remaining reviewer queue: P8 owner-flagged; P10 queued.
+
 ## §1. Workspace map
 
 ```
