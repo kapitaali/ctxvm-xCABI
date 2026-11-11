@@ -150,6 +150,17 @@ pin true every card close.
   recorded profile IS the arm's profile (`w8bn-paged`, not "default"), because that is exactly the
   defect that voided their first pair (`profile "default"` under profile `w8bn-paged`); the arms are
   separated by the profile each was invoked with and by nothing inside the trace.
+  *CONTRAST (2026-11-11, `reports/RR-W8BCONTRAST-20261111.md`):* their `57918fd` measured that the
+  instrument now engages (READY, first time) AND that both arms are the same arm - every sidecar attests
+  `profile: default` regardless of which profile served the session. That CONFIRMS the precondition half
+  above: the engine engaging is not the attribution. The umpire side's working analogue: the arms are
+  separated by the profile each was invoked with (settings resolved per invocation, not snapshotted per
+  process), so the remedy is per-session/per-profile settings inside the plugin (their option 2). A
+  no-contrast run is a HARNESS LIMIT, not a result: a closure on that ground claims nothing in either
+  direction and is not a negative result about cache-stable selection; the routes left are a fresh
+  preregistration of a longer-session paid variant (n\* ~ 34 calls vs 41 measured) or the
+  capability-mismatch verdict. The contrast gate should also assert WHICH difference it expects (the
+  naive arm's budget vs the paged arm's; the sidecar's profile vs the arm's).
   *OWNER-RULED (2026-11-11):* the subject fallback order - **nvidia** (nemotron-super, the tested path) ->
   **stepfun** -> accept longcat too slow for the 120 s cap only if both fail.
   question; a consumer that cannot dispatch on event type).
