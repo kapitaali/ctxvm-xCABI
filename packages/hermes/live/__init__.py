@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.12.2"
+PLUGIN_VERSION = "0.13.0"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -1327,6 +1327,20 @@ def register(ctx) -> None:
         if vm is not None:
             vm.on_pre_llm_call(kwargs)
             _maybe_write_through(vm, stats)
+            # W8C step 2: point the engine's observer at THIS session's tracer, so a selection that
+            # happens on the next request is recorded in the right capture (one engine, many arms).
+            engine = _state().get("engine_obj")
+            if engine is not None and hasattr(engine, "set_observer"):
+                _sid = kwargs.get("session_id", "") or ""
+                _vm = vm
+
+                def _record_selection(payload, _sid=_sid, _vm=_vm):
+                    try:
+                        _vm.tracer_for(_sid).note_evicted(int(payload.get("evictedTokens") or 0))
+                    except Exception:  # noqa: BLE001 - observability must never break a turn
+                        pass
+
+                engine.set_observer(_record_selection)
         elif TRACE_FEATURE in features:
             stats["skipped_untraced"] += 1
         for uc in _enabled_stubs(features):

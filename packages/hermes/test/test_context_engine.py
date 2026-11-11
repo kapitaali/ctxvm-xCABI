@@ -872,5 +872,39 @@ class W8CSignalTests(unittest.TestCase):
         self.assertEqual(engine.note_refault(""), 0)
 
 
+
+class SelectionReportingTests(unittest.TestCase):
+    """W8C step 2: the engine must TELL the observer what a selection cost.
+
+    Measured 2026-11-11: a run whose request was capped at the budget for eight turns produced
+    `evictedTokens 0` on every turn and no eviction rows — a real treatment no capture could witness.
+    """
+
+    def _pressured(self):
+        engine = ce.build_engine()                   # preregistered 24k, far below the transcript
+        tx = [_msg("system", "sys"), _msg("user", "go")]
+        for i in range(1, 9):
+            tx.append(_msg("assistant", "", tool_calls=[_call(f"c{i}", f"notes/f{i}.md")]))
+            tx.append(_msg("tool", _result(22_000, f"f{i}"), tool_call_id=f"c{i}"))
+        return engine, tx
+
+    def test_observer_receives_evicted_tokens(self):
+        seen = []
+        engine, tx = self._pressured()
+        engine.set_observer(seen.append)
+        out = engine.select_context(list(tx))
+        self.assertIsNotNone(out, "a pressured request must be rewritten")
+        self.assertTrue(seen, "the engine must report the selection")
+        self.assertGreater(seen[0]["evictedTokens"], 0)
+        self.assertTrue(seen[0]["dropped"], "the dropped pages are named")
+
+    def test_no_report_when_nothing_changes(self):
+        seen = []
+        engine, _tx = self._pressured()
+        engine.set_observer(seen.append)
+        engine.select_context([_msg("system", "sys"), _msg("user", "go")])
+        self.assertEqual(seen, [], "an unchanged request reports nothing (L7)")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

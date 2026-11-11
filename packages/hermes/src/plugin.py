@@ -201,6 +201,10 @@ class Tracer:
         self._touched: Set[str] = set()  # dedupe per page·source
         self._turn = -1
         self._fault_count = 0
+        # W8C: evictions are the engine's decisions, reported to the observer. They are accumulated
+        # here and land on the NEXT turn.render, because a selection happens between turn boundaries.
+        self._evicted_pending = 0
+        self._evicted_by_turn: Dict[int, int] = {}
         self._all_declared: Dict[str, int] = {}  # ref|hash → tokens
         self._pending_meta: List[Dict[str, Any]] = []
         # W8 D12 (RR-W2B1 §6): provider receipts ride `providerUsage` as the raw
@@ -369,10 +373,19 @@ class Tracer:
         if ref in self._declared:
             self._pending_recall.add(ref)
 
+    def note_evicted(self, tokens: int) -> None:
+        """Record tokens the engine dropped for this session, attributed to the next turn (W8C)."""
+        if isinstance(tokens, int) and tokens > 0:
+            self._evicted_pending += tokens
+
     def render(self, input: Optional[Dict[str, Any]] = None) -> None:
         """Turn boundary: reveals newly declared pages; turn-level facts flush at finish()."""
         input = input or {}
         self._turn += 1
+        if self._evicted_pending:
+            self._evicted_by_turn[self._turn] = (
+                self._evicted_by_turn.get(self._turn, 0) + self._evicted_pending)
+            self._evicted_pending = 0
         for page in self._declared.values():
             if not page["revealed"]:
                 self._reveal(page, self._turn)
@@ -522,7 +535,7 @@ class Tracer:
                 "type": "turn.render",
                 "turn": t,
                 "residentTokens": resident,
-                "evictedTokens": 0,
+                "evictedTokens": self._evicted_by_turn.get(t, 0),
             }
             # The v0 wire field is UNSIGNED (`headroom: Option<u64>`). A resident set
             # above the declared budget therefore has no representable headroom:

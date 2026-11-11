@@ -305,6 +305,9 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         # process counter made a control sidecar report the probes that ran on the treatment
         # (measured 2026-11-11: naive sidecar read 2 selections it never made).
         self._meter: Dict[str, Any] = {"select": 0, "skipped_control": 0, "by_profile": {}}
+        # W8C step 2: the observer that turns a selection into trace facts. Set by the plugin per
+        # session, because one engine serves every arm and the callback must land in the right tracer.
+        self._observer = None
         self._last_policy: Optional[Dict[str, Any]] = None
         self._selections = 0
         # stock keep-law defaults (the host ABC's own class-level values)
@@ -422,7 +425,21 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         dropped, repositioned = self._plan(request_messages, units, keep_hard)
         if not dropped and not repositioned:
             return None  # L7: nothing changed → byte-identical request
-        return self._assemble(request_messages, units, keep_hard, dropped, repositioned)
+        assembled = self._assemble(request_messages, units, keep_hard, dropped, repositioned)
+        # W8C: tell the observer what this selection cost. Until 2026-11-11 the engine rewrote the
+        # request and said nothing, so the trace reported evictedTokens 0 on a session whose
+        # residency was capped at the budget — a real treatment that no capture could witness.
+        try:
+            evicted = sum(units[i].tokens for i in dropped if i in units)
+            if self._observer is not None and (dropped or repositioned):
+                self._observer({
+                    "evictedTokens": evicted,
+                    "dropped": [sorted(units[i].id_toks) for i in sorted(dropped) if i in units],
+                    "repositioned": sorted(repositioned),
+                })
+        except Exception:  # noqa: BLE001 - reporting must never break a selection
+            pass
+        return assembled
 
     # ---- pass 1: pairing --------------------------------------------------------
 
@@ -524,6 +541,10 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                 toks = page["id_toks"]
                 if toks and not toks.isdisjoint(words):
                     page["prose_mentions"] = page.get("prose_mentions", 0) + 1  # telemetry, never a pin
+
+    def set_observer(self, callback: Any) -> None:
+        """Install the per-session observer the plugin uses to record selections (W8C)."""
+        self._observer = callback
 
     def note_refault(self, args: Any) -> int:
         """W8C: the model asked for the same page again — pin it, at CALL time.

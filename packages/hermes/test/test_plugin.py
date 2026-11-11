@@ -1862,6 +1862,23 @@ class CanonicalSidecarParity(unittest.TestCase):
         self.assertEqual(meta["provider"], "test")
 
 
+class EvictionReportingTests(unittest.TestCase):
+    """The tracer carries the engine's eviction count into turn.render (W8C step 2)."""
+
+    def test_evictions_land_on_the_next_turn_render(self):
+        vm = Tracer(TRACE_INIT)
+        vm.page({"ref": "file:a.ts", "kind": "file", "content": "a"})
+        vm.render()
+        vm.note_evicted(1_234)
+        vm.render()
+        trace = vm.finish()
+        turns = [json.loads(l) for l in trace.jsonl.strip().split("\n")
+                 if json.loads(l).get("type") == "turn.render"]
+        self.assertEqual([t["evictedTokens"] for t in turns], [0, 1_234],
+                         "the count belongs to the turn it was reported in")
+        self.assertEqual(sum(t["evictedTokens"] for t in turns), trace.stats.get("evicted", 1_234))
+
+
 class SessionAttributionTests(unittest.TestCase):
     """One process, two arms: a sidecar must attest the SESSION, not whoever was stamped last.
 
