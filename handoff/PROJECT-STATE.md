@@ -14,6 +14,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 1. Paste budget repaired (RR-CTXPACK-20261111): CONTEXT-PACK 7,417 -> 6,837 B; all 11 packet pastes fit (worst 16,037/16,384).
 2. Umpire-residue sweep (RR-UMRES-20261111): CI green at HEAD; U2 re-measured (server DOWN); MCP default cal = superseded v2 (U6); P11 queued.
 3. Umpire gates run (RR-UGATE-20261111): F1–F7 closed; P10 queued.
+4. W8 close-out card complete at zero spend: C1 cache writes 5-9x request growth, cause UNKNOWN, H1 excluded (RR-W8CACHE); C2 no-op preserves bytes (RR-W8NOOPBYTES); C3 simulator cannot validate, scaffold mass unrecorded, ceiling 5.3% of session input tokens (RR-W8SIM); C5 spend UNKNOWN, exports missing for 11-07 and 11-09 (RR-SPEND-RECON2); C7 grid cannot pass its own gate at measured call counts (RR-W8GRID); packet P9 answered A, W8 closed negative (design/W8-CLOSURE-20261110.md); gates green (check-handoff ALL PASS, run-ci ALL GATES GREEN).
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
