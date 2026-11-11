@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-11, HEAD `2ff8df6` (the T-A-block verification card in flight, committing on top).
+State of record: 2026-11-11, HEAD `940a5fb` (the RFC-0.1 compatibility note landing in flight, committing on top).
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -141,7 +141,14 @@ pin true every card close.
   the books: `schemaVersion` is on the `session.open` line ONLY and optional (RFC-0.1:8), so their
   "if every v0.1 line carried schemaVersion" premise is false; and a conformance vector is a FIXTURE
   (`rust/crates/ctxvm-conformance/vectors/`), not a spec edit.
-  *Owner-routed next (this lane writes no spec byte):* the note as a NEW file under `spec/rfc-0.1/`
+  *LANDED 2026-11-11 (D18):* the note is `spec/rfc-0.1/COMPATIBILITY.md` — a new file under
+  `spec/rfc-0.1/` (that document's declared scope), carrying **C1** the type-dispatch rule, **C2** the
+  key-order compatibility statement plus its pointer to the conformance test, and **C3** the canonical
+  form for hash inputs (code-point ordering, integers only) — the reviewer's own conditional, triggered
+  by umpire's ref digest and the two measured divergences. No field, no sealed byte, no gate moved (CI
+  ALL GATES GREEN with it present). The D-number is renumberable by the owner.
+  *Owner-routed next:* nothing for the note itself except the renumbering; the P11 test's third level
+  (assert level 2 or drop the claim) remains, per the earlier gap.
   *Follow-on (2026-11-11):* the owner's T-A classification was applied and verified
   (`reports/RR-W8BBLOCK-20261111.md`): probe/smoke = diagnostic, the 13:46 pair = PAIR ATTEMPT (not
   bookable: block unfilled), and the next block is filled and committed. **Finding A:** at that shape the

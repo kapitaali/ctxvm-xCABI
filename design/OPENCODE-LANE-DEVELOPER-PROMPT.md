@@ -325,12 +325,13 @@ disqualifies this file from prompt duty:
   Rust unit test; the note is a compatibility statement only; two divergences measured today (astral
   key order, number forms) trigger the third falsifier, so the note needs a canonical form for hash
   inputs only.
-  Still owner-routed: the P10+P11 note file (one D-number, two lines) and its canonical-form choice,
-  U6 (the MCP's default calibration artifact = the superseded v2 map), and the hub $ref edit (revert,
-  or change the generator + re-hash the baseline). CLOSED since: the T-A prediction block (filled and
-  committed for w8b-cell-01), and P8's W8 subject choice is now the arm-attribution precondition
-  (assert `engineSelections > 0` AND profile `w8bn-paged`); and the P11 pair's missing third level
-  (assert the derived page table via `derive_projection`, or drop the claim).
+  Still owner-routed: U6 (the MCP's default calibration artifact = the superseded v2 map); the hub $ref edit (revert,
+  or change the generator + re-hash the baseline); the P11 pair's missing third level (assert the
+  derived page table via `derive_projection`, or drop the claim); and T-A's arm-attribution precondition
+  (assert `engineSelections > 0` AND profile `w8bn-paged`).
+  CLOSED since: the T-A prediction block (filled and committed for w8b-cell-01), and the RFC-0.1
+  compatibility note (LANDED as spec/rfc-0.1/COMPATIBILITY.md under D18 — C1 dispatch, C2 key-order +
+  test pointer, C3 canonical form for hash inputs; CI green with it present).
   LANDED and green: the P11 order pair (four vectors + tests/key_order.rs, 3/3 pass, verified by this
   lane) and the P10 negative vector's fact (the v0.1 validator rejects a flat page.declare). U4 TICKED against RR-M3V3; U5 (page-id) answered; U2 re-measured -
   the model server is still DOWN (port 8081 free), the offline MCP surface answers.

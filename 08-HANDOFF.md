@@ -1248,6 +1248,26 @@ this lane writes no test byte. An erratum on this lane's own P11 card corrects i
 statements (a helper that does not exist, and the report-carries-the-page-table claim).
 Card `reports/RR-P11GAP-20261111.md`.
 
+**Frontier 11 addendum 21 (2026-11-11, the RFC-0.1 compatibility note LANDED under D18):** the P10 and
+P11 answers were already the authorisation, so what remained was execution — the note is now
+`spec/rfc-0.1/COMPATIBILITY.md` (a NEW file under `spec/rfc-0.1/`, that document's own declared
+scope; **D18**, renumberable by the owner). Three clauses: **C1** a page's identity is
+verb-dependent — nested for `page.declare`, flat for the other five page-carrying verbs — and a
+consumer MUST dispatch on the event type, never on which fields happen to be present (the P10 rule
+verbatim in substance; its reason measured here: the validator rejects a flat-identity
+`page.declare`, and `tools/waste-report.mjs:79` is exactly such a sniffing reader in this repo);
+**C2** key order within an event is not significant to parsing or replay, the codec stays strict,
+see the conformance test (the P11 line, with the test locator added — and the inference made
+explicit: the page table is a PURE FUNCTION of the parsed model, so equal models entail equal tables);
+**C3** the canonical form of a hash input, normative FOR HASH INPUTS ONLY: code-point key order,
+minimal separators, no ASCII escaping, values restricted to strings/exact integers/bools/null/arrays/
+objects, floats inadmissible — the P11 answer's own conditional, triggered by umpire's ref truncation
+digest and by the two measured divergences (astral-plane key names; number spelling). The note adds NO
+field, says nothing normative about a trace line's key order (law 3), and touches neither the sealed
+`spec/rfc-0/` nor the existing RFC-0.1 text. **No gate moves:** hub regen + `hub.sha256` self-baseline
+verified (the manifest pins no `spec/` inventory) and the full CI is **ALL GATES GREEN** with the note
+present (schema PASS 682 checks; hub byte-identity green). Card `reports/RR-NOTE-20261111.md`.
+
 ## §1. Workspace map
 
 ```
