@@ -402,8 +402,22 @@ def probe(spec: dict, run_id: str) -> dict:
                 out["reply"] = content.strip()[:200]
         row = c.execute("select estimated_cost_usd from sessions where id=?", (sid,)).fetchone()
         out["cost"] = row[0] if row else None
+        # The precondition the prediction block demands: did the host ever SELECT with the engine?
+        sidecar = Path.home() / ".local" / "state" / "ctxvm" / "traces" / f"{sid}.coverage.json"
+        try:
+            plug = json.loads(sidecar.read_text()).get("plugin", {})
+        except Exception:
+            plug = {}
+        out["engine"] = plug.get("engine")
+        out["engineSelections"] = plug.get("engineSelections")
+        out["profile"] = plug.get("profile")
+        out["budget"] = f"{plug.get('budgetTokens')}/{plug.get('budgetSource')}"
+        out["precondition"] = ("READY" if (plug.get("engineSelections") or 0) > 0
+                               else "NOT READY — engine never selected; a pair cannot start")
     if out["tool_calls"] and any(t in ("read_file", "search_files", "write_file") for t in out["tools"]):
         out["verdict"] = "TOOL CALLS OK"
+    if out.get("precondition", "").startswith("NOT READY"):
+        out["verdict"] = f"{out['verdict']} / {out['precondition']}"
     print(json.dumps(out, indent=2))
     return out
 
