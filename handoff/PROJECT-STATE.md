@@ -1,7 +1,7 @@
-# State (updated 2026-11-11, by ctxvm repo agent (opencode), RFC-0.1 note landed (D18); P11 gap + CI green
+# State (updated 2026-11-11, by ctxvm repo agent (opencode), U6 applied; RFC-0.1 note + C3 enforced (D18)
 
 ## Goal
-Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging. W8 CLOSED negative (`design/W8-CLOSURE-20261110.md`).
+Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging. W8 CLOSED negative (design/W8-CLOSURE-20261110.md).
 
 ## Artifacts and versions
 - Wire: RFC-0 sealed (`spec/rfc-0/`, byte-frozen); RFC-0.1 additive landed (`spec/rfc-0.1/`, R0–R5).
@@ -11,9 +11,9 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. RFC-0.1 note + C3 enforced (D18): code-point comparator + vector; no digest moved; CI green.
-2. P11 gap (RR-P11GAP-20261111): CI GREEN; the pair asserts TWO levels - level-2 patch drafted.
-3. Hub $ref edit (RR-HUBREF-20261111): UNDONE by the generator - revert, or fix the generator + re-hash.
+1. U6 applied + verified (RR-U6FIX-20261111): the MCP serves the calibration OF RECORD (cal-v1:057a5a35a9d4ec71); the gateway wrapper awaits a restart.
+2. RFC-0.1 note + C3 enforced (D18): code-point comparator + vector; no digest moved; CI green.
+3. P11 gap (RR-P11GAP-20261111): the pair asserts TWO levels; level-2 patch drafted.
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
@@ -21,7 +21,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 ## Next three (ordered, one line each)
 1. Owner: ratify D13 + D14 and route the SIX-item white-paper bundle (items listed in full in RR-DAY-20261109) — working-tree bytes, not HEAD.
 2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
-3. Agent: NO paste pending (P1-P11 answered); owner-routed: U6, hub $ref, T-A arm precondition. Umpire gates: D-ordering (P4), caller (P5), vocab (P6).
+3. Agent: NO paste pending (P1-P11 answered); owner-routed: hub $ref, T-A arm precondition, decision.md. Umpire gates: D-ordering (P4), caller (P5), vocab (P6).
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
@@ -33,7 +33,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 - 2026-11-10: D-U1 (P5) caveat; D-U3 (P6) same-build; D-U2 (P7) two zero-spend baselines first (RR-P7BASE-20261110).
 - 2026-11-11: F1–F7 closed; P10+P11 answered.
 - 2026-11-11: subject fallback APPROVED: nvidia (tested) -> stepfun -> accept longcat too slow.
-- 2026-11-11: D18 — RFC-0.1 note applied (`spec/rfc-0.1/COMPATIBILITY.md`): C1 dispatch, C2 key-order + test, C3 canonical form for hashes; C3 then enforced in code (ident.ts comparator + a 12-case vector; no digest moved; CI green).
+- 2026-11-11: D18 — RFC-0.1 note applied (`spec/rfc-0.1/COMPATIBILITY.md`): C1 dispatch, C2 key-order + test, C3 canonical form for hashes; C3 then enforced in code (no digest moved; CI green).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 (Pkt 1) ANSWERED 2026-11-08: Pillar-1 splits (replayable + conformance-testable kept; "diffable" behind the consumer profile; "reconstructs any turn" narrowed; absence reworded). Card: `design/diff-normalisation.md`. Owner next: ratify + route with the six-item bundle.
