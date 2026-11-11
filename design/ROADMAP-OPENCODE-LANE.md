@@ -177,6 +177,12 @@ pin true every card close.
   astral-plane KEY names (code point vs UTF-16 code-unit ordering) and on number text forms in four of
   six cases — and umpire's ref digest IS a digest over serialised bytes, so the note needs a normative
   canonical form FOR HASH INPUTS ONLY. Duplicate keys: accepted by the validator, unspecified anywhere.
+  *GAP (2026-11-11, `reports/RR-P11GAP-20261111.md`):* the landed test asserts THREE levels in
+  prose but only TWO in code — `ctxvm_core::ReplayReport` carries events/divergences/violations only,
+  so no page table is derived or compared; the one-call fix is
+  `ctxvm_core::render::derive_projection(events, turn)` (a pure function of the decisions fed) per
+  turn, or the two comments are corrected and the claim dropped. The test file is the owner's
+  in-flight work → theirs to make.
   *LANDED (2026-11-11, verified by this lane):* the conformance pair — four vectors under
   `rust/crates/ctxvm-conformance/vectors/` (`order-{struct,sorted}-{ts,nots}.jsonl`) plus
   `rust/crates/ctxvm-conformance/tests/key_order.rs`; the pairs are true byte-order twins (parsed equal,

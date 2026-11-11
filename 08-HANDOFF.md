@@ -1230,6 +1230,24 @@ the trace saying so. Also: the free plan's shape estimate is stale (~21k/~90k as
 measured) — the w8b lane's file to amend — and the ~99k request quantifies the context-window risk the
 plan flagged. Card `reports/RR-W8BBLOCK-20261111.md`.
 
+**Frontier 11 addendum 20 (2026-11-11, CI witness + the P11 pair's missing level):** the full CI is
+**GREEN at the current HEAD** (`env -u CTXVM_TRACE_TS -u CTXVM_HERMES_VERSION bash tools/run-ci.sh`:
+rust incl. the new `ctxvm-conformance` integration test; node-build parity — 16 events byte-identical;
+TS 22+62+46; python 187+8+66; benchmarks/metrics; `SCHEMA CONFORMANCE: PASS (682 checks)` over 677
+lines in 27 fixtures with 5 negatives rejected; export-roundtrip OK; hub byte-identity green). The new
+`order-*` vectors are rust-side, so the schema gate's totals are unchanged. **Gap found in the landed
+pair:** the test documents THREE levels (parsed model, derived page table, replay report) and its
+assertion message says "replay report (**page table**, divergences, violations)" — but
+`ctxvm_core::ReplayReport` carries **events, divergences and violations only**
+(`ctxvm-core/src/replay.rs:48-55`), so no page table is derived or compared: level 2 is asserted in
+prose only. The API to assert it exists and is a pure function of the decisions fed —
+`ctxvm_core::render::derive_projection(events, turn) -> TurnProjection { turn, slots, tally,
+violations }` — so the fix is one call; the alternative is to correct the two comments and drop the
+claim. Either assert level 2 or stop claiming it. The test file is the owner's in-flight work, so
+this lane writes no test byte. An erratum on this lane's own P11 card corrects its two wrong
+statements (a helper that does not exist, and the report-carries-the-page-table claim).
+Card `reports/RR-P11GAP-20261111.md`.
+
 ## §1. Workspace map
 
 ```
