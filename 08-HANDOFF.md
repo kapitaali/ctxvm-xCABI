@@ -1208,6 +1208,28 @@ today: `valid: true` each), so the edit buys no validity, and the failure mode i
 diff after every gate run). Either revert it, or change the generator's rewrite AND re-hash
 `hub/hub.sha256` together. This lane wrote no hub byte. Card `reports/RR-HUBREF-20261111.md`.
 
+**Frontier 11 addendum 19 (2026-11-11, the owner's T-A classification verified + two review-side
+findings):** the owner's records check out — the classification (probe/smoke = diagnostic; the 13:46
+pair = PAIR ATTEMPT, not bookable: block unfilled) is committed in `99d1e38` + `8889a67`, and the
+**filled** block for the next attempt is committed in the card (`w8b-cell-01`, digests
+`eac8b37b1602`/`e9e587e60f1f`, ~29,000 evictions, $0.00, PASS parsed-equal, INSTRUMENT-BUG verdict,
+`engineSelections > 0` precondition). `reports/W8-SPEND.md` §Prediction stays the template — correct,
+since its gate is for a PAID cell. **Finding A: the break-even now lands inside the session, the first
+time in these books** — n\* = (w/r)(P′/S) = 10 × (98,934 / 28,934) = **34.2 calls** against the **41
+calls measured** (w/r = 10 per the catalogue; the reviewer's 12.5 was corrected in `RR-P8CACHE`); W8's
+own shape gave n\* ≈ 189 calls against 14–29. It is a preregistrable number for a future PAID cell (fresh
+preregistration per P9; still needs the cache lifetime sourced and per-request attribution recorded) —
+**not** a cost claim (free tier, $0.00, no cache price; law 7). **Finding B: the open blocker is ARM
+ATTRIBUTION, not only engine engagement** — the P8 constraint says the arms are separated by the
+profile each was invoked with and by nothing in the trace, so `profile "default"` under `w8bn-paged`
+means that arm was not the paged arm (`engine: null` + `engineSelections: 0` is the in-trace
+signature): the pair was void for TWO instrument reasons, and the one-prompt precondition should
+assert **both** `engineSelections > 0` AND the invocation's profile is `w8bn-paged` — an engine
+engaging under the wrong profile would look instrumented and still be mis-attributed, with nothing in
+the trace saying so. Also: the free plan's shape estimate is stale (~21k/~90k assumed vs ~28.9k/98.9k
+measured) — the w8b lane's file to amend — and the ~99k request quantifies the context-window risk the
+plan flagged. Card `reports/RR-W8BBLOCK-20261111.md`.
+
 ## §1. Workspace map
 
 ```

@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-11, HEAD `77168a1` (the P11-pair landing verification in flight, committing on top).
+State of record: 2026-11-11, HEAD `2ff8df6` (the T-A-block verification card in flight, committing on top).
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -142,6 +142,13 @@ pin true every card close.
   "if every v0.1 line carried schemaVersion" premise is false; and a conformance vector is a FIXTURE
   (`rust/crates/ctxvm-conformance/vectors/`), not a spec edit.
   *Owner-routed next (this lane writes no spec byte):* the note as a NEW file under `spec/rfc-0.1/`
+  *Follow-on (2026-11-11):* the owner's T-A classification was applied and verified
+  (`reports/RR-W8BBLOCK-20261111.md`): probe/smoke = diagnostic, the 13:46 pair = PAIR ATTEMPT (not
+  bookable: block unfilled), and the next block is filled and committed. **Finding A:** at that shape the
+  break-even n\* ≈ 34 calls against 41 measured — the first shape where the policy pays back inside a
+  session (W8's gave ≈ 189 vs 14–29): a number for a future PAID preregistration, not a cost claim.
+  **Finding B:** the open blocker is ARM ATTRIBUTION (`profile "default"` under `w8bn-paged` → that arm
+  was not the paged arm), so the one-prompt precondition must assert the profile too.
   (that document's own scope: "new files under `spec/rfc-0.1/` only") carrying a **D-number** (RFC-0.1
   is "Applied (D4 approved 2026-10-30)"); plus a conformance vector making the rule testable — one
   line per shape AND a negative (a `page.declare` with a flat `page.logicalRef`, which a sniffing

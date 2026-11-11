@@ -326,7 +326,10 @@ disqualifies this file from prompt duty:
   key order, number forms) trigger the third falsifier, so the note needs a canonical form for hash
   inputs only.
   Still owner-routed: the P10+P11 note file (one D-number, two lines) and its canonical-form choice,
-  P8's W8 subject choice, and U6 (the MCP's default calibration artifact = the superseded v2 map).
+  U6 (the MCP's default calibration artifact = the superseded v2 map), and the hub $ref edit (revert,
+  or change the generator + re-hash the baseline). CLOSED since: the T-A prediction block (filled and
+  committed for w8b-cell-01), and P8's W8 subject choice is now the arm-attribution precondition
+  (assert `engineSelections > 0` AND profile `w8bn-paged`).
   LANDED and green: the P11 order pair (four vectors + tests/key_order.rs, 3/3 pass, verified by this
   lane) and the P10 negative vector's fact (the v0.1 validator rejects a flat page.declare). U4 TICKED against RR-M3V3; U5 (page-id) answered; U2 re-measured -
   the model server is still DOWN (port 8081 free), the offline MCP surface answers.
