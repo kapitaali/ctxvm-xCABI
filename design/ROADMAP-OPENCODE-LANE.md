@@ -321,6 +321,23 @@ pin true every card close.
   `proseMentions` 190, which is the strongest statement yet that the prose signal was REMOVED rather
   than DISABLED. Two instrument fixes are prerequisites for the next pair: engine -> observer
   reporting (evict rows + `evictedTokens`) and an arm-aware verifier.
+  *NO page.evict, AND THAT IS RIGHT (2026-11-11, `reports/RR-W8CEVICT-20261111.md`):* the other lane's
+  agent declined to emit `page.evict` for the cell's fix, because **this policy removes the dropped
+  messages rather than substituting stubs** and RFC-0's `page.evict` REQUIRES `stubText` - so emitting
+  one would describe a wire that was not sent. **Verified and endorsed**: the hermes engine's path is
+  `_plan` -> `_assemble(..., dropped, repositioned)` with **no stub substitution anywhere** (the stub
+  mechanism belongs to the rust core's page table), and the sealed schema gives `page.evict`
+  `required: [type, turn, page, stubText]` + `additionalProperties: false`. The count therefore belongs
+  in `turn.render.evictedTokens` (a v0 required field that does not presuppose substitution), the
+  detail in the **sidecar**, and `page.evict` stays for policies that really stub. **This lane's earlier
+  request for "page.evict per dropped page" was wrong for this engine** - an erratum on the ask, not
+  on the decision. **The rule it establishes: a missing event is a gap, a wrong event is a falsehood.**
+  **The sidecar's detail must be checkable against the trace** (the `proseMentions` precedent): every
+  dropped page keyed by the trace's `logicalRef` and naming a declared page; the per-page totals summing
+  to the trace's `evictedTokens`; a control arm reporting none; `repositioned` kept separate. And the
+  engine -> observer payload should carry the **logicalRef**, not the identifier tokens, so the rule can
+  be stated at all. The verifier's `evictions > 0` gate is now satisfiable by the trace without a
+  fabricated event - which is what makes the next pair bookable.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
