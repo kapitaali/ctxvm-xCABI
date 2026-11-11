@@ -13,7 +13,7 @@ Statuses: queued/sent/answered.
 | P7 | D-U2 baselines: which must run before a claim ships? | **answered 2026-11-10** | Two zero-spend baselines first (majority-class + ONE learned: logistic-on-embeddings for accuracy + calibration; zero-shot for caller-labels). Full: RR-P7BASE + ARCHIVE. |
 | P8 | cache-stable selection? | **answered 2026-11-11** | Ranking adopted (watermark compaction); w/r = 10, evictable 5.3% -> n* ~189 calls; (d) amended (no-op cost 4.4x control). Full: `RR-P8CACHE` + ARCHIVE. |
 | P9 | close W8 or buy a mechanism test? | **answered 2026-11-10** | A confirmed; the closure ALREADY states the weaker claim; the narrowing ran (H3 unknown cause); one stale phrase routed. Full: `RR-P9CLOSE-20261111` + ARCHIVE. |
-| P10 | page-id asymmetry: second-consumer trigger? | **queued 2026-11-11** | Trigger MET (2 consumers); options (a) workaround, (b) RFC-0.1 note line, (c) additive field, (d) accept; owner-gated. Full: `P10-page-id-asymmetry.md`. |
+| P10 | page-id asymmetry: second-consumer trigger? | **answered 2026-11-11** | Ruling (b)+(a): ONE RFC-0.1 compatibility-note line (type dispatch, never field-sniffing), no field (sealed v0 keeps both shapes). Note lands as a new spec/rfc-0.1 file, D-numbered; vector = fixture. Full: `RR-P10ID-20261111` + ARCHIVE. |
 | P11 | canonical ordering: who owns the line? | **queued 2026-11-11** | F9 undocumented; options (a) RFC-0.1 note line, (b) umpire 00-SPEC only, (c) a conformance test, (d) accept; crux: `ts`-last vs sorted keys. Full: `P11-canonical-order.md`. |
 
 Queue law: packets live in `handoff/packets/P<n>-<slug>.md`; answers summarize here with date + decision number; full texts in the ARCHIVE.

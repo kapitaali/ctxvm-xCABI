@@ -1100,6 +1100,31 @@ plan's 23 %-of-peak middle) against a 14–29 call session, plus the lifetime so
 cache attribution recorded — and the free run produced NO RECORD (`RR-W8B2-20261111`, timeout at
 120 s, $0.0000). Card `reports/RR-P9CLOSE-20261111.md`.
 
+**Frontier 11 addendum 13 (2026-11-11, packet P10 answered):** the reviewer's page-id ruling is
+**(b) + (a) — ONE RFC-0.1 compatibility-note line stating the type-dispatch rule, plus prose docs, and
+NO field** (sealed v0 data keeps both shapes forever; a field would add a third). The rule is verified
+WORD FOR WORD against both schemas: sealed v0's `page.declare.page` -> `$defs/pageRef` = `{id:
+pageId{logicalRef,contentHash}, kind, tokens}` (nested) while `page.render`/`page.evict`/`page.fault`/
+`page.pin`/`page.unpin` -> `$defs/pageId` = `{logicalRef,contentHash}` (flat); RFC-0.1 keeps the same
+`$defs` and the same nine verbs; no verb carries both shapes. The "never sniff fields" clause is what
+both in-repo consumers already do (the ai-sdk resume-brief dispatches on `event.type` before reading
+the flat shape; umpire's `ledger_tools.py:85` dispatches on the verb — though umpire's branch is
+profile-specific, so the note must state the general rule). **Two of three reviewer UNKNOWNs
+resolved from the books:** `schemaVersion` is on the `session.open` line ONLY and optional
+(`RFC-0.1-xCABI.md:8`), so their "if every v0.1 line carried schemaVersion" premise is false; the
+note needs a **D-number** (RFC-0.1: "Applied (D4 approved 2026-10-30)") and can land as a **NEW file
+under `spec/rfc-0.1/`** (that document's scope: "new files under `spec/rfc-0.1/` only" — neither the
+sealed RFC-0 nor the existing RFC text is touched); a conformance vector is a **fixture**
+(`rust/crates/ctxvm-conformance/vectors/`), not a spec edit. Still open: a v0-only consumer outside
+these repos. **ERRATUM** on this lane's own framing: the blast-radius argument for an additive field
+was overstated (a strict v0 consumer already rejects a v0.1 trace at its `session.open` line — measured,
+4 failures on the ab-demo fixture); the marginal costs are (i) every v0.1-aware consumer must be
+updated, (ii) two identity sources per line, (iii) a consistency rule between them. The ruling is
+unchanged. Falsifiers adopted verbatim. Not done, owner-gated: the note file, the D-number, and the
+vector (one line per shape plus a NEGATIVE — a `page.declare` carrying a flat `page.logicalRef`, which
+a sniffing reader would accept and the validator must reject). No spec, schema or vector byte was
+written. Card `reports/RR-P10ID-20261111.md`.
+
 ## §1. Workspace map
 
 ```

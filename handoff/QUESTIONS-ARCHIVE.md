@@ -333,3 +333,59 @@ The P9 row (ANSWERED 2026-11-10, per the reviewer's request) needed room the cha
 the P1–P8, P10 and P11 rows were compacted to pointers once more and the queue-law/statuses prose
 shortened. Every fact removed from a chart row survives in its own section above or in the cited RR
 card; no heading was touched. The chart now carries all eleven packets (P1–P11) at 2,961/3,072 B.
+
+## P10 — page-id asymmetry: flat vs nested page identity, and whether the second-consumer trigger fired
+
+**answered 2026-11-11**. Ruling: **(b) with (a)'s prose docs — ONE RFC-0.1 compatibility-note line,
+no field.** Full record: `reports/RR-P10ID-20261111.md`.
+
+**The rule, verbatim, and VERIFIED against both schemas:** "Read a page's identity from
+`page.id.logicalRef` and `page.id.contentHash` when the event type is `page.declare`, and from
+`page.logicalRef` and `page.contentHash` for every other page-carrying verb; dispatch on event type,
+never on which fields happen to be present." The sealed v0 schema says exactly this:
+`spec/rfc-0/x-cabi.schema-v0.json` — `page.declare.page` → `$defs/pageRef` = `{id: pageId{logicalRef,
+contentHash}, kind, tokens}` (nested) while `page.render`, `page.evict`, `page.fault`, `page.pin`,
+`page.unpin` → `$defs/pageId` = `{logicalRef, contentHash}` (flat); RFC-0.1 leaves the shapes and the
+nine verbs untouched. **No verb carries both shapes**, so the reviewer's falsifier "a verb that
+legitimately carries both shapes" is currently empty. The last clause matters and both in-repo
+consumers already comply: `packages/ai-sdk/src/resume-brief.ts:153-156` checks
+`event.type !== "page.evict"` **before** reading the flat shape, and
+`~/Documents/umpire/spec/ledger_tools.py:85` dispatches on `etype == "page.fault"` — though umpire's
+branch is *profile-specific* ("not page.fault ⇒ nested" is right only inside its two-verb profile), so
+the note must state the general rule.
+
+**Why (c) is out — for the stronger reason the reviewer gave.** The asymmetry lives in the SEALED v0
+schema, and sealed v0 traces exist that will not change, so every consumer of them must keep the
+type-dispatch rule forever; a field would add a THIRD shape without removing either old one. (d) is
+out because a third consumer would find the rule only in code comments; (a) alone is weaker than (b)
+because a workaround in two repos does not tell a new implementer the rule exists.
+
+**The reviewer's UNKNOWNs, resolved from the books:** (i) `schemaVersion` is declared on the
+`session.open` line ONLY and is optional ("A trace MAY declare `schemaVersion: \"0.1\"` on its
+`session.open` line", `spec/rfc-0.1/RFC-0.1-xCABI.md:8`) — so their "if every v0.1 line carried
+schemaVersion" premise is false; (ii) a **D-number** is required (RFC-0.1's own status line: "Applied
+(D4 approved 2026-10-30)"), and the landing site is already sanctioned by that document's scope line
+("new files under `spec/rfc-0.1/` only") — so the note can be a NEW file under `spec/rfc-0.1/`,
+touching neither the sealed `spec/rfc-0/` nor the existing RFC text; (iii) a conformance vector is a
+**fixture**, not a spec edit — the vectors live in `rust/crates/ctxvm-conformance/vectors/`
+(`events-v0.jsonl`, `events-v0-1.jsonl`, `session-clean.jsonl`, `session-divergent.jsonl`) — with the
+caveat that it changes the conformance-suite totals the CI prints. Still open: a v0-only consumer
+outside these repos (not exhaustable locally).
+
+**Falsifiers adopted verbatim** (any one changes the ruling): a valid v0 or v0.1 line where the
+type-dispatch rule gives the wrong identity; a verb that legitimately carries both shapes; a new verb
+proposed with a third shape (a v0.2 design question, where (c) would deserve a hearing); a reported
+consumer, outside these repos, that cannot dispatch on event type.
+
+**ERRATUM on this lane's P10 framing (appended block on `reports/RR-UGATE-20261111.md`):** the
+blast-radius argument for (c) was overstated. A strict v0 consumer already rejects a v0.1 trace at its
+`session.open` line (measured: the sealed v0 validator rejects the umpire ab-demo ledger with 4
+failures — lines 1, 3, 4, 6), so a `page.declare` field does not newly break v0-only readers of v0.1
+data; the marginal costs are (i) every v0.1-aware consumer must be updated (strict allowlist), (ii)
+two sources of identity per line, (iii) a consistency rule between them. The ruling is unchanged; the
+reasoning is corrected. The packet's own Evidence prose was condensed to fit the packet's 3,072 B cap
+(full text in the card).
+
+**Not done, owner-gated:** the note file, the D-number, and the conformance vector (one line per
+shape plus a negative: a `page.declare` carrying a flat `page.logicalRef`, which a sniffing reader
+would accept and the validator must reject). This lane writes no spec, schema or vector byte.

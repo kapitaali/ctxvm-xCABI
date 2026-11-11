@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-11, HEAD `e716b7b` (the P9 confirmation card in flight, committing on top).
+State of record: 2026-11-11, HEAD `ce9d9b0` (the P10 ruling card in flight, committing on top).
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -124,18 +124,30 @@ pin true every card close.
   *Done when (met):* the packet STATUS carries the confirmation, the card exists in a commit, and the
   QUESTIONS row `| P9 |` reads answered.
 
-- [ ] **P10 (page-id asymmetry: flat vs nested page identity) — QUEUED 2026-11-11.** Cut by
-  `reports/RR-UGATE-20261111.md` after the umpire gates re-ran against the books. The asymmetry
-  (`page.declare` nests `page.id`, the other page-carrying verbs are flat) is inherited from
-  SEALED v0 and is NOT in the friction card of record (`design/umpire-friction-vs-rfc01.md`,
-  whose residuals are F8 + F9 only). The "second consumer" trigger has ALREADY fired: umpire's
-  Python (`ledger_tools.py:85`, `validate_ledger.py:228`) and ctxvm's own OTLP exporter
-  (`tools/otel-export.mjs:72-73` nested vs `:86/:96/:106/:116/:125` flat) both branch.
-  Options in the packet: (a) workaround + prose, (b) one RFC-0.1 compatibility-note line,
-  (c) additive field (five touchpoints; sealed-v0 blast radius = EVERY declare line invalid for
-  strict v0 consumers), (d) accept. Agent recommendation: (a)/(b) over (c).
-  *Done when:* the owner pastes the ruling; the verdict lands in QUESTIONS + a card.
-  *Owner:* paste the packet (D-number in the umpire register).
+- [x] **P10 (page-id asymmetry: flat vs nested page identity) answered 2026-11-11.** The reviewer's
+  ruling: **(b) + (a) — ONE RFC-0.1 compatibility-note line stating the type-dispatch rule, plus
+  prose docs, and NO field** (sealed v0 data keeps both shapes forever, so a field would add a third;
+  (d) is out — code comments are not a record; (a) alone is weaker — a workaround in two repos does not
+  tell a new implementer the rule exists). The rule is verified WORD FOR WORD against both schemas
+  (sealed v0: `page.declare.page` -> `pageRef{id: pageId{logicalRef,contentHash}, kind, tokens}`;
+  `page.render`/`page.evict`/`page.fault`/`page.pin`/`page.unpin` -> `pageId{logicalRef,contentHash}`;
+  RFC-0.1 unchanged; no verb carries both shapes). Two of the reviewer's three UNKNOWNs resolved from
+  the books: `schemaVersion` is on the `session.open` line ONLY and optional (RFC-0.1:8), so their
+  "if every v0.1 line carried schemaVersion" premise is false; and a conformance vector is a FIXTURE
+  (`rust/crates/ctxvm-conformance/vectors/`), not a spec edit.
+  *Owner-routed next (this lane writes no spec byte):* the note as a NEW file under `spec/rfc-0.1/`
+  (that document's own scope: "new files under `spec/rfc-0.1/` only") carrying a **D-number** (RFC-0.1
+  is "Applied (D4 approved 2026-10-30)"); plus a conformance vector making the rule testable — one
+  line per shape AND a negative (a `page.declare` with a flat `page.logicalRef`, which a sniffing
+  reader would accept and the validator must reject). Falsifiers adopted verbatim (a valid line where
+  type-dispatch misreads identity; a verb mixing both shapes; a new verb with a third shape — a v0.2
+  question; a consumer that cannot dispatch on event type).
+  *ERRATUM:* this lane's blast-radius framing for an additive field was overstated (a strict v0 consumer
+  already rejects a v0.1 trace at its `session.open` line); the marginal costs are (i) every v0.1-aware
+  consumer must be updated, (ii) two identity sources per line, (iii) a consistency rule between them.
+  The ruling is unchanged; the reasoning is corrected (erratum block on `reports/RR-UGATE-20261111.md`).
+  *Done when (met):* the packet STATUS reads answered, the card exists in a commit, and the QUESTIONS
+  row `| P10 |` reads answered.
 
 - [ ] **P11 (canonical ordering: sorted keys vs Rust struct order) — QUEUED 2026-11-11.** Cut by
   `reports/RR-UMRES-20261111.md` to close the gap the umpire-gates card found: F9 is ACCEPTED, but
@@ -309,8 +321,8 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
 
 ## 6. Owner's next-cue list (what unblocks the most)
 
-1. Paste P10 (page-id asymmetry ruling) — the one friction item still open; its "second consumer"
-   trigger has already fired.
+1. Paste P11 (canonical ordering) — the only friction item still open; P10's ruling is in, its note
+   + D-number + conformance vector are owner-routed.
 2. Rule P8 drop-or-keep (its paste now fits — 16,037/16,384 — after `RR-CTXPACK-20261111`).
 3. Ratify G1 (ordering clause, fresh D-number) and G2 (caller sentence, D-U1).
 4. Rule the redaction go/defer (G4) and W8's fate (G7); D13/D14 + D17 remain the big gates.
