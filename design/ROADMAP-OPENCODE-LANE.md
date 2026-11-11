@@ -363,7 +363,7 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
   line is drafted proposal-only for the owner.
   *Owner:* paste P10 (D-number in the umpire register).
 
-- [ ] **U6. The MCP's default calibration artifact is the SUPERSEDED v2 map.** From
+- [x] **U6. The MCP's default calibration artifact was the SUPERSEDED v2 map — FIXED 2026-11-11.** From
   `reports/RR-UMRES-20261111.md`: `calibration_info` (no argument) returns `umpire-cal-v2.json`
   (`cal-v1:aceb881587b3b3a6`, test ECE 0.026684) while the calibration OF RECORD is v3
   (`cal-v1:057a5a35a9d4ec71`, ECE 0.030163, `RR-M3V3`; the umpire repo's own `spec/calibration_ci.py:38`,
@@ -373,9 +373,14 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
   data_version stamp than the record — the MCP as configured cannot reproduce the calibration of
   record. The default is NOT in the code (`mcp_server.py:54` has none): the launcher injects it, and
   the hermes gateway config points at v2 (`~/.hermes/config.yaml:2114`; arm profile copy `:2115`).
-  *Fix (owner-routed):* point `UMPIRE_CALIBRATION` at `umpire-cal-v3.json` + restart the gateway.
-  *Not done here:* `~/.hermes/**` is the hermes lane's machine config; the umpire repo is read-only
-  from this lane.
+  *APPLIED 2026-11-11 (`reports/RR-U6FIX-20261111.md`), owner-approved:* the MCP's environment comes
+  from opencode's OWN config as well as the hermes gateway's, so THREE files changed
+  (`~/.config/opencode/opencode.jsonc:20`, `~/.hermes/config.yaml:2114`, and the arm-profile copy
+  `~/.hermes/profiles/w8bo-paged/config.yaml:2115`), each now naming `umpire-cal-v3.json`; verified
+  LIVE — `calibration_info()` reports `cal-v1:057a5a35a9d4ec71` with test ECE 0.030163 (the record),
+  where before it served the v2 map (ECE 0.026684). The gateway's own wrapper still holds v2 until a
+  **gateway restart** (the owner's timing: it reaps gateway sessions and the w8b lane has runs in
+  flight); `health` stays DOWN until the pinned model server runs, so U2 stands.
   *Done when:* a fresh MCP session's `calibration_info` (no argument) returns the v3 artifact's
   data_version, and any MCP-decided row carries the record's stamp.
 

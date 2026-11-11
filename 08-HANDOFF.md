@@ -1311,6 +1311,21 @@ it must say is in the card), the W8SIM 5.3 % overstatement, the C3 naming collis
 disambiguates explicitly), and C2's locator (real once the owner's P11 pair + test land).
 Card `reports/RR-C3FIX-20261111.md`.
 
+**Frontier 11 addendum 24 (2026-11-11, U6 applied and verified live):** the owner approved U6, and
+the change turned out to be **three files, not two** — the MCP server's environment comes from
+opencode's OWN config (`~/.config/opencode/opencode.jsonc:20`) as well as the hermes gateway's — so
+`opencode.jsonc:20`, `~/.hermes/config.yaml:2114` and the arm-profile copy
+`~/.hermes/profiles/w8bo-paged/config.yaml:2115` all now name `umpire-cal-v3.json` (pre-change
+backups in `/tmp/opencode/20261111/u6/`). **Verified live through the tool**: `calibration_info()` now
+reports `data_version: cal-v1:057a5a35a9d4ec71` — the record named in umpire's `00-SPEC.md` — with
+test ECE **0.030163**, Brier 0.172597, accuracy 0.708333 (n=120), i.e. the numbers P5/P7/P11 cite;
+before the change the same call returned the v2 map (`cal-v1:aceb881587b3b3a6`, ECE 0.026684) — a
+*different map*, not a different label. The opencode side needed no manual restart (the MCP client
+respawned on the config change). **One process still holds v2 and it is named**: the hermes gateway's
+own wrapper (pid 7513) reads its config at start → it needs a **gateway restart** (the owner's timing:
+a restart reaps gateway sessions, and the w8b lane has runs in flight). `health` remains DOWN (the
+pinned model server on 8081 is still not running), so U2 stands. Card `reports/RR-U6FIX-20261111.md`.
+
 ## §1. Workspace map
 
 ```

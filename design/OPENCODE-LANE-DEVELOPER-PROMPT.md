@@ -325,7 +325,7 @@ disqualifies this file from prompt duty:
   Rust unit test; the note is a compatibility statement only; two divergences measured today (astral
   key order, number forms) trigger the third falsifier, so the note needs a canonical form for hash
   inputs only.
-  Still owner-routed: U6 (the MCP's default calibration artifact = the superseded v2 map); the hub $ref edit (revert,
+  Still owner-routed: the hub $ref edit (revert,
   or change the generator + re-hash the baseline); the P11 pair's third level (patch drafted - assert
   the derived page table via `derive_projection`, or drop the claim); T-A's arm-attribution precondition
   (assert `engineSelections > 0` AND profile `w8bn-paged`); the w8b lane's free-plan shape erratum; the
@@ -333,7 +333,9 @@ disqualifies this file from prompt duty:
   `reports/RR-C3FIX-20261111.md`); and whether `validateHashInput` should be wired into the minting path
   (a tool call with an integral float would then fail to mint a ref).
   OWNER-RULED since: the subject fallback order (nvidia -> stepfun -> accept longcat too slow).
-  CLOSED since: the T-A prediction block (filled and committed for w8b-cell-01), and the RFC-0.1
+  CLOSED since: the T-A prediction block (filled and committed for w8b-cell-01); U6 (the MCP now serves the
+  calibration OF RECORD - `cal-v1:057a5a35a9d4ec71`, ECE 0.030163 - verified live; only the hermes
+  gateway's own wrapper still holds v2 until a gateway restart, the owner's call); and the RFC-0.1
   compatibility note (LANDED as spec/rfc-0.1/COMPATIBILITY.md under D18 — C1 dispatch, C2 key-order +
   test pointer, C3 canonical form for hash inputs; CI green with it present).
   LANDED and green: the P11 order pair (four vectors + tests/key_order.rs, 3/3 pass, verified by this
