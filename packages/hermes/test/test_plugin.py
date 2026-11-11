@@ -1959,6 +1959,15 @@ class CoverageManifestTests(unittest.TestCase):
             self.assertEqual(
                 manifest["captures"]["proseMentionsTotal"],
                 sum(manifest["captures"]["proseMentions"].values()))
+            # The checker's rule assumes the sidecar's keys ARE the trace's logicalRefs. That is true
+            # by construction — `_declare_page(ref, …)` writes `page.id.logicalRef = ref` and the
+            # caller stores `_declared[ref]` with the same variable (src/plugin.py:308/343) — and it
+            # is pinned here so a future refactor of either side breaks a test rather than the gate.
+            declared_refs = {r["page"]["id"]["logicalRef"] for r in rows
+                             if r.get("type") == "page.declare"}
+            self.assertTrue(
+                set(manifest["captures"]["proseMentions"]) <= declared_refs,
+                "sidecar mention keys must all be logicalRefs the trace declared")
             # Arm identity: the sidecar must say which profile served the session and
             # which engine, if any, was registered. Without it a capture cannot be
             # attributed to an arm after the fact — the pilot's sidecars carried neither,
