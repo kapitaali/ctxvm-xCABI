@@ -1,4 +1,4 @@
-# State (updated 2026-11-11, by ctxvm repo agent (opencode), P10 card: page-id ruling (b)+(a), no field; paste budget REPAIRED twice)
+# State (updated 2026-11-11, by ctxvm repo agent (opencode), W8B2 correction: the arms RAN (0 calls was false); paste budget REPAIRED twice)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8: CLOSED negative (`design/W8-CLOSURE-20261110.md`); next = W8B, free model (`design/W8B-FREE-PLAN.md`).
@@ -11,9 +11,9 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. P10 answered (RR-P10ID-20261111): ruling (b)+(a) - ONE RFC-0.1 note (type dispatch), NO field; rule verified vs both schemas; note + D-number + vector owner-routed.
-2. P9 confirmed (RR-P9CLOSE-20261111): A; closure needs NO edit; narrowing already ran -> H3 unknown cause.
-3. P8 answered (RR-P8CACHE-20261111): ranking adopted (watermark compaction); w/r = 10, evictable 5.3% -> n* ~189 calls; (d) amended (no-op 4.4x).
+1. W8B2 corrected (RR-W8B2CORR-20261111): '0 calls' was false - the arms RAN (naive 9, paged 5 API calls), reaped as ws_orphan_reap; the blocker is the task's counting questions.
+2. P10 answered (RR-P10ID-20261111): ruling (b)+(a) - ONE RFC-0.1 note (type dispatch), NO field; note + D-number + vector owner-routed.
+3. P9 confirmed (RR-P9CLOSE-20261111): A; closure needs NO edit; narrowing already ran -> H3 unknown cause.
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
