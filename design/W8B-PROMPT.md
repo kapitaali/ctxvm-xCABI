@@ -2,6 +2,13 @@
 
 Give this to the agent running W8B. It assumes no memory of W8 and no access to our chat.
 
+> **STATUS 2026-11-11: W8B IS CLOSED.** The fault-pin policy selected 43 times and evicted nothing at
+> both 70,000 and 90,000; the arms were identical within 0.5 %. See `design/W8B-CLOSURE-20261111.md`.
+> Both profiles are deleted and the runner refuses to create one, so nothing here can be run as
+> written. It is kept because the instrument and the fourteen traps below are what the next card
+> starts from — and because every one of them was paid for.
+
+
 ---
 
 ## 0. The two-profile rule (read this before anything else)
