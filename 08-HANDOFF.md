@@ -1184,6 +1184,22 @@ lane prompt now also carries the COLD-START path (the session is not the memory;
 environment dependencies that do not survive a reboot (the pinned model server on 8081 is the owner's
 to start; the watcher is per-session).
 
+**Frontier 11 addendum 17 (2026-11-11, while T-A runs):** the owner asked what they have to decide.
+**One time-sensitive call — diagnostic or cell.** If it is a probe/smoke, keep it labelled a
+diagnostic: it cannot enter any denominator (the free plan's section 5 claim ceiling; P9: "any new
+test is a fresh preregistration, not W8"; law 7). If it is a Phase 2 pair, **their own gate says it
+must not start yet**: `reports/W8-SPEND.md` section Prediction ("A cell does not start until this block
+is filled, committed, and matches the verifier afterwards") is still **unfilled placeholders**, with no
+filled instance in the file — so fill and commit it before the result is read, or record no cell as
+measured. **Not the owner's call today:** what the result may claim (already capped by section 5) —
+plus two review-side guardrails: an unpaid-model run has no cache price and so cannot speak to cache
+economics (the cache-write cause stays H3 unknown-cause), and a PAID cell on this shape cannot pay
+back (n\* ~ 43 calls at the plan's 23%-of-peak middle, ~ 189 at W8's measured 5.3%, against a 14-29
+call session) — so do not buy one without resizing the session, which is a fresh preregistration.
+**Outcome-triggered, not now:** the subject choice (stepfun fallback / nvidia / accept longcat too
+slow for the 120 s cap). T-A v2 is a different task shape, so the W8 closure stands untouched and its
+cells cannot be compared with W8's numbers. Card `reports/RR-TADEC-20261111.md`.
+
 ## §1. Workspace map
 
 ```
