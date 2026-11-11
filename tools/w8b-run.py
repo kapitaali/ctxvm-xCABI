@@ -307,7 +307,7 @@ def capture_for(sid: str) -> Path | None:
     return p if p.exists() else None
 
 
-def run_arm(arm: str, run_id: str, timeout: int, spec: dict) -> dict:
+def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000) -> dict:
     title = f"{run_id}-{arm}"
     run_dir = Path.home() / ".local" / "state" / "ctxvm" / "w8-runs" / run_id / arm
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -318,7 +318,7 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict) -> dict:
     print(f"\n[{arm}] driver -> {run_dir}")
     r = subprocess.run([sys.executable, str(DRIVER), "--arm", arm, "--session-name", title,
                         "--workspace", str(ws), "--run-dir", str(run_dir),
-                        "--profile-prefix", spec["prefix"], "--expect-budget", str(args.budget),
+                        "--profile-prefix", spec["prefix"], "--expect-budget", str(budget),
                         "--timeout", str(timeout)],
                        text=True, capture_output=True, env=env, timeout=PARTS * timeout + 300)
     (run_dir / "driver.out").write_text(r.stdout, encoding="utf-8")
@@ -512,7 +512,7 @@ def main() -> int:
               f"{args.timeout}s cap, model {spec['model']}")
         return 0
 
-    results = [run_arm(a, args.run_id, args.timeout, spec) for a in arms]
+    results = [run_arm(a, args.run_id, args.timeout, spec, args.budget) for a in arms]
     for r in results:
         r["provider"] = args.provider
         r["model"] = spec["model"]
