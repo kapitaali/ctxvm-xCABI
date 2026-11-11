@@ -270,12 +270,14 @@ pin true every card close.
   *Done when:* an orchestrated publication task appears with D17 resolved.
   *Owner:* D17.
 
-- [ ] **G7. W8 reopen.** Ruled FAILED 2026-11-07; reopen conditions recorded
-  (`RR-W8CHUNK-20261107-2 §12` + `design/W8-PROMPT-SLICE.md`). Cells are the hermes/W8 lane's to
-  run; MY lane's obligations: process any resulting reviewer packets and record day-close lines.
-  *Done when:* the owner reopens AND first counted cell lands (or the owner rules it closed for
-  good).
-  *Owner:* D16/decision.
+- [x] **G7. W8 reopen — CLOSED (2026-11-10): W8 closed NEGATIVE, owner Option A** (packet P9,
+  `design/W8-CLOSURE-20261110.md`; the 2026-11-07 FAILED ruling and its reopen conditions
+  `RR-W8CHUNK-20261107-2 §12` + `design/W8-PROMPT-SLICE.md` are superseded). The reopen question is
+  now answered by the P8/P9 answers: a different shape (longer session, more unprotected middle) or a
+  different keep law is a **FRESH preregistration, not W8** — and at the measured shape the break-even
+  is n\* ≈ 34 calls against 41 measured (`RR-W8BBLOCK-20261111`), so a paid cell at this shape is
+  preregistrable while W8 itself is not. The live thread is the W8B free-model replacement
+  (`design/W8B-FREE-PLAN.md`), the other lane's to run.
 
 ## 3. W workstreams — the board as it bears on THIS lane
 
@@ -300,12 +302,16 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
   (AGENTS §9). My part: regression upkeep via the gates; nothing open.
 - [x] **W12 Steps 0–1** — done; Steps 2+ are D7 hold (:1064, :110 of frontier 9). My part:
   none until D7 lifts.
-- [ ] **W8 the decisive experiment** — FAILED ruling 2026-11-07, reopen owner-gated (G7). My
-  actionable boxes: process results into the review lane when they exist. Landed side-records I
-  keep aware of: `RR-W8PAIR-20261109` (first counted pair, negative), `RR-BUDGET-20261109`
-  (200,000 vs 24,000 provenance), `RR-DRIFT-20261109` (gate printed numbers it didn't measure),
-  `RR-W8H6-20261109` + review follow-up (`shape verified, surface fails`, toolset pinned to
-  `[file]`).
+- [x] **W8 the decisive experiment** — CLOSED NEGATIVE 2026-11-10 (owner Option A, packet P9;
+  `design/W8-CLOSURE-20261110.md`; G7 closed). My actionable box is discharged: the results were
+  processed into the review lane (P8 and P9 answered, both cards + LOG rows). Side-records kept
+  aware of: `RR-W8PAIR-20261109` (first counted pair, negative), `RR-BUDGET-20261109` (200,000 vs
+  24,000 provenance), `RR-DRIFT-20261109` (gate printed numbers it didn't measure), `RR-W8H6-20261109`
+  (`shape verified, surface fails`), and from the close-out: `RR-W8SIM-20261110` (the simulator cannot
+  validate; the 5.3% session-weighted ceiling), `RR-W8CACHE-20261110` (the cache-write cause is
+  UNKNOWN; H1 excluded, H2 untestable), `RR-W8NOOPBYTES-20261110` (a no-op selection preserves the
+  request byte for byte), `RR-W8B2CLASS-20261111` + `RR-W8B2-ERRATUM-20261111` (the free run's
+  classification: diagnostics and a pair attempt, not a cell).
 - [ ] **W9 umpire hardening/positioning** — alive on the umpire side; THIS lane's named pieces are
   exactly G1–G3 above. Nothing else until owner route.
 - [ ] **W16 causal edges / W19 tier-2 interventions / W20 trace-surface extensions** — design
@@ -389,13 +395,15 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
 
 ## 6. Owner's next-cue list (what unblocks the most)
 
-1. NO packet paste is pending: P1-P11 are all answered. What is owner-routed now: the P10 + P11
-   compatibility-note file (one D-number, two lines), the P10 conformance vector + the P11 order pair
-   (with and without `ts`) and its Rust unit test, the P8-style W8 subject choice, and U6 (the MCP's
-   default calibration artifact).
-2. Rule P8 drop-or-keep (its paste now fits — 16,037/16,384 — after `RR-CTXPACK-20261111`).
+1. NO packet paste is pending: P1-P11 are all answered, the RFC-0.1 compatibility note has LANDED
+   under D18 (with C3 now enforced in code), and U2 + U6 are verified live (the MCP is alive and serves
+   the calibration of record).
+2. The W8B lane's four items, written up in `design/W8B-LANE-PROMPT.md`: assert the P11 test's third
+   level (one-call `derive_projection` patch), the shape erratum in `design/W8B-FREE-PLAN.md`, the W8SIM
+   "5.3%" scoping, and the "C3" rename.
 3. Ratify G1 (ordering clause, fresh D-number) and G2 (caller sentence, D-U1).
-4. Rule the redaction go/defer (G4) and W8's fate (G7); D13/D14 + D17 remain the big gates.
+4. Rule the redaction go/defer (G4); D13/D14 + D17 remain the big gates. W8's fate is settled (G7
+   closed: negative, 2026-11-10).
 
 Update law: tick a box only with the command's output in hand; on every card close, re-date the
 state-of-record line and revise §14 of the operating prompt (not this file) for volatile facts
