@@ -63,6 +63,14 @@ PROVIDERS = {
         "auth": "env",
         "note": "free tier via OpenRouter; capability unproven, prompt 1 decides",
     },
+    "w8c": {
+        "model": "meituan/longcat-2.5:free",
+        "provider": "nous",
+        "prefix": "w8cn",
+        "key": None,
+        "auth": "oauth",
+        "note": "W8C pair: text signal removed, fault = model re-read; budget provisional 60000",
+    },
     "nous": {
         "model": "meituan/longcat-2.5:free",
         "provider": "nous",
