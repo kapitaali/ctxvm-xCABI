@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-11, HEAD `d53af5f` (umpire-residue PROJECT delta; the paste-budget card in flight, committing on top). This is the lane's
+State of record: 2026-11-11, HEAD `cbacf66` (the P8 answer card in flight, committing on top).
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -89,16 +89,20 @@ pin true every card close.
   outcomes; the card carries the P6 U4 erratum.
   *Done when (met):* QUESTIONS row `| P7 |` reads answered and the card exists in a commit.
 
-- [ ] **P8 (cache-stable selection) — OWNER DISPOSITION FIRST.** Owner hinted the gist is already
-  answered by the research lane's cache-stable-selection work. Two exits:
-  (a) DROP — then one kit commit removes `handoff/packets/P8-cache-stable-selection.md`, its
-  QUESTIONS row, and the PROJECT-STATE agent-line mention;
-  (b) KEEP — owner pastes and the P6 pipeline runs.
-  *Done when:* `grep -c 'P8' handoff/QUESTIONS.md` shows either no row (dropped) or an answered
-  row (kept). Packet at 3,059/3,072 B (13 B margin); the paste budget it strained is REPAIRED
-  (`RR-CTXPACK-20261111`: CONTEXT-PACK 7,417 → 6,837 B, all 11 packet pastes fit, worst P8 =
-  16,037/16,384) — P8's paste now BUILDS; whether to send it is still the owner's.
-  *Owner:* drop-or-keep.
+- [x] **P8 (cache-stable selection) answered 2026-11-11.** The reviewer's packet-only answer is
+  recorded in `reports/RR-P8CACHE-20261111.md`: the RANKING is adopted (watermark compaction first —
+  evict once on a trigger, hold the set, valid only above break-even; (c) cannot bound residency),
+  with TWO corrections from the books — **w/r = 10.0, not 12.5** (the owner's catalogue row-013:
+  $0.10 in / $0.50 out / $0.01 cached read, no cache-write row) and the **evictable share 5.3 %
+  session-weighted** (`RR-W8SIM` §2; the 12 % is last-request) — so break-even n\* ≈ 189 calls, not
+  ~100. **(d) is amended**: the books MEASURED the no-op arm (0 evictions) at $0.0765 vs naive
+  $0.0175 = 4.4× (`RR-NOOP-20261109`), so "no worse than control" is falsified — the driver is
+  session growth plus output volume, not selection. The no-op byte check the reviewer demands
+  already passes (`RR-W8NOOPBYTES`). Q3 was already executed (`design/W8-CLOSURE-20261110.md`,
+  owner Option A / packet P9); the replacement run is `design/W8B-FREE-PLAN.md`. Q2's five-condition
+  metric-replacement rule is adopted as a standing lane rule.
+  *Done when (met):* the packet STATUS reads answered, the card exists in a commit, and the
+  QUESTIONS row `| P8 |` reads answered.
 
 - [ ] **P10 (page-id asymmetry: flat vs nested page identity) — QUEUED 2026-11-11.** Cut by
   `reports/RR-UGATE-20261111.md` after the umpire gates re-ran against the books. The asymmetry

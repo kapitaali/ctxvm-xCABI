@@ -1,6 +1,6 @@
 # PACKET P8 — cache-stable selection
 
-STATUS: OPEN · 2026-11-09 · answer from this packet alone; do not ask for repo access.
+STATUS: answered 2026-11-11 (card RR-P8CACHE-20261111.md; ranking adopted, w/r = 10).
 
 ## Question
 

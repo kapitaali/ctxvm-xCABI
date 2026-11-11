@@ -313,13 +313,15 @@ these reports.
 Keep this section TRUE with one edit per stale line when you close a card; an out-of-date pin
 disqualifies this file from prompt duty:
 
-- Packet queue: P10 + P11 QUEUED 2026-11-11 (page-id asymmetry: flat vs nested page identity
-  — its second-consumer trigger ALREADY FIRED; and canonical ordering: sorted keys vs Rust struct
-  order — F9 accepted but undocumented for consumers, so the line has no owner yet). P8 (cache-stable
-  selection; 3,059/3,072 B margin) still owner-flagged drop-or-keep. P4/P5/P6/P7 answered
+- Packet queue: P8 ANSWERED 2026-11-11 (cache-stable selection: ranking adopted, w/r = 10 and
+  the evictable share corrected to 5.3 %, (d) amended because the measured no-op arm cost 4.4x
+  control, Q2's metric-replacement rule adopted as a standing rule, Q3 already executed). P10 + P11
+  QUEUED 2026-11-11 (page-id asymmetry: flat vs nested page identity — its second-consumer trigger
+  ALREADY FIRED; and canonical ordering: sorted keys vs Rust struct order — F9 accepted but
+  undocumented for consumers). P8's drop-or-keep question is MOOT (answered). P4/P5/P6/P7 answered
   (RR-P4TS / RR-P5CAL / RR-P6DET / RR-P7BASE); umpire gates G1 (ordering clause), G2 (caller
   sentence), G3 (equivalence prereg) unchanged; U4 TICKED against RR-M3V3; U5 (page-id ruling) and
-  U6 (MCP default calibration = superseded v2 map) added; U2 re-measured — the model server is still
+  U6 (MCP default calibration = superseded v2 map) open; U2 re-measured — the model server is still
   DOWN (port 8081 free), the offline MCP surface answers.
 - PROJECT-STATE cap (standing): the file sits at 6,123/6,144 B - 21 B of headroom. Any lane
   writing it must re-run `bash tools/check-handoff.sh` BEFORE committing; a Done-window line can
@@ -332,6 +334,14 @@ disqualifies this file from prompt duty:
   the packet against a 3,072 B cap, so ANY packet the checker accepts fits (worst case 15,660 B;
   P8 = 15,626 B today). If PROJECT-STATE grows, trim CONTEXT-PACK — glossary rows, excerpt lines,
   label rows; NEVER a heading — and re-measure EVERY packet's paste, not just the one you ran.
+- Metric-replacement rule (standing, from packet P8's Q2 — five conditions, ALL required): a
+  preregistered metric may be replaced ONLY when (1) the hypothesis itself changed and the old metric
+  no longer measures it; (2) the change is recorded as a DATED DEVIATION whose reason makes no
+  reference to the observed direction; (3) it applies only to NEW cells under a NEW preregistration —
+  existing cells stay under the old metric, reported as it was, and are NEVER re-scored to rescue a
+  result; (4) both metrics appear in the same table with equal prominence; (5) the SYMMETRY TEST —
+  would the same change be made if the result had favoured the other arm? If the justification
+  depends on the sign of the result, it is fishing. No cost-saving claim (law 7).
 - Naming rule (standing): friction points use the F-series (F1…F9) and NEVER an R-number —
   RFC-0.1's R0…R5 are revision ids, and one input labelled the page-id residual "R1", colliding with
   R1 = `intentional_rerun`. Friction cards also carry the date, the locator and the gate output.
@@ -342,7 +352,6 @@ disqualifies this file from prompt duty:
   decides paste-N; a PROJECT delta over ~100 B likely re-breaks paste-3. Pre-measure; trim
   glossary rows (never headings) if over.
 - Day files: 2026-11-09 (sealed), 2026-11-10 (sealed, append-only), 2026-11-11 (current).
-  LOG row count 244 COMMITTED as of the paste-budget card (the worktree shows 246: two rows
-  belong to other lanes and stay unstaged); verify with `grep -c '^| RR-' reports/LOG.md`.
+  LOG row count 245 COMMITTED as of the P8 card; verify with `grep -c '^| RR-' reports/LOG.md`.
 - AGENT-PROMPT §1 staleness: refresh PROPOSED, not edited (policy-file law, §0).
 - Watcher baselines reset for free; never treat "quiet" as "no collision".

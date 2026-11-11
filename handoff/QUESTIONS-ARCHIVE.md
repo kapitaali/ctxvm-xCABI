@@ -189,3 +189,75 @@ run "has not been run" — FALSE per `RR-M3V3-20261024` (the quiescent FULL 480 
 capture-time page-table byte-identical ⇒ **capture-time-concurrency attribution CONFIRMED**).
 P6's falsifier therefore RESOLVED recapture-clean; Roadmap U4 ticks with `RR-M3V3` as its
 locator; the P6 vocabulary line stays a PROPOSAL (owner-gated). Full: `reports/RR-P7BASE-20261110.md`.
+
+## P8 — cache-stable selection: can residency be bounded without forfeiting the prefix cache?
+
+**answered 2026-11-11** (the reviewer's footer says 2026-11-09, the packet's own date; the answer
+reached the kit on 2026-11-11). Packet-only answer plus one stated assumption (read price $0.01/1M
+"taken from the ledger"). Full record: `reports/RR-P8CACHE-20261111.md`.
+
+**Q1 — ranking ADOPTED, with (d) amended.** (1) Watermark compaction (evict once on a trigger, hold
+the set) is the candidate, valid only above break-even — and it is already the shape the in-tree
+design card specifies (`design/w8-cache-stable-selection.md` §3, parts 2–4: hold the resident set
+byte-for-byte until a trigger; batch-gated eviction on the B-th turn, single-pass purge; append-only
+growth) with a four-condition acceptance gate (parsed-equal artefact; per-call prefix ≤ 24,000;
+`prefixHash` unchanged between triggers; cache-write below naive with cache-read above) — the
+preregistration the reviewer's falsifier asks for. (2) **(d) amended**: it may gate a COMPACTION, but
+it cannot promise "no worse than control" — the measured no-op arm (9 selections, **0 evictions**)
+cost **$0.0765 against naive $0.0175 = 4.4×** (`RR-NOOP-20261109`), because the cost tracks session
+growth and output volume ("the paged arm rewrote the prefix 14 times, and it also emitted 6.5× the
+output"), not selection. (3) (c) confirmed as "a policy of not evicting": the keep law protects
+first-3 + last-6 turns, so on a one-turn session the floor is the whole request at any budget
+(`RR-NOOP` §2) and the middle appears only at turn 9 on a 12-turn session (`W8-CLOSURE` §3). The
+reviewer's own falsifier is adopted verbatim — and its second condition ("a byte-preserving no-op
+still costs more than control") is **already met by the books**.
+
+**TWO NUMBER CORRECTIONS.** (i) **w/r = 10.0, not 12.5**: the owner's price catalogue
+(`benchmarks/metrics/prices.json`, catalogue row-013 — GPT-6 Luna) gives input $0.10/1M, output
+$0.50/1M, cached read $0.01/1M and **no cache-write row** (writes bill at input); the design card's
+decomposition reproduces both reported costs to the dollar (naive input-side $0.013167 of $0.0175;
+paged $0.098227 of $0.1264). So the reviewer's 62 / 25 / 125 calls become **50 / 20 / 100**.
+(ii) **The evictable share is 5.3 % session-weighted** (25,404 of 479,076 request tokens,
+`RR-W8SIM` §2) — the reviewer's 12 % is the same quantity measured at the last request, which the
+books reconcile explicitly. At 5.3 % with w/r = 10 the break-even is **n\* ≈ 189 calls**, not ~100,
+against 5–30 measured calls.
+
+**The packet's inconsistency, resolved.** "Selection removes nothing and adds churn" — the no-op IS
+byte-identical: `RR-W8NOOPBYTES` (three cases, all pass: floor above budget; far under budget;
+eviction happening; in both no-op cases the assembled list is byte-identical to the input — "the
+property the cache depends on"; nothing mutated in place; 28 pytest passed). So churn is not a
+selection artefact: the prefix grows because the SESSION grows (one turn, 50 tool results, 63,713
+tokens; peak 63,246 vs naive 59,793) while the keep law protects all of it. The cause of the
+cache-write volume stays **UNKNOWN** (`RR-W8CACHE` H3).
+
+**Q2 — the metric-replacement rule is ADOPTED as a standing lane rule** (five conditions: the
+hypothesis changed; a dated deviation whose reason does not reference the observed direction; new
+cells under a new preregistration only, existing cells never re-scored; both metrics with equal
+prominence; the symmetry test). The existing pair stays under tokens (NTR = −2.14 recorded); the
+replacement run registers evicted tokens + parsed-equal, not dollars, on an unpaid model whose
+catalogue row has **no cache price** (`design/W8B-FREE-PLAN.md`) — so there is no cache economics to
+break even against, and **no cost-saving claim is made** (law 7).
+
+**Q3 — already executed, one day earlier.** `design/W8-CLOSURE-20261110.md`: "Decision: **Option A**
+from `design/W8-DECISION-20261110.md` (packet P9). W8 is closed with the negative result below. No
+further paid cells. The replacement run is `design/W8B-FREE-PLAN.md`." The reviewer's remaining
+instruction (a separate single-cell preregistration, after the no-op byte check and only if the
+break-even arithmetic can pay back) is half-satisfied — the no-op check passes — and half-unreachable
+on the measured shape (n\* ≈ 189 calls vs 5–30). No paid cache-stable cell is justified by the books'
+numbers as they stand; the next step is owner-routed.
+
+**UNKNOWNs after the sweep.** Provider cache TTL / minimum block size: still UNVERIFIED, and the
+books say why (`RR-W8CACHE` H2: "not recorded in the capture, and I will not assert one from
+memory"). Shared-plugin routing: partly answered — arms are separated by profile invocation and by
+nothing in the trace — with the residual open in `RR-W8CACHE` H3. The true remaining cap: already
+UNKNOWN in the books ("remaining cap UNKNOWN (exports missing for 11-07 and 11-09)";
+`RR-SPEND-RECON2`). Whether the compaction engine exists: **RESOLVED — it does not**;
+`selectionMode` / `residentSet` / `lastSelectionHash` / `prefixHash` appear only in the design card
+and its LOG row, nowhere in `packages/hermes/live/`.
+
+## Errata (2026-11-11, seventh pass): QUESTIONS.md row compaction for the 3,072 B cap
+
+The P8 row (QUEUED→ANSWERED, 2026-11-11) needed ~250 B the chart did not have, so the P1–P7, P10 and
+P11 rows were compacted to pointers once more. Every fact removed from a chart row survives in its
+own section above or in the cited RR card; no heading was touched; the cap, not the content, is the
+binding constraint.

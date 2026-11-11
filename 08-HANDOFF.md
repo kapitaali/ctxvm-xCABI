@@ -1040,6 +1040,31 @@ grew inside the kit's caps and the paste budget (a paste rule, not a checker rul
 it did not — the kit checker never flagged it, `session-start.sh` did, and the owner felt it first.
 Card `reports/RR-CTXPACK2-20261111.md`.
 
+**Frontier 11 addendum 10 (2026-11-11, packet P8 answered):** the reviewer's cache-stable-selection
+answer (packet-only, one assumption) is recorded in `reports/RR-P8CACHE-20261111.md`. The RANKING is
+adopted — bounding residency and keeping the prefix cache cannot both hold per call; watermark
+compaction (evict once on a trigger, hold) is the candidate and is already the in-tree design
+(`design/w8-cache-stable-selection.md` §3 parts 2–4) with a four-condition acceptance gate; (c) cannot
+bound residency (the keep law protects first-3 + last-6 turns, so on a one-turn session the floor IS
+the request). TWO NUMBERS CORRECTED from the books: **w/r = 10.0, not 12.5** (the owner's catalogue
+row-013: GPT-6 Luna $0.10 in / $0.50 out / $0.01 cached read, no cache-write row — writes bill at
+input; the card's decomposition reproduces both reported costs to the dollar) so the reviewer's
+62/25/125 calls become 50/20/100; and the **evictable share is 5.3 % session-weighted** (25,404 of
+479,076 request tokens, `RR-W8SIM` §2 — the reviewer's 12 % is the last-request quantity, which the
+books reconcile), giving break-even **n\* ≈ 189 calls** against 5–30 measured calls. **DECISION-
+RELEVANT FINDING the packet could not see: (d)'s "no worse than control" guarantee is already
+falsified** — the books MEASURED the no-op arm (9 selections, 0 evictions) at **$0.0765 vs naive
+$0.0175 = 4.4×** (`RR-NOOP-20261109`); the driver is session growth plus output volume (6.5× the
+output), not selection, so (d) may gate a COMPACTION but cannot promise control-cost. The packet's
+internal inconsistency is resolved: the no-op IS byte-identical (`RR-W8NOOPBYTES`, three cases pass),
+so churn is the growing SESSION under the keep law; the cache-write cause stays UNKNOWN
+(`RR-W8CACHE` H3). Q2's five-condition metric-replacement rule is ADOPTED as a standing lane rule
+(symmetry test included; existing cells stay under tokens; no cost-saving claim, law 7). **Q3 was
+already executed a day earlier**: `design/W8-CLOSURE-20261110.md` (owner Option A, packet P9) closed
+W8 negative with no further paid cells; the replacement run is `design/W8B-FREE-PLAN.md`. The
+compaction engine does NOT exist yet (`selectionMode` appears only in the design card). No paid
+cache-stable cell is justified by the books' numbers as they stand — the next step is owner-routed.
+
 ## §1. Workspace map
 
 ```
