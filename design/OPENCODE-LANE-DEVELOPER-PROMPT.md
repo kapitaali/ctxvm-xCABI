@@ -350,6 +350,13 @@ disqualifies this file from prompt duty:
   result; (4) both metrics appear in the same table with equal prominence; (5) the SYMMETRY TEST —
   would the same change be made if the result had favoured the other arm? If the justification
   depends on the sign of the result, it is fishing. No cost-saving claim (law 7).
+- Shared-index hygiene (standing): the git INDEX is shared, so another lane's STAGED files can ride
+  into your commit without appearing in your `git add` list (`git commit` commits the whole index).
+  Before pushing, run `git show --stat HEAD` and check every path is yours; if a foreign path is there,
+  `git rm --cached <path>` (keeps the file on disk) and `git commit --amend --no-edit` — the commit is
+  unpublished, so amending is free. For the shared LOG, stage by blob instead: build the file you want
+  (`git show HEAD~1:reports/LOG.md` + your row) and `git update-index --cacheinfo 100644,$(git
+  hash-object -w <file>),reports/LOG.md`, so another lane's pending row cannot be captured.
 - Cold start (a reboot kills the session, the watcher and the local servers): the SESSION is not
   the memory — the kit is. Read `handoff/PROJECT-STATE.md` (state of record), then
   `handoff/QUESTIONS.md` (the queue), then `design/ROADMAP-OPENCODE-LANE.md` (the board) and the
