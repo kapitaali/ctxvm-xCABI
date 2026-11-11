@@ -446,8 +446,12 @@ def probe(spec: dict, run_id: str, arm: str = "paged") -> dict:
                              if f.stat().st_mtime >= started - 2), key=lambda f: f.stat().st_mtime)
         for cand in candidates:
             try:
-                plug = json.loads(cand.read_text()).get("plugin", {})
+                body = json.loads(cand.read_text())
+                plug = body.get("plugin", {})
+                caps = body.get("captures", {})
                 out["sidecar"] = cand.name
+                out["scanMentions"] = caps.get("proseMentionsTotal")
+                out["faultsBySource"] = caps.get("faultsBySource")
                 break
             except Exception:
                 continue
@@ -463,6 +467,16 @@ def probe(spec: dict, run_id: str, arm: str = "paged") -> dict:
                                    if selections == 0 else
                                    "BROKEN — control arm selected; the gate did not hold")
         else:
+            # A paged session is READY only if the scan is ALSO alive: zero selections prove nothing
+            # when the observer is blind, and prose is telemetry now, so the mention count is the only
+            # proof that the scan still sees the text (W8C).
+            # Scan liveness is NOT decidable from a one-prompt probe: the final reply never enters a
+            # later request, so no pre_llm_call ever scans it (measured 2026-11-11 — a healthy session
+            # with mentions 0). It is asserted on the two-prompt diagnostic, where the second turn's
+            # history carries the first turn's text.
+            seen = out.get("scanMentions") or 0
+            out["scanNote"] = ("mentions counted here" if seen else
+                               "no mention expected in one prompt; asserted on the 2-prompt diagnostic")
             out["precondition"] = ("READY" if selections > 0
                                    else "NOT READY — engine never selected; a pair cannot start")
     if out["tool_calls"] and any(t in ("read_file", "search_files", "write_file") for t in out["tools"]):
