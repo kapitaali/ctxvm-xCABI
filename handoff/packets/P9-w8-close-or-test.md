@@ -2,6 +2,14 @@
 
 STATUS: ANSWERED 2026-11-10 — owner chose **A** (close with the negative result). Outcome:
 `design/W8-CLOSURE-20261110.md`; replacement run planned in `design/W8B-FREE-PLAN.md`.
+Reviewer confirmed **A** independently 2026-11-11 (not a new decision) and asked for four
+closure-text corrections; all four were checked against the artefacts in
+`reports/RR-P9CLOSE-20261111.md`: the closure ALREADY states the weaker claim; the zero-spend
+narrowing was ALREADY run (H1 NOT SUPPORTED, H2 NOT TESTABLE - the provider export is a per-day
+aggregate with no per-request rows, gaps ~18 s, lifetime UNVERIFIED - so H3: UNKNOWN cause); the
+cap wording stays as written (billed >= $7.14 vs the $9.16 store estimate vs the true total
+UNKNOWN - the 11-07/11-09 exports are still missing); and the stale "rewrote the prefix" phrase
+lives in `design/w8-cache-stable-selection.md` (another lane's plan of record) - ROUTED, not edited.
 
 ## Question
 

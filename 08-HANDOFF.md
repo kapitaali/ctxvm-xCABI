@@ -1078,6 +1078,28 @@ changes: the blocker is now a MODEL-SIDE TIMEOUT, and the owner must choose an a
 v2. Recorded as an appended erratum block on `reports/RR-P8CACHE-20261111.md` — no new LOG row
 (errata are blocks; the card already has its row) and no PROJECT-STATE rotation (no new card).
 
+**Frontier 11 addendum 12 (2026-11-11, packet P9 confirmed):** the reviewer's P9 answer is **A — an
+independent confirmation**, not a new decision; the closure (`design/W8-CLOSURE-20261110.md`, owner
+Option A) stands. Their four closure-text corrections were checked against the artefacts rather than
+applied on trust: **(1)** the closure ALREADY complies — item 5 says the extra cache writes are not
+explained by the engine's message list (append-only, byte-constant system prompt, byte-identical
+no-op) with cause UNKNOWN, the not-claimed list ends with "A cause for the cache-write volume", and
+the file carries no "forfeits the cache" phrasing; the stale "the paged arm rewrote the prefix 14
+times" lives in `design/w8-cache-stable-selection.md` §1 + its LOG row — **another lane's plan of
+record, so ROUTED to its owner as an appended erratum, not edited here**; **(2)** the zero-spend
+narrowing was ALREADY run and returned NOT-TESTABLE for a stated reason: the provider export is a
+per-day/per-key AGGREGATE (17 rows; no per-request rows, no timestamps), the call gaps are ~18 s
+(09:43:34 → 09:47:07 for 29 requests) and the cache lifetime is UNVERIFIED ⇒ H1 NOT SUPPORTED, H2 NOT
+TESTABLE, **H3 UNKNOWN cause** (candidates: provider accounting; session boundaries); **(3)** keep
+the closure's three-part cap wording (billed >= $7.14 / store estimate $9.16 / true total UNKNOWN —
+"at least $9.16" would promote an estimate to a floor; the 11-07 and 11-09 exports are still
+missing); **(4)** the closure already states the weaker claim. Their UNKNOWN answered from the
+books: the free replacement run (unpaid models, no cache price, descriptive only) is NOT a
+substitute for a longer-session paid variant, which would need n\* ≈ 189 calls (≈ 43 even at the free
+plan's 23 %-of-peak middle) against a 14–29 call session, plus the lifetime sourced and per-request
+cache attribution recorded — and the free run produced NO RECORD (`RR-W8B2-20261111`, timeout at
+120 s, $0.0000). Card `reports/RR-P9CLOSE-20261111.md`.
+
 ## §1. Workspace map
 
 ```

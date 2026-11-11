@@ -313,16 +313,19 @@ these reports.
 Keep this section TRUE with one edit per stale line when you close a card; an out-of-date pin
 disqualifies this file from prompt duty:
 
-- Packet queue: P8 ANSWERED 2026-11-11 (cache-stable selection: ranking adopted, w/r = 10 and
-  the evictable share corrected to 5.3 %, (d) amended because the measured no-op arm cost 4.4x
-  control, Q2's metric-replacement rule adopted as a standing rule, Q3 already executed). P10 + P11
-  QUEUED 2026-11-11 (page-id asymmetry: flat vs nested page identity — its second-consumer trigger
-  ALREADY FIRED; and canonical ordering: sorted keys vs Rust struct order — F9 accepted but
-  undocumented for consumers). P8's drop-or-keep question is MOOT (answered). P4/P5/P6/P7 answered
-  (RR-P4TS / RR-P5CAL / RR-P6DET / RR-P7BASE); umpire gates G1 (ordering clause), G2 (caller
-  sentence), G3 (equivalence prereg) unchanged; U4 TICKED against RR-M3V3; U5 (page-id ruling) and
-  U6 (MCP default calibration = superseded v2 map) open; U2 re-measured — the model server is still
-  DOWN (port 8081 free), the offline MCP surface answers.
+- Packet queue: P8 + P9 ANSWERED 2026-11-11 (P8 cache-stable selection: ranking adopted,
+  w/r = 10 and the evictable share corrected to 5.3%, (d) amended because the measured no-op arm
+  cost 4.4x control, Q2's metric-replacement rule adopted as a standing rule, Q3 already executed;
+  P9 close-W8-or-mechanism-test: A confirmed as an independent confirmation — the closure needs NO
+  edit, its four correction points were checked against the artefacts: the zero-spend narrowing
+  already ran and returned NOT-TESTABLE (H1 out, H2 untestable, H3 unknown cause), the cap wording
+  stays three-part, and the stale 'rewrote the prefix' phrase is ROUTED to the design card's owner).
+  P10 + P11 QUEUED 2026-11-11 (page-id asymmetry: flat vs nested page identity — its second-consumer
+  trigger ALREADY FIRED; and canonical ordering: sorted keys vs Rust struct order — F9 accepted but
+  undocumented for consumers). P4/P5/P6/P7 answered (RR-P4TS / RR-P5CAL / RR-P6DET / RR-P7BASE);
+  umpire gates G1 (ordering clause), G2 (caller sentence), G3 (equivalence prereg) unchanged; U4 TICKED
+  against RR-M3V3; U5 (page-id ruling) and U6 (MCP default calibration = superseded v2 map) open; U2
+  re-measured — the model server is still DOWN (port 8081 free), the offline MCP surface answers.
 - PROJECT-STATE cap (standing): the file sits at 6,123/6,144 B - 21 B of headroom. Any lane
   writing it must re-run `bash tools/check-handoff.sh` BEFORE committing; a Done-window line can
   push the file over the cap and turn the WHOLE kit red (precedent: `ada48de` -> `RR-KITCAP-20261111`,
@@ -352,6 +355,6 @@ disqualifies this file from prompt duty:
   decides paste-N; a PROJECT delta over ~100 B likely re-breaks paste-3. Pre-measure; trim
   glossary rows (never headings) if over.
 - Day files: 2026-11-09 (sealed), 2026-11-10 (sealed, append-only), 2026-11-11 (current).
-  LOG row count 245 COMMITTED as of the P8 card; verify with `grep -c '^| RR-' reports/LOG.md`.
+  LOG row count 246 COMMITTED as of the P9 card; verify with `grep -c '^| RR-' reports/LOG.md`.
 - AGENT-PROMPT §1 staleness: refresh PROPOSED, not edited (policy-file law, §0).
 - Watcher baselines reset for free; never treat "quiet" as "no collision".

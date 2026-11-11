@@ -261,3 +261,75 @@ The P8 row (QUEUED→ANSWERED, 2026-11-11) needed ~250 B the chart did not have,
 P11 rows were compacted to pointers once more. Every fact removed from a chart row survives in its
 own section above or in the cited RR card; no heading was touched; the cap, not the content, is the
 binding constraint.
+
+## P9 — close W8 with a negative result, or buy one mechanism test?
+
+**answered 2026-11-10** (owner chose **A**; the reviewer confirmed A independently on 2026-11-11 —
+an independent confirmation, not a new decision). Full record: `reports/RR-P9CLOSE-20261111.md`.
+
+**Why A, in the books' terms:** at most **5.3 %** of request tokens can ever be evicted (25,404 of
+479,076 — the per-turn table runs 0.0 % for turns 1–8, 7.5 % at turn 9, 12.7 % at turn 10, 17.2 % at
+turn 11; `RR-W8SIM` §2), and the reviewer's earlier "at most 12 % of the end-of-session resident" is
+the same quantity measured at the last request, which the books reconcile explicitly. 4–6 paired
+cells cannot resolve an effect that size, so B would buy a demonstration of eviction and nothing else.
+Re-opening conditions: no condition on this task shape fixes it — the shape needs a much longer
+session with enough unprotected middle pages, sized with P8's break-even arithmetic, and any new test
+is a fresh preregistration, not W8.
+
+**The four closure-text corrections, checked against the artefacts (not applied on trust):**
+
+1. *"The closure must state plainly that items 3 and 4 conflict, and must not repeat 'selection
+   rewrites the prefix' as the explanation."* — **the closure already complies.** Item 5: "The extra
+   cache writes are not explained by the engine's message list. The request series is strictly
+   append-only with a byte-constant system prompt, and a unit test shows byte-identical no-op output
+   (`RR-W8CACHE`, `RR-W8NOOPBYTES`). Cause **UNKNOWN**"; the not-claimed list ends with "A cause for
+   the cache-write volume"; the file carries no "forfeits the cache" / "rewrites the prefix" phrasing.
+   The stale phrasing lives in `design/w8-cache-stable-selection.md` §1 ("the paged arm rewrote the
+   prefix 14 times") and its LOG row `RR-CACHEDESIGN-20261109` — **another lane's plan of record, so
+   routed to its owner as an appended erratum, not edited here**; the books had already made the
+   correction (`RR-W8CACHE` §4: "The inference was reasonable and the data does not support it").
+2. *"A zero-spend check can narrow it: the provider export has per-request cache columns, and the
+   gateway logs may carry timestamps."* — **checked at the artefacts: the export does not.**
+   `experiments/usage-day-summary-a93f8b06-2026-11-10.csv` is a per-day, per-key AGGREGATE (header
+   `date, credit_source, product, model, key, tool_action, user, requests, input_tokens,
+   output_tokens, cache_read_tokens, cache_write_tokens, debited_usd, credited_usd, net_usd`; 17 data
+   rows) — no per-request rows, no timestamps. And the narrowing check was **already run**: the gaps
+   in `w8-cell-01` are ~18 s (09:43:34 → 09:47:07 for 29 requests), far below any plausible lifetime,
+   and the lifetime is not recorded — so **H2 NOT TESTABLE**, while **H1 NOT SUPPORTED** (the request
+   is append-only, the system prompt constant, the no-op byte-identical) ⇒ **H3: UNKNOWN cause**, with
+   two candidates left open (provider accounting — an export checkpoint counted as a whole-prefix
+   write; session-boundary effects — twelve `hermes chat` invocations, each opening a cold prefix if
+   the cache key includes something outside the text). The reviewer's "mark it UNVERIFIED until
+   someone sources the lifetime" is the books' own state. The zero-spend proposals the books offer
+   instead: record per-request `cache_read`/`cache_write`/`prefixHash` in the coverage sidecar; one
+   back-to-back probe on the same prefix and diff the export's `cache_write` for that key; fix
+   `providerUsage.inputTokens`.
+3. *"Write the closure as 'at least $9.16, true total unknown'."* — **keep the closure's own
+   three-part wording**: "spend **>= $7.14 billed on 2026-11-10 alone**; store estimate **$9.16 over
+   three days**; remaining cap **UNKNOWN** (exports missing for 11-07 and 11-09)". "At least $9.16"
+   would promote a store ESTIMATE to a floor — a stronger claim than the books support. The exports
+   are still missing (`experiments/` holds exactly one CSV), so the cap stays UNKNOWN.
+4. *"State the weaker claim only."* — **the closure already does**: item 3 (the shape caps the effect
+   at 5.3 %), item 4 ("No cost saving was measured, and the one measured pair cost more"), item 5
+   (cause UNKNOWN), plus the not-claimed list (no cost saving; no equivalence or non-inferiority
+   statement; no generalisation beyond task/model (gpt-6-luna)/surface (`file`)/host; no cause for the
+   cache-write volume). The reviewer's one-line form is compatible and may be adopted as a summary.
+
+**The reviewer's UNKNOWN answered from the books:** the replacement run in `design/W8B-FREE-PLAN.md` is
+an UNPAID-model run (nemotron / nemotron-lightning:free / longcat), budget 70,000, shape changed
+12 → 20 parts so the unprotected middle reaches ~21k evictable (≈ 23 % of the peak), claims
+descriptive only — and its catalogue row has **no cache price**, so it cannot measure cache economics
+at all. It is therefore **not a substitute** for a longer-session variant: the free plan asks "can
+eviction happen at all on a multi-part shape, at zero spend?"; only a longer-session variant on the
+paid model could speak to the cache question, and it would need (i) a session long enough for the P8
+break-even (n\* ≈ 189 calls at the 5.3 % ceiling; ≈ 43 calls even at the free plan's 23 %-of-peak
+middle, against a 14–29 call session), (ii) the cache lifetime sourced, (iii) per-request cache
+attribution recorded. Live state: the free run produced **NO RECORD** (`RR-W8B2-20261111`: both arms,
+`nous/longcat-2.5:free`, prompt-1 timeout at 120 s, $0.0000) — neither variant has data today.
+
+## Errata (2026-11-11, eighth pass): QUESTIONS.md row compaction for the 3,072 B cap
+
+The P9 row (ANSWERED 2026-11-10, per the reviewer's request) needed room the chart did not have, so
+the P1–P8, P10 and P11 rows were compacted to pointers once more and the queue-law/statuses prose
+shortened. Every fact removed from a chart row survives in its own section above or in the cited RR
+card; no heading was touched. The chart now carries all eleven packets (P1–P11) at 2,961/3,072 B.

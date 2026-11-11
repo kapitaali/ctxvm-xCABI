@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-11, HEAD `cbacf66` (the P8 answer card in flight, committing on top).
+State of record: 2026-11-11, HEAD `e716b7b` (the P9 confirmation card in flight, committing on top).
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -106,6 +106,23 @@ pin true every card close.
   metric-replacement rule is adopted as a standing lane rule.
   *Done when (met):* the packet STATUS reads answered, the card exists in a commit, and the
   QUESTIONS row `| P8 |` reads answered.
+
+- [x] **P9 (close W8 or buy a mechanism test) answered 2026-11-10; reviewer confirmed 2026-11-11.**
+  Verdict A (close with the negative result) — an independent confirmation, not a new decision; the
+  closure (`design/W8-CLOSURE-20261110.md`, owner Option A) stands and needs NO edit: its items 3–5
+  and not-claimed list already state the weaker claim (the cache-write cause is UNKNOWN, not
+  "selection rewrites the prefix"). The reviewer's four closure-text corrections were checked against
+  the artefacts (`reports/RR-P9CLOSE-20261111.md`): the zero-spend narrowing was ALREADY run and
+  returned NOT-TESTABLE (the provider export is a per-day/per-key aggregate — no per-request rows,
+  no timestamps; call gaps ~18 s; the cache lifetime is UNVERIFIED) ⇒ H1 NOT SUPPORTED, H2 NOT
+  TESTABLE, **H3 UNKNOWN cause**; the cap wording stays three-part (billed >= $7.14 / store estimate
+  $9.16 / true total UNKNOWN; the 11-07 and 11-09 exports are still missing).
+  *ROUTED, not edited:* `design/w8-cache-stable-selection.md` §1 still says "the paged arm rewrote the
+  prefix 14 times" — superseded by `RR-W8CACHE` §4 and `RR-W8NOOPBYTES`; that is another lane's plan
+  of record, so its owner may append an erratum block. The owner may also ask the w8b lane to adopt
+  the reviewer's one-line weaker-claim summary.
+  *Done when (met):* the packet STATUS carries the confirmation, the card exists in a commit, and the
+  QUESTIONS row `| P9 |` reads answered.
 
 - [ ] **P10 (page-id asymmetry: flat vs nested page identity) — QUEUED 2026-11-11.** Cut by
   `reports/RR-UGATE-20261111.md` after the umpire gates re-ran against the books. The asymmetry
