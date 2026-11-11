@@ -26,6 +26,18 @@ _LIVE_DIR = str(Path(__file__).resolve().parents[1] / "live")
 if _LIVE_DIR not in sys.path:
     sys.path.insert(0, _LIVE_DIR)
 
+# --- the arm policy, pinned for the suite -------------------------------------
+# The engine asks `profile_policy.policy()` which arm this session belongs to, and outside the host
+# that resolves the operator's own ~/.hermes (where context.engine is `compressor`), which would
+# make every law test inert. The suite therefore declares the arm explicitly: paged by default, and
+# ArmPolicyTests overrides it per test to prove the gate itself.
+import profile_policy  # noqa: E402  (live/ is on sys.path above)
+
+_PAGED_POLICY = {"engine": "ctxvm", "budget": 70000, "budgetSource": "settings",
+                 "profile": "w8bn-paged", "arm": "paged", "home": "/suite"}
+_REAL_POLICY = profile_policy.policy
+mock.patch.object(profile_policy, "policy", lambda *a, **k: dict(_PAGED_POLICY)).start()
+
 # --- structural stub of the host ABC, installed BEFORE the engine import ------
 _stub_agent = types.ModuleType("agent")
 _stub_ctx_engine = types.ModuleType("agent.context_engine")
@@ -725,6 +737,87 @@ class NoOpByteIdentityTests(unittest.TestCase):
         positions = [before.index(json.dumps(m, sort_keys=True)) for m in out
                      if json.dumps(m, sort_keys=True) in before]
         self.assertEqual(positions, sorted(positions), "kept messages must keep transcript order")
+
+
+class ArmPolicyTests(unittest.TestCase):
+    """One gateway serves every profile, so the arm must be read per SESSION, not per process.
+
+    Measured 2026-11-11: the naive arm reported `engine: ctxvm` and `budgetTokens: 70000 /
+    settings` because the plugin took one settings snapshot at registration and applied it to
+    every session served afterwards. These tests pin the per-profile resolution that replaces it.
+    """
+
+    def _home(self, name, engine, budget=None):
+        import tempfile
+        root = Path(tempfile.mkdtemp(prefix=f"w8bn-{name}-"))
+        lines = ["model:", '  default: "x"', "context:", f'  engine: "{engine}"']
+        if budget is not None:
+            lines += ["plugins:", "  entries:", "    ctxvm-tracer:", "      settings:",
+                      f"        budgetTokens: {budget}"]
+        (root / "config.yaml").write_text("\n".join(lines) + "\n")
+        return root
+
+    def test_control_profile_is_control_and_carries_no_budget(self):
+        import profile_policy
+        home = self._home("naive", "compressor")
+        pol = _REAL_POLICY(home)
+        self.assertEqual(pol["arm"], "control")
+        self.assertEqual(pol["engine"], "compressor")
+        self.assertEqual(pol["budgetSource"], "default")
+
+    def test_paged_profile_is_paged_and_carries_its_budget(self):
+        import profile_policy
+        home = self._home("paged", "ctxvm", 70000)
+        pol = _REAL_POLICY(home)
+        self.assertEqual(pol["arm"], "paged")
+        self.assertEqual(pol["budget"], 70000)
+        self.assertEqual(pol["budgetSource"], "settings")
+
+    def test_missing_config_falls_open_to_control(self):
+        import profile_policy
+        import tempfile
+        home = Path(tempfile.mkdtemp(prefix="w8bn-empty-"))
+        pol = _REAL_POLICY(home)
+        self.assertEqual(pol["arm"], "control", "a missing profile must never become a treatment")
+        self.assertEqual(pol["budget"], 200000)
+
+    def test_comments_and_quotes_do_not_confuse_the_reader(self):
+        import profile_policy
+        import tempfile
+        home = Path(tempfile.mkdtemp(prefix="w8bn-comments-"))
+        (home / "config.yaml").write_text(
+            "# context:\ncontext:\n  engine: \"ctxvm\"   # the treatment\n"
+            "plugins:\n  entries:\n    ctxvm-tracer:\n      settings:\n"
+            "        budgetTokens: 70000  # measured floor + middle\n")
+        pol = _REAL_POLICY(home)
+        self.assertEqual(pol["engine"], "ctxvm")
+        self.assertEqual(pol["budget"], 70000)
+
+    def test_engine_declines_when_the_session_profile_is_control(self):
+        import context_engine
+        import profile_policy
+        engine = context_engine.CtxvmFaultPinEngine(v_budget=70000)
+        msgs = [{"role": "user", "content": "hi"}]
+        with mock.patch.object(profile_policy, "policy",
+                               return_value={"engine": "compressor", "budget": 70000,
+                                             "budgetSource": "settings", "profile": "w8bn-naive",
+                                             "arm": "control", "home": "/x"}):
+            self.assertIsNone(engine.select_context(msgs, budget_tokens=70000))
+        self.assertEqual(engine._meter["skipped_control"], 1)
+        self.assertEqual(engine._meter["select"], 0, "a control session must not select")
+
+    def test_engine_acts_when_the_session_profile_is_paged(self):
+        import context_engine
+        import profile_policy
+        engine = context_engine.CtxvmFaultPinEngine(v_budget=1)
+        msgs = [{"role": "user", "content": "hi"}]
+        with mock.patch.object(profile_policy, "policy",
+                               return_value={"engine": "ctxvm", "budget": 1,
+                                             "budgetSource": "settings", "profile": "w8bn-paged",
+                                             "arm": "paged", "home": "/y"}):
+            engine.select_context(msgs, budget_tokens=1)
+        self.assertEqual(engine._meter["select"], 1)
+        self.assertEqual(engine._meter["skipped_control"], 0)
 
 
 if __name__ == "__main__":

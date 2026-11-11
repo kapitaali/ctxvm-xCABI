@@ -288,6 +288,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         super().__init__()
         self._v_budget, self._v_budget_source, self._v_budget_refused_lower = \
             _resolve_v_budget(v_budget)
+        self._v_budget_explicit = v_budget is not None
         # Selection count ON THE INSTANCE, not in a module global. The plugin package is
         # namespaced per profile (hermes_cli/plugins_loader.py `_directory_module_name`
         # gives the first scope `hermes_plugins.<slug>` and every other scope a
@@ -300,7 +301,8 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         # plugin holds. Measured 2026-11-09: a 14-read paged cell reported
         # `engineSelections: 0` while the host log showed no fallback, i.e. the engine was
         # running and the witness was reading the wrong object.
-        self._meter: Dict[str, int] = {"select": 0}
+        self._meter: Dict[str, int] = {"select": 0, "skipped_control": 0}
+        self._last_policy: Optional[Dict[str, Any]] = None
         self._selections = 0
         # stock keep-law defaults (the host ABC's own class-level values)
         self._protect_first_n = int(protect_first_n)
@@ -366,6 +368,36 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         """Per-request resident-set replacement (§3.3 item 2). Returns None to
         leave the request byte-identical; the returned list is request-only."""
         import datetime as _dt
+
+        # ---- which arm is this turn? (per SESSION, not per process) --------------
+        # One gateway holds one plugin instance, so at registration the settings snapshot was the
+        # paged profile's and was applied to every session: measured 2026-11-11, the naive arm
+        # reported `engine: ctxvm` and `70000/settings`. The profile is knowable here because the
+        # host scopes a turn with a contextvar that reaches this worker (gateway/run.py
+        # _profile_runtime_scope -> set_hermes_home_override -> get_hermes_home()).
+        pol = None
+        try:
+            from profile_policy import policy as _policy_for_turn  # live sibling, flat import
+            pol = _policy_for_turn()
+        except Exception:  # noqa: BLE001 - outside the host: treat as control, never as treatment
+            pol = None
+        self._last_policy = pol
+        if pol is not None:
+            if pol.get("engine") != "ctxvm":
+                # Control arm: the host may have activated this engine for the process, but the
+                # profile this session belongs to says compressor. Leave the request untouched.
+                self._meter["skipped_control"] = self._meter.get("skipped_control", 0) + 1
+                return None
+            # A budget given to the constructor is the caller's decision (the test suite uses tiny
+            # ones to exercise the laws), and a policy whose home does not exist is not a session
+            # (the suite patches one to keep the laws runnable). Only a real, unset session adopts.
+            _home = pol.get("home") or ""
+            _real_home = bool(_home) and __import__("os").path.isdir(_home)
+            if (not self._v_budget_explicit and _real_home and isinstance(pol.get("budget"), int)
+                    and pol["budget"] != self._v_budget):
+                self._v_budget = pol["budget"]
+                self._v_budget_source = pol.get("budgetSource", self._v_budget_source)
+
         self._selections += 1
         self._meter["select"] += 1
         ACTIVATIONS["select"] += 1

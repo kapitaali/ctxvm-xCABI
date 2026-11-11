@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.10.12"
+PLUGIN_VERSION = "0.11.0"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -526,6 +526,15 @@ def _engine_activated() -> Optional[str]:
     return _state().get("engine_registered") if count > 0 else None
 
 
+def _engine_skipped_control() -> Optional[int]:
+    """Times the engine declined to act because this session's profile says compressor."""
+    engine = _state().get("engine_obj")
+    meter = getattr(engine, "_meter", None)
+    if isinstance(meter, dict) and "skipped_control" in meter:
+        return int(meter["skipped_control"])
+    return 0
+
+
 def _engine_selections() -> int:
     try:
         from context_engine import ACTIVATIONS
@@ -605,9 +614,14 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # either, and the runner must enforce the single-arm gateway.
             "engine": _engine_activated(),
             "engineSelections": _engine_selections(),
-            # Recorded when a hook ran (inside the turn's profile scope); reading the
-            # environment at flush time would name the host again.
+            # The arm this SESSION belongs to, resolved from its home at hook time, and the
+            # engine that profile declares. `engine` above says the process used the engine;
+            # `engineSetting` says which arm asked for it. A control session with engine ctxvm
+            # still shows `skippedControl > 0` and no selections.
             "profile": _state().get("serving_profile") or _serving_profile(),
+            "arm": _state().get("arm"),
+            "engineSetting": _state().get("engine_setting"),
+            "skippedControl": _engine_skipped_control(),
             "budgetTokens": _state().get("budget_tokens") or _budget_from_env(),
             "budgetSource": _state().get("budget_source") or "default",
         },
@@ -1119,8 +1133,25 @@ def register(ctx) -> None:
             kwargs["environmentId"] = environment
         # Same law as the environment id: whichever hook fires first must carry the profile,
         # because the flush happens after the turn's profile scope has been reset.
-        if not _state().get("serving_profile"):
-            _state()["serving_profile"] = _serving_profile()
+        # Resolved from the SESSION's home (contextvar-aware), not from the process: one gateway
+        # serves every profile, so a value captured at registration is the wrong arm for all but
+        # one of them (measured 2026-11-11: naive reported `ctxvm` and `70000/settings`).
+        try:
+            from profile_policy import policy as _policy_for_turn
+            pol = _policy_for_turn()
+        except Exception:  # noqa: BLE001
+            pol = None
+        st = _state()
+        # A policy whose home is not on disk is not a session (the plugin's own tests, or a host
+        # that has not created the home yet); fall back to what the hook reported.
+        if pol and os.path.isdir(pol.get("home") or ""):
+            st["serving_profile"] = pol["profile"]
+            st["budget_tokens"] = pol["budget"]
+            st["budget_source"] = pol["budgetSource"]
+            st["arm"] = pol["arm"]
+            st["engine_setting"] = pol["engine"]
+        elif not st.get("serving_profile"):
+            st["serving_profile"] = _serving_profile()
 
     def on_session_start(**kwargs: Any) -> None:
         _stamp_environment(kwargs)
@@ -1801,14 +1832,16 @@ def register(ctx) -> None:
     # observer duties — the hooks above stay fully functional either way.
     try:
         from context_engine import build_engine  # live/-sibling, flat import
-        v_budget, budget_source = _budget_from_settings(ctx)
-        engine = build_engine(v_budget=v_budget)
+        # No budget at registration: one gateway serves every profile, so a snapshot taken here is
+        # the wrong arm for all but one session. The engine resolves it per call (profile_policy).
+        _v_budget_at_load, _budget_source_at_load = _budget_from_settings(ctx)
+        engine = build_engine(v_budget=None)
         if engine is not None and hasattr(ctx, "register_context_engine"):
             ctx.register_context_engine(engine)
             state["engine_obj"] = engine
             state["engine_registered"] = engine.name
-            state["budget_tokens"] = v_budget
-            state["budget_source"] = budget_source
+            state["budget_tokens"] = _v_budget_at_load
+            state["budget_source"] = _budget_source_at_load
             # NOTE (0.10.8, falsified the same day): `ctx.get_config(key)` reads
             # `plugins.entries.<plugin_id>.settings.<key>`, NOT the profile's top-level
             # `context.engine`. Measured on a live `-p w8-paged` probe: the field came back null
