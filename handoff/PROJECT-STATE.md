@@ -1,4 +1,4 @@
-# State (updated 2026-11-11, by ctxvm repo agent (opencode), umpire-residue card: CI green at pushed HEAD; MCP default calibration = SUPERSEDED v2 (U6); P11 queued)
+# State (updated 2026-11-11, by ctxvm repo agent (opencode), paste-budget card: the 16 KB paste budget REPAIRED - all 11 packet pastes fit)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8: CLOSED negative (`design/W8-CLOSURE-20261110.md`); next = W8B, free model (`design/W8B-FREE-PLAN.md`).
@@ -11,9 +11,9 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. Umpire-residue sweep (RR-UMRES-20261111): CI green at pushed HEAD; U2 re-measured (server DOWN); MCP default calibration = superseded v2 (U6); P11 queued.
-2. Umpire gates run (RR-UGATE-20261111): F1–F7 closed, F8 = P4-answered; P10 queued.
-3. P7 answered (RR-P7BASE-20261110): two zero-spend baselines first.
+1. Paste budget repaired (RR-CTXPACK-20261111): CONTEXT-PACK 7,417 -> 6,837 B; all 11 packet pastes fit (worst 16,037/16,384).
+2. Umpire-residue sweep (RR-UMRES-20261111): CI green at HEAD; U2 re-measured (server DOWN); MCP default cal = superseded v2 (U6); P11 queued.
+3. Umpire gates run (RR-UGATE-20261111): F1–F7 closed; P10 queued.
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
@@ -21,7 +21,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 ## Next three (ordered, one line each)
 1. Owner: ratify D13 + D14 and route the SIX-item white-paper bundle (items listed in full in RR-DAY-20261109) — working-tree bytes, not HEAD.
 2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
-3. Agent: P10+P11 queued; P8 pending. Umpire gates: D-ordering (P4), caller (P5), vocab (P6), protocol+margins (P7), page-id (P10), order (P11).
+3. Agent: P10+P11 queued; P8 pending (paste fits). Umpire gates: D-ordering (P4), caller (P5), vocab (P6), protocol+margins (P7), page-id (P10), order (P11).
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
@@ -31,7 +31,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 - 2026-11-08: D3-c approved (owner); D13 answered (P1); P2 answered + seq 7 located (`identifier_scan` swap-in).
 - 2026-11-09: D14 answered (P3 verdicts recorded); consent mends + card-citation rule routed. P4 answered: ts stays optional; ordering clause PROPOSED for umpire §2 (RR-P4TS-20261109), D-number outstanding.
 - 2026-11-10: D-U1 (P5) calibration with caveat. D-U3 (P6) same-build. D-U2 (P7) two zero-spend baselines first (RR-P7BASE-20261110).
-- 2026-11-11: F1–F7 closed; F8 = P4-answered; P10 queued (trigger fired); F9's owner = P11 (RR-UGATE/UMRES-2026).
+- 2026-11-11: F1–F7 closed; F8 = P4-answered; P10 queued (trigger fired); F9's owner = P11; paste budget repaired.
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 (Pkt 1) ANSWERED 2026-11-08: Pillar-1 splits (replayable + conformance-testable kept; "diffable" behind the consumer profile; "reconstructs any turn" narrowed; absence reworded). Card: `design/diff-normalisation.md`. Owner next: ratify + route with the six-item bundle.
@@ -49,7 +49,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 3. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% belongs to an external controller (AGENTS.md law 7).
 
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
-- Conformance gate: GREEN 2026-11-08 (nine-key `env -u` + `bash tools/run-ci.sh`; proven local, run №90, AND hosted run №94 `42589188792` at `cd43555`, 4/4, 37 s, 2026-11-09); log `/tmp/opencode/otel/gate-d3c.log`. Snapshot dated; totals re-derivable via run-ci.
+- Conformance gate: GREEN 2026-11-11 (local, pushed HEAD `63472f4`; env-correct `run-ci.sh` → ALL GATES GREEN; RR-UMRES-20261111 §1). Earlier hosted witness №94 `42589188792` at `cd43555` (2026-11-09) still stands; totals re-derivable via run-ci.
 - XERJ Hub listing UNVERIFIED — live `hub.xerj.org/llms.txt` re-check (RR-XERJ-20261029).
 - openai price row + cache-read nulls UNVERIFIED (`prices.json`) — owner source.
 - W8 arm-attribution rule SUPERSEDED by plan §4e (`b6aa2a3`: one host gateway, attestation-scope equality); UNPROVEN until a probe runs.
