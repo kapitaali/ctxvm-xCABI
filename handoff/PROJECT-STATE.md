@@ -1,4 +1,4 @@
-# State (updated 2026-11-11, by ctxvm repo agent (opencode), U6 applied; RFC-0.1 note + C3 enforced (D18)
+# State (updated 2026-11-11, by ctxvm repo agent (opencode), U6 applied; RFC-0.1 note + C3 enforced (D18); P11 level-2 asserted
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
@@ -13,7 +13,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 ## Done (last 3 items: one line each, with locators)
 1. U2 + U6 verified live (RR-U2LIVE): health ok; a decide runs on the record's map; the gateway restart is DONE (both surfaces v3).
 2. RFC-0.1 note + C3 enforced (D18): code-point comparator + vector; no digest moved; CI green.
-3. P11 gap (RR-P11GAP-20261111): the pair asserts TWO levels; level-2 patch drafted.
+3. P11 gap CLOSED (RR-P11LEVEL2-20261111): the pair is committed; level 2 asserted + pinned.
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
@@ -21,7 +21,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 ## Next three (ordered, one line each)
 1. Owner: ratify D13 + D14 and route the SIX-item white-paper bundle (items listed in full in RR-DAY-20261109) — working-tree bytes, not HEAD.
 2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
-3. Agent: NO paste pending (P1-P11 answered); owner-routed: hub $ref, T-A arm precondition. Umpire gates: D-ordering (P4), caller (P5), vocab (P6).
+3. Agent: NO paste pending (P1-P11 answered); owner-routed: W8B's per-session arm record. Umpire gates: D-ordering (P4), caller (P5), vocab (P6).
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
@@ -51,7 +51,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 3. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% belongs to an external controller (AGENTS.md law 7).
 
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
-- Conformance gate: GREEN 2026-11-11 (local, HEAD `3234cfc`; env-correct run-ci.sh → ALL GATES GREEN); hosted witness №94 `42589188792` (2026-11-09) stands.
+- Conformance gate: GREEN 2026-11-11 (local, HEAD `82f6a03`; hermetic run-ci.sh → ALL GATES GREEN); hosted witness №94 `42589188792` (2026-11-09) stands.
 - XERJ Hub listing UNVERIFIED — live `hub.xerj.org/llms.txt` re-check (RR-XERJ-20261029).
 - openai price row + cache-read nulls UNVERIFIED (`prices.json`) — owner source.
 - W8 arm-attribution rule SUPERSEDED by plan §4e (`b6aa2a3`: one host gateway, attestation-scope equality); UNPROVEN until a probe runs.
