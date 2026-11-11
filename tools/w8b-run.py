@@ -201,26 +201,23 @@ def _set_model_provider(cfgp: Path, model: str, provider: str) -> bool:
 
 
 def ensure_profiles(spec: dict) -> None:
-    """Create <prefix>-{naive,paged} from w8b-* when they do not exist yet.
+    """Never create a profile. Refuse and say what is missing.
 
-    A profile pair is the only place model/provider can live (the gateway refuses creation
-    overrides on resume), so a new provider needs its own pair. Copying keeps toolsets,
-    agent.max_turns and the paged budget identical, so the two providers differ only in
-    model + provider — which is what makes their results comparable at all.
+    An earlier version provisioned a missing pair by copying another one, which is how eight
+    profiles (368 MB, ~170 sessions) appeared in the owner's Hermes install. The owner does not want
+    the experiment to add profiles. A missing pair is now a refusal that names the two paths, and
+    preflight reports it too, so nothing is created even by accident.
     """
-    src_prefix = "w8b"
+    missing = []
     for arm in ("naive", "paged"):
         dst = PROFILES / f"{spec['prefix']}-{arm}"
-        if dst.exists():
-            if _set_model_provider(dst / "config.yaml", spec["model"], spec["provider"]):
-                print(f"updated {dst} -> model={spec['model']} provider={spec['provider']}")
+        if not dst.exists():
+            missing.append(str(dst))
             continue
-        src = PROFILES / f"{src_prefix}-{arm}"
-        if not src.exists():
-            continue
-        shutil.copytree(src, dst)
-        _set_model_provider(dst / "config.yaml", spec["model"], spec["provider"])
-        print(f"provisioned {dst} (model={spec['model']}, provider={spec['provider']})")
+        if _set_model_provider(dst / "config.yaml", spec["model"], spec["provider"]):
+            print(f"updated {dst} -> model={spec['model']} provider={spec['provider']}")
+    if missing:
+        print("refusing to create profiles (the owner's rule): " + ", ".join(missing))
 
 
 def preflight(arms: list[str], spec: dict) -> list[str]:

@@ -2,6 +2,10 @@
 
 Give this to the agent running W8B. It assumes no memory of W8 and no access to our chat.
 
+**Status 2026-11-11:** the eight `w8*` profiles were deleted on the owner's instruction, and the
+runner no longer provisions pairs. A run therefore refuses at preflight until a pair is deliberately
+restored. Nothing else about the design changed.
+
 The work is **one command**. Everything the earlier agents built by hand — fixture, profiles, driver
 prompts, seal, verification — is in the repo, and the runner refuses to start if any of it is wrong.
 Your job is to run it, read the verdicts, and record them.
@@ -91,6 +95,8 @@ The runner refuses, correctly, when any of these is true:
 
 ```
 profile missing, or its model/provider differ from the selected provider's spec
+                          NOTE 2026-11-11: the w8* profile pairs no longer exist — the owner pruned
+                          all eight. The runner refuses and names them; it must never create one.
 toolsets != [file]        (no shell, no code execution — the H6 run shelled out 16 times without it)
 paged budget != 70000     (a budget default is not a treatment)
 fixture does not have exactly 20 parts
