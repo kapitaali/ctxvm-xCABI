@@ -313,19 +313,22 @@ these reports.
 Keep this section TRUE with one edit per stale line when you close a card; an out-of-date pin
 disqualifies this file from prompt duty:
 
-- Packet queue: P8 + P9 + P10 ANSWERED 2026-11-11 (P8 cache-stable selection: ranking
-  adopted, w/r = 10 and the evictable share corrected to 5.3%, (d) amended because the measured no-op
-  arm cost 4.4x control, Q2's metric-replacement rule adopted as a standing rule, Q3 already executed;
-  P9 close-W8-or-mechanism-test: A confirmed, closure needs NO edit, narrowing already ran -> H3
-  unknown cause, one stale phrase routed; P10 page-id asymmetry: ruling (b)+(a) — ONE RFC-0.1
-  compatibility-note line stating the type-dispatch rule, plus prose docs, NO field; the rule is
+- Packet queue: EMPTY of owner pastes - P1..P11 are all answered. P8 cache-stable selection:
+  ranking adopted, w/r = 10 and the evictable share corrected to 5.3%, (d) amended because the
+  measured no-op arm cost 4.4x control, Q2's metric-replacement rule adopted as a standing rule, Q3
+  already executed. P9 close-W8-or-mechanism-test: A confirmed, closure needs NO edit, narrowing
+  already ran -> H3 unknown cause, one stale phrase routed. P10 page-id asymmetry: ruling (b)+(a) - ONE
+  RFC-0.1 compatibility-note line stating the type-dispatch rule, plus prose docs, NO field; the rule is
   verified word for word against both schemas; the note lands as a NEW file under spec/rfc-0.1/ with a
-  D-number and a conformance vector (a fixture) makes it testable). P11 is the ONLY queued paste
-  (canonical ordering: sorted keys vs Rust struct order — F9 accepted but undocumented for consumers).
-  P4/P5/P6/P7 answered (RR-P4TS / RR-P5CAL / RR-P6DET / RR-P7BASE); umpire gates G1 (ordering clause),
-  G2 (caller sentence), G3 (equivalence prereg) unchanged; U4 TICKED against RR-M3V3; U5 (page-id ruling)
-  is ANSWERED (its note + D-number are owner-routed); U6 (MCP default calibration = superseded v2 map)
-  open; U2 re-measured — the model server is still DOWN (port 8081 free), the offline MCP surface answers.
+  D-number. P11 canonical ordering: ruling (c) owner with (a) as a POINTER, TEST FIRST - equal parsed
+  model, equal page table, equal replay report, never equal bytes, with and without `ts`, vector pair +
+  Rust unit test; the note is a compatibility statement only; two divergences measured today (astral
+  key order, number forms) trigger the third falsifier, so the note needs a canonical form for hash
+  inputs only.
+  Still owner-routed: the P10+P11 note file (one D-number, two lines), the P10 vector + the P11 order pair
+  and its Rust unit test, P8's W8 subject choice, and U6 (the MCP's default calibration artifact = the
+  superseded v2 map). U4 TICKED against RR-M3V3; U5 (page-id) answered; U2 re-measured -
+  the model server is still DOWN (port 8081 free), the offline MCP surface answers.
 - PROJECT-STATE cap (standing): the file sits at 6,123/6,144 B - 21 B of headroom. Any lane
   writing it must re-run `bash tools/check-handoff.sh` BEFORE committing; a Done-window line can
   push the file over the cap and turn the WHOLE kit red (precedent: `ada48de` -> `RR-KITCAP-20261111`,
@@ -355,6 +358,6 @@ disqualifies this file from prompt duty:
   decides paste-N; a PROJECT delta over ~100 B likely re-breaks paste-3. Pre-measure; trim
   glossary rows (never headings) if over.
 - Day files: 2026-11-09 (sealed), 2026-11-10 (sealed, append-only), 2026-11-11 (current).
-  LOG row count 247 COMMITTED as of the P10 card; verify with `grep -c '^| RR-' reports/LOG.md`.
+  LOG row count 248 COMMITTED as of the P11 card; verify with `grep -c '^| RR-' reports/LOG.md`.
 - AGENT-PROMPT §1 staleness: refresh PROPOSED, not edited (policy-file law, §0).
 - Watcher baselines reset for free; never treat "quiet" as "no collision".

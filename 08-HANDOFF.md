@@ -1144,6 +1144,35 @@ step is now CONCRETE — rewrite the questions to the values the tool reports �
 amendment, the Q2 rule, Q3-executed — none depends on the W8B2 call count). The committed LOG row
 never claimed "0 calls", so no committed row needs an erratum. Card `reports/RR-W8B2CORR-20261111.md`.
 
+**Frontier 11 addendum 15 (2026-11-11, packet P11 answered):** the canonical-ordering ruling stands —
+**(c) as the owner, with (a) as a short POINTER — and the ORDER is test-first**: write the
+conformance test, then the note can state a fact the test enforces (F9 is otherwise a claim nobody can
+falsify). The test belongs to ctxvm (its replay makes the acceptance claim; umpire's 00-SPEC may
+mention it but cannot own it) and asserts, in order of strength, equal parsed model -> equal page table
+-> equal replay report (incl. divergences and violations), NEVER equal bytes, with a trace WITH `ts` and
+one WITHOUT (the sorted form puts `ts` before `type`), plus a numeric case — in BOTH places: a vector
+pair with the expected report in `rust/crates/ctxvm-conformance/vectors/` and a Rust unit test that
+parses the pair. The note's line is a COMPATIBILITY STATEMENT ONLY (verbatim: "Key order within an event
+is not significant to parsing or replay … the codec remains strict about unknown fields"). Two of the
+reviewer's UNKNOWNs resolved: `events-v0-1.jsonl` carries `ts` on 6 lines (the v0 and session vectors
+carry none) and a vector is a FIXTURE, not a spec edit; the note's route is a D-number (RFC-0.1:
+"Applied (D4 approved 2026-10-30)") and a NEW file under `spec/rfc-0.1/` (its scope: "new files under
+`spec/rfc-0.1/` only"), bundling the P10 type-dispatch line and this line as two lines under one
+D-number. **One premise corrected:** a TS-to-Python byte comparison DOES exist (`RR-W7-20261029.md` §4:
+17 records, mismatches=0) with the scope caveats "ASCII-only …, floats banned" and the verdict
+"byte-compatible, NOT an independent implementation" — and the hash-input inference is narrowed
+(content hashes hash the content string; only the ref's truncation digest is over canonical JSON).
+**TWO DIVERGENCES MEASURED TODAY, so the reviewer's third falsifier is TRIGGERED:** umpire's Python
+canonical_json vs ctxvm's TS canonicalJson agree on ascii, non-ASCII values and nested keys, but
+DIFFER on astral-plane KEY names (Python sorts by code point, JS's default sort by UTF-16 code unit) and
+on number text forms in four of six cases (1.0 vs 1; 1e+16 vs 10000000000000000; 1e-07 vs 1e-7; big
+ints past 2^53 lose precision in JS). Since umpire's ref digest IS a digest over serialised bytes, the
+note needs a normative canonical form FOR HASH INPUTS ONLY — "byte-for-byte across languages" is not
+satisfiable as stated. Duplicate keys measured: the v0.1 validator accepts them (exit 0) and no
+duplicate-key check exists in the codec or either validator (last value wins in all three parsers -
+uniform by accident, specified nowhere). No spec, schema or vector byte was written. Card
+`reports/RR-P11CANON-20261111.md`.
+
 ## §1. Workspace map
 
 ```

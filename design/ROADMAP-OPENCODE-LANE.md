@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-11, HEAD `f1e068c` (the W8B2-figure correction card in flight, committing on top).
+State of record: 2026-11-11, HEAD `b8e1d3b` (the P11 ruling card in flight, committing on top).
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -155,17 +155,24 @@ pin true every card close.
   *Done when (met):* the packet STATUS reads answered, the card exists in a commit, and the QUESTIONS
   row `| P10 |` reads answered.
 
-- [ ] **P11 (canonical ordering: sorted keys vs Rust struct order) — QUEUED 2026-11-11.** Cut by
-  `reports/RR-UMRES-20261111.md` to close the gap the umpire-gates card found: F9 is ACCEPTED, but
-  its documentation line was proposed as "packet P5" in the friction card while the kit's P5 is the
-  calibration question — so no owner existed. Options: (a) one RFC-0.1 compatibility-note line
-  (owner + D-number), (b) umpire's 00-SPEC only, (c) a CONFORMANCE TEST instead of a note, (d) accept
-  silently. The packet carries the crux: `ts` is the LAST field of every Rust event variant
-  (`model.rs:161,:179,:189,:199,:211,:220`) while sorted keys place `ts` BEFORE `type`, so the two byte
-  forms differ BY CONSTRUCTION — "both accepted" is the only honest rule, and a normative sorted-keys
-  rule would forbid the wire order law 3 requires.
-  *Done when:* the owner pastes the ruling; the verdict lands in QUESTIONS + a card.
-  *Owner:* paste the packet.
+- [x] **P11 (canonical ordering: sorted keys vs Rust struct order) answered 2026-11-11.** The ruling
+  stands: **(c) as the owner, with (a) as a short POINTER — and the ORDER is test-first**: write the
+  conformance test, then the note can state a fact the test enforces (F9 is otherwise a claim nobody
+  can falsify). The test belongs to ctxvm (its replay makes the acceptance claim) and asserts, in order
+  of strength, equal parsed model -> equal page table -> equal replay report, NEVER equal bytes, with a
+  trace WITH `ts` and one WITHOUT plus a numeric case, in BOTH places (a vector pair in
+  `rust/crates/ctxvm-conformance/vectors/` + a Rust unit test). The note's line is a COMPATIBILITY
+  STATEMENT ONLY (parsing and replay; the codec stays strict). Resolved from the books: `ts` coverage
+  (6 lines in `events-v0-1.jsonl`), a vector is a FIXTURE not a spec edit, and the note's route (a
+  D-number + a NEW file under `spec/rfc-0.1/`, bundling the P10 line and this one under one D-number).
+  **MEASURED TODAY, and it TRIGGERS the reviewer's third falsifier:** umpire's Python `canonical_json`
+  and ctxvm's TS `canonicalJson` agree on ascii, non-ASCII values and nested keys but DIFFER on
+  astral-plane KEY names (code point vs UTF-16 code-unit ordering) and on number text forms in four of
+  six cases — and umpire's ref digest IS a digest over serialised bytes, so the note needs a normative
+  canonical form FOR HASH INPUTS ONLY. Duplicate keys: accepted by the validator, unspecified anywhere.
+  *Owner-routed next:* the conformance pair + Rust unit test, and the note's two clauses under one
+  D-number. *Done when (met):* the packet STATUS reads answered, the card exists in a commit, and the
+  QUESTIONS row `| P11 |` reads answered.
 
 ## 2. Owner-gated proposals this lane authored (ratification turns text into bytes)
 
@@ -327,8 +334,10 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
 
 ## 6. Owner's next-cue list (what unblocks the most)
 
-1. Paste P11 (canonical ordering) — the only friction item still open; P10's ruling is in, its note
-   + D-number + conformance vector are owner-routed.
+1. NO packet paste is pending: P1-P11 are all answered. What is owner-routed now: the P10 + P11
+   compatibility-note file (one D-number, two lines), the P10 conformance vector + the P11 order pair
+   (with and without `ts`) and its Rust unit test, the P8-style W8 subject choice, and U6 (the MCP's
+   default calibration artifact).
 2. Rule P8 drop-or-keep (its paste now fits — 16,037/16,384 — after `RR-CTXPACK-20261111`).
 3. Ratify G1 (ordering clause, fresh D-number) and G2 (caller sentence, D-U1).
 4. Rule the redaction go/defer (G4) and W8's fate (G7); D13/D14 + D17 remain the big gates.

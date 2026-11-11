@@ -389,3 +389,86 @@ reasoning is corrected. The packet's own Evidence prose was condensed to fit the
 **Not done, owner-gated:** the note file, the D-number, and the conformance vector (one line per
 shape plus a negative: a `page.declare` carrying a flat `page.logicalRef`, which a sniffing reader
 would accept and the validator must reject). This lane writes no spec, schema or vector byte.
+
+## P11 — canonical ordering: sorted keys vs Rust struct order, and who owns the compatibility line
+
+**answered 2026-11-11** (two passes: the reviewer's first answer, then a re-check against the cards
+that landed the same day — `RR-UMRES`, `RR-UGATE`, `RR-P10ID`). Full record:
+`reports/RR-P11CANON-20261111.md`.
+
+**Ruling: (c) as the owner, with (a) as a short POINTER to it — and the ORDER matters: WRITE THE
+CONFORMANCE TEST FIRST; the note can then state a fact the test enforces.** Because F9 is currently a
+claim nobody can falsify (the packet's Evidence 5: no test shows a sorted-keys line and a struct-order
+line derive the same page table) — "a note without the test records a belief". **Ownership: the test
+belongs to ctxvm**, because ctxvm's replay is what makes the acceptance claim; umpire's `00-SPEC.md`
+(option (b)) can mention it but cannot own it. (d) is out, for the reason given in P10 — a third
+consumer will hit this.
+
+**What the test must assert, in order of strength (all three should pass; a failure at any level says
+what broke): (1) same parsed model** — one event set serialised in sorted-key order and in struct order
+parses to equal models; **(2) same derived page table** — replay both files, page tables equal field by
+field; **(3) same report** — `ctxvm replay` output, including divergences and violations, identical.
+**Never byte-identical lines** (the byte forms differ by construction — `ts` rides last). Include a
+trace WITH `ts` and one WITHOUT, because the sorted form puts `ts` before `type` and that is the case
+most likely to expose a bug. **It lives in BOTH places**: a vector pair (the same trace in both orders,
+with the expected report) in the conformance vectors so any other implementation can run it, AND a
+Rust unit test that parses the pair.
+
+**The note's line, if (a) is done, is a COMPATIBILITY STATEMENT ONLY** (verbatim): "Key order within an
+event is not significant to parsing or replay: events written in sorted-key order and in the emitter's
+field order are accepted equally; the codec remains strict about unknown fields." The last clause stops
+the note from implying anything new is accepted, and the claim stays about parsing and replay — not
+hashing — "if one [a digest] is computed over serialised bytes, key order matters for it, and the note
+must say so".
+
+**Two UNKNOWNs resolved from the books.** (i) `ts` coverage: `events-v0-1.jsonl` **carries `ts` on 6
+lines** (the v0 vector and both session vectors carry none) — so ts-bearing material exists, but only
+one byte form per event, and the discriminating PAIR still has to be built. (ii) **A vector is a
+FIXTURE, not a spec edit**: the vectors live in `rust/crates/ctxvm-conformance/vectors/`, outside
+`spec/` — so the pair can be added without touching any spec byte (with the caveat that it changes the
+conformance-suite totals the CI prints). And the note's route: **a D-number** (RFC-0.1's status line:
+"Applied (D4 approved 2026-10-30)") and a **new file under `spec/rfc-0.1/`** (its scope line: "new
+files under `spec/rfc-0.1/` only") — the reviewer's suggestion to bundle the P10 type-dispatch line and
+this line as TWO lines in ONE new file under ONE D-number is adopted.
+
+**The reviewer's premise corrected.** "RR-IMPL2 reports no TS-to-Python byte comparison" — there **IS**
+one: `RR-W7-20261029.md` §4 ("umpire committed fixtures re-minted: 17 records, mismatches=0"), with the
+scope caveats printed beside it: "**ASCII-only** per umpire §2, **floats banned**, labels sorted-unique
+by umpire's law", and the verdict line "byte-compatible, **NOT an independent implementation**" (the
+Python side declares itself a mirror of `packages/node/src/ident.ts`). So the assertion is well-aimed —
+it is precisely the ASCII-only, float-free scope that leaves their case untested — but the comparison
+exists and is recorded.
+
+**The reviewer's hash-input inference, narrowed.** "Identity hashes are computed over canonical JSON"
+is only partly true: umpire's `content_hash`/`response_hash` hash the content **string** directly; only
+the REF's truncation digest (`decide_ref` → `hex8(canonical)` on the canonical args) is over canonical
+JSON. So the note's "hash input" scope is the canonical-args/ref digest, not content identity.
+
+**Two divergences MEASURED today (zero spend), which is why the note cannot merely say "byte-for-byte
+across languages".** umpire's Python `canonical_json` (`json.dumps(sort_keys=True, separators=(",",":"),
+ensure_ascii=False)`) vs ctxvm's TS `canonicalJson` (`packages/node/src/ident.ts:16-21`):
+
+```
+ascii      IDENTICAL      nonascii   IDENTICAL      nested     IDENTICAL
+astral     *** DIFFER ***  py {"a":3,"�":1,"😀":2}   node {"a":3,"😀":2,"�":1}
+```
+
+Astral-plane KEY names order differently (Python sorts by code point, JS's default sort by UTF-16 code
+unit) ⇒ different canonical bytes ⇒ different digest, silently; the VALUE side is fine, so
+`ensure_ascii=False` alone does not make the two equivalent. And number TEXT forms diverge in four of
+six cases: `1.0`→"1.0"/"1", `1e16`→"1e+16"/"10000000000000000", `1e-7`→"1e-07"/"1e-7", and a big
+integer past 2^53 loses precision in JS ("12345678901234567890" vs "12345678901234567000"); `1e+30` and
+`0.30000000000000004` agree. So the reviewer's third falsifier — "any digest or chain computed over
+serialised bytes" — **is TRIGGERED**: umpire's ref digest is exactly that, so the note needs a
+normative canonical form FOR HASH INPUTS ONLY, which in turn requires choosing the ordering (code
+point vs UTF-16) and the number encoding.
+
+**Duplicate keys, measured.** The v0.1 validator **accepts** a line with a duplicated key ("OK: all
+checks passed", exit 0) and no duplicate-key check exists in the codec or either validator;
+serde_json, Python `json` and `JSON.parse` all take the LAST value — uniform by accident, specified
+nowhere. The reviewer's "number-format" UNKNOWN is now the measured matrix above; both items remain
+ruleless, and the test should include one numeric case.
+
+**Falsifiers adopted (any one changes the ruling):** a pair of lines in the two orders whose parsed
+models differ; differing page tables or replay reports; any digest or chain computed over serialised
+bytes (TRIGGERED — see above); a consumer relying on key order to dispatch.
