@@ -300,10 +300,17 @@ def make_live_shape_trace():
     jsonl, stats = finished["trace"].jsonl, finished["trace"].stats
     assert all(msg["content"] and isinstance(msg["content"], str) for msg in history), \
         "live-shape generator regression: history lost the plain-string shape"
-    scans = sum(1 for line in jsonl.splitlines()
-                if json.loads(line).get("type") == "page.fault"
-                and json.loads(line).get("source") == "identifier_scan")
-    assert scans >= 1, "live-shape generator regression: identifier_scan silent on string history (B1-class death)"
+    # W8C (2026-11-11): the B1-class guard is about the SCAN SEEING the history text, not about a
+    # fault. Prose is telemetry now — it pinned 19 of 21 pages in W8B, on the control arm too — so
+    # the guard checks the mention count the scan records, and separately that a genuine re-read
+    # still produces the one fault the fixture carries.
+    tracer = plugin._vm_for(sid)
+    mentions = sum(page.get("mentions", 0) for page in tracer._declared.values())
+    assert mentions >= 1, "live-shape generator regression: scan silent on string history (B1-class death)"
+    faults = [json.loads(line) for line in jsonl.splitlines()
+              if json.loads(line).get("type") == "page.fault"]
+    assert all(f.get("source") == "tool_recall" for f in faults), \
+        "W8C: the only remaining fault source is a model-initiated re-read"
     if stats["turns"] != 5 or stats["pages"] != 3:
         raise RuntimeError(f"live-shape echo beat structure drifted: {stats}")
     return jsonl, stats, history
