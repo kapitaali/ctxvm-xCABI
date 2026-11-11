@@ -1,4 +1,4 @@
-# State (updated 2026-11-11, by ctxvm repo agent (opencode), P8 card: cache-stable selection answered; paste budget REPAIRED twice)
+# State (updated 2026-11-11, by ctxvm repo agent (opencode), P9 card: W8 close confirmed (A); paste budget REPAIRED twice)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8: CLOSED negative (`design/W8-CLOSURE-20261110.md`); next = W8B, free model (`design/W8B-FREE-PLAN.md`).
@@ -11,9 +11,9 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. P8 answered (RR-P8CACHE-20261111): ranking adopted (watermark compaction); w/r = 10, evictable 5.3% -> n* ~189 calls; (d) amended (no-op arm 4.4x control); Q3 done.
-2. CONTEXT-PACK trimmed again (RR-CTXPACK2-20261111): 6,837 -> 6,440 B; worst paste 15,626/16,384.
-3. W8 closed NEGATIVE at zero spend (P9 = A): RR-W8CACHE/NOOPBYTES/SIM/GRID + RR-SPEND-RECON2; card `design/W8-CLOSURE-20261110.md`.
+1. P9 confirmed (RR-P9CLOSE-20261111): A (no new decision); closure needs NO edit; zero-spend narrowing already ran -> H3 unknown cause; cap wording stays.
+2. P8 answered (RR-P8CACHE-20261111): ranking adopted (watermark compaction); w/r = 10, evictable 5.3% -> n* ~189 calls; (d) amended (no-op arm 4.4x control).
+3. CONTEXT-PACK trimmed again (RR-CTXPACK2-20261111): 6,837 -> 6,440 B; worst paste 15,626/16,384.
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
@@ -21,7 +21,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 ## Next three (ordered, one line each)
 1. Owner: ratify D13 + D14 and route the SIX-item white-paper bundle (items listed in full in RR-DAY-20261109) — working-tree bytes, not HEAD.
 2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
-3. Agent: P10+P11 queued; P8 answered. Umpire gates: D-ordering (P4), caller (P5), vocab (P6), margins (P7), page-id (P10), order (P11).
+3. Agent: P10+P11 queued; P8+P9 answered. Umpire gates: D-ordering (P4), caller (P5), vocab (P6), margins (P7), page-id (P10), order (P11).
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
@@ -31,7 +31,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 - 2026-11-08: D3-c approved (owner); D13 answered (P1); P2 answered + seq 7 located (`identifier_scan` swap-in).
 - 2026-11-09: D14 answered (P3 verdicts recorded); consent mends + card-citation rule routed. P4 answered: ts stays optional; ordering clause PROPOSED for umpire §2 (RR-P4TS-20261109), D-number outstanding.
 - 2026-11-10: D-U1 (P5) calibration with caveat. D-U3 (P6) same-build. D-U2 (P7) two zero-spend baselines first (RR-P7BASE-20261110).
-- 2026-11-11: F1–F7 closed; P10 queued (trigger fired); F9's owner = P11; P8 answered.
+- 2026-11-11: F1–F7 closed; P10 queued (trigger fired); F9's owner = P11; P8+P9 answered.
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 (Pkt 1) ANSWERED 2026-11-08: Pillar-1 splits (replayable + conformance-testable kept; "diffable" behind the consumer profile; "reconstructs any turn" narrowed; absence reworded). Card: `design/diff-normalisation.md`. Owner next: ratify + route with the six-item bundle.
