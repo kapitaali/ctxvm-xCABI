@@ -157,3 +157,25 @@ The plan asks for two owner checkpoints, four tests, one pair and no money.
 - Kit: this card + LOG row + a day-file line + the roadmap's W8B/W8C pointers + the owner's next-cue
   list. No file of the other lane's was edited; no spec, schema, corpus, vector or umpire byte changed;
   nothing pushed.
+
+## 10. Erratum-block: the evidence line, read more sharply (2026-11-11, after the observer/engine
+## distinction was verified)
+
+`page.fault` events are emitted by the plugin **observer** (`packages/hermes/src/plugin.py`: `tool_recall`
+at `:349-352` for a re-read, `identifier_scan` at `:426-434` for a prose mention), while the **pinning**
+lives in the engine (`packages/hermes/live/context_engine.py`, `_credit_demand`). The two are different
+rules in different modules — and the W8B **control arm, which ran no engine at all, recorded the same 19
+faults** as the treatment, so the fault count is engine-independent.
+
+So the closure's evidence line (`page.declare 21 / page.fault 19`) should be read as: **19 pages were
+prose-demanded** — visible in the capture as `identifier_scan` faults, in the control arm too — **and the
+engine pinned those pages** (the correspondence is by page, since both rules fire on the same tokens;
+the engine-side evidence is the behaviour itself: `_plan` returning early on all 43 selections, so the
+protected block alone met the budget).
+
+**The outcome is untouched and does not depend on this:** 0 evictions at both budgets, with the
+instrument engaging 43 times, is measured directly. What changes is the reading of one evidence line —
+and a new instruction for the successor: after W8C, the capture's fault count is expected to be
+**unchanged** unless the observer is aligned in the same change, so before/after comparisons must be made
+on the engine's pin count by source, not on the capture's fault count
+(`reports/RR-W8CSEQ-20261111.md` §7).

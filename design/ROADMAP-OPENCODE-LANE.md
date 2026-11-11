@@ -233,6 +233,18 @@ pin true every card close.
   diagnostic verifies the pins and the growth. **The block should carry the bound**: the six-turn window
   (14-19) comes from the PINNED CEILING, so under the new instrument it is an UPPER BOUND, not a
   promise - state the predicted volume as a range so a narrower window is not read as a falsification.
+  *ERRATUM ON THIS LANE'S NOTE 1 (2026-11-11, their `f14db07`, `reports/RR-W8CERRATUM-20261111`)*
+  **:** `page.fault` is emitted by the plugin **observer** (`packages/hermes/src/plugin.py`:
+  `tool_recall` `:349-352`, `identifier_scan` `:426-434`), not by the engine (which pins in
+  `packages/hermes/live/context_engine.py`, `_credit_demand`) - and the count is ENGINE-INDEPENDENT:
+  the W8B **control arm ran no engine and recorded the same 19 faults**. So "assert `page.fault == 0`"
+  was wrong in its measurement choice; the discriminating observable is the **engine's pin count by
+  source** (`pins_by_source.text == 0`, which the plan's section 4 already requires). The **observer must
+  be aligned in the same change** or the capture cannot be compared before/after - and if it is not
+  aligned, the capture's fault count stays 19 after W8C **by design**, so before/after comparisons must
+  be made on the engine's pin count. The W8B closure's outcome is untouched; only its evidence line is
+  read more sharply (19 pages were prose-demanded, visible as faults in the control arm too, and the
+  engine pinned those pages).
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
