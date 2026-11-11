@@ -124,6 +124,14 @@ file `handoff/packets/P10-page-id-asymmetry.md`, not a section here) fits the ca
 a chart row survives in that packet's own section above and in the cited RR cards; the cap is the only
 reason a row is a pointer.
 
+
+Sixth pass (2026-11-11, the umpire-residue card): the P1/P2/P3 chart rows compacted to
+pointers as well, so the P11 row (QUEUED 2026-11-11 - canonical ordering; whose full text is the
+packet file `handoff/packets/P11-canonical-order.md`) fits the cap. Nothing was rewritten in the
+sections above: every fact dropped from a chart row survives in its own section and in the cited RR
+card. The chart now runs at 3,055/3,072 B - the cap, not the content, is the binding constraint on
+new queue rows.
+
 ## P7 —` section above.
 
 A third shave in the same pass: the statuses line, the queue-law paragraph and the

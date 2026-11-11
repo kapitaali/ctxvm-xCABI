@@ -313,13 +313,17 @@ these reports.
 Keep this section TRUE with one edit per stale line when you close a card; an out-of-date pin
 disqualifies this file from prompt duty:
 
-- Packet queue: P10 QUEUED 2026-11-11 (page-id asymmetry: flat vs nested page identity — the
-  second-consumer trigger ALREADY FIRED: umpire's Python and ctxvm's own OTLP exporter both
-  branch; ruling owner-gated, agent recommends (a)/(b) over (c) because a declare-side field
-  would invalidate EVERY declare line for strict v0 consumers). P8 (cache-stable selection;
-  3,059/3,072 B margin) still owner-flagged drop-or-keep. P4/P5/P6/P7 answered (RR-P4TS /
-  RR-P5CAL / RR-P6DET / RR-P7BASE); umpire gates G1 (ordering clause), G2 (caller sentence),
-  G3 (equivalence prereg) unchanged; U4 TICKED against RR-M3V3; U5 (page-id ruling) added.
+- Packet queue: P10 + P11 QUEUED 2026-11-11 (page-id asymmetry: flat vs nested page identity
+  — its second-consumer trigger ALREADY FIRED; and canonical ordering: sorted keys vs Rust struct
+  order — F9 accepted but undocumented for consumers, so the line has no owner yet). P8 (cache-stable
+  selection; 3,059/3,072 B margin) still owner-flagged drop-or-keep. P4/P5/P6/P7 answered
+  (RR-P4TS / RR-P5CAL / RR-P6DET / RR-P7BASE); umpire gates G1 (ordering clause), G2 (caller
+  sentence), G3 (equivalence prereg) unchanged; U4 TICKED against RR-M3V3; U5 (page-id ruling) and
+  U6 (MCP default calibration = superseded v2 map) added; U2 re-measured — the model server is still
+  DOWN (port 8081 free), the offline MCP surface answers.
+- Naming rule (standing): friction points use the F-series (F1…F9) and NEVER an R-number —
+  RFC-0.1's R0…R5 are revision ids, and one input labelled the page-id residual "R1", colliding with
+  R1 = `intentional_rerun`. Friction cards also carry the date, the locator and the gate output.
 - Owner gates outstanding: the umpire ordering clause (P4) and the calibrated-confidence caller
   sentence (P5) — both carried VERBATIM as PROPOSAL in their cards; ratification + fresh
   D-numbers needed (A6's register has NO ts candidate; D-U1 IS registered, so P5 ratifies into it).
@@ -327,7 +331,7 @@ disqualifies this file from prompt duty:
   decides paste-N; a PROJECT delta over ~100 B likely re-breaks paste-3. Pre-measure; trim
   glossary rows (never headings) if over.
 - Day files: 2026-11-09 (sealed), 2026-11-10 (sealed, append-only), 2026-11-11 (current).
-  LOG row count 242 COMMITTED as of the umpire-gates card (the worktree shows 244: two rows
+  LOG row count 243 COMMITTED as of the umpire-residue card (the worktree shows 245: two rows
   belong to other lanes and stay unstaged); verify with `grep -c '^| RR-' reports/LOG.md`.
 - AGENT-PROMPT §1 staleness: refresh PROPOSED, not edited (policy-file law, §0).
 - Watcher baselines reset for free; never treat "quiet" as "no collision".

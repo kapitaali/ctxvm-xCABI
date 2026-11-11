@@ -976,6 +976,25 @@ recommendation is (a)/(b) over (c) because an additive declare-side field would 
 line invalid for strict v0 consumers. Card `reports/RR-UGATE-20261111.md`; ruling is owner-gated
 (D-number in the umpire register). Remaining reviewer queue: P8 owner-flagged; P10 queued.
 
+**Frontier 11 addendum 6 (2026-11-11, after the push):** the push landed (remote `main` == local HEAD
+`63472f4`) and the full CI was re-run at that HEAD with the env-correct invocation → **ALL GATES
+GREEN** (rust; node build parity — 16 events byte-identical; TS 22+62+46; python 187+8+66;
+benchmarks/metrics; `SCHEMA CONFORMANCE: PASS (682 checks)`; export round-trip; hub byte-identity).
+The umpire MCP surface was re-checked: `health` → connection refused (the pinned server listens on
+127.0.0.1:8081 and is not running — `ss`/`pgrep` agree), while `pins` and `calibration_info` answer.
+**NEW finding:** the MCP's default calibration artifact is the SUPERSEDED v2 map
+(`cal-v1:aceb881587b3b3a6`, test ECE 0.026684) — not the v3 map of record
+(`cal-v1:057a5a35a9d4ec71`, ECE 0.030163, `RR-M3V3`) — and the two are not one map under two labels
+(`isotonic.points`, `raw_sha256`, `provenance.git_head`, `selection` and the test metrics all differ).
+The default is injected by the launcher (`mcp_server.py:54` has none): the hermes gateway config sets
+`UMPIRE_CALIBRATION=…/umpire-cal-v2.json` (`~/.hermes/config.yaml:2114` + the arm profile copy
+`:2115`), so the MCP as configured cannot reproduce the calibration of record. Fix = one config line
++ gateway restart; NOT done here (hermes lane's machine config; the umpire repo is read-only from
+this lane) — board item U6, owner-routed. F9's ownership gap is closed by packet **P11** (canonical
+ordering; queued; the crux: `ts`-last vs sorted keys differ by construction, so "both accepted" is
+the only honest rule). Friction points use the F-series from now on — never an R-number. Remaining
+reviewer queue: P8 owner-flagged; P10 + P11 queued.
+
 ## §1. Workspace map
 
 ```

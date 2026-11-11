@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-11, HEAD `c8aa370` (w8b lane; my umpire-gates card in flight, committing on top). This is the lane's
+State of record: 2026-11-11, HEAD `63472f4` (umpire-gates PROJECT delta; the residue card in flight, committing on top). This is the lane's
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -111,6 +111,18 @@ pin true every card close.
   *Done when:* the owner pastes the ruling; the verdict lands in QUESTIONS + a card.
   *Owner:* paste the packet (D-number in the umpire register).
 
+- [ ] **P11 (canonical ordering: sorted keys vs Rust struct order) — QUEUED 2026-11-11.** Cut by
+  `reports/RR-UMRES-20261111.md` to close the gap the umpire-gates card found: F9 is ACCEPTED, but
+  its documentation line was proposed as "packet P5" in the friction card while the kit's P5 is the
+  calibration question — so no owner existed. Options: (a) one RFC-0.1 compatibility-note line
+  (owner + D-number), (b) umpire's 00-SPEC only, (c) a CONFORMANCE TEST instead of a note, (d) accept
+  silently. The packet carries the crux: `ts` is the LAST field of every Rust event variant
+  (`model.rs:161,:179,:189,:199,:211,:220`) while sorted keys place `ts` BEFORE `type`, so the two byte
+  forms differ BY CONSTRUCTION — "both accepted" is the only honest rule, and a normative sorted-keys
+  rule would forbid the wire order law 3 requires.
+  *Done when:* the owner pastes the ruling; the verdict lands in QUESTIONS + a card.
+  *Owner:* paste the packet.
+
 ## 2. Owner-gated proposals this lane authored (ratification turns text into bytes)
 
 - [ ] **G1. Umpire ordering clause (from P4).** The one-clause rule (line order governs; absent
@@ -217,10 +229,14 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
   (schema `umpire-calibration-precision/0.1`, `cal-v1:057a5a35a9d4ec71`, corpus sha `54e39733…`,
   bootstrap n=2000 seed 42, 10-bin ECE, test n=120, committed `47e0ee0`) verified on disk during
   P5.
-- [ ] **U2. MCP health re-check before any umpire MCP consumer work.** Server was DOWN at P5
-  verification (`urlopen Errno 111`); the disk artifact carried the record.
-  *Done when:* `tools.umpire.health()` (or the pinned URL check) returns ok on a fresh session
-  that needs the surface.
+- [ ] **U2. MCP health re-check before any umpire MCP consumer work.** RE-MEASURED 2026-11-11
+  (`RR-UMRES-20261111`): still DOWN — `tools.umpire.health()` returns `urlopen Errno 111` (connection
+  refused); the pinned server (`llama-server … --host 127.0.0.1 --port 8081`) has no listener and no
+  process, so the MCP CONSUMER path is blocked on the model server, not on the MCP layer. The offline
+  surface answers: `pins` OK (default `qwen3-1.7b`), `calibration_info` OK.
+  *Done when:* `tools.umpire.health()` returns ok on a fresh session that needs the surface (the
+  owner starts the pinned server; this lane does not — it loads ~4.5 GB of weights).
+
 - [ ] **U3. Umpire-side lane tools.** The umpire repo has its own AGENTS.md books; if the owner
   routes a dev card there, its pipeline mirrors §4 of my prompt with uom-per-card kit rules in
   that repo. Standing: proposals only until a D-number lands.
@@ -248,6 +264,22 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
   *Done when:* P10 is answered in QUESTIONS + a card lands; if (b), the RFC-0.1 compatibility-note
   line is drafted proposal-only for the owner.
   *Owner:* paste P10 (D-number in the umpire register).
+
+- [ ] **U6. The MCP's default calibration artifact is the SUPERSEDED v2 map.** From
+  `reports/RR-UMRES-20261111.md`: `calibration_info` (no argument) returns `umpire-cal-v2.json`
+  (`cal-v1:aceb881587b3b3a6`, test ECE 0.026684) while the calibration OF RECORD is v3
+  (`cal-v1:057a5a35a9d4ec71`, ECE 0.030163, `RR-M3V3`; the umpire repo's own `spec/calibration_ci.py:38`,
+  `spec/test_packaging.py:33`, `spec/transfer_eval.py:35` all use v3). The two artifacts are NOT one map
+  under two labels: `isotonic.points`, `raw_sha256`, `provenance.git_head`, `selection` and the test
+  metrics all differ, so an MCP consumer on the default serves a different map and a different
+  data_version stamp than the record — the MCP as configured cannot reproduce the calibration of
+  record. The default is NOT in the code (`mcp_server.py:54` has none): the launcher injects it, and
+  the hermes gateway config points at v2 (`~/.hermes/config.yaml:2114`; arm profile copy `:2115`).
+  *Fix (owner-routed):* point `UMPIRE_CALIBRATION` at `umpire-cal-v3.json` + restart the gateway.
+  *Not done here:* `~/.hermes/**` is the hermes lane's machine config; the umpire repo is read-only
+  from this lane.
+  *Done when:* a fresh MCP session's `calibration_info` (no argument) returns the v3 artifact's
+  data_version, and any MCP-decided row carries the record's stamp.
 
 ## 6. Owner's next-cue list (what unblocks the most)
 
