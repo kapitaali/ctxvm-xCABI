@@ -347,7 +347,7 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000
         return out
 
     v = sh([sys.executable, str(DRIVER), "--capture", str(cap), "--expect-budget",
-            str(BUDGET) if arm == "paged" else "any"])
+            str(budget) if arm == "paged" else "any"])
     (run_dir / "verify.txt").write_text(v.stdout + v.stderr, encoding="utf-8")
     for line in v.stdout.splitlines():
         if line.strip().startswith("["):
@@ -369,9 +369,30 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000
         c = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
         row = c.execute("select api_call_count, estimated_cost_usd, input_tokens, output_tokens "
                         "from sessions where id=?", (sid,)).fetchone()
+        # Prefer the provider receipts in the capture: the session row's token columns are an
+        # estimate, and on 2026-11-11 they disagreed by 1.87x between two arms whose requests were
+        # byte-identical. `call.meta.providerUsage` is what the provider actually charged.
+        cap_file = Path.home() / ".local" / "state" / "ctxvm" / "traces" / f"{sid}.jsonl"
+        try:
+            usage = {}
+            for line in cap_file.read_text().splitlines():
+                if '"providerUsage"' not in line:
+                    continue
+                rec = json.loads(line)
+                u = rec.get("providerUsage") or {}
+                for k in ("inputTokens", "outputTokens", "cachedInputTokens"):
+                    if isinstance(u.get(k), int):
+                        usage[k] = usage.get(k, 0) + u[k]
+            out["receipt"] = usage or None
+        except Exception:
+            out["receipt"] = None
         if row:
             out["calls"], out["cost_usd"] = row[0], row[1]
             out["in"], out["out"] = row[2], row[3]
+        if out.get("receipt"):
+            out["in"] = out["receipt"].get("inputTokens")
+            out["out"] = out["receipt"].get("outputTokens")
+            out["cached"] = out["receipt"].get("cachedInputTokens")
     return out
 
 

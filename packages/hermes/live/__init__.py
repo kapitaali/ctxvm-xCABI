@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.11.0"
+PLUGIN_VERSION = "0.11.1"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -527,15 +527,40 @@ def _engine_activated() -> Optional[str]:
 
 
 def _engine_skipped_control() -> Optional[int]:
-    """Times the engine declined to act because this session's profile says compressor."""
+    """Times the engine declined to act because THIS session's profile says compressor."""
     engine = _state().get("engine_obj")
     meter = getattr(engine, "_meter", None)
+    profile = _current_profile_name()
+    if isinstance(meter, dict) and isinstance(meter.get("by_profile"), dict):
+        bucket = meter["by_profile"].get(profile or "")
+        return int(bucket.get("skip", 0)) if isinstance(bucket, dict) else 0
     if isinstance(meter, dict) and "skipped_control" in meter:
         return int(meter["skipped_control"])
     return 0
 
 
+def _current_profile_name() -> Optional[str]:
+    try:
+        from profile_policy import policy
+        return policy().get("profile")
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _engine_selections() -> int:
+    """Selections made FOR THIS SESSION'S PROFILE, not for the process.
+
+    One gateway holds one engine for every arm; a flat counter let a control sidecar report the
+    probes that ran on the treatment. The engine now keeps a per-profile bucket and this reads it.
+    """
+    engine = _state().get("engine_obj")
+    meter = getattr(engine, "_meter", None)
+    profile = _current_profile_name()
+    if isinstance(meter, dict) and isinstance(meter.get("by_profile"), dict):
+        bucket = meter["by_profile"].get(profile or "")
+        if isinstance(bucket, dict):
+            return int(bucket.get("select", 0))
+        return 0
     try:
         from context_engine import ACTIVATIONS
     except Exception:  # noqa: BLE001

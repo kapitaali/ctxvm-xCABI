@@ -301,7 +301,10 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         # plugin holds. Measured 2026-11-09: a 14-read paged cell reported
         # `engineSelections: 0` while the host log showed no fallback, i.e. the engine was
         # running and the witness was reading the wrong object.
-        self._meter: Dict[str, int] = {"select": 0, "skipped_control": 0}
+        # Per PROFILE, because one gateway serves every arm from one engine object: a flat
+        # process counter made a control sidecar report the probes that ran on the treatment
+        # (measured 2026-11-11: naive sidecar read 2 selections it never made).
+        self._meter: Dict[str, Any] = {"select": 0, "skipped_control": 0, "by_profile": {}}
         self._last_policy: Optional[Dict[str, Any]] = None
         self._selections = 0
         # stock keep-law defaults (the host ABC's own class-level values)
@@ -383,10 +386,14 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
             pol = None
         self._last_policy = pol
         if pol is not None:
+            _prof = pol.get("profile") or "?"
+            _bucket = self._meter.setdefault("by_profile", {}).setdefault(
+                _prof, {"select": 0, "skip": 0})
             if pol.get("engine") != "ctxvm":
                 # Control arm: the host may have activated this engine for the process, but the
                 # profile this session belongs to says compressor. Leave the request untouched.
                 self._meter["skipped_control"] = self._meter.get("skipped_control", 0) + 1
+                _bucket["skip"] += 1
                 return None
             # A budget given to the constructor is the caller's decision (the test suite uses tiny
             # ones to exercise the laws), and a policy whose home does not exist is not a session
@@ -401,6 +408,8 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         self._selections += 1
         self._meter["select"] += 1
         ACTIVATIONS["select"] += 1
+        if pol is not None:
+            self._meter["by_profile"][pol.get("profile") or "?"]["select"] += 1
         _now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         ACTIVATIONS["firstTs"] = ACTIVATIONS["firstTs"] or _now
         ACTIVATIONS["lastTs"] = _now
