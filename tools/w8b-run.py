@@ -426,11 +426,19 @@ def probe(spec: dict, run_id: str, arm: str = "paged") -> dict:
         out["engineSelections"] = plug.get("engineSelections")
         out["profile"] = plug.get("profile")
         out["budget"] = f"{plug.get('budgetTokens')}/{plug.get('budgetSource')}"
-        out["precondition"] = ("READY" if (plug.get("engineSelections") or 0) > 0
-                               else "NOT READY — engine never selected; a pair cannot start")
+        selections = plug.get("engineSelections") or 0
+        is_control = (plug.get("arm") == "control") or (plug.get("engineSetting") == "compressor")
+        if is_control:
+            # A control session must NOT select: that is the arm working, not a failure.
+            out["precondition"] = ("CONTROL OK — no selection, as the profile asks"
+                                   if selections == 0 else
+                                   "BROKEN — control arm selected; the gate did not hold")
+        else:
+            out["precondition"] = ("READY" if selections > 0
+                                   else "NOT READY — engine never selected; a pair cannot start")
     if out["tool_calls"] and any(t in ("read_file", "search_files", "write_file") for t in out["tools"]):
         out["verdict"] = "TOOL CALLS OK"
-    if out.get("precondition", "").startswith("NOT READY"):
+    if out.get("precondition") and not out["precondition"].startswith("READY"):
         out["verdict"] = f"{out['verdict']} / {out['precondition']}"
     print(json.dumps(out, indent=2))
     return out
