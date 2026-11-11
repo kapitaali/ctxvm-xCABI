@@ -348,6 +348,16 @@ disqualifies this file from prompt duty:
   result; (4) both metrics appear in the same table with equal prominence; (5) the SYMMETRY TEST —
   would the same change be made if the result had favoured the other arm? If the justification
   depends on the sign of the result, it is fishing. No cost-saving claim (law 7).
+- Cold start (a reboot kills the session, the watcher and the local servers): the SESSION is not
+  the memory — the kit is. Read `handoff/PROJECT-STATE.md` (state of record), then
+  `handoff/QUESTIONS.md` (the queue), then `design/ROADMAP-OPENCODE-LANE.md` (the board) and the
+  current `reports/RR-DAY-<date>.md`. The standing rules live in this prompt.
+- Environment dependencies that do NOT survive a reboot: the pinned umpire model server
+  (`llama-server … --host 127.0.0.1 --port 8081`, ~4.5 GB of weights) is the OWNER's to start — until
+  then the umpire MCP consumer path (`decide`) is blocked (U2 measured DOWN on 2026-11-11) while
+  `pins` and `calibration_info` still answer as long as the gateway runs; the MCP wrappers themselves
+  restart with the session. The background watcher is per-session and dies with the machine, so
+  overnight monitoring is replaced by the kit's state of record, not by a watcher.
 - Naming rule (standing): friction points use the F-series (F1…F9) and NEVER an R-number —
   RFC-0.1's R0…R5 are revision ids, and one input labelled the page-id residual "R1", colliding with
   R1 = `intentional_rerun`. Friction cards also carry the date, the locator and the gate output.
