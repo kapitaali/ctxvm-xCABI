@@ -494,11 +494,19 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                 self._identity_active.setdefault(u.identity, u.key)
 
     def _credit_demand(self, messages: List[Dict[str, Any]]) -> None:
-        """L3: each digest-unseen message text that references one of a page's
-        identifier tokens is one more demand — served or not, resident or
-        dropped. The birth-index rule (a message demands only pages born
-        strictly before it) keeps a page's own birth messages and earlier
-        context from counting: no demand precedes the page's first render."""
+        """W8C: prose is NOT a demand. Mentions are counted as telemetry only.
+
+        Until 2026-11-11 this method pinned a page when any new message text named one of its
+        argument values. On a read-once task that pinned 19 of 21 pages, because the model's own
+        reply ("part-01.txt is 16,602 bytes") and the final artefact prompt both name the files —
+        and a pinned page is protected, so the budget could never bite. Measured twice: 0 evictions
+        at 70,000 and 90,000 with 43 selections.
+
+        A demand is now a MODEL-INITIATED RE-READ: a second tool call for the same arguments, seen by
+        `note_refault()` at call time, or the same page key arriving on a new result message in
+        `_update_page_state` (the re-render path, unchanged). Prose mentioning a page proves nothing
+        about whether the model needs it: the harness re-sends the same text on every request.
+        """
         for i, m in enumerate(messages):
             if not isinstance(m, dict):
                 continue
@@ -512,12 +520,34 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
             words = {w for w in _SPLIT_RE.split(text) if len(w) >= _MIN_TOKEN_LEN}
             for key, page in self._pages.items():
                 if page["birth"] >= i:
-                    continue  # no demand precedes the first render (L3 birth rule)
+                    continue  # the birth rule still decides what could be demanded
                 toks = page["id_toks"]
                 if toks and not toks.isdisjoint(words):
-                    page["demand_count"] += 1
-                    if page["demand_count"] >= 2:
-                        self._ensure_pinned(key)
+                    page["prose_mentions"] = page.get("prose_mentions", 0) + 1  # telemetry, never a pin
+
+    def note_refault(self, args: Any) -> int:
+        """W8C: the model asked for the same page again — pin it, at CALL time.
+
+        `args` is the tool call's argument payload as the host delivers it (a JSON string or a dict);
+        it is tokenised with the same rule the page table uses, so the identity cannot drift between
+        the observer and the engine. Returns the number of pages newly pinned.
+        """
+        try:
+            toks = frozenset(sorted(_value_tokens(args)))
+        except Exception:  # noqa: BLE001 - an unreadable payload demands nothing
+            return 0
+        if not toks:
+            return 0
+        pinned = 0
+        for key, page in self._pages.items():
+            if toks.isdisjoint(page["id_toks"]):
+                continue
+            page["demand_count"] = page.get("demand_count", 1) + 1
+            page["refaults"] = page.get("refaults", 0) + 1
+            if page["demand_count"] >= 2 and not page["pinned"]:
+                self._ensure_pinned(key)
+                pinned += 1
+        return pinned
 
     # ---- pass 3: keeps, budget, drops --------------------------------------------
 

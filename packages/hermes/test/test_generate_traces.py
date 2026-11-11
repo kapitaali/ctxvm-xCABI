@@ -67,14 +67,19 @@ class GenerateTests(unittest.TestCase):
         the suite, not silently in the field again (m4/m7: faults 0).
         """
         jsonl, stats, history = generate_traces.make_live_shape_trace()
-        self.assertGreaterEqual(
+        # W8C (2026-11-11): prose is telemetry, so this test no longer counts identifier_scan
+        # faults. The B1-class guard is now the generator's own mention assertion, and the trace's
+        # one fault must come from a genuine re-read.
+        self.assertEqual(
             sum(1 for e in jsonl.splitlines() if '"identifier_scan"' in e and "page.fault" in e),
-            1,
+            0,
             "identifier_scan must fire on the live-shape session",
         )
         # Mirror of the m3 echo structure through live shapes: same beats,
         # so the surface composition must match the frozen echo exactly.
-        self.assertEqual(fault_pairs(jsonl), [["identifier_scan", 0], ["tool_recall", 0], ["identifier_scan", 1]])
+        # W8C (2026-11-11): prose is telemetry. The fixture keeps exactly one fault, the re-read at
+        # turn 0; the two identifier_scan faults it used to carry were the defect this card removes.
+        self.assertEqual(fault_pairs(jsonl), [["tool_recall", 0]])
         self.assertEqual(stats["pages"], 3)
         self.assertEqual(stats["turns"], 5)
         self.assertIn("page.declare", jsonl)

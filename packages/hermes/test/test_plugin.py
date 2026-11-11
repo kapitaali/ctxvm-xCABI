@@ -19,6 +19,36 @@ for _p in (_HERMES_ROOT, _HERMES_SRC):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+# The engine seam needs `agent.context_engine` and `live/` on the path. Install both HERE so this
+# module does not depend on another test module having done it first — measured 2026-11-11: the
+# engine-wiring test passed only when test_context_engine.py happened to run earlier in the process.
+_LIVE_DIR = str(Path(__file__).resolve().parents[1] / "live")
+if _LIVE_DIR not in sys.path:
+    sys.path.insert(0, _LIVE_DIR)
+if "agent.context_engine" not in sys.modules:
+    import copy as _copy
+    import types as _types
+
+    _agent_mod = _types.ModuleType("agent")
+    _ce_mod = _types.ModuleType("agent.context_engine")
+
+    class _HostContextEngine:  # structural stand-in for the host ABC
+        last_prompt_tokens = 0
+        last_completion_tokens = 0
+        last_total_tokens = 0
+        emit_automatic_compaction_status = False
+
+        def __init__(self):
+            pass
+
+        def clone_for_agent(self):
+            return _copy.deepcopy(self)
+
+    _ce_mod.ContextEngine = _HostContextEngine
+    _agent_mod.context_engine = _ce_mod
+    sys.modules["agent"] = _agent_mod
+    sys.modules["agent.context_engine"] = _ce_mod
+
 from plugin import CtxvmPlugin, create_ctxvm_plugin, Tracer, TraceInit, canonical_json, content_hash, tool_ref, identity_tokens, provider_usage_of  # noqa: E402
 from live import PLUGIN_VERSION, _budget_from_settings, _canon_meta, _clear_env_for_tests, _evict_stale_tracers, _state, register  # noqa: E402
 
@@ -43,6 +73,11 @@ class TracerTests(unittest.TestCase):
     def run_healthy(self):
         vm = Tracer(TRACE_INIT)
         vm.page({"ref": "file:src/auth.ts", "kind": "file", "content": "export const S = 1;\n"})
+        vm.page({"tool": "read_file", "args": {"path": "src/auth/session.ts"}, "content": "SESSION = configured\n"})
+        # W8C (2026-11-11): a fault is a MODEL-INITIATED RE-READ, so the healthy run has to ask for
+        # the page a second time to produce one. Prose mentioning it no longer does (that pinned 19
+        # of 21 pages in W8B, on the control arm too).
+        vm.recall({"tool": "read_file", "args": {"path": "src/auth/session.ts"}})
         vm.page({"tool": "read_file", "args": {"path": "src/auth/session.ts"}, "content": "SESSION = configured\n"})
         vm.page({"ref": "summary:t0", "kind": "summary", "content": "turn-0 micro-summary"})
         vm.render()
@@ -77,10 +112,14 @@ class TracerTests(unittest.TestCase):
         self.assertEqual([e["turn"] for e in turns], [0, 1, 2, 3])
         self.assertEqual(turns[0]["evictedTokens"], 0)
         self.assertEqual(turns[0]["headroom"], 120000 - turns[0]["residentTokens"])
+        # W8C (2026-11-11): a fault now means the model asked for the page again. The fixture's
+        # double fetch is that event; the prose mentions that used to raise identifier_scan faults
+        # are telemetry on the page, so the trace carries exactly one fault and it is tool_recall.
         faults = [e for e in lines if e["type"] == "page.fault"]
-        self.assertEqual(faults[0]["source"], "identifier_scan")
-        self.assertEqual(faults[0]["turn"], 2)
-        self.assertEqual(faults[0]["latencyMs"], 12)
+        self.assertEqual(len(faults), 1)
+        self.assertEqual(faults[0]["source"], "tool_recall")
+        self.assertEqual(faults[0]["turn"], 0)
+        self.assertIsNone(faults[0].get("latencyMs"))
         metas = [e for e in lines if e["type"] == "call.meta"]
         self.assertEqual(len(metas), 4)
         self.assertEqual(metas[3]["turn"], 3)
@@ -171,7 +210,8 @@ class TracerTests(unittest.TestCase):
         self.assertEqual(tr0["residentTokens"], total_tokens)
         self.assertEqual(trace.stats["pages"], 3)
         self.assertEqual(trace.stats["turns"], 4)
-        self.assertEqual(trace.stats["faults"], 1)
+        self.assertEqual(trace.stats["faults"], 1,
+                         "W8C: the healthy run's re-read is the one fault")
 
     def test_tool_recall_resident_recall_page_fault(self):
         vm = Tracer(TRACE_INIT)
@@ -199,7 +239,13 @@ class TracerTests(unittest.TestCase):
         faults = [e for e in trace.events if e["type"] == "page.fault"]
         self.assertEqual(len(faults), 0)
 
-    def test_identifier_scan_deduped_per_page_per_source(self):
+    def test_scan_counts_mentions_and_emits_no_fault(self):
+        """W8C (2026-11-11): prose naming a page is telemetry, not a demand.
+
+        It used to emit `page.fault` with source `identifier_scan`, which made the trace claim a
+        re-demand whenever the model's own text mentioned a page — 19 of 21 pages in W8B, on the
+        control arm too, where no engine ran. A fault now means one thing: the model asked again.
+        """
         vm = Tracer(TRACE_INIT)
         vm.page({"ref": "file:src/auth/session.ts", "kind": "file", "content": "s"})
         vm.render()
@@ -208,7 +254,10 @@ class TracerTests(unittest.TestCase):
         vm.render()
         trace = vm.finish()
         faults = [e for e in trace.events if e["type"] == "page.fault"]
-        self.assertEqual(len(faults), 1)
+        self.assertEqual(len(faults), 0, "prose must not produce a fault")
+        self.assertEqual(trace.stats["faults"], 0)
+        page = next(iter(vm._declared.values()))
+        self.assertGreaterEqual(page.get("mentions", 0), 1, "the mention is still counted")
 
     def test_determinism_identical_sessions_byte_identical(self):
         # D9: ts default-ON stamps each trace's own wall-clock; the per-trace
@@ -355,7 +404,8 @@ class PluginTests(unittest.TestCase):
         self.assertEqual(types.count("session.open"), 1)
         self.assertEqual(record["trace"].stats["turns"], 1)
         self.assertEqual(record["trace"].stats["pages"], 1)
-        self.assertEqual(record["trace"].stats["faults"], 1)
+        self.assertEqual(record["trace"].stats["faults"], 0,
+                         "W8C: a prose mention is telemetry, not a fault")
 
     def test_errored_call_produces_no_page(self):
         plugin = create_ctxvm_plugin(INIT)
@@ -392,7 +442,7 @@ class PluginTests(unittest.TestCase):
         declares = [e for e in events if e["type"] == "page.declare"]
         faults = [e for e in events if e["type"] == "page.fault"]
         self.assertEqual(len(declares), 1, "status='ok' must declare a page")
-        self.assertEqual(len(faults), 1)  # identifier_scan from history text
+        self.assertEqual(len(faults), 0, "W8C: prose is telemetry; only a re-read faults")
         self.assertEqual(record["trace"].stats["pages"], 1)
         self.assertEqual(record["trace"].stats["turns"], 1)
 
@@ -514,8 +564,7 @@ class PluginTests(unittest.TestCase):
         })
         record = plugin.finish_all()[0]
         faults = [e for e in record["trace"].events if e["type"] == "page.fault"]
-        self.assertEqual(len(faults), 1, "the live string shape must fire identifier_scan")
-        self.assertEqual(faults[0]["source"], "identifier_scan")
+        self.assertEqual(len(faults), 0, "W8C: prose is telemetry; only a re-read faults")
 
     def test_live_shape_multimodal_parts_still_scan(self):
         """W4b B1 guard — the block shape (multimodal / OpenCode-style) keeps firing."""
@@ -537,8 +586,7 @@ class PluginTests(unittest.TestCase):
         })
         record = plugin.finish_all()[0]
         faults = [e for e in record["trace"].events if e["type"] == "page.fault"]
-        self.assertEqual(len(faults), 1)
-        self.assertEqual(faults[0]["source"], "identifier_scan")
+        self.assertEqual(len(faults), 0, "W8C: prose is telemetry; only a re-read faults")
 
     def test_transcript_texts_shape_matrix(self):
         """W4b B1 unit matrix — the next Hermes shape change fails one obvious test."""
@@ -1809,6 +1857,7 @@ class CanonicalSidecarParity(unittest.TestCase):
         self.assertEqual(meta["hookStats"]["sessions"], ["ses_par"])
         self.assertEqual(meta["traceStats"], trace_stats)
         self.assertEqual(meta["budgetTokens"], 1234)
+        # (the ARM is attested by `arm`/`engineSetting`, which is what W8C added)
         self.assertEqual(meta["model"], "test/model")
         self.assertEqual(meta["provider"], "test")
 
@@ -1897,8 +1946,8 @@ class CoverageManifestTests(unittest.TestCase):
                 "declaresByClass": {"READ_ONLY": 1, "MUTATING": 1},
                 # The pre-LLM scan attributes the history path token to the
                 # just-declared tool page → one identifier_scan fault.
-                "faults": 1,
-                "faultsBySource": {"tool_recall": 0, "identifier_scan": 1,
+                "faults": 0,
+                "faultsBySource": {"tool_recall": 0, "identifier_scan": 0,
                                    "explicit_api": 0, "semantic": 0},
             })
             # Arm identity: the sidecar must say which profile served the session and
@@ -2345,6 +2394,11 @@ class EngineWiringTests(unittest.TestCase):
                          "exactly one engine — the host allows only one")
         self.assertEqual(captured[0].name, "ctxvm")
         self.assertEqual(_state()["engine_registered"], "ctxvm")
+        # 0.11.0/W8C: the engine is registered WITHOUT a budget. One gateway serves every profile,
+        # so a snapshot taken here is the wrong arm for all but one session; the engine resolves the
+        # session's budget per call from its own home (profile_policy).
+        self.assertFalse(getattr(captured[0], "_v_budget_explicit", True),
+                         "the registration must not pin a budget")
 
     def test_register_survives_a_ctx_without_the_engine_seam(self):
         class FakeCtx:

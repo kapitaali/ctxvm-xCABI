@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.11.1"
+PLUGIN_VERSION = "0.12.0"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -647,7 +647,7 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             "arm": _state().get("arm"),
             "engineSetting": _state().get("engine_setting"),
             "skippedControl": _engine_skipped_control(),
-            "budgetTokens": _state().get("budget_tokens") or _budget_from_env(),
+            "budgetTokens": _state().get("budget_tokens") or 200000,
             "budgetSource": _state().get("budget_source") or "default",
         },
         "captures": {
@@ -1202,6 +1202,24 @@ def register(ctx) -> None:
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_pre_tool_call(kwargs)
+        # W8C: a SECOND tool call with the same arguments is a demand — the model asked for the page
+        # again. Prose mentioning it is telemetry (the engine no longer pins on text), because the
+        # harness re-sends the same text on every request and that is not the model asking twice.
+        engine = _state().get("engine_obj")
+        tool = kwargs.get("tool") or kwargs.get("tool_name")
+        if engine is not None and isinstance(tool, str):
+            session = kwargs.get("session_id", "") or ""
+            seen = _state().setdefault("tool_args_seen", {}).setdefault(session, {})
+            key = repr(kwargs.get("args"))
+            if key in seen:
+                try:
+                    pinned = engine.note_refault(kwargs.get("args"))
+                    if pinned:
+                        _witness(f"refault tool={tool} pinned={pinned}")
+                except Exception:  # noqa: BLE001 - the observer must never break a tool call
+                    pass
+            elif len(seen) < 500:
+                seen[key] = True
         elif TRACE_FEATURE in features:
             stats["skipped_untraced"] += 1
         for uc in _enabled_stubs(features):
@@ -1865,8 +1883,9 @@ def register(ctx) -> None:
             ctx.register_context_engine(engine)
             state["engine_obj"] = engine
             state["engine_registered"] = engine.name
-            state["budget_tokens"] = _v_budget_at_load
-            state["budget_source"] = _budget_source_at_load
+            # No budget stamped here: one gateway serves every profile, so this snapshot would be the
+            # wrong arm for all but one session. The hook stamps the session's policy instead.
+            _ = (_v_budget_at_load, _budget_source_at_load)
             # NOTE (0.10.8, falsified the same day): `ctx.get_config(key)` reads
             # `plugins.entries.<plugin_id>.settings.<key>`, NOT the profile's top-level
             # `context.engine`. Measured on a live `-p w8-paged` probe: the field came back null

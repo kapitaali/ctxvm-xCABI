@@ -193,6 +193,11 @@ class EngineBudgetTests(unittest.TestCase):
             self.assertEqual(engine2._v_budget_source, "ctor")
 
 
+def _pin_via_refault(engine, path: str) -> int:
+    """W8C: a pin is made by the MODEL asking for the page again, not by prose naming it."""
+    return engine.note_refault({"path": path})
+
+
 class EngineLawTests(unittest.TestCase):
     """L1–L7 pins against hand-built transcripts.
 
@@ -288,7 +293,7 @@ class EngineLawTests(unittest.TestCase):
         self.assertEqual(page["demand_count"], 1)
         self.assertFalse(page["pinned"])
 
-    def test_second_demand_via_prose_remention_pins(self):
+    def test_prose_does_not_pin_and_a_refault_does(self):
         """A digest-unseen later message naming the identifier = demand 2 →
         pinned (policies.py: pin on second demand, served or not)."""
         engine = ce.build_engine()
@@ -299,13 +304,18 @@ class EngineLawTests(unittest.TestCase):
               _msg("assistant", "", tool_calls=[_call("c2", "notes/bravo.md")]),
               _msg("tool", _result(2_000, "bravo"), tool_call_id="c2")]
         engine.select_context(list(tx))
-        # the model re-mentions the ALPHA identifier in a new user turn
+        # W8C: prose naming the page is telemetry. It must NOT pin — the harness re-sends this text
+        # on every request, so a mention says nothing about whether the model needs the page.
         tx2 = list(tx) + [_msg("user", "Now revisit the notes/alpha.md finding.")]
-        out = engine.select_context(list(tx2))
+        engine.select_context(list(tx2))
+        self.assertEqual(engine._pin_order, [],
+                         "prose must not pin (W8C); it pinned 19 of 21 pages in W8B")
+        self.assertTrue(any(p.get("prose_mentions") for p in engine._pages.values()),
+                        "the mention is still recorded, as telemetry")
+        # ... and a model-initiated re-read does pin, which is the signal that replaced it.
+        self.assertGreaterEqual(_pin_via_refault(engine, "notes/alpha.md"), 1)
         pinned_key, = engine._pin_order
         self.assertIn("notes/alpha", str(sorted(engine._pages[pinned_key]["id_toks"])))
-        self.assertEqual(len(engine._pages) - 1,
-                         sum(1 for p in engine._pages.values() if not p["pinned"]))
 
     def test_re_read_is_a_demand_that_pins_and_the_block_rides(self):
         """The same file read again (same rollup → same key, new result
@@ -378,8 +388,10 @@ class EngineLawTests(unittest.TestCase):
         self.assertEqual(self._call_count(out1, "c2"), 0)
         self.assertEqual([m for m in out1 if m.get("tool_call_id") == "c2"], [],
                          "a dropped call must not dangle")
-        # re-mention file02 → demand 2 → pin → the pair rides the block
-        tx2 = list(tx) + [_msg("user", "Back to notes/file02.md — combine findings.")]
+        # W8C: a model-initiated re-read of file02 pins it — prose would not (it pinned 19 of 21
+        # pages in W8B, because the harness re-sends every mention on every request)
+        _pin_via_refault(engine, "notes/file02.md")
+        tx2 = list(tx)
         out2 = engine.select_context(list(tx2))
         self._assert_request_valid(tx2, out2)
         self.assertEqual(len(engine._pin_order), 1)
@@ -401,7 +413,8 @@ class EngineLawTests(unittest.TestCase):
             tx.append(_msg("tool", _result(chars, path.split("/")[-1].split(".")[0]),
                            tool_call_id=cid))
         engine.select_context(list(tx))  # pressured: at least one drop happens
-        tx2 = list(tx) + [_msg("user", "Back to notes/file02.md now.")]
+        _pin_via_refault(engine, "notes/file02.md")
+        tx2 = list(tx)
         out2 = engine.select_context(list(tx2))
         self._assert_request_valid(tx2, out2)
         carrier, reply = self._pair_positions(out2, "c2")   # the pinned page rides
@@ -454,13 +467,14 @@ class EngineLawTests(unittest.TestCase):
             _msg("tool", _result(6_000, "file06"), tool_call_id="c06"),
         ]
         engine.select_context(list(base))
-        # mention file03 (demand 2 → pin), then file05 (demand 2 → pin)
-        with_m3 = list(base) + [_msg("user", "Compare notes/file03.md to the brief.")]
+        # W8C: pins land by re-read, in this order
+        _pin_via_refault(engine, "notes/file03.md")
+        with_m3 = list(base)
         out2 = engine.select_context(list(with_m3))
         self._assert_request_valid(with_m3, out2)
         self.assertEqual(len(engine._pin_order), 1)
-        with_m5 = list(with_m3) + [
-            _msg("user", "And notes/file05.md goes with notes/file03.md.")]
+        _pin_via_refault(engine, "notes/file05.md")
+        with_m5 = list(with_m3)
         out3 = engine.select_context(list(with_m5))
         self._assert_request_valid(with_m5, out3)
         pinned = list(engine._pin_order)   # frozen order: file03 then file05
@@ -503,7 +517,8 @@ class EngineLawTests(unittest.TestCase):
               _msg("assistant", "", tool_calls=[_call("c1", "notes/alpha.md")]),
               _msg("tool", _result(2_000, "alpha"), tool_call_id="c1")]
         engine.select_context(list(tx))
-        tx2 = list(tx) + [_msg("user", "Again: notes/alpha.md please.")]
+        _pin_via_refault(engine, "notes/alpha.md")
+        tx2 = list(tx)
         out2 = engine.select_context(list(tx2))
         self.assertIsNotNone(out2)   # the pin rides the block
         self.assertEqual(len(engine._pin_order), 1)
@@ -525,7 +540,8 @@ class EngineLawTests(unittest.TestCase):
               _msg("assistant", "", tool_calls=[_call("c1", "notes/alpha.md")]),
               _msg("tool", _result(2_000, "alpha"), tool_call_id="c1")]
         engine.select_context(list(tx))
-        tx2 = list(tx) + [_msg("user", "Back to notes/alpha.md.")]
+        _pin_via_refault(engine, "notes/alpha.md")
+        tx2 = list(tx)
         engine.select_context(list(tx2))
         self.assertEqual(len(engine._pin_order), 1)
         tx3 = list(tx2) + [
@@ -639,7 +655,8 @@ class EngineLawTests(unittest.TestCase):
               _msg("assistant", "", tool_calls=[_call("c1", "notes/alpha.md")]),
               _msg("tool", _result(2_000, "alpha"), tool_call_id="c1")]
         engine.select_context(list(tx))
-        engine.select_context(list(tx) + [_msg("user", "notes/alpha.md again")])
+        _pin_via_refault(engine, "notes/alpha.md")
+        engine.select_context(list(tx))
         self.assertTrue(engine._pin_order)
         engine.compression_count = 3          # the base class's counter state
         engine.on_session_reset()
@@ -715,6 +732,11 @@ class NoOpByteIdentityTests(unittest.TestCase):
         tx = self._tx()
         before = json.dumps(tx, sort_keys=True)
         engine = ce.build_engine(v_budget=1_000)          # floor is far above this
+        # W8C: the floor only reaches the budget if the pages are protected, and prose no longer
+        # protects them. Pin them explicitly so the test measures the clause it is named for.
+        engine.select_context(list(tx))
+        for i in range(10):
+            _pin_via_refault(engine, f"notes/part-{i}.txt")
         out = engine.select_context(list(tx))
         # L7 says None; the contract that matters for the cache is BYTES. A pinned
         # page can make the engine return a list that is still byte-identical.
@@ -818,6 +840,36 @@ class ArmPolicyTests(unittest.TestCase):
             engine.select_context(msgs, budget_tokens=1)
         self.assertEqual(engine._meter["select"], 1)
         self.assertEqual(engine._meter["skipped_control"], 0)
+
+
+class W8CSignalTests(unittest.TestCase):
+    """The falsification set for W8C: what counts as a demand, before and after the change."""
+
+    def test_re_sent_result_does_not_pin(self):
+        """Invariant guard: a tool result re-sent in the next request was never a demand."""
+        engine = ce.build_engine()
+        tx = [_msg("system", "sys"), _msg("user", "go"),
+              _msg("assistant", "", tool_calls=[_call("c1", "notes/a.md")]),
+              _msg("tool", _result(2_000, "a"), tool_call_id="c1")]
+        engine.select_context(list(tx))
+        engine.select_context(list(tx))          # same result, sent again
+        self.assertEqual(engine._pin_order, [], "a re-sent result must not pin")
+
+    def test_refault_pins_and_is_counted(self):
+        engine = ce.build_engine()
+        tx = [_msg("system", "sys"), _msg("user", "go"),
+              _msg("assistant", "", tool_calls=[_call("c1", "notes/a.md")]),
+              _msg("tool", _result(2_000, "a"), tool_call_id="c1")]
+        engine.select_context(list(tx))
+        self.assertEqual(engine.note_refault({"path": "notes/a.md"}), 1)
+        self.assertEqual(len(engine._pin_order), 1)
+        page = engine._pages[engine._pin_order[0]]
+        self.assertEqual(page.get("refaults"), 1)
+
+    def test_refault_with_unreadable_args_demands_nothing(self):
+        engine = ce.build_engine()
+        self.assertEqual(engine.note_refault(None), 0)
+        self.assertEqual(engine.note_refault(""), 0)
 
 
 if __name__ == "__main__":

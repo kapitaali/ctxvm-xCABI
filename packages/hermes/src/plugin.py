@@ -423,13 +423,19 @@ class Tracer:
             self._orphan_usage = shaped
 
     def scan(self, input: Dict[str, Any]) -> None:
-        """identifier_scan over produced model text (deduped per page per source)."""
+        """Prose that names a page is TELEMETRY, not a fault (W8C, 2026-11-11).
+
+        It used to emit `page.fault` with source `identifier_scan`, which made the trace say a page
+        had been re-demanded whenever the model's own text mentioned it — in W8B that was 19 of 21
+        pages, on the control arm too, where no engine ran at all. A fault now means one thing: the
+        model asked for the page again (`tool_recall`). The count is kept so the trace still shows how
+        often prose named a page, without claiming it was demand.
+        """
         text = input["text"]
-        latency_ms = input.get("latencyMs")
         for page in self._declared.values():
             for tok in page["identities"]:
                 if tok in text:
-                    self._emit_fault(page, "identifier_scan", latency_ms)
+                    page["mentions"] = page.get("mentions", 0) + 1
                     break
 
     def pin(self, input: Dict[str, Any]) -> None:
