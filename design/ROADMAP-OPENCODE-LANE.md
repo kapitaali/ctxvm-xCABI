@@ -172,6 +172,20 @@ pin true every card close.
   per-session delta; gate on the ARM fields (`arm`, `engineSetting`, `budgetTokens`+`budgetSource`,
   `skippedControl`) and never on `engine` (process-level by design, reads `ctxvm` in both arms). With
   the new fields the PROFILE half of the precondition can become a gate rather than a reading.
+  *CELL READY (2026-11-11, their `4566c4b`, LOG row `RR-W8B-CONTRASTOK-20261111`):* **CONTRAST
+  OK** - after the 0.11.0 restart the probe reports the two arms as two arms: `w8bn-naive` engine
+  null, **0 selections**, profile `w8bn-naive`, budget **200000/default**; `w8bn-paged` engine `ctxvm`,
+  **2 selections**, profile `w8bn-paged`, budget **70000/settings** - the first time in this card the
+  control arm IS a control. Digests re-verified against the committed prediction block (prompt
+  `eac8b37b1602`, fixture `e9e587e60f1f`), so `w8b-cell-01` may run as written (the block:
+  `reports/RR-W8B2CLASS-20261111.md` §3 - evictions ~29,000 tokens, first at turn 13-14, cost $0.00 on
+  the free tier, artefact PASS parsed-equal, mismatch = INSTRUMENT-BUG and the cell is not booked).
+  **ONE REVIEW-SIDE PRECONDITION IS STILL UNMET** (`reports/RR-W8BARMSTATE-20261111.md`): the arm
+  fields are still written into the tracer's PROCESS-GLOBAL state, so the probe's correct attribution
+  comes from the arms running sequentially with no other session in between - a 20-prompt pair is a
+  much longer window, and the operator's chat (default profile) fires hooks in the same gateway.
+  Before a pair counts as a CELL, the recording must be keyed per session (and the counters reported as
+  a per-session delta), or the pair is a pair attempt again.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
@@ -431,10 +445,16 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
 
 1. NO packet paste is pending: P1-P11 are all answered, the RFC-0.1 compatibility note has LANDED
    under D18 (with C3 now enforced in code), and U2 + U6 are verified live (the MCP is alive and serves
-   the calibration of record).
-2. The W8B lane's four items, written up in `design/W8B-LANE-PROMPT.md`: assert the P11 test's third
-   level (one-call `derive_projection` patch), the shape erratum in `design/W8B-FREE-PLAN.md`, the W8SIM
-   "5.3%" scoping, and the "C3" rename.
+   the calibration of record). **Two loose ends in that note's own pointer:** the P11 pair + test are
+   still STAGED, NOT COMMITTED (0 `order-*` vectors in `HEAD`), so the note's C2 locator names an
+   uncommitted file, and the test's third level (the derived page table) is still unasserted - the
+   one-call patch is in `reports/RR-P11GAP-20261111.md` §7.
+2. **The W8B cell is READY to run** (their `4566c4b`: CONTRAST OK, digests re-verified) - one
+   review-side precondition is still unmet: the arm attribution is recorded in process-global state, so
+   it must be keyed per session before a 20-prompt pair counts as a cell
+   (`reports/RR-W8BARMSTATE-20261111.md`). The other lane's four items stand
+   (`design/W8B-LANE-PROMPT.md`): assert the P11 test's third level (one-call `derive_projection` patch),
+   the shape erratum in `design/W8B-FREE-PLAN.md`, the W8SIM "5.3%" scoping, and the "C3" rename.
 3. Ratify G1 (ordering clause, fresh D-number) and G2 (caller sentence, D-U1).
 4. Rule the redaction go/defer (G4); D13/D14 + D17 remain the big gates. W8's fate is settled (G7
    closed: negative, 2026-11-10).
