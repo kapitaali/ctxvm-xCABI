@@ -995,6 +995,19 @@ ordering; queued; the crux: `ts`-last vs sorted keys differ by construction, so 
 the only honest rule). Friction points use the F-series from now on — never an R-number. Remaining
 reviewer queue: P8 owner-flagged; P10 + P11 queued.
 
+**Frontier 11 addendum 7 (2026-11-11, the 16 KB paste budget):** `session-start.sh 8 --with-context`
+reported OVER 16 KB (16,617 > 16,384). Diagnosis: `session-start.sh` takes the PACKET NUMBER as its
+argument, so "8" assembles P8's paste — nothing was sent to the reviewer, and P8's drop-or-keep
+ruling is still the owner's. The defect was wider than P8: with PROJECT-STATE 6,137 B + CONTEXT-PACK
+7,417 B, only 2,826 B remained for the packet, and P8 (3,059), P10 (3,045) and P11 (3,048) all
+exceeded it — every one of their with-context pastes was over budget. Fixed per the tool's own
+instruction (glossary rows / excerpt lines / label rows, never a heading): CONTEXT-PACK 7,417 →
+**6,837 B** (-580; the `trace` and `touch ratio` glossary rows dropped — both still defined in the
+repo — plus citation trims across §1/§2/§3/§8). Re-measured: all 11 packets' with-context pastes
+fit, worst **P8 = 16,037 B** (347 B spare); the worst theoretical case (PROJECT at its 6,144 cap + a
+3,072 packet) is 16,057 B, so the budget holds for anything the checker accepts; checker ALL PASS and
+the three standing pastes exit 0. Card `reports/RR-CTXPACK-20261111.md`.
+
 ## §1. Workspace map
 
 ```

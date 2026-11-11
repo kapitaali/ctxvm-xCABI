@@ -321,6 +321,10 @@ disqualifies this file from prompt duty:
   sentence), G3 (equivalence prereg) unchanged; U4 TICKED against RR-M3V3; U5 (page-id ruling) and
   U6 (MCP default calibration = superseded v2 map) added; U2 re-measured — the model server is still
   DOWN (port 8081 free), the offline MCP surface answers.
+- Paste budget (standing): a session paste = PROJECT-STATE + CONTEXT-PACK + packet + 4 <= 16,384 B.
+  As of 2026-11-11 (`RR-CTXPACK-20261111`): 6,137 + 6,837, so ANY packet the checker accepts (<= 3,072)
+  fits (worst case 16,057 B). If PROJECT-STATE grows, trim CONTEXT-PACK — glossary rows, excerpt
+  lines, label rows; NEVER a heading — and re-measure every packet's paste.
 - Naming rule (standing): friction points use the F-series (F1…F9) and NEVER an R-number —
   RFC-0.1's R0…R5 are revision ids, and one input labelled the page-id residual "R1", colliding with
   R1 = `intentional_rerun`. Friction cards also carry the date, the locator and the gate output.
@@ -331,7 +335,7 @@ disqualifies this file from prompt duty:
   decides paste-N; a PROJECT delta over ~100 B likely re-breaks paste-3. Pre-measure; trim
   glossary rows (never headings) if over.
 - Day files: 2026-11-09 (sealed), 2026-11-10 (sealed, append-only), 2026-11-11 (current).
-  LOG row count 243 COMMITTED as of the umpire-residue card (the worktree shows 245: two rows
+  LOG row count 244 COMMITTED as of the paste-budget card (the worktree shows 246: two rows
   belong to other lanes and stay unstaged); verify with `grep -c '^| RR-' reports/LOG.md`.
 - AGENT-PROMPT §1 staleness: refresh PROPOSED, not edited (policy-file law, §0).
 - Watcher baselines reset for free; never treat "quiet" as "no collision".

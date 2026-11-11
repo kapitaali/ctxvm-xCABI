@@ -6,27 +6,25 @@
 3. RFC-0.1 adds additive fields only (schemaVersion, ts, toolEffect, providerUsage, environmentId, latencyMs, prefix, turn); sealed v0 must keep rejecting v0.1-only lines (spec/rfc-0.1/).
 4. The Rust core (`rust/`) page table and renderer runs deterministically; it never mutates messages — telemetry first, control later (08-HANDOFF.md §0).
 5. `ctxvm replay` re-derives the page table and checks embedded turn totals; divergence exits 1 (08-HANDOFF.md §5/T1d).
-6. Harness adapters capture real agents: OpenCode (`packages/opencode`), Hermes (`packages/hermes`, capture default-on), Vercel AI SDK (`packages/ai-sdk`), shared tracer `@ctxvm/node`.
-7. Measurement stack: metric formulas + fixtures + policy simulator (`benchmarks/metrics/`), packaged as ODPS data products (manifest + hub).
-8. W8's "does paging help?" is CLOSED FAILED on record: paging never bent the request curve; the task was search-bound (reports/RR-W8INDEX-20261107.md).
+6. Harness adapters capture real agents: OpenCode, Hermes (capture default-on), AI SDK, shared tracer `@ctxvm/node`.
+7. Measurement stack: metric formulas + fixtures + policy simulator (`benchmarks/metrics/`), packaged as ODPS data products.
+8. W8's "does paging help?" is CLOSED FAILED: paging never bent the request curve; the task was search-bound (`reports/RR-W8INDEX-20261107.md`).
 
 ## 2. Glossary (one line each, from the repo)
 - page — content a tool result contributes to a turn, addressed without carrying its bytes (white-paper.md §4.1; RFC-0 event table).
 - page_id — `(logical_ref, content_hash)` identity, content-blind (rust/crates/ctxvm-codec/src/model.rs:14–21).
-- trace — the JSONL event stream of one capture; "The trace is the only artifact" (white-paper.md §5.1).
 - turn — index of request cycles; `page.evict` @ t makes the stub visible AT turn t (RFC-0 ordering, line 91).
-- render — per-turn mirror of what the model sees as `turn.render`; totals embedded for replay (white-paper.md §5.1).
-- fault — `page.fault`: model re-requests resident/stubbed content; sources tool_recall | identifier_scan | explicit_api | semantic (RFC-0 fault taxonomy; white-paper.md §3.6).
-- stub — the recovery text an evicted page leaves; instructions only, never prompt pollution (`page.evict.stubText`).
+- render — per-turn mirror of what the model sees as `turn.render`; totals embedded for replay.
+- fault — `page.fault`: model re-requests resident/stubbed content; sources tool_recall | identifier_scan | explicit_api | semantic.
+- stub — the recovery text an evicted page leaves; instructions only, never prompt pollution.
 - protected floor — system prompt + protect_first_n=3 head + protect_last_n=6 tail + pins; over vBudget `_plan` returns early, no selection (context_engine.py:12,287–292; RR-ENGINEGAP-20261106).
-- touch ratio — touched_tokens / rendered_tokens; honestly "identifier-touched share", an upper bound (benchmarks/metrics/metrics.py:14; 08.1 W1).
 - fault recall — hard_fault_recall = explicit re-calls / hard faults (Pichay §3.2; metrics.py:159, W3); old recovered/evictions survives as refetch_rate (metrics.py:146).
 
 ## 3. Repo map (directories)
 - `00-09 numbered docs` — plan, event draft, tracer API, ODPS manifest, llms.txt, integration findings, benchmark gates, handoff, update prompt.
 - `rust/` — ctxvm-codec (wire + strict codec; fields declared before `ts`), ctxvm-core (page table, replay, diff, profile, export), ctxvm-tokenizer (apx4-char + tiktoken feature), ctxvm-conformance (CLI + vectors).
 - `packages/` — node/opencode/ai-sdk/hermes/py. `spec/rfc-0/` + `spec/rfc-0.1/` — sealed + additive layers with validators. `corpus/m1–m8/` — checksummed drops.
-- `benchmarks/metrics/` — metrics.py, prices.json, bootstrap.py, policies.py, monitor_replay.py, fixtures. `hub/` — ODPC catalog. `design/` — plans of record. `tools/` — run-ci.sh, ci-rehearsal.py, handoff tools. `reports/` — RR-* cards + append-only LOG.md. `research/` — white-paper lane.
+- `benchmarks/metrics/` — metrics.py, prices.json, bootstrap.py, policies.py, monitor_replay.py. `hub/` — ODPC catalog. `design/` — plans of record. `tools/` — run-ci.sh + handoff tools. `reports/` — RR cards + LOG.md. `research/` — white-paper lane.
 
 Five files first: `00-README.md`; `08-HANDOFF.md` §0–§4; `spec/rfc-0/RFC-0-xCABI.md`; `07-benchmarks-go-no-go.md`; `reports/RR-W8INDEX-20261107.md`.
 
@@ -57,7 +55,7 @@ Agents apply all five to their own work BEFORE asking; an item that cannot answe
 
 ## 8. Labels (how to read the books)
 - W-numbers: workstream IDs, defined in `08.1-UPDATE-PROMPT.md` §W (e.g. W8 does-paging-help, W19 tier-2 interventions).
-- W8 vocabulary: cell = one preregistered task×page-family measurement point; slice = the two-cell restart prompt (`design/W8-PROMPT-SLICE.md`); arm = the naive-vs-paged half of a paired run; arm witness = the plugin's in-trace arm record, broken in 0.10.4 (it recorded the observer), fixed in 0.10.5.
+- W8 vocabulary: cell = one preregistered task×page-family measurement point; slice = the two-cell restart prompt (`design/W8-PROMPT-SLICE.md`); arm = the naive-vs-paged half of a paired run; arm witness = the plugin's in-trace arm record (fixed in 0.10.5).
 - D-numbers: the decision ledger — D1–D12 owner-ruled (e.g. D9 ts opt-out, D11 signing); D13–D17 tracked in PROJECT-STATE.
-- RR-<slug>-<date>[-n]: one card's report file under `reports/`; `reports/LOG.md` rows `| card | area | summary |` are the append-only ledger. Some cards exist only as a LOG row beside the commit carrying them: RR-W8BOOK-20261107 → `89ff8e4`, RR-W8SLICE-20261107 → `3dd1f52`, RR-W8CHUNK-20261107-2b → `4d08da5`, -2c → `9947bf0`.
+- RR-<slug>-<date>[-n]: one card's report file under `reports/`; `reports/LOG.md` rows `| card | area | summary |` are the append-only ledger. Some cards exist only as a LOG row beside the commit carrying them: RR-W8BOOK-20261107 → `89ff8e4`, RR-W8CHUNK-20261107-2b → `4d08da5`.
 - lane: one agent session owning one scope; owned paths + must-not-write map in `handoff/LANES.md`.

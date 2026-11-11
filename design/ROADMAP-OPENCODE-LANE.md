@@ -1,6 +1,6 @@
 # ROADMAP — opencode lane (kit, review packets, umpire-development proposals)
 
-State of record: 2026-11-11, HEAD `63472f4` (umpire-gates PROJECT delta; the residue card in flight, committing on top). This is the lane's
+State of record: 2026-11-11, HEAD `d53af5f` (umpire-residue PROJECT delta; the paste-budget card in flight, committing on top). This is the lane's
 own task list, not the project board (`08-HANDOFF.md` §5 governs the project board; W workstreams
 are defined in `08.1-UPDATE-PROMPT.md` §W). Format law inherited from the family
 (`design/ROADMAP-HERMES-LANE.md`): tick a box ONLY when the command under **done when** printed
@@ -95,7 +95,9 @@ pin true every card close.
   QUESTIONS row, and the PROJECT-STATE agent-line mention;
   (b) KEEP — owner pastes and the P6 pipeline runs.
   *Done when:* `grep -c 'P8' handoff/QUESTIONS.md` shows either no row (dropped) or an answered
-  row (kept). Packet currently at 3,059/3,072 B (13 B margin) — the paste-budget strain driver.
+  row (kept). Packet at 3,059/3,072 B (13 B margin); the paste budget it strained is REPAIRED
+  (`RR-CTXPACK-20261111`: CONTEXT-PACK 7,417 → 6,837 B, all 11 packet pastes fit, worst P8 =
+  16,037/16,384) — P8's paste now BUILDS; whether to send it is still the owner's.
   *Owner:* drop-or-keep.
 
 - [ ] **P10 (page-id asymmetry: flat vs nested page identity) — QUEUED 2026-11-11.** Cut by
@@ -285,7 +287,7 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
 
 1. Paste P10 (page-id asymmetry ruling) — the one friction item still open; its "second consumer"
    trigger has already fired.
-2. Rule P8 drop-or-keep (frees paste budget pressure at its 13 B margin).
+2. Rule P8 drop-or-keep (its paste now fits — 16,037/16,384 — after `RR-CTXPACK-20261111`).
 3. Ratify G1 (ordering clause, fresh D-number) and G2 (caller sentence, D-U1).
 4. Rule the redaction go/defer (G4) and W8's fate (G7); D13/D14 + D17 remain the big gates.
 
