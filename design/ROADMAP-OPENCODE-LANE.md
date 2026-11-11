@@ -208,6 +208,16 @@ pin true every card close.
   read-once shape. **Next owner decision: W8C** (`design/W8C-PLAN.md`, proposed, approval required
   before any instrument change; its falsifier: with the new signal and a floor-sized budget the paged
   arm still evicts zero => the FLOOR is binding, not the signal).
+  *W8C REVIEW (2026-11-11, `reports/RR-W8CREVIEW-20261111.md`):* the plan is sound and its own
+  falsifier is stated, but two cheap additions should be asked for at the owner's first checkpoint:
+  **(a) a falsification set** - the plan's test "a second `read_file` in a later turn DOES pin" should
+  ALREADY pass on today's engine, because `_update_page_state` treats a re-render as a demand and pins
+  at two (`context_engine.py:479-488`); it is therefore a regression guard for the removal, not evidence
+  of the new mechanism, and each test's BEFORE behaviour must be stated. The load-bearing change is the
+  REMOVAL of the text signal (what pinned 19 of 21 pages); the explicit `note_refault` mostly moves the
+  pin from result-time to call-time. **(b) a stated margin** over the measured floor in the block:
+  floor ~48,650 (arithmetic checks out), candidate budget 60,000 => ~11,350 tokens of room, and a
+  budget a hair above the floor would make "zero evictions" expected rather than informative.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
