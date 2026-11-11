@@ -350,14 +350,26 @@ pin true every card close.
   `ts` = unknown, never zero; no cross-ledger order) — verbatim text in
   `reports/RR-P4TS-20261109.md`; insertion point `umpire/00-SPEC.md` §2, after the L1–L5 block,
   documentation-only. Needs owner approval + a FRESH D-number (the A6 D-U register has no ts
-  candidate).
+  candidate). **READY TO APPLY (2026-11-11, `reports/RR-UMPIREREADY-20261111.md`):** the insert point
+  is re-verified (L1–L5 at `00-SPEC.md:37-43`, the next heading at `:45` → the clause lands at `:44`;
+  the P4 card's `:45` citation has drifted by one line) and **the fresh D-number is `D-U10`** — the
+  register (`design/umpire-design-choices.md`, in this repo) holds D-U1–D-U9. No contradiction to fix:
+  the umpire spec has **no** ordering/`ts` statement at all (only `canonicalJson`'s key-sorting at
+  `:47`, a hash-input rule = the note's C3 domain), so the clause lands without touching the D18 note.
   *Done when:* the clause is IN a committed `umpire/00-SPEC.md` §2 AND the new D-number appears in
   the umpire decision register.
   *Owner:* approval + D-number.
 
 - [ ] **G2. Calibrated-confidence caller sentence (from P5).** Verbatim text in
   `reports/RR-P5CAL-20261110.md`; insertion point: wherever `calibrate()`'s contract text lives
-  (MCP tool description / umpire spec). Ratifies INTO registered D-U1.
+  (MCP tool description / umpire spec). Ratifies INTO registered D-U1. **READY TO APPLY
+  (2026-11-11, `reports/RR-UMPIREREADY-20261111.md`):** the surfaces are re-verified
+  (`umpire/mcp_server.py:67-77` INSTRUCTIONS, `:80-85` the `decide` description, `00-SPEC.md:90-109`
+  §3) and **G2 is NOT a no-op**: the MCP's existing caveat ("not a correctness guarantee and is
+  opt-in") is a *different, weaker* claim; the **transfer** caveat — the substance of G2 and of the P5
+  answer — appears **nowhere** in the MCP text or §3. The ratification home is this repo's
+  `design/umpire-design-choices.md` (D-U1); the register's header says "inputs only, no choice made",
+  so this lane's recommendation is a short "## Resolved" section at the end.
   *Done when:* sentence committed into the umpire books AND `handoff/QUESTIONS-ARCHIVE.md` P5
   updated with the ratification locator.
   *Owner:* approval (D-U1 exists already).
