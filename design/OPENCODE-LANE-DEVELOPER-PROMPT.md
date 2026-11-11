@@ -321,6 +321,12 @@ disqualifies this file from prompt duty:
   sentence), G3 (equivalence prereg) unchanged; U4 TICKED against RR-M3V3; U5 (page-id ruling) and
   U6 (MCP default calibration = superseded v2 map) added; U2 re-measured — the model server is still
   DOWN (port 8081 free), the offline MCP surface answers.
+- PROJECT-STATE cap (standing): the file sits at 6,123/6,144 B - 21 B of headroom. Any lane
+  writing it must re-run `bash tools/check-handoff.sh` BEFORE committing; a Done-window line can
+  push the file over the cap and turn the WHOLE kit red (precedent: `ada48de` -> `RR-KITCAP-20261111`,
+  repaired by compaction-to-a-pointer + window rotation + a day-file erratum). When the cap binds,
+  compact the longest index line (keep its card ids), shave this lane's own lines, never drop a
+  heading or a locator, and log the compaction as an erratum.
 - Paste budget (standing): a session paste = PROJECT-STATE + CONTEXT-PACK + packet + 4 <= 16,384 B.
   As of 2026-11-11 (`RR-CTXPACK-20261111`): 6,137 + 6,837, so ANY packet the checker accepts (<= 3,072)
   fits (worst case 16,057 B). If PROJECT-STATE grows, trim CONTEXT-PACK — glossary rows, excerpt

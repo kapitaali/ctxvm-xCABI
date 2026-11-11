@@ -1008,6 +1008,20 @@ fit, worst **P8 = 16,037 B** (347 B spare); the worst theoretical case (PROJECT 
 3,072 packet) is 16,057 B, so the budget holds for anything the checker accepts; checker ALL PASS and
 the three standing pastes exit 0. Card `reports/RR-CTXPACK-20261111.md`.
 
+**Frontier 11 addendum 8 (2026-11-11, kit cap repaired):** the w8b lane's commit `ada48de` added a
+**549 B** line to `handoff/PROJECT-STATE.md` as a FOURTH item of the "Done (last 3 items)" window,
+taking the file to **6,686 B > 6,144 B** and turning `check-handoff.sh` RED; the background watcher
+surfaced it two minutes after the landing. Repaired by this lane (the cap is a shared law and the kit
+was red): the w8b line compacted to a pointer that keeps every finding id
+(RR-W8CACHE/NOOPBYTES/SIM/GRID + RR-SPEND-RECON2), the P9 = A answer and the closure card
+`design/W8-CLOSURE-20261110.md` — the narrative stays in that lane's own card and LOG rows, so no
+fact was dropped — and the window restored to its 3-item contract (w8b close-out, paste-budget
+repair, umpire-residue sweep; this lane's umpire-gates line rotated out with its locator intact).
+**6,123/6,144 B, checker ALL PASS, three pastes exit 0.** Pre-repair snapshot in
+`/tmp/opencode/20261111/kitcap/`. Standing rule added to the lane prompt: any lane writing
+PROJECT-STATE must re-run `check-handoff.sh` BEFORE committing — 21 B of headroom is thin, and a
+long index line turns the whole kit red. Card `reports/RR-KITCAP-20261111.md`.
+
 ## §1. Workspace map
 
 ```
