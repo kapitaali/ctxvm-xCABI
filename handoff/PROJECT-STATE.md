@@ -1,7 +1,7 @@
-# State (updated 2026-11-11, by ctxvm repo agent (opencode), P11 gap + CI green; hub-$ref + T-A
+# State (updated 2026-11-11, by ctxvm repo agent (opencode), RFC-0.1 note landed (D18); P11 gap + CI green
 
 ## Goal
-Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8: CLOSED negative (`design/W8-CLOSURE-20261110.md`); next = W8B, free model (`design/W8B-FREE-PLAN.md`).
+Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8 CLOSED negative (`design/W8-CLOSURE-20261110.md`); next = W8B free model.
 
 ## Artifacts and versions
 - Wire: RFC-0 sealed (`spec/rfc-0/`, byte-frozen); RFC-0.1 additive landed (`spec/rfc-0.1/`, R0–R5).
@@ -11,9 +11,9 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. P11 gap + CI (RR-P11GAP-20261111): CI GREEN here; the pair asserts TWO levels (no page table in the report) - assert level 2 or drop the claim.
-2. Hub $ref edit (RR-HUBREF-20261111): the bare-$ref change is UNDONE by the generator - revert it, or change the generator + re-hash the baseline.
-3. T-A (RR-TADEC/W8BBLOCK): classification applied; block filled; open blocker = ARM ATTRIBUTION (profile = w8bn-paged).
+1. RFC-0.1 note landed (D18): C1 dispatch, C2 key-order + test pointer, C3 canonical form for hashes (D renumberable).
+2. P11 gap + CI (RR-P11GAP-20261111): CI GREEN; the pair asserts TWO levels (no page table) - assert level 2 or drop it.
+3. Hub $ref edit (RR-HUBREF-20261111): UNDONE by the generator - revert it, or change the generator + re-hash the baseline.
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
@@ -21,7 +21,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 ## Next three (ordered, one line each)
 1. Owner: ratify D13 + D14 and route the SIX-item white-paper bundle (items listed in full in RR-DAY-20261109) — working-tree bytes, not HEAD.
 2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
-3. Agent: NO paste pending (P1-P11 answered); owner-routed: note + D-number, U6; T-A: fill the prediction block or call it diagnostic. Umpire gates: D-ordering (P4), caller (P5), vocab (P6), margins (P7), page-id (P10), order (P11).
+3. Agent: NO paste pending (P1-P11 answered); owner-routed: U6, hub $ref, P11 level-2, T-A arm precondition. Umpire gates: D-ordering (P4), caller (P5), vocab (P6), margins (P7), page-id (P10), order (P11).
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
@@ -30,8 +30,9 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 - 2026-11-07: W8 ruled FAILED; capture stays default-on; contract restored (RR-W8CHUNK-20261107-2b + RR-W8INDEX).
 - 2026-11-08: D3-c approved (owner); D13 answered (P1); P2 answered + seq 7 located (`identifier_scan` swap-in).
 - 2026-11-09: D14 answered (P3 verdicts recorded); consent mends + card-citation rule routed. P4 answered: ts stays optional; ordering clause PROPOSED for umpire §2 (RR-P4TS-20261109), D-number outstanding.
-- 2026-11-10: D-U1 (P5) calibration with caveat. D-U3 (P6) same-build. D-U2 (P7) two zero-spend baselines first (RR-P7BASE-20261110).
-- 2026-11-11: F1–F7 closed; P10+P11 answered (note + vectors drafted).
+- 2026-11-10: D-U1 (P5) caveat; D-U3 (P6) same-build; D-U2 (P7) two zero-spend baselines first (RR-P7BASE-20261110).
+- 2026-11-11: F1–F7 closed; P10+P11 answered.
+- 2026-11-11: D18 — RFC-0.1 compatibility note applied (`spec/rfc-0.1/COMPATIBILITY.md`): C1 dispatch, C2 key-order + test, C3 canonical form for hashes.
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 (Pkt 1) ANSWERED 2026-11-08: Pillar-1 splits (replayable + conformance-testable kept; "diffable" behind the consumer profile; "reconstructs any turn" narrowed; absence reworded). Card: `design/diff-normalisation.md`. Owner next: ratify + route with the six-item bundle.
@@ -49,7 +50,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 3. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% belongs to an external controller (AGENTS.md law 7).
 
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
-- Conformance gate: GREEN 2026-11-11 (local, pushed HEAD `63472f4`; env-correct `run-ci.sh` → ALL GATES GREEN). Hosted witness №94 `42589188792` (2026-11-09) stands.
+- Conformance gate: GREEN 2026-11-11 (local, HEAD `940a5fb`; env-correct `run-ci.sh` → ALL GATES GREEN). Hosted witness №94 `42589188792` (2026-11-09) stands.
 - XERJ Hub listing UNVERIFIED — live `hub.xerj.org/llms.txt` re-check (RR-XERJ-20261029).
 - openai price row + cache-read nulls UNVERIFIED (`prices.json`) — owner source.
 - W8 arm-attribution rule SUPERSEDED by plan §4e (`b6aa2a3`: one host gateway, attestation-scope equality); UNPROVEN until a probe runs.
