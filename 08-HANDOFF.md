@@ -1338,6 +1338,23 @@ owner's temporary scratch file for naming the discussion. The ratification lives
 line, PROJECT-STATE's decisions ledger and the two cards → that item is **closed, not routed**, and the
 index lines are corrected. Card `reports/RR-U2LIVE-20261111.md`.
 
+**Frontier 11 addendum 26 (2026-11-11, a small prompt for the W8B lane; and U6 closed on both
+surfaces):** the owner asked for a small prompt for the other lane → `design/W8B-LANE-PROMPT.md`, a
+companion to `design/W8B-PROMPT.md` (the master) carrying only what changed: the measured state (W8
+closed negative; T-A v2 landed asking only what `read_file` reports; the v2 run's NO RECORD classified
+as a pair attempt, with the block now filled for `w8b-cell-01`; the measured shape peak 98,934 /
+evictable ~28.9k against the plan's ~90k / ~21k), the owner's ruled decisions (subject order nvidia ->
+stepfun -> accept longcat too slow; a new subject means new digests, so the block is rewritten and
+re-committed before the pair; the arm-attribution precondition — the paged arm ran as profile
+"default" under w8bn-paged, so assert BOTH engineSelections > 0 AND profile w8bn-paged before any
+pair; no cost-saving claim from a free run, while a future paid variant's break-even is n* ~ 34 calls
+against 41 measured), and four small items the lane owes (assert level 2 in the P11 test — the
+one-call derive_projection patch; the shape erratum in design/W8B-FREE-PLAN.md; scope the W8SIM 5.3%
+sentence to this engine's keep law; rename one "C3"). **U6 closed on both surfaces**: the gateway
+restart replaced the wrapper that still held v2 — a new gateway-spawned mcp_server.py carries
+umpire-cal-v3.json — so every MCP surface now applies the record's map. Card
+`reports/RR-UGATEPROMPT-20261111.md`.
+
 ## §1. Workspace map
 
 ```

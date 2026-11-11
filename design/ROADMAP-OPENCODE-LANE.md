@@ -139,6 +139,10 @@ pin true every card close.
   line per shape AND a negative (a `page.declare` with a flat `page.logicalRef`, which a sniffing
   reader would accept and the validator must reject). Falsifiers adopted verbatim (a valid line where
   type-dispatch misreads identity; a verb mixing both shapes; a new verb with a third shape — a v0.2
+  *HANDOFF WRITTEN (2026-11-11):* `design/W8B-LANE-PROMPT.md` - a small prompt for that lane with the
+  measured state, the owner's ruled decisions (subject order; new subject = new digests = re-commit the
+  block first; the arm-attribution precondition) and four items it owes (level-2 assert, the shape
+  erratum, the W8SIM 5.3% scoping, the "C3" rename).
   *OWNER-RULED (2026-11-11):* the subject fallback order - **nvidia** (nemotron-super, the tested path) ->
   **stepfun** -> accept longcat too slow for the 120 s cap only if both fail.
   question; a consumer that cannot dispatch on event type).
