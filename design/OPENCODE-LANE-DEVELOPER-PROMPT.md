@@ -375,6 +375,17 @@ disqualifies this file from prompt duty:
   unpublished, so amending is free. For the shared LOG, stage by blob instead: build the file you want
   (`git show HEAD~1:reports/LOG.md` + your row) and `git update-index --cacheinfo 100644,$(git
   hash-object -w <file>),reports/LOG.md`, so another lane's pending row cannot be captured.
+- **Private index + resync (standing, from AGENTS.md §7):** commit through a private index when lanes
+  share a tree — `GIT_INDEX_FILE=/tmp/idx git read-tree HEAD && git update-index … && git commit` — and
+  **after every such commit run `git read-tree HEAD` on the SHARED index**. A private-index commit
+  leaves the shared `.git/index` pointing at an older tree, so `git status` later shows the newly
+  committed files as *staged deletions with untracked twins* — the shape of a delete-then-rewrite, which
+  is why it can pass review — and a commit of that shared index drops those files from history without a
+  diff that looks wrong. `bash tools/git-hygiene.sh` proves the resync happened: it exits 1 and names
+  the offending paths when the index is stale, 0 when the index agrees with HEAD. Run it before staging
+  a shared file. Two failures of this class are on record: `reports/RR-LOGREWIND-20261111.md` (the
+  working-tree LOG had been rewound by ten committed rows) and the other lane's `RR-GITHYGIENE-20261111`
+  (six staged deletions caught before they landed).
 - Cold start (a reboot kills the session, the watcher and the local servers): the SESSION is not
   the memory — the kit is. Read `handoff/PROJECT-STATE.md` (state of record), then
   `handoff/QUESTIONS.md` (the queue), then `design/ROADMAP-OPENCODE-LANE.md` (the board) and the
