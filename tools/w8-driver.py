@@ -37,6 +37,11 @@ import sys
 from pathlib import Path
 
 SEAL_AFTER_TURN = 3
+# The model's failure mode on this task is an unbounded search_files loop: 21 tool calls for one
+# "read this file and report four numbers" prompt (2026-11-11). The rule is part of what the model
+# sees, so it belongs in the prompt digest, not only in the task text.
+RULE_READ = " Use read_file only; do not use search_files."
+RULE_FINAL = " Use read_file and write_file only; do not use search_files."
 SEALED_PARTS = ["part-01.txt", "part-02.txt", "part-03.txt"]
 ALLOWED_TOOL_PREFIXES = ("tool:read_file", "tool:write_file", "tool:search_files", "tool:patch")
 
@@ -150,8 +155,13 @@ def _refusal_marker(stdout: str) -> str | None:
     return None
 
 
+def prompt_text(i: int, prompt: str) -> str:
+    return prompt + (RULE_FINAL if i == len(PROMPTS) else RULE_READ)
+
+
 def build_cmd(i: int, prompt: str, args) -> list[str]:
-    cmd = ["hermes", "chat", "-q", prompt, "--oneshot", "-c", args.session_name, "--in", args.workspace]
+    cmd = ["hermes", "chat", "-q", prompt_text(i, prompt), "--oneshot", "-c", args.session_name,
+           "--in", args.workspace]
     if i == 1:
         cmd.insert(5, "--create-if-missing")
     # --max-turns is REFUSED on this flow: a named session with --create-if-missing
@@ -198,6 +208,7 @@ def run(args) -> int:
         "profile": f"{pp}-{args.arm}",
         "workspace": str(ws),
         "prompts": len(PROMPTS),
+        "prompt_rules": [RULE_READ, RULE_FINAL],
         "middle_prompts": len(PROMPTS[3:-1]),
         "seal_after_prompt": SEAL_AFTER_TURN,
         "sealed_parts": SEALED_PARTS,
@@ -218,26 +229,40 @@ def run(args) -> int:
         return 0
 
     env = dict(os.environ)
+    prompts = PROMPTS[: args.limit] if args.limit else PROMPTS
     for k in [k for k in env if k.startswith("CTXVM")]:
         env.pop(k)                      # the profile settings are the contract
     moved: list[str] = []
     try:
-        for i, p in enumerate(PROMPTS, 1):
+        for i, p in enumerate(prompts, 1):
             if i == SEAL_AFTER_TURN + 1:
                 moved = seal(ws, run_dir)
                 print(f"[seal] removed {len(moved)} parts from the fixture: {', '.join(moved)}")
             cmd = build_cmd(i, p, args)
             (run_dir / f"cmd-{i:02d}.txt").write_text(" ".join(cmd) + "\n")
             print(f"[prompt {i:02d}] running...", flush=True)
+            # SIGTERM first, SIGKILL only as a last resort: a hard kill leaves the session open,
+            # the gateway reaps it (end_reason ws_orphan_reap) and NOTHING flushes, so a timeout
+            # becomes NO RECORD instead of a readable partial. Measured 2026-11-11.
+            proc = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, env=env)
             try:
-                r = subprocess.run(cmd, text=True, capture_output=True, env=env, timeout=args.timeout)
-            except subprocess.TimeoutExpired as exc:
-                # Record it instead of dying with a traceback: a killed prompt used to leave
-                # no stdout file at all, and a 2.5-hour retry loop looked like a rate limit.
-                (run_dir / f"stdout-{i:02d}.txt").write_text((exc.stdout or "") if isinstance(exc.stdout, str) else "", encoding="utf-8")
-                (run_dir / f"stderr-{i:02d}.txt").write_text(f"TIMEOUT after {args.timeout}s\n", encoding="utf-8")
-                print(f"driver: prompt {i} TIMEOUT after {args.timeout}s — cell DATA-INVALID", file=sys.stderr)
+                out, err = proc.communicate(timeout=args.timeout)
+                rc = proc.returncode
+            except subprocess.TimeoutExpired:
+                proc.terminate()
+                try:
+                    out, err = proc.communicate(timeout=20)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    out, err = proc.communicate()
+                rc = -15
+                (run_dir / f"stdout-{i:02d}.txt").write_text(out or "", encoding="utf-8")
+                (run_dir / f"stderr-{i:02d}.txt").write_text(
+                    f"TIMEOUT after {args.timeout}s (SIGTERM sent so the session can flush)\n", encoding="utf-8")
+                print(f"driver: prompt {i} TIMEOUT after {args.timeout}s — terminated", file=sys.stderr)
                 return 1
+            r = subprocess.CompletedProcess(cmd, rc, out, err)
             (run_dir / f"stdout-{i:02d}.txt").write_text(r.stdout, encoding="utf-8")
             (run_dir / f"stderr-{i:02d}.txt").write_text(r.stderr, encoding="utf-8")
             if r.returncode != 0:
@@ -339,8 +364,10 @@ def main() -> int:
     ap.add_argument("--run-dir")
     ap.add_argument("--max-turns", type=int, default=8,
                     help="tool-calling iterations per prompt (cost ceiling; h7-h9 ran unbounded)")
-    ap.add_argument("--expect-budget", type=int, default=55000)
+    ap.add_argument("--expect-budget", default="55000",
+                    help="expected budgetTokens, or \"any\" to record whatever the plugin saw")
     ap.add_argument("--timeout", type=int, default=600)
+    ap.add_argument("--limit", type=int, default=0, help="run only the first N prompts (smoke check)")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--capture", help="verify mode: capture .jsonl to accept or reject")
     ap.add_argument("--profile-prefix", default="w8",
