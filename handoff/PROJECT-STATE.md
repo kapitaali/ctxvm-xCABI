@@ -1,4 +1,4 @@
-# State (updated 2026-11-11, by ctxvm repo agent (opencode), paste-budget card: 16 KB paste budget REPAIRED; all 11 packet pastes fit)
+# State (updated 2026-11-11, by ctxvm repo agent (opencode), paste-budget cards: 16 KB budget REPAIRED twice; worst packet paste 15,626/16,384)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8: CLOSED negative (`design/W8-CLOSURE-20261110.md`); next = W8B, free model (`design/W8B-FREE-PLAN.md`).
@@ -11,9 +11,9 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. W8 closed NEGATIVE at zero spend (P9 = A): RR-W8CACHE/NOOPBYTES/SIM/GRID + RR-SPEND-RECON2; card `design/W8-CLOSURE-20261110.md`.
-2. Paste budget repaired (RR-CTXPACK-20261111): CONTEXT-PACK 7,417 -> 6,837 B; all 11 packet pastes fit (worst 16,037/16,384).
-3. Umpire-residue sweep (RR-UMRES-20261111): CI green; U2 re-measured (server DOWN); MCP default cal = superseded v2 (U6); P11 queued.
+1. CONTEXT-PACK trimmed again (RR-CTXPACK2-20261111): 6,837 -> 6,440 B; worst packet paste 15,626/16,384.
+2. W8 closed NEGATIVE at zero spend (P9 = A): RR-W8CACHE/NOOPBYTES/SIM/GRID + RR-SPEND-RECON2; card `design/W8-CLOSURE-20261110.md`.
+3. Paste budget repaired (RR-CTXPACK-20261111): CONTEXT-PACK 7,417 -> 6,837 B; all 11 packet pastes fit.
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
