@@ -223,8 +223,16 @@ pin true every card close.
   (remove the text signal - load-bearing; move the re-read pin to call time - a timing refinement),
   states each test's BEFORE behaviour (only "prose mention does not pin" fails today), and requires
   the block to read floor + margin with the margin NAMED (candidate 60,000 against an estimated 48,650
-  floor = 11,350 ~ 2.4 turns of growth). The plan is OWNER-READY: checkpoint A is the approval,
-  checkpoint B is the block with its measured floor and its named margin.
+  floor = 11,350 ~ 2.4 turns of growth). **THE OWNER RULED THE SEQUENCE (2026-11-11,
+  `reports/RR-W8CSEQ-20261111.md`)**: instrument -> **checkpoint A = the probe's verdict** (CONTRAST OK
+  + paged READY) -> profiles (exactly two, budget on the paged arm only) -> diagnostic (one prompt per
+  arm) -> block (floor + margin, committed) -> checkpoint B -> pair (~20 min, $0.00). **The diagnostic
+  should assert `page.fault == 0`** - that single number IS the change (19 of 21 faulted under the text
+  signal) - but it CANNOT measure the floor: a one-prompt run never reaches the late turns, so the
+  floor is DERIVED from the measured W8B series (4,350 + 3x4,700 + 6x4,700 + 2,000 = 48,650) and the
+  diagnostic verifies the pins and the growth. **The block should carry the bound**: the six-turn window
+  (14-19) comes from the PINNED CEILING, so under the new instrument it is an UPPER BOUND, not a
+  promise - state the predicted volume as a range so a narrower window is not read as a falsification.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
@@ -503,11 +511,15 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
    one-call patch is in `reports/RR-P11GAP-20261111.md` §7.
 2. **W8B is closed NEGATIVE** (their `163787a`; `reports/RR-W8BCLOSURE-20261111.md`): the policy's
    demand signal pins nearly every page on a read-once shape (19 of 21 fault), so nothing is ever
-   eligible; no cell was booked and no cost claim exists. The live owner decision is **W8C**
-   (`design/W8C-PLAN.md`): approve or decline the plan - **checkpoint A** is the approval and
-   **checkpoint B** is the block with its MEASURED floor and its NAMED margin (floor + margin, per
-   this lane's review, which their `5c0a8aa` accepted); four tests, one pair, no money. The other
-   lane's remaining items stand
+   eligible; no cell was booked and no cost claim exists. The live thread is **W8C**, and its sequence
+   is OWNER-RULED (2026-11-11, `reports/RR-W8CSEQ-20261111.md`): **1** instrument (remove the text
+   signal; add `note_refault(ref)`; plugin 0.12.0; four tests - one discriminating, three guards) -
+   **2** **checkpoint A** = `--probe --arm both` returns CONTRAST OK and paged READY - **3** profiles
+   (exactly two: `w8cn-naive`, `w8cn-paged`; budget on the paged arm only) - **4** diagnostic (one
+   prompt per arm; read the real floor from the capture) - **5** block (floor + margin, written and
+   committed) then **checkpoint B** - **6** pair (one run, ~20 min, $0.00). **CORRECTED HERE: this
+   board had said checkpoint A was a plan approval - the plan's own section 8 says it is the PROBE's
+   verdict, and the file wins over a summary.** The other lane's remaining items stand
    (`design/W8B-LANE-PROMPT.md`): the shape erratum in `design/W8B-FREE-PLAN.md`, the W8SIM "5.3%"
    scoping, and the "C3" rename (the P11 third level is done - `reports/RR-P11LEVEL2-20261111.md`).
 3. Ratify G1 (ordering clause, fresh D-number) and G2 (caller sentence, D-U1).
