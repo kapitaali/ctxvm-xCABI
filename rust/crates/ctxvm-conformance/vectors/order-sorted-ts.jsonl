@@ -1,0 +1,6 @@
+{"agentId":"conformance-v0.1","budgetTokens":120000,"environmentId":"env-0a1b2c3d4e5f","model":"example/model","provider":"example","schemaVersion":"0.1","tokenizerId":"apx4-char","ts":"2026-10-29T15:16:58.000Z","type":"session.open"}
+{"latencyMs":42,"page":{"id":{"contentHash":"sha256:18b4e2bf","logicalRef":"tool:read_file({\"path\":\"notes/alpha.md\"})"},"kind":"tool_result","tokens":19},"toolEffect":"READ_ONLY","ts":"2026-10-29T15:16:58.120Z","turn":0,"type":"page.declare"}
+{"mode":"full","page":{"contentHash":"sha256:18b4e2bf","logicalRef":"tool:read_file({\"path\":\"notes/alpha.md\"})"},"ts":"2026-10-29T15:16:58.400Z","turn":0,"type":"page.render"}
+{"page":{"contentHash":"sha256:18b4e2bf","logicalRef":"tool:read_file({\"path\":\"notes/alpha.md\"})"},"source":"intentional_rerun","ts":"2026-10-29T15:16:58.500Z","turn":0,"type":"page.fault"}
+{"cacheEstimate":{"estHitTokens":0,"estMissTokens":19,"providerReported":false},"latencyMs":1240,"provider":"example","providerUsage":{"inputTokens":19,"outputTokens":7},"ts":"2026-10-29T15:16:59.640Z","turn":0,"type":"call.meta"}
+{"evictedTokens":0,"headroom":119981,"prefix":{"approxInputTokens":2048,"messageCount":4,"requestChars":8192,"source":"measured","systemPromptBytes":1820,"toolSchemas":23},"residentTokens":19,"ts":"2026-10-29T15:16:59.645Z","turn":0,"type":"turn.render"}

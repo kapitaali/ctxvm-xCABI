@@ -265,6 +265,18 @@ pin true every card close.
   `ctxvm_core::render::derive_projection(events, turn)` (a pure function of the decisions fed) per
   turn, or the two comments are corrected and the claim dropped. The test file is the owner's
   in-flight work → theirs to make.
+  **GAP CLOSED (2026-11-11, owner-ruled "do those", `reports/RR-P11LEVEL2-20261111.md`):** the test
+  now derives the page table per turn (`derive_projection`), asserts both byte forms project to the
+  SAME `TurnProjection`, and asserts both equal a PINNED projection
+  (`vectors/order-expected-projection.json`, produced by the committed tool
+  `ctxvm replay <vector> --turn N`) — the pin is what makes the level independent of level 1. The two
+  overstating comments are corrected (the report carries events/divergences/violations only). The
+  pin was falsified (one token → `derived page table differs from the pinned projection at turn 0`)
+  and restored; `cargo test -p ctxvm-conformance --test key_order` → 4 passed. **The pair is now
+  COMMITTED** (test + five vectors + two goldens + the vectors README, one commit because the
+  golden is `include_str!`d), so the RFC-0.1 note's C2 pointer names a committed file and the
+  clause's inference is executed rather than assumed. The note's TEXT is deliberately unchanged:
+  its status line binds content changes to a new D-number (the owner's to grant).
   *LANDED (2026-11-11, verified by this lane):* the conformance pair — four vectors under
   `rust/crates/ctxvm-conformance/vectors/` (`order-{struct,sorted}-{ts,nots}.jsonl`) plus
   `rust/crates/ctxvm-conformance/tests/key_order.rs`; the pairs are true byte-order twins (parsed equal,

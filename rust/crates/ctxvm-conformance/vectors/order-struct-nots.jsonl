@@ -1,0 +1,10 @@
+{"type":"session.open","agentId":"demo-agent","model":"openai/gpt-5","provider":"openai","budgetTokens":120000,"tokenizerId":"tiktoken-o200k_base"}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"kind":"tool_result","tokens":8200}}
+{"type":"page.render","turn":0,"page":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"mode":"full"}
+{"type":"page.evict","turn":1,"page":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"stubText":"[Paged out: read src/auth/session.ts (8.2k tok, 187 lines).\n Re-call read_file(path=\"src/auth/session.ts\") to re-materialize.]"}
+{"type":"page.render","turn":1,"page":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"mode":"stub"}
+{"type":"turn.render","turn":1,"residentTokens":47800,"evictedTokens":82,"headroom":64000}
+{"type":"page.fault","turn":2,"page":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"source":"tool_recall","latencyMs":180}
+{"type":"page.pin","page":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"reason":"explicit_api: harness re-materialized the page for turn 2"}
+{"type":"page.unpin","page":{"logicalRef":"tool:read_file(path=\"src/auth/session.ts\")","contentHash":"sha256:9f2ac17d"},"reason":"budget headroom restored; pin released at turn boundary"}
+{"type":"call.meta","turn":2,"provider":"openai","cacheEstimate":{"estHitTokens":47000,"estMissTokens":1000,"providerReported":false},"latencyMs":1240}
