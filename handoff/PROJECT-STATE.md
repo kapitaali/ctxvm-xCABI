@@ -1,7 +1,7 @@
 # State (updated 2026-11-11, by ctxvm repo agent (opencode), U6 applied; RFC-0.1 note + C3 enforced (D18)
 
 ## Goal
-Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging. W8 CLOSED negative (design/W8-CLOSURE-20261110.md).
+Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
 
 ## Artifacts and versions
 - Wire: RFC-0 sealed (`spec/rfc-0/`, byte-frozen); RFC-0.1 additive landed (`spec/rfc-0.1/`, R0–R5).
@@ -11,7 +11,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. U2 + U6 verified live (RR-U2LIVE): health ok; a decide runs on the record's map (cal-v1:057a5a35a9d4ec71); the gateway restart is DONE (both surfaces v3).
+1. U2 + U6 verified live (RR-U2LIVE): health ok; a decide runs on the record's map; the gateway restart is DONE (both surfaces v3).
 2. RFC-0.1 note + C3 enforced (D18): code-point comparator + vector; no digest moved; CI green.
 3. P11 gap (RR-P11GAP-20261111): the pair asserts TWO levels; level-2 patch drafted.
 
@@ -33,7 +33,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 - 2026-11-10: D-U1 (P5) caveat; D-U3 (P6) same-build; D-U2 (P7) two zero-spend baselines first (RR-P7BASE-20261110).
 - 2026-11-11: F1–F7 closed; P10+P11 answered.
 - 2026-11-11: subject fallback APPROVED: nvidia (tested) -> stepfun -> accept longcat too slow.
-- 2026-11-11: D18 — RFC-0.1 note applied (`spec/rfc-0.1/COMPATIBILITY.md`): C1 dispatch, C2 key-order + test, C3 canonical form for hashes; C3 then enforced in code (no digest moved; CI green).
+- 2026-11-11: D18 — RFC-0.1 note applied (`spec/rfc-0.1/COMPATIBILITY.md`): C1 dispatch, C2 key-order + test, C3 canonical form for hashes; C3 enforced in code (no digest moved; CI green).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 (Pkt 1) ANSWERED 2026-11-08: Pillar-1 splits (replayable + conformance-testable kept; "diffable" behind the consumer profile; "reconstructs any turn" narrowed; absence reworded). Card: `design/diff-normalisation.md`. Owner next: ratify + route with the six-item bundle.
