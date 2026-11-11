@@ -256,6 +256,21 @@ pin true every card close.
   items: the healthy fixture's turn count moved ([0,1,2,3] -> [0,1,2,3,4]), so the W8C capture may not
   be shape-comparable with W8B's and the block must be written from the diagnostic's capture; and the
   mention telemetry must stay in the SIDECAR/engine status, never inside a v0 event.
+  *STEP-1 VERIFIED (2026-11-11, their `7e0f2df`, `reports/RR-W8CVERIFY-20261111.md`):* the
+  six-item list run against the committed bytes - **five PASS, one GAP**: the text signal is removed not
+  weakened (prose is telemetry only, `context_engine.py:496-525`); `note_refault(args)` exists and is fed
+  from `pre_tool_call` (`live/__init__.py:1216`) using the SAME tokenisation as the page table; the
+  sidecar carries `faultsBySource`; the observer is aligned (mentions kept as telemetry); the four tests
+  carry their before-behaviour; and **the gate is ALL GATES GREEN** (exit 0, TS 24+62+46, python
+  196+8+66, schema 682, node-build 16 byte-identical, hub green). **THE GAP: the prose-mention count is
+  invisible in the capture** (`prose_mentions`/`refaults` are engine-internal), so a capture can no longer
+  distinguish "the scan sees the prose and does not pin" from "the scan is blind" - the B1-class death
+  the identifier_scan fault used to expose. **Recommendation: report the mention count in the SIDECAR**
+  (never inside a v0 event), so the diagnostic can assert both halves. This lane's earlier
+  "byte-identical" fixture claim is corrected by an appended erratum (the comparison used the working
+  tree, not HEAD: the committed fixture had 20 lines with two identifier_scan faults and needed the
+  regeneration their commit carried; the no-law-5-exposure conclusion survives because the package
+  fixture is not checksum-pinned and the two frozen ones are protected).
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
