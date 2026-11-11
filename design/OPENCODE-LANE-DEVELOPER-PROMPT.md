@@ -329,7 +329,8 @@ disqualifies this file from prompt duty:
   and its Rust unit test, P8's W8 subject choice, and U6 (the MCP's default calibration artifact = the
   superseded v2 map). U4 TICKED against RR-M3V3; U5 (page-id) answered; U2 re-measured -
   the model server is still DOWN (port 8081 free), the offline MCP surface answers.
-- PROJECT-STATE cap (standing): the file sits at 6,123/6,144 B - 21 B of headroom. Any lane
+- PROJECT-STATE cap (standing): the file sits at 6,044/6,144 B - 100 B of headroom (measured
+  2026-11-11, after a measured shave pass). Any lane
   writing it must re-run `bash tools/check-handoff.sh` BEFORE committing; a Done-window line can
   push the file over the cap and turn the WHOLE kit red (precedent: `ada48de` -> `RR-KITCAP-20261111`,
   repaired by compaction-to-a-pointer + window rotation + a day-file erratum). When the cap binds,

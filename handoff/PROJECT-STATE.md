@@ -1,4 +1,4 @@
-# State (updated 2026-11-11, by ctxvm repo agent (opencode), P11 card: canonical ordering ruled (test first); queue EMPTY; budget REPAIRED twice)
+# State (updated 2026-11-11, by ctxvm repo agent (opencode), P11 card: canonical ordering ruled (test-first); queue EMPTY
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8: CLOSED negative (`design/W8-CLOSURE-20261110.md`); next = W8B, free model (`design/W8B-FREE-PLAN.md`).
@@ -11,9 +11,9 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. P11 answered (RR-P11CANON-20261111): (c) owner, (a) pointer, TEST FIRST; note = compatibility statement; divergences measured (astral keys, number forms) -> canonical form for hashes.
-2. W8B2 corrected (RR-W8B2CORR-20261111): '0 calls' was false - arms RAN; blocker = the task's counting questions.
-3. P10 answered (RR-P10ID-20261111): ruling (b)+(a) - ONE RFC-0.1 note (type dispatch), NO field; note + vector owner-routed.
+1. P11 answered (RR-P11CANON-20261111): (c) owner, (a) pointer, TEST FIRST; note = compatibility statement; divergences measured -> canonical form for hashes.
+2. W8B2 corrected (RR-W8B2CORR-20261111): '0 calls' was false - arms RAN; blocker = the task's questions.
+3. P10 answered (RR-P10ID-20261111): ruling (b)+(a) - ONE RFC-0.1 note (type dispatch), NO field; drafted.
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
@@ -31,7 +31,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 - 2026-11-08: D3-c approved (owner); D13 answered (P1); P2 answered + seq 7 located (`identifier_scan` swap-in).
 - 2026-11-09: D14 answered (P3 verdicts recorded); consent mends + card-citation rule routed. P4 answered: ts stays optional; ordering clause PROPOSED for umpire §2 (RR-P4TS-20261109), D-number outstanding.
 - 2026-11-10: D-U1 (P5) calibration with caveat. D-U3 (P6) same-build. D-U2 (P7) two zero-spend baselines first (RR-P7BASE-20261110).
-- 2026-11-11: F1–F7 closed; P10+P11 answered (note + vectors owner-routed).
+- 2026-11-11: F1–F7 closed; P10+P11 answered (note + vectors drafted).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 (Pkt 1) ANSWERED 2026-11-08: Pillar-1 splits (replayable + conformance-testable kept; "diffable" behind the consumer profile; "reconstructs any turn" narrowed; absence reworded). Card: `design/diff-normalisation.md`. Owner next: ratify + route with the six-item bundle.
@@ -49,7 +49,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 3. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% belongs to an external controller (AGENTS.md law 7).
 
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
-- Conformance gate: GREEN 2026-11-11 (local, pushed HEAD `63472f4`; env-correct `run-ci.sh` → ALL GATES GREEN). Hosted witness №94 `42589188792` at `cd43555` (2026-11-09) stands.
+- Conformance gate: GREEN 2026-11-11 (local, pushed HEAD `63472f4`; env-correct `run-ci.sh` → ALL GATES GREEN). Hosted witness №94 `42589188792` (2026-11-09) stands.
 - XERJ Hub listing UNVERIFIED — live `hub.xerj.org/llms.txt` re-check (RR-XERJ-20261029).
 - openai price row + cache-read nulls UNVERIFIED (`prices.json`) — owner source.
 - W8 arm-attribution rule SUPERSEDED by plan §4e (`b6aa2a3`: one host gateway, attestation-scope equality); UNPROVEN until a probe runs.
