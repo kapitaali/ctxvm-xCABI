@@ -62,7 +62,7 @@ head 3 turns             ~14,100 tokens               (measured: 4,700/turn grow
 tail 6 turns             ~28,200 tokens
 scaffold + schemas       ~2,000
                          -----------------
-floor                    ≈ 48,650 tokens              (estimate, to be measured before the cell)
+floor                    ≈ 48,650 tokens              (DERIVED from the W8B series, not measured)
 
 measured residency       10,518 → 104,032 over 20 turns
 turns above 60,000       14-19
@@ -81,9 +81,15 @@ candidate budget           60,000        margin 11,350  ≈ 2.4 turns of growth
 residency above 60,000     turns 14-19  (measured, pinned ceiling)
 ```
 
-The 60,000 figure is a placeholder for the diagnostic. **The block states floor + margin explicitly**,
-with both numbers derived from the diagnostic capture, and the margin is a decision the owner sees at
-checkpoint B.
+**The floor cannot be measured by a one-prompt diagnostic** (review note 2, 2026-11-11): the floor
+that binds is the protected set at the LATE turns — system prompt + head 3 + tail 6 — and a one-prompt
+run never reaches them. So the floor is DERIVED from the measured W8B series (4,350 + 3×4,700 +
+6×4,700 + 2,000 = 48,650, re-derived independently and agreeing), and the diagnostic's job is narrower
+and sharper: prove that nothing pins and that growth per turn is unchanged. The pair is the measurement
+that tests the floor.
+
+**The 60,000 figure is provisional.** The block states **floor + margin**, both numbers carried into it
+from this derivation, and the margin is a decision the owner sees at checkpoint B.
 
 ## 4. What has to be built before any pair
 
@@ -107,6 +113,35 @@ profiles         recreate `w8cn-{naive,paged}` from the configs recorded in the 
                  with budgetTokens 60000 on the paged arm; two profiles, never more
 ```
 
+### The diagnostic asserts, and what it must NOT assert
+
+```
+page.fault by source     identifier_scan == 0 AND tool_recall == 0 on the paged arm
+page.declare             20 (+1 for the artefact write) — one sighting per file
+growth per turn          ~4,700 tokens, unchanged from the W8B series
+budget/arm               paged carries its budget from settings; naive carries none
+```
+
+**Correction to review note 1.** The note asks the diagnostic to assert `page.fault == 0` as proof that
+the text signal is gone. Verified in the code: `page.fault` is emitted by the **plugin observer**, not
+by the engine, and the control arm in W8B recorded the same 19 faults as the treatment — a control with
+no engine at all. Two plugin rules produce them:
+
+```
+src/plugin.py:352   tool_recall      a second declare of the same logicalRef (a re-read)
+src/plugin.py:432   identifier_scan  the model's produced text contains a page's identity token
+```
+
+`identifier_scan` is the plugin's own prose rule. Removing the engine's `_credit_demand` pinning does
+**not** stop it, so a diagnostic asserting zero faults would fail for a reason unrelated to the change —
+and the "19 of 21" that W8B measured would persist in the capture untouched.
+
+Therefore **the observer must be aligned in the same change**: either `scan()` stops emitting a fault
+for a prose mention (the mention becomes telemetry on the message, not a fault event), or the fault
+carries its source and the assertion is `source == identifier_scan: 0`. Either way the capture must
+describe the engine's pinning truthfully — today it describes a second, independent rule, and that is
+itself a defect worth fixing in the same card.
+
 Instrument version is a real change, so the card gets its own preregistration line in `reports/LOG.md`
 and its own prediction block before the first pair.
 
@@ -125,9 +160,16 @@ artefact                    parsed-equal is the gate; canonical bytes are a note
 pins by source              prose 0, harness 0, model re-read = the actual pins
 ```
 
+**The predicted eviction volume is stated as a range, with its bound** (review note 3): the W8B series
+is a PINNED ceiling — nineteen pins meant nothing was ever stubbed — so the new instrument's residency
+is at or below it, and it crosses 60,000 no earlier than turn 14. The six-turn window (14-19) is an
+**upper bound, not a promise**: a narrower window is a finding about the shape, not a falsification of
+the change. The block therefore reads "evictions begin no earlier than turn 14; predicted volume 5-20 k
+tokens depending on where the floor lands", and the falsifier stays exactly as stated below.
+
 Success (a cell, not a saving): evictions > 0 on the paged arm with a parsed-equal artefact, and the
-pins attributed to model re-reads only. Failure: evictions 0 at a budget above the measured floor, or
-artefact inequality, or any pin from prose or from a re-sent result.
+pins attributed to model re-reads only. Failure: evictions 0 at a floor+margin budget, or artefact
+inequality, or any pin from prose or from a re-sent result.
 
 ## 6. What this cannot conclude, whatever it shows
 
@@ -155,8 +197,9 @@ cache-write volume rises with zero evictions          the same defect the paid r
 1. **Instrument** — plugin 0.12.0 and engine change, with the four tests above; gate green.
 2. **Checkpoint A** — `--probe --arm both` returns CONTRAST OK and the paged arm READY; the owner sees
    it before anything runs.
-3. **Diagnostic** — one prompt per arm at budget 60,000, read the floor from the capture.
-4. **Block** — write and commit the prediction from that floor, with digests.
+3. **Diagnostic** — one prompt per arm at the provisional budget: assert zero faults by source, count
+   declares, check per-turn growth. It does NOT measure the floor (see §3).
+4. **Block** — write and commit the prediction as floor + margin and a volume RANGE, with digests.
 5. **Checkpoint B** — owner approves the block.
 6. **Pair** — one run, ~20 minutes, $0.00.
 7. **Record** — card, LOG row, chunk log; verdict NO-OP is a result, not a failure.
