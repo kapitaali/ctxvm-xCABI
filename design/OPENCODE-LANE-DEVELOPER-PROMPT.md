@@ -224,13 +224,18 @@ python -> schema/corpus/export -> hub. It prints ALL GATES GREEN or fails. A red
 means you ran a stale copy of the script.
 
 - The capture-session environment LEAKS into your shell (it showed up as `CTXVM_TRACE_TS=0` —
-  D9's own ts opt-out — plus `CTXVM_HERMES_VERSION` etc.). Two documented leak verdicts:
-  `CTXVM_TRACE_TS=0` turns the node `ts` law red (fingerprints: `tracer.test.ts:172`, `:240`) and
-  `CTXVM_HERMES_VERSION` turns the hermes lane-fixed-identity red (`test_plugin.py:1908`). The
-  representative invocation from a capture env is
-  `env -u CTXVM_TRACE_TS -u CTXVM_HERMES_VERSION bash tools/run-ci.sh`
-  (see `reports/RR-ENVLEAK-20261110.md`). Treat a red gate as "find what changed", not "assume
-  the tree broke"; the env -u rerun is the repro-off.
+  D9's own ts opt-out — plus `CTXVM_HERMES_VERSION` etc.). Three documented leak verdicts:
+  `CTXVM_TRACE_TS=0` turns the node `ts` law red (fingerprints: `tracer.test.ts:172`, `:240`),
+  `CTXVM_HERMES_VERSION` turns the hermes lane-fixed-identity red (`test_plugin.py:1908`), and
+  `CTXVM_BUDGET_TOKENS=200000` (exported by `~/.bashrc`) made the arm-policy test read `env`
+  where it means `default` (`reports/RR-CTXVMENV-20261111.md`). **The gate now unsets the nine
+  `CTXVM_*` variables itself** (`tools/run-ci.sh`, before any step — the steps are unchanged, so it
+  still mirrors `ci.yml` step for step, and now mirrors ci.yml's *environment* too), so plain
+  `bash tools/run-ci.sh` is safe from a capture shell; the older representative invocation
+  `env -u CTXVM_TRACE_TS -u CTXVM_HERMES_VERSION bash tools/run-ci.sh` stays valid and is now
+  redundant (see `reports/RR-ENVLEAK-20261110.md`). A test that reads the ambient environment is
+  still fragile when the suite is run directly — that is the other lane's test, not the gate's.
+  Treat a red gate as "find what changed", not "assume the tree broke".
 - Companions: `python3 tools/ci-rehearsal.py` clones the COMMITTED tree and runs each job's
   steps in order (catches green-only-because-of-uncommitted-state), and
   `bash tools/check-node-build.sh` proves dist emits the same 16 events (also inside gate 2).
