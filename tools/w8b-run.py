@@ -403,11 +403,19 @@ def probe(spec: dict, run_id: str) -> dict:
         row = c.execute("select estimated_cost_usd from sessions where id=?", (sid,)).fetchone()
         out["cost"] = row[0] if row else None
         # The precondition the prediction block demands: did the host ever SELECT with the engine?
-        sidecar = Path.home() / ".local" / "state" / "ctxvm" / "traces" / f"{sid}.coverage.json"
-        try:
-            plug = json.loads(sidecar.read_text()).get("plugin", {})
-        except Exception:
-            plug = {}
+        # The capture name is not guaranteed to equal the DB session id, so look for the newest
+        # sidecar written during this probe rather than deriving a path that may not exist.
+        traces = Path.home() / ".local" / "state" / "ctxvm" / "traces"
+        sidecars = [f for f in traces.glob("*.coverage.json") if f.stat().st_mtime >= started - 2]
+        sidecars.sort(key=lambda f: f.stat().st_mtime)
+        plug = {}
+        out["sidecar"] = None
+        if sidecars:
+            try:
+                plug = json.loads(sidecars[-1].read_text()).get("plugin", {})
+                out["sidecar"] = sidecars[-1].name
+            except Exception:
+                plug = {}
         out["engine"] = plug.get("engine")
         out["engineSelections"] = plug.get("engineSelections")
         out["profile"] = plug.get("profile")
