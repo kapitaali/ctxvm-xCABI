@@ -1,4 +1,4 @@
-# State (updated 2026-11-10, by ctxvm repo agent (opencode), after the P7 card: D-U2 answered — two zero-spend baselines first, margins preregistered before any run)
+# State (updated 2026-11-11, by ctxvm repo agent (opencode), umpire-gates card: F1–F7 closed, F8 = P4-answered, F9 unowned; P10 queued)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > second harness identical traces > falsifiable metrics > packaging. W8: CLOSED negative (`design/W8-CLOSURE-20261110.md`); next = W8B, free model (`design/W8B-FREE-PLAN.md`).
@@ -11,9 +11,9 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. P7 answered (RR-P7BASE-20261110): two zero-spend baselines first (majority-class + ONE learned); margins preregistered before any run.
-2. P6 answered (RR-P6DET-20261110): replay stays SAME-BUILD (option (a)); vocabulary = replay-reproducible with 10 documented exceptions.
-3. P5 answered (RR-P5CAL-20261110): calibration WITH the caveat; transfer needs the ≥5-set preregistered equivalence test.
+1. Umpire gates run (RR-UGATE-20261111): F1–F7 closed, F8 = P4-answered, F9 unowned; P10 queued (owner-gated).
+2. P7 answered (RR-P7BASE-20261110): two zero-spend baselines first.
+3. P6 answered (RR-P6DET-20261110): replay SAME-BUILD (option (a)); vocabulary = replay-reproducible with 10 documented exceptions.
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
@@ -21,7 +21,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 ## Next three (ordered, one line each)
 1. Owner: ratify D13 + D14 and route the SIX-item white-paper bundle (items listed in full in RR-DAY-20261109) — working-tree bytes, not HEAD.
 2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
-3. Agent: P7 answered; P8 drop-or-keep. Umpire gates: D-ordering (P4), caller sentence (P5), vocab line (P6), protocol+margins (P7).
+3. Agent: P10 queued (page-id ruling); P8 drop-or-keep. Umpire gates: D-ordering (P4), caller sentence (P5), vocab (P6), protocol+margins (P7), page-id (P10).
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
@@ -30,7 +30,8 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 - 2026-11-07: W8 ruled FAILED; capture stays default-on; contract restored (RR-W8CHUNK-20261107-2b + RR-W8INDEX).
 - 2026-11-08: D3-c approved (owner); D13 answered (P1); P2 answered + seq 7 located (`identifier_scan` swap-in).
 - 2026-11-09: D14 answered (P3 verdicts recorded); consent mends + card-citation rule routed. P4 answered: ts stays optional; ordering clause PROPOSED for umpire §2 (RR-P4TS-20261109), D-number outstanding.
-- 2026-11-10: D-U1 (P5) calibration with caveat. D-U3 (P6) same-build. D-U2 (P7) two zero-spend baselines first; margins preregistered before any run (RR-P7BASE-20261110).
+- 2026-11-10: D-U1 (P5) calibration with caveat. D-U3 (P6) same-build. D-U2 (P7) two zero-spend baselines first (RR-P7BASE-20261110).
+- 2026-11-11: F1–F7 closed; F8 = P4-answered; F9 unowned; P10 queued, trigger already fired (RR-UGATE-20261111).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 (Pkt 1) ANSWERED 2026-11-08: Pillar-1 splits (replayable + conformance-testable kept; "diffable" behind the consumer profile; "reconstructs any turn" narrowed; absence reworded). Card: `design/diff-normalisation.md`. Owner next: ratify + route with the six-item bundle.
