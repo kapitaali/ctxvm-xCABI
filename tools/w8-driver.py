@@ -329,7 +329,14 @@ def verify(args) -> int:
     checks.append(("budget from settings" if expect != "any" else "budget recorded",
                    budget_ok,
                    f"{plugin.get('budgetTokens')} / {plugin.get('budgetSource')}"))
-    checks.append(("engine selections > 0", (plugin.get("engineSelections") or 0) > 0, str(plugin.get("engineSelections"))))
+    # Arm-aware: a CONTROL session must select nothing — zero is the correct answer there, and
+    # requiring > 0 labelled a correct control VOID (measured 2026-11-11, W8C cell-01).
+    _sel = plugin.get("engineSelections") or 0
+    _control = (plugin.get("arm") == "control") or (plugin.get("engineSetting") == "compressor")
+    if _control:
+        checks.append(("control selects nothing", _sel == 0, str(_sel)))
+    else:
+        checks.append(("engine selections > 0", _sel > 0, str(_sel)))
     checks.append(("no code/shell tools",
                    not any(t in ("tool:terminal", "tool:execute_code") for t in tools),
                    ", ".join(f"{k}x{v}" for k, v in sorted(tools.items()))))
