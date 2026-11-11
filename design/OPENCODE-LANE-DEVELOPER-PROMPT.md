@@ -328,16 +328,18 @@ disqualifies this file from prompt duty:
   Still owner-routed: the hub $ref edit (revert,
   or change the generator + re-hash the baseline); the P11 pair's third level (patch drafted - assert
   the derived page table via `derive_projection`, or drop the claim); T-A's arm-attribution precondition
-  (assert `engineSelections > 0` AND profile `w8bn-paged`); the w8b lane's free-plan shape erratum; the
-  `decision.md` approval record (not locatable from this lane - what it must say is in
-  `reports/RR-C3FIX-20261111.md`); and whether `validateHashInput` should be wired into the minting path
-  (a tool call with an integral float would then fail to mint a ref).
+  (assert `engineSelections > 0` AND profile `w8bn-paged`); the w8b lane's free-plan shape erratum; and
+  whether `validateHashInput` should be wired into the minting path (a tool call with an integral float
+  would then fail to mint a ref).
   OWNER-RULED since: the subject fallback order (nvidia -> stepfun -> accept longcat too slow).
-  CLOSED since: the T-A prediction block (filled and committed for w8b-cell-01); U6 (the MCP now serves the
-  calibration OF RECORD - `cal-v1:057a5a35a9d4ec71`, ECE 0.030163 - verified live; only the hermes
-  gateway's own wrapper still holds v2 until a gateway restart, the owner's call); and the RFC-0.1
+  CLOSED since: the T-A prediction block (filled and committed for w8b-cell-01); U2 (the MCP is ALIVE:
+  health ok, and a decide runs on the record's map - `reports/RR-U2LIVE-20261111.md`); U6 (the MCP now
+  serves the calibration OF RECORD - `cal-v1:057a5a35a9d4ec71`, ECE 0.030163 - verified live; only the
+  hermes gateway's own wrapper still holds v2 until a gateway restart, the owner's call); and the RFC-0.1
   compatibility note (LANDED as spec/rfc-0.1/COMPATIBILITY.md under D18 — C1 dispatch, C2 key-order +
-  test pointer, C3 canonical form for hash inputs; CI green with it present).
+  test pointer, C3 canonical form for hash inputs; CI green with it present). The note's ratification
+  lives in that status line and in PROJECT-STATE's ledger - there is NO `decision.md` file in this repo
+  and never was (it was a scratch file for naming the review discussion).
   LANDED and green: the P11 order pair (four vectors + tests/key_order.rs, 3/3 pass, verified by this
   lane) and the P10 negative vector's fact (the v0.1 validator rejects a flat page.declare). U4 TICKED against RR-M3V3; U5 (page-id) answered; U2 re-measured -
   the model server is still DOWN (port 8081 free), the offline MCP surface answers.

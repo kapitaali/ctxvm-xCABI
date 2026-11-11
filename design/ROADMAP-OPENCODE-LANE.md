@@ -327,14 +327,13 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
   (schema `umpire-calibration-precision/0.1`, `cal-v1:057a5a35a9d4ec71`, corpus sha `54e39733…`,
   bootstrap n=2000 seed 42, 10-bin ECE, test n=120, committed `47e0ee0`) verified on disk during
   P5.
-- [ ] **U2. MCP health re-check before any umpire MCP consumer work.** RE-MEASURED 2026-11-11
-  (`RR-UMRES-20261111`): still DOWN — `tools.umpire.health()` returns `urlopen Errno 111` (connection
-  refused); the pinned server (`llama-server … --host 127.0.0.1 --port 8081`) has no listener and no
-  process, so the MCP CONSUMER path is blocked on the model server, not on the MCP layer. The offline
-  surface answers: `pins` OK (default `qwen3-1.7b`), `calibration_info` OK.
-  *Done when:* `tools.umpire.health()` returns ok on a fresh session that needs the surface (the
-  owner starts the pinned server; this lane does not — it loads ~4.5 GB of weights).
-
+- [x] **U2. MCP health re-check — VERIFIED LIVE 2026-11-11.** With the pinned server started,
+  `tools.umpire.health()` returns ok (200) on 127.0.0.1:8081, and a real `decide` returns key
+  `billing` with calibrated confidence 0.905882 at `data_version: cal-v1:057a5a35a9d4ec71` — the record's
+  map applied end-to-end (U6 verified where it matters), latency 5.3 s, ledger + records written
+  (`reports/RR-U2LIVE-20261111.md`). The only environment tail is the gateway-scoped MCP: its wrapper
+  still holds v2 until a gateway restart (the owner's timing — a restart reaps gateway sessions and the
+  w8b lane has runs in flight).
 - [ ] **U3. Umpire-side lane tools.** The umpire repo has its own AGENTS.md books; if the owner
   routes a dev card there, its pipeline mirrors §4 of my prompt with uom-per-card kit rules in
   that repo. Standing: proposals only until a D-number lands.

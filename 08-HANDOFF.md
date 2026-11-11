@@ -1326,6 +1326,18 @@ own wrapper (pid 7513) reads its config at start → it needs a **gateway restar
 a restart reaps gateway sessions, and the w8b lane has runs in flight). `health` remains DOWN (the
 pinned model server on 8081 is still not running), so U2 stands. Card `reports/RR-U6FIX-20261111.md`.
 
+**Frontier 11 addendum 25 (2026-11-11, U2 verified live; and a correction):** with the pinned model
+server started, `health()` returns **ok (200)** and a real `decide` returns key **billing** with
+calibrated confidence **0.905882** at **`data_version: cal-v1:057a5a35a9d4ec71`** — the record's map
+applied END-TO-END, not merely reported (U6 verified where it matters; latency 5.3 s; the ledger and
+records sidecars were written). **U2 is done**; the only environment tail is the gateway-scoped MCP
+(its wrapper still holds v2 until a gateway restart — the owner's timing, since a restart reaps gateway
+sessions and the w8b lane has runs in flight). **CORRECTION:** this lane's records referred to a
+"`decision.md` approval record" — **no such file exists in this repo and never did**; it was the
+owner's temporary scratch file for naming the discussion. The ratification lives in the note's status
+line, PROJECT-STATE's decisions ledger and the two cards → that item is **closed, not routed**, and the
+index lines are corrected. Card `reports/RR-U2LIVE-20261111.md`.
+
 ## §1. Workspace map
 
 ```
