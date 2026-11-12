@@ -404,8 +404,6 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                          f"messages={len(request_messages)} entered={self._meter.get('entered')}\n")
         except Exception:
             pass
-        import datetime as _dt
-
         # ---- which arm is this turn? (per SESSION, not per process) --------------
         # One gateway holds one plugin instance, so at registration the settings snapshot was the
         # paged profile's and was applied to every session: measured 2026-11-11, the naive arm
@@ -428,6 +426,18 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                 # profile this session belongs to says compressor. Leave the request untouched.
                 self._meter["skipped_control"] = self._meter.get("skipped_control", 0) + 1
                 _bucket["skip"] += 1
+                try:
+                    import os as _os
+                    _d = Path(_os.environ.get("CTXVM_TRACE_DIR") or
+                              (Path(_os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
+                               / "ctxvm" / "traces"))
+                    _d.mkdir(parents=True, exist_ok=True)
+                    with open(_d / "_decision.log", "a", encoding="utf-8") as _f:
+                        _f.write(f"{_dt.datetime.now(_dt.timezone.utc).isoformat(timespec='seconds')} "
+                                 f"RETURNED-CONTROL arm={pol.get('arm')} engine={pol.get('engine')!r} "
+                                 f"home={pol.get('home')!r} session_profile={pol.get('profile')!r}\n")
+                except Exception:
+                    pass
                 return None
             # A budget given to the constructor is the caller's decision (the test suite uses tiny
             # ones to exercise the laws), and a policy whose home does not exist is not a session
@@ -439,6 +449,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                 self._v_budget = pol["budget"]
                 self._v_budget_source = pol.get("budgetSource", self._v_budget_source)
 
+        import datetime as _dt
         self._selections += 1
         self._meter["select"] += 1
         ACTIVATIONS["select"] += 1
@@ -464,7 +475,8 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
             _d.mkdir(parents=True, exist_ok=True)
             with open(_d / "_decision.log", "a", encoding="utf-8") as _f:
                 _f.write(f"{_dt.datetime.now(_dt.timezone.utc).isoformat(timespec='seconds')} "
-                         f"arm={(pol or {}).get('arm')} budget={self._v_budget} "
+                         f"arm={(pol or {}).get('arm')} engine={(pol or {}).get('engine')!r} "
+                         f"home={(pol or {}).get('home')!r} budget={self._v_budget} "
                          f"units={len(units)} kept={len(keep_hard)} dropped={len(dropped)} "
                          f"repositioned={len(repositioned)} "
                          f"resident={sum(u.tokens for u in units.values()) if isinstance(units, dict) else 0}\n")
