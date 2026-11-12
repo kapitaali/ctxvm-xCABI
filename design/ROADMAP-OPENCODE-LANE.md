@@ -399,6 +399,22 @@ pin true every card close.
   **loses** at these rates ✓). The cause of the cache-write volume is now answered **for this shape** ✓
   — it is the per-turn prefix invalidation of a selection that is not cache-stable ✓, i.e. the **P8**
   thesis ✓, and therefore where the remaining hope lives ✓.
+  *THE NEXT POLICY CHOICE, PRICED (2026-11-12, `reports/RR-POLICYCHOICE-20261112.md`):* the paid
+  pair's negative is about the **REWRITE, not the eviction** ✓ — the paged arm **never sent 894,814
+  tokens** ✓ and **re-sent 797,443** of them ✓ (0.89× the unsent content ✓): the token claim survives
+  (0.82× ✓) and the dollar claim fails (2.11× against ✓) because **a cache write costs 13× a cache
+  read** ✓ → the saving is **$0.0089** ✓ and the tax **$0.1037** = **11.6×** it ✓. Hence the
+  dollar-optimal policy is **send less, and never change what you already sent** ✓. Priced candidates:
+  cache-stable selection / watermark (the same mechanism — the evicted set must stop changing ✓) net
+  ≈ **−$0.009 ± $0.010** ✓ = **a tie inside one pair's noise** ✓ (the owner's own reading ✓), with the
+  design requirement now computable: **extra write volume < ~0.13 M tokens per session** (≈ 3.2 k per
+  engaged call ✓ — an eighth of today's 26.6 k ✓); stop-and-publish ✓; and **a different shape** — the
+  only place with a materially bigger effect ✓ (the same unsent tokens priced at the input rate are
+  worth ≈ **$0.089** ✓ ≈ 1.2× the control ✓), i.e. content that is **not cached** ✓ — a fresh
+  preregistration under the W8 reopen's rule ✓. **So: no paid confirmation is worth buying** ✓ (the
+  effect is 3.5 % of the pair's spend ✓) — the next test is **zero-spend** with the **cache-write volume
+  as the primary metric** ✓, and the simulator can now be **scored** ✓ (the paid pair measured the
+  constants it lacked ✓).
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
