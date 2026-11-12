@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.7"
+PLUGIN_VERSION = "0.13.8"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -400,6 +400,7 @@ def _write_live_stamp(session_id: str) -> None:
             "engineSetting": pol.get("engine"),
             "engine": (layers.get("engineRegistered") if pol.get("arm") == "paged" else None),
             "engineSelections": _engine_selections_for(pol.get("profile")),
+            "engineEntered": _entered_total(),
             "rootEngineSetting": layers.get("rootEngineSetting"),
             "homeEngineSetting": layers.get("homeEngineSetting"),
             "budgetTokens": pol.get("budget"),
@@ -1407,6 +1408,13 @@ def register(ctx) -> None:
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_pre_llm_call(kwargs)
+            # Unconditional per-turn stamp: a transport that never assembles the engine through the
+            # hook leaves no selection, so a stamp written only on selection would be silent exactly
+            # when it is needed (0.13.8).
+            try:
+                _write_live_stamp(kwargs.get("session_id", "") or "")
+            except Exception:  # noqa: BLE001
+                pass
             _maybe_write_through(vm, stats)
             # W8C step 2: point the engine's observer at THIS session's tracer, so a selection that
             # happens on the next request is recorded in the right capture (one engine, many arms).
@@ -1427,7 +1435,7 @@ def register(ctx) -> None:
                             _st = _state()
                             _st.setdefault("call_sizes_by_session", {}) \
                                 .setdefault(_sid, []).append({"before": _before, "after": _after})
-                            _write_live_stamp(_sid)
+
                         _refs = _tr.refs_for_identity_tokens(payload.get("dropped"))
                         if _refs:
                             _st = _state()

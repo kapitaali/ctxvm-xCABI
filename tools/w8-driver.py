@@ -439,12 +439,31 @@ def _assert_engaged(session_name: str, run_dir: Path, arm: str) -> str | None:
     d = Path(os.environ.get("CTXVM_TRACE_DIR") or
              (Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
               / "ctxvm" / "traces"))
-    stamps = sorted(_glob.glob(str(d / "*.live.json")), key=os.path.getmtime, reverse=True)
+    stamps = sorted(_glob.glob(str(d / "*.live.json")),
+                    key=lambda p: os.stat(p).st_mtime_ns, reverse=True)
     if not stamps:
         return None  # no stamp yet: not an engagement failure, just nothing to read
-    stamp = _json.load(open(stamps[0], encoding="utf-8"))
-    if stamp.get("arm") != "paged":
-        return None  # the newest stamp belongs to another session; nothing to conclude
+    # Read the newest stamp that belongs to a TREATMENT session; another arm's stamp says nothing
+    # about this one.
+    stamp = None
+    for p in stamps[:8]:
+        try:
+            cand = _json.load(open(p, encoding="utf-8"))
+        except Exception:
+            continue
+        if cand.get("arm") == "paged":
+            stamp = cand
+            break
+    if stamp is None:
+        return None
+    if int(stamp.get("engineEntered") or 0) == 0:
+        # The transport never assembled the request through the engine hook. That is not a policy
+        # result and not a VOID to be booked: it is a transport that cannot run this experiment.
+        msg = ("this transport does not assemble the engine: select_context has not been entered "
+               f"after prompt 1 (engine={stamp.get('engine')!r} entered=0 "
+               f"setting={stamp.get('engineSetting')!r})")
+        (run_dir / "ENGAGEMENT-ABORT").write_text(msg + "\n", encoding="utf-8")
+        return msg
     if stamp.get("engine") is None or not stamp.get("engineSelections"):
         msg = (f"treatment never engaged after prompt 1: engine={stamp.get('engine')!r} "
                f"selections={stamp.get('engineSelections')} "
