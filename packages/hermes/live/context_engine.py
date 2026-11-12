@@ -382,6 +382,24 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
             self._meter["entered"] += 1
         except Exception:
             pass
+        try:
+            ENTERED["n"] += 1
+        except Exception:
+            pass
+        # Unconditional file trace of the call itself. The meter is shared with the host's clone, but
+        # a shared dict read through another object is exactly the kind of evidence that has misled
+        # this card twice; an append-only line is not (0.13.7).
+        try:
+            import os as _os, time as _time
+            _d = Path(_os.environ.get("CTXVM_TRACE_DIR") or
+                      (Path(_os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
+                       / "ctxvm" / "traces"))
+            _d.mkdir(parents=True, exist_ok=True)
+            with open(_d / "_entered.log", "a", encoding="utf-8") as _f:
+                _f.write(f"{_time.strftime('%Y-%m-%dT%H:%M:%S')} select_context "
+                         f"messages={len(request_messages)} entered={self._meter.get('entered')}\n")
+        except Exception:
+            pass
         import datetime as _dt
 
         # ---- which arm is this turn? (per SESSION, not per process) --------------

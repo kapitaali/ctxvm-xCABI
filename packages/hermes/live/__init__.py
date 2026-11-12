@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.6"
+PLUGIN_VERSION = "0.13.7"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -613,6 +613,15 @@ def _current_profile_name() -> Optional[str]:
         return None
 
 
+def _entered_total() -> int:
+    """Module-global count of select_context entries, independent of which engine instance ran."""
+    try:
+        from context_engine import ENTERED
+        return int(ENTERED.get("n") or 0)
+    except Exception:  # noqa: BLE001
+        return int(((getattr(_state().get("engine_obj"), "_meter", {}) or {}).get("entered")) or 0)
+
+
 def _engine_selections_for(profile: Optional[str]) -> int:
     """Selections the engine made FOR one profile's sessions (0.11.1's per-profile buckets)."""
     engine = _state().get("engine_obj")
@@ -770,7 +779,7 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             "evictedPages": sorted(_state().get("evicted_refs_by_session", {}).get(session_id or "", set()))[:50],
             "evictedPagesCount": len(_state().get("evicted_refs_by_session", {}).get(session_id or "", set())),
             # "called but selected nothing" vs "never called" — the distinction the 12:39 run lacked.
-            "engineEntered": int(((getattr(_state().get("engine_obj"), "_meter", {}) or {}).get("entered")) or 0),
+            "engineEntered": _entered_total(),
             # Every selection's request size before and after, so a simulator can be scored at the
             # granularity the policy actually decides at (two calls per turn).
             "callSizes": _state().get("call_sizes_by_session", {}).get(session_id or "", [])[:80],
