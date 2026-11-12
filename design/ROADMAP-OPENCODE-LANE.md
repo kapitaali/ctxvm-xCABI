@@ -384,6 +384,21 @@ pin true every card close.
   card). Plus: the cache-write share is a **PROXY** (the ledger's uncached input is prompt minus both
   cache buckets) → name it, mark it UNVERIFIED, and predict the receipts' observable ✓; and the **floor
   must be re-derived for the paid subject** (48,650 carries longcat's scaffold and system prompt) ✓.
+  *THE PAID PAIR LANDED (2026-11-12, `reports/RR-PAIDRESULT-20261112.md`):* **$0.2534** for the pair
+  (the owner's central estimate $0.25 ✓, the bracket's LOW end ✓), the **paged arm costs 2.11× the
+  control** in dollars ($0.1580 vs $0.0748) ✓ — inside the projected 1.8–2.4× ✓ — and **the cause is
+  measured**: the paged arm's **cache_write is 4.49× the control's** (1,025,825 vs 228,382 ✓) at
+  **0.61× its cache_read** ✓, while it sends **0.82× the tokens** ✓ and holds the request at the budget
+  (**0.57×** the final request ✓). The trace witnessed the evictions (275,362 per-turn re-drops, first at
+  **turn 12** ✓; the control's counter **0** ✓) — and the onset landed exactly where the **ratified
+  rule's** form puts it (the control crosses 60,000 at turn 11, the eviction follows one turn later —
+  the lag is run-specific ✓, which is why the rule says *plus the lag* and never a turn number ✓).
+  **So: no saving may be claimed** (law 7 ✓ — fewer tokens, more money ✓), the claim stays scoped to this
+  shape/model/budget ✓, and the **break-even must be re-derived** for a policy that rewrites the prefix
+  every turn (the measured `P′` is 4.49× and the token saving is 18 % of the session ⇒ the policy
+  **loses** at these rates ✓). The cause of the cache-write volume is now answered **for this shape** ✓
+  — it is the per-turn prefix invalidation of a selection that is not cache-stable ✓, i.e. the **P8**
+  thesis ✓, and therefore where the remaining hope lives ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
