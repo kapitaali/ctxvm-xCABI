@@ -63,6 +63,15 @@ PROVIDERS = {
         "auth": "env",
         "note": "free tier via OpenRouter; capability unproven, prompt 1 decides",
     },
+    "w8cp": {
+        "model": "openai/gpt-6-luna",
+        "provider": "openai",
+        "prefix": "w8cp",
+        "key": "OPENAI_API_KEY",
+        "auth": "key",
+        "max_calls": 50,
+        "note": "W8C paid pair: the cost direction under real billing; ceiling 50 calls per arm (100 per pair: 100 x $0.0084 = $0.84 worst case)",
+    },
     "w8c": {
         "model": "meituan/longcat-2.5:free",
         "provider": "nous",
@@ -327,7 +336,8 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000
     r = subprocess.run([sys.executable, str(DRIVER), "--arm", arm, "--session-name", title,
                         "--workspace", str(ws), "--run-dir", str(run_dir),
                         "--profile-prefix", spec["prefix"], "--expect-budget", str(budget),
-                        "--timeout", str(timeout)],
+                        "--timeout", str(timeout),
+                        "--max-calls", str(spec.get("max_calls") or 0)],
                        text=True, capture_output=True, env=env, timeout=PARTS * timeout + 300)
     (run_dir / "driver.out").write_text(r.stdout, encoding="utf-8")
     (run_dir / "driver.err").write_text(r.stderr, encoding="utf-8")
@@ -363,6 +373,12 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000
         if line.startswith("verify: verdict"):
             out["verdict"] = line.split()[-1]
     print(v.stdout.strip())
+
+    if (run_dir / "CEILING").exists():
+        # A booked outcome: the arm stopped at its call ceiling. The verifier may still say CELL or
+        # NO-OP; the ceiling is what happened, and it must not be read as either.
+        out["verdict"] = "CEILING"
+        out["ceiling"] = (run_dir / "CEILING").read_text(encoding="utf-8").strip()
 
     if arm == "paged":
         art = ws / "artefact.json"
@@ -550,7 +566,8 @@ def main() -> int:
         for arm in arms:
             print(f"[{arm}] python3 tools/w8-driver.py --arm {arm} --session-name {args.run_id}-{arm} "
                   f"--workspace experiments/w8b/ws-{arm} --run-dir <state>/w8-runs/{args.run_id}/{arm} "
-                  f"--profile-prefix {spec['prefix']} --expect-budget {args.budget} --timeout {args.timeout}")
+                  f"--profile-prefix {spec['prefix']} --expect-budget {args.budget} --timeout {args.timeout} "
+                  f"--max-calls {spec.get('max_calls') or 0}")
         print(f"dry-run OK — provider {args.provider}, {len(arms)} arm(s), {PARTS} prompts each, "
               f"{args.timeout}s cap, model {spec['model']}")
         return 0

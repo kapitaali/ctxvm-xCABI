@@ -275,6 +275,17 @@ def run(args) -> int:
                 print(f"driver: prompt {i} aborted — {bad} — cell DATA-INVALID", file=sys.stderr)
                 return 1
             print(f"[prompt {i:02d}] ok")
+            if args.max_calls:
+                used = _calls_so_far(args.session_name)
+                print(f"[calls] {used}/{args.max_calls} after prompt {i}")
+                if used >= args.max_calls:
+                    # A ceiling is a booked OUTCOME, never a void: the session is sound and the
+                    # capture still flushes, it simply stopped short of the prompt set.
+                    (run_dir / "CEILING").write_text(
+                        f"calls={used} ceiling={args.max_calls} after_prompt={i}\n", encoding="utf-8")
+                    print(f"driver: CEILING reached ({used} >= {args.max_calls}) after prompt {i} "
+                          f"— stopping; this is an outcome, not an error", file=sys.stderr)
+                    break
     finally:
         unseal(ws, run_dir)
     print(f"driver: done — {len(prompts)} prompts, session={args.session_name}")
@@ -364,6 +375,30 @@ def verify(args) -> int:
     return 0 if verdict == "CELL" else 1
 
 
+def _calls_so_far(session_name: str) -> int:
+    """API calls the provider has been asked for in this session, read from the profile's DB.
+
+    The ceiling has to be checked BETWEEN prompts: the driver launches one `hermes chat` per prompt and
+    cannot see inside it. `agent.max_turns` bounds one prompt; this bounds the arm.
+    """
+    home = os.environ.get("HERMES_HOME")
+    if not home:
+        return 0
+    db = Path(home) / "state.db"
+    if not db.exists():
+        return 0
+    try:
+        import sqlite3
+        c = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+        row = c.execute("select api_call_count from sessions where title=? "
+                        "order by rowid desc limit 1", (session_name,)).fetchone()
+        c.close()
+        return int(row[0] or 0) if row else 0
+    except Exception:
+        return 0
+
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--arm", choices=["naive", "paged"])
@@ -376,6 +411,8 @@ def main() -> int:
                     help="expected budgetTokens, or \"any\" to record whatever the plugin saw")
     ap.add_argument("--timeout", type=int, default=600)
     ap.add_argument("--limit", type=int, default=0, help="run only the first N prompts (smoke check)")
+    ap.add_argument("--max-calls", type=int, default=0,
+                    help="stop the arm once the session has made this many provider calls (0 = no ceiling)")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--capture", help="verify mode: capture .jsonl to accept or reject")
     ap.add_argument("--profile-prefix", default="w8",
