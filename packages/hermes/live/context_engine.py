@@ -454,6 +454,22 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
 
         keep_hard = self._hard_keep(request_messages, units)
         dropped, repositioned = self._plan(request_messages, units, keep_hard)
+        try:
+            # The decision, recorded where it is made: the live counters said "entered 57, selected 0"
+            # and could not say whether the plan found nothing or the call never got that far.
+            import os as _os
+            _d = Path(_os.environ.get("CTXVM_TRACE_DIR") or
+                      (Path(_os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
+                       / "ctxvm" / "traces"))
+            _d.mkdir(parents=True, exist_ok=True)
+            with open(_d / "_decision.log", "a", encoding="utf-8") as _f:
+                _f.write(f"{_dt.datetime.now(_dt.timezone.utc).isoformat(timespec='seconds')} "
+                         f"arm={(pol or {}).get('arm')} budget={self._v_budget} "
+                         f"units={len(units)} kept={len(keep_hard)} dropped={len(dropped)} "
+                         f"repositioned={len(repositioned)} "
+                         f"resident={sum(u.tokens for u in units.values()) if isinstance(units, dict) else 0}\n")
+        except Exception:
+            pass
         if not dropped and not repositioned:
             return None  # L7: nothing changed → byte-identical request
         assembled = self._assemble(request_messages, units, keep_hard, dropped, repositioned)
