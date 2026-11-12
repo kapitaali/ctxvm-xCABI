@@ -352,7 +352,10 @@ def verify(args) -> int:
                    not any(t in ("tool:terminal", "tool:execute_code") for t in tools),
                    ", ".join(f"{k}x{v}" for k, v in sorted(tools.items()))))
     checks.append(("no sealed part read after seal", not sealed_reads, f"{len(sealed_reads)} reads"))
-    checks.append(("evictions > 0", evicted > 0, f"{evicted} tokens evicted"))
+    if _control:
+        checks.append(("control evicts nothing", evicted == 0, f"{evicted} tokens evicted"))
+    else:
+        checks.append(("evictions > 0", evicted > 0, f"{evicted} tokens evicted"))
 
     # sealed reads are informational only: a failed attempt is recorded, not fatal.
     # Only a SUCCESSFUL sealed-part read invalidates the run.
@@ -370,7 +373,14 @@ def verify(args) -> int:
     print(f"  [{'ok' if cov_rc.returncode == 0 else 'FAIL'}] coverage_check exit {cov_rc.returncode}")
     print(f"  [{'ok' if rep_rc and rep_rc.returncode == 0 else 'FAIL'}] replay exit {rep_rc.returncode if rep_rc else 'missing binary'}")
 
-    verdict = "VOID" if not ok else ("CELL" if evicted > 0 else "NO-OP")
+    # A CONTROL session that passes every check is a CONTROL, not a NO-OP: "no-op" is the
+    # TREATMENT doing nothing, and a control is asked to do exactly that (measured twice, 2026-11-12).
+    if not ok:
+        verdict = "VOID"
+    elif _control:
+        verdict = "CONTROL"
+    else:
+        verdict = "CELL" if evicted > 0 else "NO-OP"
     print(f"verify: verdict {verdict}")
     return 0 if verdict == "CELL" else 1
 
