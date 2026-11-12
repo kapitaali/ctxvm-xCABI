@@ -1,4 +1,4 @@
-# State (updated 2026-11-11, by ctxvm repo agent (opencode), U6 applied; RFC-0.1 note + C3 enforced (D18); P11 level-2 asserted
+# State (updated 2026-11-12, by ctxvm repo agent (opencode); W8C instrument in, trace can witness it
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
@@ -6,14 +6,14 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 ## Artifacts and versions
 - Wire: RFC-0 sealed (`spec/rfc-0/`, byte-frozen); RFC-0.1 additive landed (`spec/rfc-0.1/`, R0–R5).
 - Corpus: ODPS 0.8.0, m1–m8 checksummed; hub ODPC byte-identical.
-- Plugins: hermes 0.10.11 (`packages/hermes/live/__init__.py:94`); @ctxvm/node 0.1.0, @ctxvm/opencode 0.0.1, @ctxvm/ai-sdk 0.0.1.
+- Plugins: hermes 0.13.0 (`packages/hermes/live/__init__.py:94`); @ctxvm/node 0.1.0, @ctxvm/opencode 0.0.1, @ctxvm/ai-sdk 0.0.1.
 - Papers: Part I committed + the white-paper lane's UNCOMMITTED revision; Part II untracked (`RR-WP2REV-20261107`).
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. U2 + U6 verified live (RR-U2LIVE): health ok; a decide runs on the record's map; the gateway restart is DONE (both surfaces v3).
-2. RFC-0.1 note + C3 enforced (D18): code-point comparator + vector; no digest moved; CI green.
-3. P11 gap CLOSED (RR-P11LEVEL2-20261111): the pair is committed; level 2 asserted + pinned.
+1. W8C instrument 0.13.0 in: the trace can witness an eviction (RR-W8CEVICTREPORT).
+2. Cell-01: the treatment ACTS (request held at the budget, 0.59x final); the cache is destroyed (4.77x uncached input) (RR-W8CCELL01).
+3. U2 + U6 live again after the reboot; the model server has a start script (RR-SERVER-20261112).
 
 ## In progress (one item: what, blocker, next command)
 Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that lane's WIP + owner routing.
@@ -21,7 +21,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 ## Next three (ordered, one line each)
 1. Owner: ratify D13 + D14 and route the SIX-item white-paper bundle (items listed in full in RR-DAY-20261109) — working-tree bytes, not HEAD.
 2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
-3. Agent: NO paste pending (P1-P11 answered); owner-routed: W8B's per-session arm record. Umpire gates: D-ordering (P4), caller (P5), vocab (P6).
+3. Owner: G1 (ordering clause; fresh D-U10) + G2 (caller sentence) + G4. Lane: W8C's three open items, then the block -> checkpoint B -> the pair.
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
@@ -51,7 +51,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 3. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% belongs to an external controller (AGENTS.md law 7).
 
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
-- Conformance gate: GREEN 2026-11-11 (local, HEAD `9a82bfc`; hermetic run-ci.sh → ALL GATES GREEN); hosted witness №94 `42589188792` (2026-11-09) stands.
+- Conformance gate: GREEN 2026-11-12 (local, HEAD `1da9e4a`; hermetic run-ci.sh → ALL GATES GREEN); hosted witness №94 `42589188792` (2026-11-09) stands.
 - XERJ Hub listing UNVERIFIED — live `hub.xerj.org/llms.txt` re-check (RR-XERJ-20261029).
 - openai price row + cache-read nulls UNVERIFIED (`prices.json`) — owner source.
 - W8 arm-attribution rule SUPERSEDED by plan §4e (`b6aa2a3`: one host gateway, attestation-scope equality); UNPROVEN until a probe runs.
