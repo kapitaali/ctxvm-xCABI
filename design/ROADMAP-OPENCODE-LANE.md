@@ -478,7 +478,7 @@ pin true every card close.
   a fitted P(key is correct), not a guarantee; the model is 1.7B and local, ~6 s and free). The umpire
   repo's own `README-MCP.md` now names the runner's start script and the artifact of record
   (`umpire-cal-v3.json` = `cal-v1:057a5a35a9d4ec71`), and the runner dependency's failure mode.
-- [ ] **G1. Umpire ordering clause (from P4).** The one-clause rule (line order governs; absent
+- [x] **G1. Umpire ordering clause (from P4) — APPLIED 2026-11-12.** The one-clause rule (line order governs; absent
   `ts` = unknown, never zero; no cross-ledger order) — verbatim text in
   `reports/RR-P4TS-20261109.md`; insertion point `umpire/00-SPEC.md` §2, after the L1–L5 block,
   documentation-only. Needs owner approval + a FRESH D-number (the A6 D-U register has no ts
@@ -489,8 +489,13 @@ pin true every card close.
   the umpire spec has **no** ordering/`ts` statement at all (only `canonicalJson`'s key-sorting at
   `:47`, a hash-input rule = the note's C3 domain), so the clause lands without touching the D18 note.
   *Done when:* the clause is IN a committed `umpire/00-SPEC.md` §2 AND the new D-number appears in
-  the umpire decision register.
-  *Owner:* approval + D-number.
+  the umpire decision register. **APPLIED (owner-approved 2026-11-12,
+  `reports/RR-G1APPLIED-20261112.md`):** the clause IS in `umpire/00-SPEC.md` §2 (after L1–L5, before
+  "### Identity minting") ✓ and **D-U10** IS in the register (`design/umpire-design-choices.md`) ✓;
+  the owner's wording change applied — the dated repo-facts parenthetical moved OUT of the clause into
+  D-U10, leaving the clause timeless ✓; no validator change, no negative, no ledger or fixture byte
+  changed ✓ (umpire commit `1f7eae8`; umpire gate ALL GATES GREEN ✓). **MET.**
+  *Owner:* approval + D-number — **given 2026-11-12** ✓.
 
 - [ ] **G2. Calibrated-confidence caller sentence (from P5).** Verbatim text in
   `reports/RR-P5CAL-20261110.md`; insertion point: wherever `calibrate()`'s contract text lives
@@ -678,7 +683,11 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
    verdict, and the file wins over a summary.** The other lane's remaining items stand
    (`design/W8B-LANE-PROMPT.md`): the shape erratum in `design/W8B-FREE-PLAN.md`, the W8SIM "5.3%"
    scoping, and the "C3" rename (the P11 third level is done - `reports/RR-P11LEVEL2-20261111.md`).
-3. Ratify G1 (ordering clause, fresh D-number) and G2 (caller sentence, D-U1).
+3. **G1 is applied** ✓ (the clause in `umpire/00-SPEC.md` §2; D-U10 in the register). **G2** (the
+   caller sentence — the transfer caveat is genuinely missing from the MCP) is still to be
+   ratified. **The spend ruling** (`reports/RR-SPEND-20261112.md`): one paid pair ≈ $0.25, ceiling
+   $1, four conditions before it — and the **refined prediction-block rule** is in front of the
+   owner for ratification BEFORE the next block.
 4. Rule the redaction go/defer (G4); D13/D14 + D17 remain the big gates. W8's fate is settled (G7
    closed: negative, 2026-11-10).
 

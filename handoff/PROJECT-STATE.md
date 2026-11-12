@@ -21,7 +21,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 ## Next three (ordered, one line each)
 1. Owner: ratify D13 + D14 and route the SIX-item white-paper bundle (items listed in full in RR-DAY-20261109) — working-tree bytes, not HEAD.
 2. Owner: ratify the release rule + §4-LIST at D6/D17 (placement DONE: `design/redaction-block.md`).
-3. Owner: G1 (ordering clause; fresh D-U10) + G2 (caller sentence) + G4. Lane: W8C's three open items, then the block -> checkpoint B -> the pair.
+3. Owner: G2 (caller sentence) + G4; ratify the refined prediction-block rule; the spend ruling: one paid pair ~$0.25, ceiling $1.
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
@@ -51,7 +51,7 @@ Part II revision (absorbs D13's sentence; `RR-WP2REV-20261107`). Blocker: that l
 3. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% belongs to an external controller (AGENTS.md law 7).
 
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
-- Conformance gate: GREEN 2026-11-12 (local, HEAD `1da9e4a`; hermetic run-ci.sh → ALL GATES GREEN); hosted witness №94 `42589188792` (2026-11-09) stands.
+- Conformance gate: GREEN 2026-11-12 (local, HEAD `1850ab0`; hermetic run-ci.sh → ALL GATES GREEN); hosted witness №94 `42589188792` (2026-11-09) stands.
 - XERJ Hub listing UNVERIFIED — live `hub.xerj.org/llms.txt` re-check (RR-XERJ-20261029).
 - openai price row + cache-read nulls UNVERIFIED (`prices.json`) — owner source.
 - W8 arm-attribution rule SUPERSEDED by plan §4e (`b6aa2a3`: one host gateway, attestation-scope equality); UNPROVEN until a probe runs.
