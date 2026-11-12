@@ -368,6 +368,22 @@ pin true every card close.
   Still open: the payload's logicalRef + the sidecar's per-page detail + a checker rule (the *count*
   is witnessed; the *set* of dropped pages is not). **No saving may be claimed** (4.73x the uncached
   input, law 7).
+  *CELL-03 DRAFT REVIEWED BEFORE COMMIT (2026-11-12, `reports/RR-W8CCELL03-20261112.md`):* the
+  paid-pair draft's arithmetic **checks out** (cell-02's own net reduction **167,793**, turns 12–19
+  **168,447**; counter/net = **1.257**), and the other lane is **right** that this lane's "12 % apart"
+  compared **two different runs** — within cell-02 the gap is 26 % (net = 0.80 × counter) ✓ (erratum
+  appended). **Three things to settle before the block is committed:** (a) the **refined rule must be
+  RATIFIED first** (it is in front of the owner, `reports/RR-SPEND-20261112.md` §4) — a block committed
+  under an unratified rule repeats cell-02's defect in a milder form; (b) the **widened brackets**
+  ($0.15–0.50, 1.5–4.0× vs the owner's $0.20–0.30, 1.8–2.4×) are a **deviation that needs the owner's
+  word** — the reason is sound (the subject moves to Luna; ~46.7k cache-write tokens per call were seen
+  on earlier paid Luna cells) — carry the owner's brackets as the expectation and the widened ones as the
+  tolerance, or carry the widening with its reason ✓; (c) the **claim set must be cost-only** (the
+  draft reuses cell-02's shape, so the accuracy PASS stays near-guaranteed — acceptable here, because
+  this pair's purpose is to make the cost claim *measured*; the revisit task belongs to the cache-stable
+  card). Plus: the cache-write share is a **PROXY** (the ledger's uncached input is prompt minus both
+  cache buckets) → name it, mark it UNVERIFIED, and predict the receipts' observable ✓; and the **floor
+  must be re-derived for the paid subject** (48,650 carries longcat's scaffold and system prompt) ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
