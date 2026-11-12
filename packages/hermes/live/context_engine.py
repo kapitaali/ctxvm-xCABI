@@ -74,6 +74,7 @@ import hashlib
 import json
 import os
 import re
+from pathlib import Path
 from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple
 
 try:  # host ABC, present inside hermes; absent in the plugin's own test suite
@@ -254,6 +255,9 @@ def _rollup(body: str) -> str:
 # behavioural fact of the process, so it is only meaningful when one gateway serves one
 # arm (design/w8-run-plan.md 4c); a multiplexer serving both arms cannot attest either one.
 ACTIVATIONS = {"select": 0, "firstTs": None, "lastTs": None}
+# Module-global entry counter: a measurement read through another object has misled this card three
+# times; this one cannot be out of step with the code path that ran.
+ENTERED = {"n": 0}
 
 
 class _PageUnit:
