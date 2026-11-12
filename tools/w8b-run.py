@@ -337,7 +337,8 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000
                         "--workspace", str(ws), "--run-dir", str(run_dir),
                         "--profile-prefix", spec["prefix"], "--expect-budget", str(budget),
                         "--timeout", str(timeout),
-                        "--max-calls", str(spec.get("max_calls") or 0)],
+                        "--max-calls", str(spec.get("max_calls") or 0)] +
+                       (["--assert-engaged"] if arm == "paged" else []),
                        text=True, capture_output=True, env=env, timeout=PARTS * timeout + 300)
     (run_dir / "driver.out").write_text(r.stdout, encoding="utf-8")
     (run_dir / "driver.err").write_text(r.stderr, encoding="utf-8")
@@ -346,6 +347,14 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000
            "wall_s": round(time.time() - started, 1), "verdict": None, "checks": [],
            "capture": None, "cost_usd": None, "calls": None}
     if r.returncode != 0:
+        ab = run_dir / "ENGAGEMENT-ABORT"
+        if ab.exists():
+            # The arm stopped itself after prompt 1 because the treatment never engaged. One prompt
+            # spent instead of the whole arm, and the reason names the layer (reviewer, 2026-11-12).
+            out["verdict"] = "ABORTED"
+            out["reason"] = ab.read_text(encoding="utf-8").strip()
+            print(f"[{arm}] ABORTED after prompt 1 — {out['reason']}")
+            return out
         out["verdict"] = "DATA-INVALID" if "TIMEOUT" not in r.stderr else "NO RECORD"
         print(f"[{arm}] driver stopped: {r.stderr.strip().splitlines()[-1] if r.stderr.strip() else 'rc=' + str(r.returncode)}")
         return out

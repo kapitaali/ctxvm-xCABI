@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.4"
+PLUGIN_VERSION = "0.13.5"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -380,6 +380,40 @@ def _clear_env_for_tests() -> None:
     os.environ.pop("CTXVM_FEATURES", None)
     if hasattr(sys, _STATE_ATTR):
         delattr(sys, _STATE_ATTR)
+
+
+def _write_live_stamp(session_id: str) -> None:
+    """One small JSON per turn so a driver can abort an arm whose treatment never engaged.
+
+    The probe runs in a different process from the arm, so "probe first" cannot guarantee the arm's
+    activation (measured 2026-11-12: probe READY, 42-call arm VOID). This stamp is the in-process
+    check: it carries the same three layer fields the sidecar does, written while the arm is running.
+    """
+    try:
+        import json as _json
+        st = _state()
+        pol = (st.get("policy_by_session") or {}).get(session_id) or {}
+        layers = _engine_layers()
+        stamp = {
+            "session": session_id,
+            "arm": pol.get("arm"),
+            "engineSetting": pol.get("engine"),
+            "engine": (layers.get("engineRegistered") if pol.get("arm") == "paged" else None),
+            "engineSelections": _engine_selections_for(pol.get("profile")),
+            "rootEngineSetting": layers.get("rootEngineSetting"),
+            "homeEngineSetting": layers.get("homeEngineSetting"),
+            "budgetTokens": pol.get("budget"),
+            "ts": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+        d = Path(os.environ.get("CTXVM_TRACE_DIR") or
+                 (Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
+                  / "ctxvm" / "traces"))
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / f"{session_id}.live.json"
+        p.write_text(_json.dumps(stamp) + "\n", encoding="utf-8")
+        os.chmod(p, 0o600)
+    except Exception:  # noqa: BLE001 - a stamp must never break a turn
+        pass
 
 
 def _engine_layers() -> Dict[str, Any]:
@@ -1382,6 +1416,7 @@ def register(ctx) -> None:
                             _st = _state()
                             _st.setdefault("call_sizes_by_session", {}) \
                                 .setdefault(_sid, []).append({"before": _before, "after": _after})
+                            _write_live_stamp(_sid)
                         _refs = _tr.refs_for_identity_tokens(payload.get("dropped"))
                         if _refs:
                             _st = _state()

@@ -275,6 +275,13 @@ def run(args) -> int:
                 print(f"driver: prompt {i} aborted — {bad} — cell DATA-INVALID", file=sys.stderr)
                 return 1
             print(f"[prompt {i:02d}] ok")
+            if i == 1 and args.assert_engaged:
+                why = _assert_engaged(args.session_name, run_dir, args.arm)
+                if why:
+                    print(f"driver: ABORT — {why}", file=sys.stderr)
+                    print("driver: a failed precondition is not a cell; cost so far: one prompt",
+                          file=sys.stderr)
+                    return 1
             if args.max_calls:
                 used = _calls_so_far(args.session_name)
                 print(f"[calls] {used}/{args.max_calls} after prompt {i}")
@@ -420,6 +427,35 @@ def _calls_so_far(session_name: str) -> int:
 
 
 
+def _assert_engaged(session_name: str, run_dir: Path, arm: str) -> str | None:
+    """Read the live stamp after prompt 1. A treatment that never engaged must not run 41 more calls.
+
+    Returns None when fine, else the reason to abort. Cost of a host-side regression: one prompt.
+    """
+    if arm != "paged":
+        return None
+    import glob as _glob
+    import json as _json
+    d = Path(os.environ.get("CTXVM_TRACE_DIR") or
+             (Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
+              / "ctxvm" / "traces"))
+    stamps = sorted(_glob.glob(str(d / "*.live.json")), key=os.path.getmtime, reverse=True)
+    if not stamps:
+        return None  # no stamp yet: not an engagement failure, just nothing to read
+    stamp = _json.load(open(stamps[0], encoding="utf-8"))
+    if stamp.get("arm") != "paged":
+        return None  # the newest stamp belongs to another session; nothing to conclude
+    if stamp.get("engine") is None or not stamp.get("engineSelections"):
+        msg = (f"treatment never engaged after prompt 1: engine={stamp.get('engine')!r} "
+               f"selections={stamp.get('engineSelections')} "
+               f"root={stamp.get('rootEngineSetting')!r} home={stamp.get('homeEngineSetting')!r} "
+               f"setting={stamp.get('engineSetting')!r}")
+        (run_dir / "ENGAGEMENT-ABORT").write_text(msg + "\n", encoding="utf-8")
+        return msg
+    return None
+
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--arm", choices=["naive", "paged"])
@@ -432,6 +468,8 @@ def main() -> int:
                     help="expected budgetTokens, or \"any\" to record whatever the plugin saw")
     ap.add_argument("--timeout", type=int, default=600)
     ap.add_argument("--limit", type=int, default=0, help="run only the first N prompts (smoke check)")
+    ap.add_argument("--assert-engaged", action="store_true",
+                    help="abort after prompt 1 if the paged arm's engine never engaged")
     ap.add_argument("--max-calls", type=int, default=0,
                     help="stop the arm once the session has made this many provider calls (0 = no ceiling)")
     ap.add_argument("--dry-run", action="store_true")
