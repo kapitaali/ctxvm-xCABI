@@ -103,3 +103,23 @@ because the engine never acted ✓.
   cell ✓, and the third verdict was specified against fields the capture already carries ✓.
 - Kit: this card + LOG row + the day file + the roadmap's W8C pointer. Nothing spent ✓; no file of the
   other lane's edited ✓; nothing pushed ✓.
+
+## 7. Erratum (2026-11-12): `engine: null` means "no selections", not "never called" — my inference was
+## one step too strong
+
+This card wrote that the treatment arm "**never engaged the engine**", on the strength of the sidecar's
+`engine: null` plus the plugin's comment (*"the field now means `select_context()` was called in this
+process"* ✓). **The implementation is one step weaker than the comment**: `engine` is
+`_engine_activated_for(profile)` ✓, which returns the registered name **only if the selection count is
+> 0** ✓ (`live/__init__.py:520`, `:534` ✓) — so `engine: null` establishes *"no selection happened"* ✓, not
+*"`select_context()` was never called"* ✓.
+
+**The conclusion was right, but the correct evidence is the agent's behaviour** ✓ — the run came up with
+the **built-in compressor** ✓ (the host's own fallback ✓), which is what shows the host did not use the
+plugin's engine ✓✓; and the other lane's later work makes that explicit with a proper discriminator ✓
+(`engineRegistered` / `rootEngineSetting` / `homeEngineSetting` ✓, commit `93ff8ab` ✓, whose code comment
+reads *"A null engine with `engineRegistered: "ctxvm"` means the host chose the built-in compressor
+anyway; a null `engineRegistered` means the plugin never registered at all"* ✓✓).
+
+So: the void stands ✓ (the arm never acted ✓ — the built-in compressor ✓, 0 selections ✓, 0 evictions ✓,
+empty `evictedPages`/`callSizes` ✓), and this card's *mechanism* sentence is corrected accordingly ✓.

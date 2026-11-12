@@ -432,6 +432,28 @@ pin true every card close.
   the simulator's prerequisite ✓) ✓, so the simulator's blocker is implemented ✓ and the next scoring run
   can produce a scoreable capture ✓ — provided the gateway is restarted ✓ and the probe's READY is a
   precondition of the run ✓.
+  *THE ENGINE-LAYERS DIAGNOSIS, REVIEWED (2026-11-12, `reports/RR-W8CENGINE-20261112.md`):* **sound** ✓ —
+  every exclusion is a file-level fact ✓ and only the third `agent_init` path survives ✓, so the
+  disagreement is **inside the agent build** ✓ (the registry is empty *at construction time* ✓) and this
+  is the **fourth form** of the failure class ✓ — the first three were configuration/ordering faults with
+  a known fix ✓, this one is a **host-side ordering property** no ctxvm-side configuration controls ✓.
+  **This lane's own card is corrected** ✓ (erratum): `engine: null` establishes *no selections* ✓, not
+  *"never called"* ✓ (the implementation is `_engine_activated_for` ✓ = null iff selections == 0 ✓) — the
+  conclusion stood ✓ but the right evidence is the **agent's behaviour** ✓ (the built-in compressor ✓).
+  **Their two commits already close this lane's sharp edge** ✓: the arm-conditioned verdict ✓
+  (`450b9bd` ✓ — *a treatment that never acted is void, not a control that behaved* ✓) and the three layer
+  fields ✓ (`93ff8ab` ✓) so the sidecar can **name the failing layer** ✓. **The cheap insurance left:**
+  the VOID capture was avoidable ✓ — the probe's READY runs in a **different process** than the 42-call
+  run ✓, so "probe first" cannot guarantee the run's activation ✓; with the new fields the run should
+  **assert engagement on its first prompt and abort** ✓ (naming the layer ✓) → a host-side regression costs
+  **one prompt** ✓, and on a paid run **$0.00** ✓. **On the two options:** option 1 (a one-line host
+  diagnostic ✓) is the right first move ✓ — it answers *what order* ✓ in one free prompt ✓, and the
+  consent framing is right ✓ (the agent runtime is outside both lanes ✓). Option 2 (bypass the host slot ✓)
+  is endorsed with their own caveat ✓ — it changes the activation path ✓, so the booked cells would be on
+  a different mechanism than any future one ✓: a **new experiment**, not a fallback ✓. **A third option
+  the arithmetic supports** ✓: file the host defect and **close the W8C line** ✓ — the remaining measurable
+  upside is ≈ **$0.009/session** ✓ (3.5 % of one paid pair ✓) against a **host-side** blocker ✓, so if
+  option 1 does not name it in one free prompt ✓, closing with the defect filed is the honest end ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
