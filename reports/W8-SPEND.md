@@ -95,7 +95,26 @@ and a per-cell call ceiling goes in the driver, because at $0.0086 per request t
 ## Prediction block — mandatory before any paid cell (C4)
 
 A cell does not start until this block is filled, committed, and matches the verifier afterwards.
-A mismatch means the instrument is wrong, not that the engine surprised us.
+
+**The rule, as amended by the owner's ratification of 2026-11-12** (the review side's proposal is
+`reports/RR-SPEND-20261112.md` §4; the owner ratified it verbatim, so it applies from the next block
+onward):
+
+```
+1  every predicted quantity names its UNIT — tokens, USD, or a ratio between which two, and
+   whether the quantity is a net reduction or a per-turn sum;
+2  the onset is predicted as "the first turn the unconstrained request exceeds the budget, plus the
+   engine's lag" — never as a turn number;
+3  a MISMATCH whose cause is identified as a specification error — recorded, explained and
+   corrected — is a RECORDED DEVIATION, not a void;
+4  a mismatch with an UNEXPLAINED cause remains INSTRUMENT-BUG: stop, do not book the cell.
+```
+
+(3) exists because the rule's purpose is to catch a **broken instrument**, and a mismatch whose cause is
+known and is *our* specification is not an instrument fault. Its cost is that the judgement happens
+after the result, so the rule must be in force **before** the block is written — which is why the
+amendment was ratified before the cell-03 block ✓. A D-number for the amendment, if the house wants
+one, is the owner's to assign ✓ (agents do not mint them ✓).
 
 ```
 cell id            <e.g. w8-cell-02>
