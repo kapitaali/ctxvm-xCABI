@@ -439,6 +439,15 @@ pin true every card close.
 
 ## 2. Owner-gated proposals this lane authored (ratification turns text into bytes)
 
+- [x] **Umpire side — how it is currently used (noted 2026-11-12).** `reports/RR-UMPIREUSE-20261112.md`:
+  the mechanism as it stands (MCP proxy → pinned model server → calibration artifact + ledgers; the
+  pins make drift a hard error; the calibration of record is bound to the pin's hashes), this lane's use
+  of it (an **instrument, not a decision-maker**: health, pins, calibration_info, one decide, and the two
+  output gates `validate` / `replay`), and the limits that travel with every umpire number (the transfer
+  caveat is still missing = **G2**; determinism is scoped to one machine/build; `calibrated.confidence` is
+  a fitted P(key is correct), not a guarantee; the model is 1.7B and local, ~6 s and free). The umpire
+  repo's own `README-MCP.md` now names the runner's start script and the artifact of record
+  (`umpire-cal-v3.json` = `cal-v1:057a5a35a9d4ec71`), and the runner dependency's failure mode.
 - [ ] **G1. Umpire ordering clause (from P4).** The one-clause rule (line order governs; absent
   `ts` = unknown, never zero; no cross-ledger order) — verbatim text in
   `reports/RR-P4TS-20261109.md`; insertion point `umpire/00-SPEC.md` §2, after the L1–L5 block,
