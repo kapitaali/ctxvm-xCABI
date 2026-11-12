@@ -474,6 +474,25 @@ pin true every card close.
   fine for scoring ✓, not for a comparable cell ✓. **And a third step, ours and reusable** ✓: when the
   transport never calls the hook ✓, the run's refusal should **say so** ✓ (*"this transport does not
   assemble the engine"* ✓) instead of producing a void ✓✓ — it would have said this on 11 November ✓.
+  *ENGINE AUDIT: THE PLAN NEVER RAN (2026-11-12, `reports/RR-W8CAUDIT-20261112.md`):* the counter is
+  incremented **before** the plan ✓ — `select_context` increments `self._meter["select"]` at `:443` ✓ and
+  only then classifies (`:451` ✓) and plans (`:456` ✓) — and the only earlier return is the **control-arm
+  branch** (`:428-431` ✓) ⇒ **`engineSelections 0` means every call returned there** ✓✓ ⇒ **the plan never
+  ran** ✓✓ ⇒ **(a) and (b) are both premature** ✓✓ (both assume the engine planned ✓) — and (a)'s *second*
+  half is right ✓✓: with no selection the request grows to the **host's** limit ✓✓, so the ~62 k plateau is
+  the host's compaction ✓✓ ⇒ the run's honest statement is *"the paged arm was not a paged arm"* ✓✓.
+  **The two resolutions of the same policy disagree** ✓✓ — the sidecar's `engineSetting: ctxvm` ✓ (hook
+  time ✓) vs the engine's call-time resolution ✓ (compressor ✓) ✓ — and `policy()`'s fallback is
+  `engine or "compressor"` ✓✓ ⇒ **a missing/unreadable home silently reads as the control arm** ✓✓✓
+  (the profiles were recreated ✓✓, so a stale contextvar home ✓✓ would resolve to nothing ✓✓) — ⇒ **the
+  fix is ours** ✓✓ (pass the hook-time resolution into the engine's per-call resolution ✓✓) ⇒ **the
+  upstream report is not warranted** ✓✓ (the hook path works ✓✓ — 67 entries ✓✓) **and the desktop
+  transport is unlikely to help** ✓✓ (the contextvar would be missing there too ✓✓; no worker executions
+  anywhere ✓✓). **The `_decision.log` needs the call-time resolution's HOME and ENGINE** ✓✓ (its current
+  fields cannot say *which* resolution failed ✓✓) ✓✓. **And the unit point is the next block's blocker** ✓✓:
+  the budget is **60,000 apx4-char tokens** ✓✓ (≈240,000 chars ✓) while every quoted request size is in
+  **provider** tokens ✓✓, and the books' floor (48,650 ✓) **mixes the two** ✓✓ ⇒ the next block must name
+  the unit ✓✓ and compare the keep law's floor in **apx4** ✓✓ ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
