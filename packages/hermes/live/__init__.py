@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.11"
+PLUGIN_VERSION = "0.13.12"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -399,7 +399,7 @@ def _write_live_stamp(session_id: str) -> None:
             "arm": pol.get("arm"),
             "engineSetting": pol.get("engine"),
             "engine": (layers.get("engineRegistered") if pol.get("arm") == "paged" else None),
-            "engineSelections": _engine_selections_for(pol.get("profile")),
+            "engineSelections": _selections_total(),
             "engineEntered": _entered_total(),
             "rootEngineSetting": layers.get("rootEngineSetting"),
             "homeEngineSetting": layers.get("homeEngineSetting"),
@@ -612,6 +612,15 @@ def _current_profile_name() -> Optional[str]:
         return policy().get("profile")
     except Exception:  # noqa: BLE001
         return None
+
+
+def _selections_total() -> int:
+    """Process-wide selection count from the engine module, not from one instance's meter."""
+    try:
+        from context_engine import ACTIVATIONS
+        return int(ACTIVATIONS.get("select") or 0)
+    except Exception:  # noqa: BLE001
+        return _engine_selections_for(None)
 
 
 def _entered_total() -> int:

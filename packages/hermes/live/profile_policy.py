@@ -112,6 +112,14 @@ def policy(home: Optional[Path] = None) -> Dict[str, Any]:
         cfg = {"engine": None, "budgetTokens": None}
 
     engine = cfg.get("engine") or "compressor"
+    # The experiment engine only ever runs for an ARM profile. The operator's own home must never be
+    # trimmed by it: measured 2026-11-12, the default home resolved arm=paged at budget 200000 and the
+    # engine dropped 58 units from the operator's own session. A guard, not a preference.
+    try:
+        if h.resolve() == (Path.home() / ".hermes").resolve():
+            engine = "compressor"
+    except Exception:  # noqa: BLE001
+        pass
     budget: Optional[int] = cfg.get("budgetTokens")
     source = "settings" if isinstance(budget, int) and budget > 0 else "default"
     if source == "default":

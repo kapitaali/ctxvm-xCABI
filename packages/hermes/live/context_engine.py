@@ -258,6 +258,10 @@ ACTIVATIONS = {"select": 0, "firstTs": None, "lastTs": None}
 # Module-global entry counter: a measurement read through another object has misled this card three
 # times; this one cannot be out of step with the code path that ran.
 ENTERED = {"n": 0}
+# Module-global observer slot. Per-session callbacks have now been lost to instance identity three
+# times (clone at build, second registration, sidecar reading another object); a module global cannot
+# be out of step with the code that fires it.
+OBSERVER: Dict[str, Any] = {"cb": None}
 
 
 class _PageUnit:
@@ -490,8 +494,8 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         # residency was capped at the budget — a real treatment that no capture could witness.
         try:
             evicted = sum(units[i].tokens for i in dropped if i in units)
-            if self._observer_ref[0] is not None and (dropped or repositioned):
-                self._observer_ref[0]({
+            if OBSERVER["cb"] is not None and (dropped or repositioned):
+                OBSERVER["cb"]({
                     "evictedTokens": evicted,
                     "dropped": [sorted(units[i].id_toks) for i in sorted(dropped) if i in units],
                     "repositioned": sorted(repositioned),
@@ -609,6 +613,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
     def set_observer(self, callback: Any) -> None:
         """Install the per-session observer the plugin uses to record selections (W8C)."""
         self._observer_ref[0] = callback
+        OBSERVER["cb"] = callback
 
     def note_refault(self, args: Any) -> int:
         """W8C: the model asked for the same page again — pin it, at CALL time.
