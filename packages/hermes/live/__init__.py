@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.3"
+PLUGIN_VERSION = "0.13.4"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -380,6 +380,30 @@ def _clear_env_for_tests() -> None:
     os.environ.pop("CTXVM_FEATURES", None)
     if hasattr(sys, _STATE_ATTR):
         delattr(sys, _STATE_ATTR)
+
+
+def _engine_layers() -> Dict[str, Any]:
+    """Which layer says what about the context engine — the diagnostic the 12:39 VOID could not give.
+
+    Three places can disagree and only one of them decides activation: the root config the host
+    reads, the profile config the plugin's policy reads, and whether registration actually happened
+    in this process. A null engine with `engineRegistered: "ctxvm"` means the host chose the built-in
+    compressor anyway; a null `engineRegistered` means the plugin never registered at all.
+    """
+    out: Dict[str, Any] = {"engineRegistered": _state().get("engine_registered")}
+    try:
+        from profile_policy import read_yaml_subset
+        root = Path.home() / ".hermes" / "config.yaml"
+        out["rootEngineSetting"] = (read_yaml_subset(root) or {}).get("engine")
+    except Exception:  # noqa: BLE001
+        out["rootEngineSetting"] = None
+    try:
+        from profile_policy import read_yaml_subset
+        home = Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes")) / "config.yaml"
+        out["homeEngineSetting"] = (read_yaml_subset(home) or {}).get("engine")
+    except Exception:  # noqa: BLE001
+        out["homeEngineSetting"] = None
+    return out
 
 
 def _budget_from_env() -> int:
@@ -691,6 +715,8 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # one gateway serves one arm (plan 4c); a multiplexer serving both cannot attest
             # either, and the runner must enforce the single-arm gateway.
             "engine": _engine_activated_for(_session_profile),
+            # See _engine_layers: which layer said what, so a null engine names its cause.
+            **_engine_layers(),
             "engineSelections": _engine_selections_for(_session_profile),
             # The arm this SESSION belongs to, resolved from its home at hook time, and the
             # engine that profile declares. `engine` above says the process used the engine;
