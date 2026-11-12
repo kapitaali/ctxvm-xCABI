@@ -338,6 +338,19 @@ pin true every card close.
   engine -> observer payload should carry the **logicalRef**, not the identifier tokens, so the rule can
   be stated at all. The verifier's `evictions > 0` gate is now satisfiable by the trace without a
   fabricated event - which is what makes the next pair bookable.
+  *CELL-02's BLOCK (2026-11-12, `reports/RR-W8CCELL02-20261112.md`):* the block takes this lane's three
+  additions (the **attribution clause** - read the arm/profile/budget from the RUN, never from a capture
+  afterwards; the digests; the instrument version 0.13.0) and keeps the named floor + margin, five
+  checkable preconditions and the no-saving-claim clause - **but one number is stale by an order of
+  magnitude**: it predicts evictions "first at turn 14 or later; volume 5-20 k", while cell-01's own
+  measurement (the arms' residency difference, recomputed from the captures) gives **turn 4** and a
+  **session total of 185,303 tokens** (peak 42,186 at turn 19) - 9x to 37x the stated upper bound, and
+  the block's own preamble cites that measurement. **Consequence if unfixed:** a correct run at ~185 k
+  would MISS the block's range, and by the block's own verdict line be classified INSTRUMENT-BUG and not
+  booked - sending the lane to re-fix a working instrument. Two honest fixes (the measured prediction
+  with a three-way outcome rule, or the range restated as a THRESHOLD with the expected volume
+  alongside) - the freeze discipline allows either, since the prediction must be committed before the
+  run (it is) and a new cell is a fresh preregistration.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
