@@ -18,6 +18,25 @@ Declared BEFORE the numbers are read (RR-W8SIM's rule, kept):
             observed evictions from `turn.render.evictedTokens`.
 
 Usage: w8-sim-score.py CONTROL.jsonl TREATMENT.jsonl --budget 60000
+
+CALL-GRANULARITY MODE (rule declared 2026-11-12, BEFORE the 0.13.3 pair was run)
+
+  model S2  the policy decides once per selection. For each recorded selection k with a measured
+            request size `before`, the model predicts
+                after_k  = min(before_k, budget)
+                drop_k   = max(0, before_k - budget)
+            and is scored against the `after` the engine itself recorded. `before` is the only input;
+            `after` is the only thing compared.
+
+  tolerance the median relative error of after_k must be <= 5 % on selections where the model
+            predicts a drop, and the sign of every prediction must match (drop or no drop). Outside
+            either, model S2 FAILS and the card says so.
+
+  why       the turn-level mode failed by 33 % with a +3,200/turn residual because a turn is two
+            requests and one `turn.render`. If the reconciliation is right, the call-level model
+            closes that gap; if it does not, the keep law itself is wrong and the next card says that.
+
+Usage: w8-sim-score.py --calls TREATMENT.jsonl --budget 60000
 """
 from __future__ import annotations
 
@@ -43,6 +62,34 @@ def load(path: str) -> Dict[str, Any]:
     return {"prompts": prompts, "evicted": evicted}
 
 
+def score_calls(trace_path: str, budget: int) -> int:
+    side = trace_path.replace(".jsonl", ".coverage.json")
+    calls = (json.load(open(side, encoding="utf-8")).get("plugin") or {}).get("callSizes") or []
+    if not calls:
+        print(f"sim: no callSizes in {side} — the capture predates plugin 0.13.3; nothing to score")
+        return 2
+    errs = []
+    sign_ok = True
+    for c in calls:
+        before, after = c.get("before"), c.get("after")
+        if not isinstance(before, int) or not isinstance(after, int):
+            continue
+        pred_after = min(before, budget)
+        dropped_pred = before > budget
+        dropped_obs = after < before
+        if dropped_pred != dropped_obs:
+            sign_ok = False
+        if dropped_obs and after > 0:
+            errs.append(abs(pred_after - after) / after)
+    median_err = statistics.median(errs) if errs else 0.0
+    print(f"sim(S2): {len(calls)} selections, budget {budget:,}")
+    print(f"sim(S2): selections with a predicted drop {len(errs)}; median |error| {median_err:.1%}")
+    print(f"sim(S2): every prediction's sign matches: {sign_ok}")
+    ok = sign_ok and median_err <= 0.05
+    print(f"sim(S2): VERDICT {'PASS' if ok else 'FAIL'} (sign exact, median error <= 5 %)")
+    return 0 if ok else 1
+
+
 def main(argv: List[str]) -> int:
     if len(argv) < 2:
         print(__doc__)
@@ -50,6 +97,8 @@ def main(argv: List[str]) -> int:
     budget = 60000
     if "--budget" in argv:
         budget = int(argv[argv.index("--budget") + 1])
+    if "--calls" in argv:
+        return score_calls(argv[argv.index("--calls") + 1], budget)
     control = load(argv[0])
     treatment = load(argv[1])
     n = min(len(control["prompts"]), len(treatment["prompts"]), len(treatment["evicted"]))
