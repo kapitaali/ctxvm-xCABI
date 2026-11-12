@@ -351,6 +351,23 @@ pin true every card close.
   with a three-way outcome rule, or the range restated as a THRESHOLD with the expected volume
   alongside) - the freeze discipline allows either, since the prediction must be committed before the
   run (it is) and a new cell is a fresh preregistration.
+  *CELL-02 IS A CELL (2026-11-12, their `e6863f4`, `reports/RR-W8CCELL02RUN-20261112.md`):* the first
+  **counted cell in the W8 family** — verified from the captures digit for digit: paged
+  `evictedTokens` 0 x13 then 4,396…55,914 (**210,856**, first non-zero at **turn 13**), residency
+  63,014 -> **64,733** vs the control's 62,999 -> **107,794** (ratio **0.60x**), the control's counter
+  **0 on every turn**, and **no `page.evict` row in either arm** (the count rides in
+  `turn.render.evictedTokens`) — so **the trace witnesses the policy engaging for the first time**.
+  **The unit lesson (their rule): a block's volume column must name its unit** — the trace sums
+  *per-turn re-drops*, this lane's ~185 k was the *net residency difference* (12% apart, and this
+  lane's "turn 4" onset was wrong: **the onset is the first turn the unconstrained request exceeds
+  the budget**, plus a two-turn engine lag). **Booking despite the mismatch was defensible** (the
+  instrument was verified; the cause was the block's own specification error) — but the rule's text
+  was not followed literally, so it needs the owner's refinement: units named; a *specified* mismatch
+  is a recorded deviation, an unexplained one stays INSTRUMENT-BUG. **The attribution items are
+  CLOSED** (`cc8f833`, 0.13.1: the budget is session-keyed too) — the capture is self-describing now.
+  Still open: the payload's logicalRef + the sidecar's per-page detail + a checker rule (the *count*
+  is witnessed; the *set* of dropped pages is not). **No saving may be claimed** (4.73x the uncached
+  input, law 7).
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
