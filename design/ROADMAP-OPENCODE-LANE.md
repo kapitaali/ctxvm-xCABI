@@ -454,6 +454,26 @@ pin true every card close.
   the arithmetic supports** ✓: file the host defect and **close the W8C line** ✓ — the remaining measurable
   upside is ≈ **$0.009/session** ✓ (3.5 % of one paid pair ✓) against a **host-side** blocker ✓, so if
   option 1 does not name it in one free prompt ✓, closing with the defect filed is the honest end ✓.
+  *THE HOST'S SOURCE COMPLETES THE DIAGNOSIS (2026-11-12, `reports/RR-W8CTRANSPORT-20261112.md`):*
+  read in the host's tree, read-only ✓ — the per-turn selection hook has **exactly one** production
+  call site (`agent/turn_request_assembly.py:145` ✓), its **only** guard is `_engine_overrides_hook` ✓
+  (true iff the engine overrides the ABC's no-op ✓ → our engine does ✓ → the gate passes ✓), and the
+  one-shot CLI is **not** a separate fast path ✓ (`_run_oneshot_from_args` → `launch_gateway_chat` ✓) →
+  it *should* reach the same assembly ✓ ⇒ **the request in the one-shot path is not assembled through
+  `assemble_api_request`** ✓✓ — a precise, file-and-line reproducible statement ✓ (not the hypothesis
+  "the difference is in how the host assembles this path" ✓) ✓ and upstream's to fix ✓. **Their
+  `_entered.log` evidence is durable** ✓ (the prune globs only `*.jsonl` ✓ → it cannot have removed it ✓,
+  and the file is absent ✓) ✓, and the durable witness going forward is the sidecar's **`engineEntered`** ✓
+  (0.13.7 ✓ — the void runs were 0.13.3 ✓ and predate it ✓). **The one free check left** ✓: one
+  session, reading all three witnesses **from the same run** ✓ (the host's `CONTEXT-ENGINE-DIAG` lines ✓,
+  `engineEntered` ✓, `_entered.log` ✓) — **$0.00** ✓ — which turns the upstream report from *"the hook
+  is not called here"* into *"…and here is the path"* ✓✓. **On the two options: they are not exclusive**
+  ✓ — option 1 (report upstream ✓) is warranted ✓, and option 2 (the desktop transport ✓) is the
+  **scoring remedy**, not only a test ✓✓ (a scoreable capture with no upstream patch ✓ and no change to
+  the instrument ✓✓) — with the honest caveat that a desktop-path pair is a **different transport** ✓ →
+  fine for scoring ✓, not for a comparable cell ✓. **And a third step, ours and reusable** ✓: when the
+  transport never calls the hook ✓, the run's refusal should **say so** ✓ (*"this transport does not
+  assemble the engine"* ✓) instead of producing a void ✓✓ — it would have said this on 11 November ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
