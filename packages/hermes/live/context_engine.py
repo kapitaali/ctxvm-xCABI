@@ -304,10 +304,14 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         # Per PROFILE, because one gateway serves every arm from one engine object: a flat
         # process counter made a control sidecar report the probes that ran on the treatment
         # (measured 2026-11-11: naive sidecar read 2 selections it never made).
-        self._meter: Dict[str, Any] = {"select": 0, "skipped_control": 0, "by_profile": {}}
+        self._meter: Dict[str, Any] = {"select": 0, "entered": 0, "skipped_control": 0,
+                                      "by_profile": {}}
         # W8C step 2: the observer that turns a selection into trace facts. Set by the plugin per
         # session, because one engine serves every arm and the callback must land in the right tracer.
-        self._observer = None
+        # Held in a one-slot list so a per-agent CLONE shares it: the host deepcopies the engine
+        # at agent build (before any turn), and a copied None would blind the clone forever while the
+        # plugin kept setting the observer on the process-level original (measured 2026-11-12).
+        self._observer_ref: List[Any] = [None]
         self._last_policy: Optional[Dict[str, Any]] = None
         self._selections = 0
         # stock keep-law defaults (the host ABC's own class-level values)
@@ -373,6 +377,11 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
     ) -> Optional[List[Dict[str, Any]]]:
         """Per-request resident-set replacement (§3.3 item 2). Returns None to
         leave the request byte-identical; the returned list is request-only."""
+        # Entry counter: "called but selected nothing" must be distinguishable from "never called"
+        try:
+            self._meter["entered"] += 1
+        except Exception:
+            pass
         import datetime as _dt
 
         # ---- which arm is this turn? (per SESSION, not per process) --------------
@@ -431,8 +440,8 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         # residency was capped at the budget — a real treatment that no capture could witness.
         try:
             evicted = sum(units[i].tokens for i in dropped if i in units)
-            if self._observer is not None and (dropped or repositioned):
-                self._observer({
+            if self._observer_ref[0] is not None and (dropped or repositioned):
+                self._observer_ref[0]({
                     "evictedTokens": evicted,
                     "dropped": [sorted(units[i].id_toks) for i in sorted(dropped) if i in units],
                     "repositioned": sorted(repositioned),
@@ -549,7 +558,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
 
     def set_observer(self, callback: Any) -> None:
         """Install the per-session observer the plugin uses to record selections (W8C)."""
-        self._observer = callback
+        self._observer_ref[0] = callback
 
     def note_refault(self, args: Any) -> int:
         """W8C: the model asked for the same page again — pin it, at CALL time.
@@ -772,6 +781,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         # The meter is the one attribute a clone must SHARE, not copy: the plugin holds the
         # original, the host runs the clone, and the selection count has to be visible to both.
         fresh._meter = self._meter
+        fresh._observer_ref = self._observer_ref
         return fresh
 
 
