@@ -701,9 +701,12 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
    scoping, and the "C3" rename (the P11 third level is done - `reports/RR-P11LEVEL2-20261111.md`).
 3. **G1 is applied** ✓ (the clause in `umpire/00-SPEC.md` §2; D-U10 in the register). **G2** (the
    caller sentence — the transfer caveat is genuinely missing from the MCP) is still to be
-   ratified. **The spend ruling** (`reports/RR-SPEND-20261112.md`): one paid pair ≈ $0.25, ceiling
-   $1, four conditions before it — and the **refined prediction-block rule** is in front of the
-   owner for ratification BEFORE the next block.
+   ratified. **The spend ruling** (`reports/RR-SPEND-20261112.md`): one paid pair, ceiling $1, four
+   conditions before it — and the owner's **refined prediction-block rule is RATIFIED** and now
+   sits in the rule's home (`reports/W8-SPEND.md` §Prediction ✓). **The cost bracket is computed**
+   (`reports/RR-COSTBRACKET-20261112.md`): LOW ≈ $0.21, CENTRAL ≈ $0.30, HIGH ≈ $0.70 per pair,
+   ratio 1.0–2.4× (the historical precedent 7.2×), with the **driver ceiling at 100 calls for the
+   pair** so the $1 is real ✓.
 4. Rule the redaction go/defer (G4); D13/D14 + D17 remain the big gates. W8's fate is settled (G7
    closed: negative, 2026-11-10).
 
