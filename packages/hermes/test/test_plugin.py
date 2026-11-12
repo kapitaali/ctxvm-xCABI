@@ -1914,6 +1914,10 @@ class SessionAttributionTests(unittest.TestCase):
                          ("w8cn-paged", "paged", "ctxvm"))
         self.assertNotEqual(naive["arm"], paged["arm"],
                             "the two arms must never collapse into one attribution")
+        # The budget belongs to the session too. Measured 2026-11-12 (cell-02): the control arm's
+        # sidecar attested 60000/settings — the paged arm's value — while the trace said 200000/default.
+        self.assertEqual((naive["budgetTokens"], naive["budgetSource"]), (200000, "default"))
+        self.assertEqual((paged["budgetTokens"], paged["budgetSource"]), (60000, "settings"))
 
 
 class CoverageManifestTests(unittest.TestCase):

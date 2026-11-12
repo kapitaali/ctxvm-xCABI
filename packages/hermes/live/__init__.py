@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.0"
+PLUGIN_VERSION = "0.13.1"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -700,8 +700,11 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             "arm": (_session_policy or {}).get("arm"),
             "engineSetting": (_session_policy or {}).get("engine"),
             "skippedControl": _engine_skipped_control_for(_session_profile),
-            "budgetTokens": _state().get("budget_tokens") or 200000,
-            "budgetSource": _state().get("budget_source") or "default",
+            # The budget belongs to the SESSION too. Measured 2026-11-12 (cell-02): the control
+            # arm's sidecar attested 60000/settings — the paged arm's value — because these two
+            # fields were still read from the process-global slot while arm/engine were not.
+            "budgetTokens": (_session_policy or {}).get("budget") or _state().get("budget_tokens") or 200000,
+            "budgetSource": (_session_policy or {}).get("budgetSource") or _state().get("budget_source") or "default",
         },
         "captures": {
             "turns": len(turns),
