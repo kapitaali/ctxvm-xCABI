@@ -1879,6 +1879,19 @@ class EvictionReportingTests(unittest.TestCase):
         self.assertEqual(sum(t["evictedTokens"] for t in turns), trace.stats.get("evicted", 1_234))
 
 
+class EvictedPageDetailTests(unittest.TestCase):
+    """A token count says how much left; only the refs say what left (reviewer's blind spot)."""
+
+    def test_dropped_identity_tokens_resolve_to_logical_refs(self):
+        vm = Tracer(TRACE_INIT)
+        vm.page({"ref": 'tool:read_file({"path":"fixture/part-04.txt"})', "kind": "tool",
+                 "content": "alpha beta"})
+        refs = vm.refs_for_identity_tokens([["read_file", "part-04.txt"]])
+        self.assertEqual(refs, ['tool:read_file({"path":"fixture/part-04.txt"})'])
+        self.assertEqual(vm.refs_for_identity_tokens([["nothing-matches"]]), [],
+                         "an unmatched set is dropped, never guessed")
+
+
 class SessionAttributionTests(unittest.TestCase):
     """One process, two arms: a sidecar must attest the SESSION, not whoever was stamped last.
 

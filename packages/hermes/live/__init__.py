@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.1"
+PLUGIN_VERSION = "0.13.2"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -705,6 +705,10 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # fields were still read from the process-global slot while arm/engine were not.
             "budgetTokens": (_session_policy or {}).get("budget") or _state().get("budget_tokens") or 200000,
             "budgetSource": (_session_policy or {}).get("budgetSource") or _state().get("budget_source") or "default",
+            # Per-page eviction detail, keyed by the same session id as the rest of the arm fields.
+            # A count without identities cannot say WHICH page left the request.
+            "evictedPages": sorted(_state().get("evicted_refs_by_session", {}).get(session_id or "", set()))[:50],
+            "evictedPagesCount": len(_state().get("evicted_refs_by_session", {}).get(session_id or "", set())),
         },
         "captures": {
             "turns": len(turns),
@@ -1339,7 +1343,15 @@ def register(ctx) -> None:
 
                 def _record_selection(payload, _sid=_sid, _vm=_vm):
                     try:
-                        _vm.tracer_for(_sid).note_evicted(int(payload.get("evictedTokens") or 0))
+                        _tr = _vm.tracer_for(_sid)
+                        _tr.note_evicted(int(payload.get("evictedTokens") or 0))
+                        # Which pages, not just how many tokens (the reviewer's blind spot): the
+                        # engine reports content identities, the tracer resolves them to refs.
+                        _refs = _tr.refs_for_identity_tokens(payload.get("dropped"))
+                        if _refs:
+                            _st = _state()
+                            _st.setdefault("evicted_refs_by_session", {}) \
+                                .setdefault(_sid, set()).update(_refs)
                     except Exception:  # noqa: BLE001 - observability must never break a turn
                         pass
 

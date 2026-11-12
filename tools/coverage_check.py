@@ -354,6 +354,22 @@ def main(argv: list) -> int:
         if hv is not None and not isinstance(hv, str):
             _fail(violations, "plugin", "plugin.harnessVersion must be a string or null")
 
+        # A treatment that reports evictions must say WHICH pages left the request. A token count
+        # alone cannot distinguish "the engine dropped the middle" from "something else changed the
+        # prefix" — measured 2026-11-12, before the engine reported identities.
+        def _v(v):
+            try:
+                return tuple(int(x) for x in str(v).split(".")[:3])
+            except Exception:
+                return (0,)
+        if isinstance(plugin.get("evictedTokens"), int) and plugin["evictedTokens"] > 0 \
+                and plugin.get("arm") != "control" and _v(plugin.get("version")) >= (0, 13, 2):
+            n = plugin.get("evictedPagesCount")
+            if not isinstance(n, int) or n <= 0:
+                _fail(violations, "plugin",
+                      "evictedTokens > 0 but no per-page detail: plugin.evictedPagesCount must be a "
+                      "positive integer once the engine reports identities")
+
     if violations:
         for line in violations:
             print(f"coverage_check: violated {line}")

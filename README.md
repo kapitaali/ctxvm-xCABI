@@ -115,22 +115,22 @@ measured, and the docs say so where it matters.
 | **Fault counts depend on the capture surface — fix landed in plugin 0.12.0.** The Hermes `identifier_scan` surface no longer emits faults (it was a second, independent rule); prose mentions are telemetry (`page["prose_mentions"]`), and `page.fault` now has two honest producers: `tool_recall` and `explicit_api`. | `packages/hermes/OBSERVABILITY.md`, `reports/RR-W8C-INSTRUMENT-20261111.md` |
 | **Cross-harness comparisons are not yet apples-to-apples.** A Hermes "turn" is a user turn; an OpenCode/AI-SDK turn is a model request. | `design/`, `corpus/m7` vs `m8` |
 | **Single corpus, free tiers.** Captures used free-tier or locally-shaped models at USD 0; the corpus is small (17 traces, 112 distinct `page.declare` keys) and does not represent production traffic. | `corpus/*/provenance.json` |
-| **The control-plane effect is measured; the cell is not booked, and no saving may be claimed.** W8C cell-01: at budget 60,000 the paged arm's request stops growing at ~61 k from turn 12 (final 60,781 vs control 102,967, 0.59×; sum 0.833×) with a parsed-equal artefact — but the trace could not witness the evictions (`evictedTokens` 0 until plugin 0.13.0) and its uncached provider input was 4.77× the control's with cached input 0.64×, so fewer tokens were bought with cache misses. An instrument bug, not a cell; law 7: no cost-saving claim. | `reports/RR-W8C-CELL01-20261111.md`, `reports/RR-W8CCELL01-20261111.md` |
+| **The control-plane effect is measured on a free and a paid subject; no saving may be claimed.** W8C cell-02 (longcat, free tier): the request stops at ~61 k from turn 12 (final 64,733 against the control's 107,794, 0.60×), 210,856 evicted tokens, parsed-equal. W8C cell-03 (`openai/gpt-6-luna`, paid, 20 prompts, budget 60,000): the request is held at 0.57×, 275,362 evicted tokens, 44 selections, and the gateway's own cost estimate is $0.1580 against the control's $0.0748 — **2.11×** — pair $0.2328. Fewer tokens sent, more dollars spent: the rewritten prefix is a cache miss every turn. Two cells, n = 1 each, no grid; law 7: no cost-saving claim. | `reports/RR-W8CCELL02-RUN-20261112.md`, `reports/RR-W8CCELL03-RUN-20261112.md` |
 | **The first counted W8 pair is negative.** Naive 5 calls / $0.0175 vs paged 14 / $0.1264 — 3.14× input tokens and 7.2× dollars; mechanism = prefix-cache forfeiture, not selection quality. | `design/w8-cache-stable-selection.md` |
 
-## Status (2026-11-11)
+## Status (2026-11-12)
 
 | track | state |
 |---|---|
 | **engine (M0)** | `rust/` — codec (strict JSONL, byte-identical vectors) + page table + deterministic renderer + replay/profile/diff/export/stream CLIs · **77 tests** (78 with `--features tiktoken`), 0 warnings |
-| **paging engine** | `packages/hermes/live/context_engine.py` — host-side page selection/drop under a token budget; reports `turn.render.evictedTokens`; plugin **0.13.0** |
+| **paging engine** | `packages/hermes/live/context_engine.py` — host-side page selection/drop under a token budget; reports `turn.render.evictedTokens`; plugin **0.13.1** |
 | **standard (RFC-0)** | `spec/rfc-0/` — normative semantics + strict JSON Schema; conformance **PASS (682 checks)** over 27 fixtures, 17 of them corpus traces |
 | **standard (RFC-0.1)** | `spec/rfc-0.1/` — additive shape + validator (`validate_schema_v0_1.py`); CI runs it as a separate gate |
 | **measurement** | `corpus/m1`–`m8` (17 traces: seed, live OpenCode, Hermes, resume pairs, AI-SDK) each with `provenance.json` + `checksums.sha256` · `benchmarks/metrics/` reference impl (66 tests) + eviction-policy simulator · ODPS manifest `productVersion 0.8.0` validated by SDK 0.4.0 |
 | **instrumentation** | `packages/node` (24 tests) · `packages/opencode` live v2 plugin (62) · `packages/hermes` plugin (200) · `packages/ai-sdk` middleware/tap (46) · `packages/py` binding (8) |
 | **CI** | `tools/run-ci.sh` mirrors `.github/workflows/ci.yml` — 4 jobs (rust / ts / schema+corpus / hub parity) · pre-push check: `python3 tools/ci-rehearsal.py --committed` (the committed tree only) |
 | **design** | `design/` — MCP tool-shim, harness adapters (pinned contracts), UC1 pause/resume, **OTel mapping + a working OTLP/JSON projector** (`tools/otel-export.mjs`), W8B/W8C plans, **cache-stable selection** (`w8-cache-stable-selection.md`), RFC-0.1 |
-| **experiment (W8)** | naive-vs-paged cells; first counted pair measured (see limitations); spend ledger `reports/W8-SPEND.md` |
+| **experiment (W8)** | naive-vs-paged cells; **three W8C cells measured** — cell-02 (free, 0.60× request) and cell-03 (paid, 0.57× request at 2.11× cost), cell-01 void as an instrument bug; spend ledger `reports/W8-SPEND.md` |
 
 ## Verify it yourself
 

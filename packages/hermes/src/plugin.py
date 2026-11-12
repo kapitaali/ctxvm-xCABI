@@ -373,6 +373,25 @@ class Tracer:
         if ref in self._declared:
             self._pending_recall.add(ref)
 
+    def refs_for_identity_tokens(self, dropped: Any) -> List[str]:
+        """Map the engine's dropped identity-token sets back to the pages they belong to.
+
+        The engine knows content, not refs; the tracer knows refs and the identity tokens each page
+        exposes. Intersection is the join. A set that matches nothing is dropped rather than guessed.
+        """
+        out: List[str] = []
+        if not isinstance(dropped, list):
+            return out
+        for toks in dropped:
+            if not isinstance(toks, list):
+                continue
+            want = set(t for t in toks if isinstance(t, str))
+            for ref, page in self._declared.items():
+                if want & set(page.get("identities") or []):
+                    out.append(ref)
+                    break
+        return out
+
     def note_evicted(self, tokens: int) -> None:
         """Record tokens the engine dropped for this session, attributed to the next turn (W8C)."""
         if isinstance(tokens, int) and tokens > 0:
