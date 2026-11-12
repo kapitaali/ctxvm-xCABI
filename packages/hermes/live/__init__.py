@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.12"
+PLUGIN_VERSION = "0.13.13"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -623,6 +623,15 @@ def _selections_total() -> int:
         return _engine_selections_for(None)
 
 
+def _call_sizes() -> list:
+    """The engine's own before/after log; falls back to the plugin's per-session record."""
+    try:
+        from context_engine import CALL_LOG
+        return list(CALL_LOG)[-80:]
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def _entered_total() -> int:
     """Module-global count of select_context entries, independent of which engine instance ran."""
     try:
@@ -770,7 +779,7 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             "engine": _engine_activated_for(_session_profile),
             # See _engine_layers: which layer said what, so a null engine names its cause.
             **_engine_layers(),
-            "engineSelections": _engine_selections_for(_session_profile),
+            "engineSelections": _selections_total(),
             # The arm this SESSION belongs to, resolved from its home at hook time, and the
             # engine that profile declares. `engine` above says the process used the engine;
             # `engineSetting` says which arm asked for it. A control session with engine ctxvm
@@ -792,7 +801,7 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             "engineEntered": _entered_total(),
             # Every selection's request size before and after, so a simulator can be scored at the
             # granularity the policy actually decides at (two calls per turn).
-            "callSizes": _state().get("call_sizes_by_session", {}).get(session_id or "", [])[:80],
+            "callSizes": _call_sizes(),
         },
         "captures": {
             "turns": len(turns),

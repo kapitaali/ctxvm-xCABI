@@ -262,6 +262,9 @@ ENTERED = {"n": 0}
 # times (clone at build, second registration, sidecar reading another object); a module global cannot
 # be out of step with the code that fires it.
 OBSERVER: Dict[str, Any] = {"cb": None}
+# Per-selection request sizes, module-global for the same reason as the observer: the capture must be
+# able to read what the engine did without depending on which instance or which state dict it finds.
+CALL_LOG: List[Dict[str, int]] = []
 
 
 class _PageUnit:
@@ -489,6 +492,12 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         if not dropped and not repositioned:
             return None  # L7: nothing changed → byte-identical request
         assembled = self._assemble(request_messages, units, keep_hard, dropped, repositioned)
+        try:
+            CALL_LOG.append({"before": sum(_tokens_for(m) for m in request_messages),
+                             "after": sum(_tokens_for(m) for m in assembled)})
+            del CALL_LOG[:-200]
+        except Exception:
+            pass
         # W8C: tell the observer what this selection cost. Until 2026-11-11 the engine rewrote the
         # request and said nothing, so the trace reported evictedTokens 0 on a session whose
         # residency was capped at the budget — a real treatment that no capture could witness.
