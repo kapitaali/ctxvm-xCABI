@@ -343,11 +343,20 @@ def verify(args) -> int:
     # Arm-aware: a CONTROL session must select nothing — zero is the correct answer there, and
     # requiring > 0 labelled a correct control VOID (measured 2026-11-11, W8C cell-01).
     _sel = plugin.get("engineSelections") or 0
-    _control = (plugin.get("arm") == "control") or (plugin.get("engineSetting") == "compressor")
+    _arm = plugin.get("arm")
+    # Arm-conditioned, never inferred from the engine SETTING: a paged session whose sidecar fell
+    # back to the compressor default must not pass as a control that behaved (reviewer, 2026-11-12).
+    _control = (_arm == "control")
     if _control:
         checks.append(("control selects nothing", _sel == 0, str(_sel)))
     else:
         checks.append(("engine selections > 0", _sel > 0, str(_sel)))
+        if _sel == 0:
+            # The treatment never acted. That is VOID, not a NO-OP: a no-op is a decision the engine
+            # made, and a null engine is the engine never being asked. Usually the root config's
+            # `context.engine` is not "ctxvm" — the profile's setting does not decide activation.
+            checks.append(("engine engaged", plugin.get("engine") is not None,
+                           f"engine={plugin.get('engine')!r}; check ~/.hermes/config.yaml context.engine"))
     checks.append(("no code/shell tools",
                    not any(t in ("tool:terminal", "tool:execute_code") for t in tools),
                    ", ".join(f"{k}x{v}" for k, v in sorted(tools.items()))))
@@ -379,6 +388,8 @@ def verify(args) -> int:
         verdict = "VOID"
     elif _control:
         verdict = "CONTROL"
+    elif _sel == 0 and plugin.get("engine") is None:
+        verdict = "VOID"          # never engaged, as distinct from a decision not to page
     else:
         verdict = "CELL" if evicted > 0 else "NO-OP"
     print(f"verify: verdict {verdict}")
