@@ -65,10 +65,10 @@ PROVIDERS = {
     },
     "w8cp": {
         "model": "openai/gpt-6-luna",
-        "provider": "openai",
+        "provider": "nous",
         "prefix": "w8cp",
-        "key": "OPENAI_API_KEY",
-        "auth": "key",
+        "key": None,
+        "auth": "oauth",
         "max_calls": 50,
         "note": "W8C paid pair: the cost direction under real billing; ceiling 50 calls per arm (100 per pair: 100 x $0.0084 = $0.84 worst case)",
     },
