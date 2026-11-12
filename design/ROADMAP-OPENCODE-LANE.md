@@ -415,6 +415,23 @@ pin true every card close.
   effect is 3.5 % of the pair's spend ✓) — the next test is **zero-spend** with the **cache-write volume
   as the primary metric** ✓, and the simulator can now be **scored** ✓ (the paid pair measured the
   constants it lacked ✓).
+  *THE FREE PAIR AFTER THE PAID ONE IS A VOID (2026-11-12, `reports/RR-VOIDPAIR-20261112.md`):* the
+  scoring run on the free tier **never engaged the engine** on the treatment arm (`engine: null` ✓ —
+  which in 0.13.x means *select_context() was never called* ✓ — 0 selections ✓, 0 evictions ✓, empty
+  `evictedPages`/`callSizes` ✓) while the profile asked for it (`engineSetting: ctxvm` ✓,
+  `60000/settings` ✓) ✓ → **a void by instrument fault, not a policy result** ✓, nothing spent ✓ ($0 ✓),
+  and **not booked** ✓ (the ratified rule + their own precondition ✓). The engine code did **not** change
+  ✓ (`git diff 2b6c950..HEAD` on `context_engine.py` is empty ✓) → a **runtime** cause ✓: the gateway was
+  not restarted after the `w8cn-*` profiles were recreated ✓ (the PLG-7 behaviour ✓), while the paid pair
+  used fresh `w8cp-*` homes **with** a restart ✓ → the contrast identifies it ✓. **The sharp edge:** the
+  verifier's new CONTROL verdict (*"a control asked to select nothing has not done nothing"* ✓) is **not
+  arm-conditioned** ✓, and a **paged** arm with 0 selections has exactly the shape it would accept ✓ →
+  booked, it would be a **false cell** ✓; the sidecar already carries the evidence ✓, so a **third**
+  verdict is cheap ✓ — `arm == paged and engine == null` → **VOID** ✓. **And 0.13.3 carries the two open
+  instrument items** ✓: `evictedPages` (the per-page detail ✓) and `callSizes` (the per-call sizes ✓ —
+  the simulator's prerequisite ✓) ✓, so the simulator's blocker is implemented ✓ and the next scoring run
+  can produce a scoreable capture ✓ — provided the gateway is restarted ✓ and the probe's READY is a
+  precondition of the run ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
