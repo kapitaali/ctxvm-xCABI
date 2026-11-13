@@ -152,8 +152,10 @@ but it is **not** evidence about the treatment.
 **3. And a defect neither of us had noticed, now on record:** on a flush-tail trace the derived page table
 is **not turn-scoped**. Every `page.declare` row precedes the `turn.render` block, so the export's
 positional cut includes all 21 declares at turn 0 as well as turn 19. The table therefore claims 21 pages /
-86,569 tokens where the request carried 12 pages / 47,805 — and the **provider's own receipts** say the
+86,569 tokens where the request carried **12 pages** — and the **provider's own receipts** say the
 model saw 56.3 % of the control's tokens, so the removal is real and the **table is the false part**.
+*(The 47,805-token figure first written here is cross-capture — 86,569 minus the free capture's 38,764 —
+and is withdrawn; the page count and the provider ratio are measured on the paid capture itself.)*
 
 That is a representation gap in v0, not a bug in this line's measurement: `page.evict` requires a
 `stubText` a removal policy never has, `evictedTokens` is unchecked in v0, and the derived table is not

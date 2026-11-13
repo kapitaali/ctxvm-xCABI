@@ -182,3 +182,33 @@ The refusal in §10 therefore stands, and is now stronger than when it was writt
 assumed a 4× reduction with a 6.9× requirement, the measured version is a 1.8× reduction against 10.4×.
 What a different shape would have to deliver is correspondingly larger: a write volume per rewrite below
 **~11,000 tokens** (9 × 11,000 ÷ 41 ≈ 2,400), not the ~7,000 the first draft implied.
+
+## 12. Erratum 2 (2026-11-13) — a capture-only gate, and two provenance labels
+
+The second review round (`RR-SHAPEGAP` verification) found that two of §11's inputs are not verifiable
+from this tree. Both are now labelled, and the gate is recomputed from **this lane's own capture only**.
+
+**Provenance.** The per-arm billed split (`paged 1,025,825 + control 228,382`) comes from the review lane;
+the provider export in `experiments/` is **per key**, and both arms ran on one credential, so this lane
+cannot separate it. Likewise `1,254,207` for the pair is that lane's figure; the export in the tree is the
+**2026-11-12** day, not the 13th.
+
+**Capture-only gate** (0.13.21 capture, `local-d60a50c4…`: 16 dropping selections, `sum(after) = 941,257`,
+mean 58,829, 41 calls, 9 distinct pages ever removed):
+
+```
+hold-once: 9 events × 58,829 = 529,457 write tokens -> 12,914 per call
+allowance: ~2,400 per call
+=> FAIL by 5.4×
+event reduction achieved 1.8× (16 -> 9); what is needed is either ~2 events or ~11,000 tokens per rewrite
+```
+
+The earlier 5.9× came from the unverifiable split; the capture-only 5.4× rests on numbers this lane can
+reproduce with one command. **The refusal in §10 is unchanged and does not depend on either figure.**
+
+**One cross-capture number to stop quoting.** `RR-W8C-CLOSING-20261113.md`'s Erratum 2 says the request
+carried "12 pages / 47,805 tokens": 47,805 is 86,569 − 38,764, and 38,764 is the **0.13.21 free** capture's
+9 removed pages — not the paid cell-03 capture, whose sidecar predates `evictedPages` and whose own
+`evictedTokens` sum is 275,362. The provider ratio (0.563 against the trace's 0.570) is measured directly
+on the paid capture and does not need that subtraction; the 12-pages/47,805 pair should be quoted only
+with its source named, or not at all.
