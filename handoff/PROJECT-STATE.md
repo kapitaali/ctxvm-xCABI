@@ -6,13 +6,13 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 ## Artifacts and versions
 - Wire: RFC-0 sealed (`spec/rfc-0/`, byte-frozen); RFC-0.1 additive landed (`spec/rfc-0.1/`, R0–R5).
 - Corpus: ODPS 0.8.0, m1–m8 checksummed; hub ODPC byte-identical.
-- Plugins: hermes 0.13.13 (`packages/hermes/live/__init__.py:94`); @ctxvm/node 0.1.0, @ctxvm/opencode 0.0.1, @ctxvm/ai-sdk 0.0.1.
+- Plugins: hermes 0.13.14 (`packages/hermes/live/__init__.py:94`); @ctxvm/node 0.1.0, @ctxvm/opencode 0.0.1, @ctxvm/ai-sdk 0.0.1.
 - Papers: Part I committed + the white-paper lane's UNCOMMITTED revision; Part II untracked (`RR-WP2REV-20261107`).
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
 1. W8C paid cell-03 (`openai/gpt-6-luna`): $0.2534 total, 0.57x final request, 2.11x dollars, 4.49x cache writes; paid spend stopped (RR-PAIDRESULT-20261112).
-2. Plugin 0.13.13 + call-granularity scorer PASS: module-global `OBSERVER`/`ACTIVATIONS`/`CALL_LOG`, default home forced to control, median |error| 1.2% (RR-W8SIM3-20261112, RR-SIM3CHECK-20261112).
+2. Plugin 0.13.14 + call-granularity scorer PASS: module-global `OBSERVER`/`ACTIVATIONS`/`CALL_LOG`, default home forced to control, median |error| 1.2% (RR-W8SIM3-20261112, RR-SIM3CHECK-20261112).
 3. G1 timeless ordering clause applied in umpire `00-SPEC.md` §2 (`1f7eae8`) and recorded as D-U10 (`design/umpire-design-choices.md`, RR-G1APPLIED-20261112).
 
 ## In progress (one item: what, blocker, next command)
