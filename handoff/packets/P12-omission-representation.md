@@ -1,14 +1,10 @@
 # Packet P12: representing omission — what should a trace say about a page that left the request?
 
-STATUS: answered 2026-11-13 (card `reports/RR-OMISSIONANSWER-20261113.md`): ruling = THE WIRE — an optional,
-omitted-when-unknown list of removed-page identities with token counts, PER CALL (not per turn: Hermes buckets
-~2 requests per turn and the two requests of a turn remove different pages); the sidecar kept as a documented
-fallback; the check per call and FAIL CLOSED (a capture with removals and no list is a violation; provider
-receipts are the third witness, not the rule); the scoped view is an ADDITION under a new field name, never a
-change to the recorded `residentTokens`; no `page.evict` reuse. Falsifier: disagreement with provider receipts
-beyond estimate error, or a second harness that cannot report removals (OpenCode already cannot). UNKNOWN:
-placement (per-turn event with per-call entries vs a new per-call verb); the names; the D-number; the tolerance.
-Owner's decision: D19.
+STATUS: answered 2026-11-13 (card `reports/RR-OMISSIONANSWER-20261113.md`): ruling = THE WIRE — an
+optional, omitted-when-unknown list of removed-page identities with token counts, PER CALL (not per
+turn); the sidecar kept as a documented fallback; the check per call and FAIL CLOSED (a capture with
+removals and no list is a violation); the scoped view an ADDITION under a new field name, never a
+change to the recorded `residentTokens`; no `page.evict` reuse. Owner's decision: D19.
 
 ## Question (as asked)
 

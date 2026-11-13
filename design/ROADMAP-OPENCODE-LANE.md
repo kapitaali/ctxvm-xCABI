@@ -674,6 +674,16 @@ pin true every card close.
   have written is **fits 25 | evicted 16 | floor_bust 0** ✓ ⇒ ⇒ the `floor_bust` string is **silent in this
   shape** ✓ ⇒ ⇒ H9's value is shape-dependent ✓ ⇒ ⇒ the honest argument is *"only the engine knows the floor"*
   ✓ ⇒ ⇒ **H9 and H10 are one change** ✓ ✓.
+  *P12 ANSWERED FROM THE PACKET ALONE (`reports/RR-OMISSIONANSWER-20261113.md`):* the reviewer ruled **the wire** ✓
+  with three refinements ✓ — the list is **per request, not per turn** ✓ (Hermes buckets ~2 requests per turn ✓ and
+  the two requests of a turn remove different pages ✓ ⇒ a turn-grain list merges them ✓), the check is **per call
+  and fail closed** ✓ (*"a capture with removals and no list is a violation"* ✓ ⇒ it also fixes the dormant
+  precondition ✓), and the scoped view is an **addition under a new field name** ✓ (the recorded `residentTokens`
+  is whole-table residency ✓ and is not repurposed ✓) ⇒ the sidecar stays a **documented fallback** ✓ ⇒ ⇒ one
+  correction to this lane's own proposal ✓: the scoped view **cannot replace** the table projection ✓ (one engine ✓,
+  whole-table residency ✓ ⇒ a replacement would make v0.1 captures diverge ✓) ⇒ ⇒ **D19 (proposed)** stays on the
+  owner's table ✓ (placement ✓, names ✓, D-number ✓, tolerance ✓) ✓ and the answer text is verbatim in
+  `handoff/QUESTIONS.md` ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
