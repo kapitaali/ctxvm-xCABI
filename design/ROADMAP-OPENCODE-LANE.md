@@ -586,6 +586,23 @@ pin true every card close.
   **lagging cumulative** ✓ (session sum 210,856 = **5.44×** the unique removed content 38,764 ✓) ⇒ the W8D
   prereg's "36 rewrite events" is unsupported ✓ (measured: **9** pages ever removed ✓, **16** dropping
   selections ✓) and its write-volume per event must be re-derived ✓ — zero-spend, from the capture ✓.
+  *THE W8D ERRATUM REVIEWED (`ceb15d2`, `reports/RR-W8DERRATUM-20261113.md`):* five of §11's inputs verified ✓
+  (16 dropping selections ✓, 75 page-drops ✓, 9 distinct pages ✓, 1,254,207 pair writes ✓, and the withdrawal of
+  "0 stubs" ✓), but three arithmetic errors ✓ — the denominator is the paid arm's **42** calls ✓ (not the free
+  capture's 41 ✓), the "0.918" ratio is **inverted** ✓ (the sentence it supports needs 1.090 ✓) and mixes **two
+  tokenizers** ✓ (apx4 vs provider ✓, factor 1.92–1.94 ✓), and "**rewrite events, today 16**" is unsupported ✓
+  (the dropped-set *sizes* take 9 distinct values ✓ and change 9 times ✓) ⇒ the like-for-like comparison is
+  **9 → 9 = 1.0×** ✓, not 16 → 9 = 1.8× ✓. **The model check contradicts itself** ✓: 16 whole-request writes
+  would cost 1,804,703 provider tokens against the measured 1,025,825 ✓ (1.76× ✓), while **9** whole-request
+  writes fit with a residual of **0.2 %** ✓ ✓ — and the provider's receipts witness the whole-request write ✓
+  (the paged arm's cached prefix collapsed to 14,504 ✓ = the turn-0 static prefix ✓, so no message content was
+  reusable ✓). ⇒ **The refusal stands and is stronger** ✓: today's own **24,424** write tokens/call against the
+  1,868–2,428 allowance ✓ ≈ **10× over** ✓ — and hold-once does not touch it ✓, because **the dropped set is
+  already monotone** ✓ (the union of pages ever dropped = 9 ✓ equals the final set's size ✓ ⇒ the policy never
+  un-drops ✓ ⇒ hold-once's premise already holds ✓). ⇒ **The zero-spend gate's step 1 cannot discriminate** ✓
+  (H1 predicts 9–14 ✓; today's run already yields 9 ✓) ⇒ the one missing measurement is the per-call dropped
+  **identity** list ✓ (the observer computes it ✓; the adapter folds it into a union ✓) ⇒ one sidecar field would
+  make step 1 a lookup ✓ at zero spend ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
