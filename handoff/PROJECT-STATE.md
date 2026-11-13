@@ -6,14 +6,14 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 ## Artifacts and versions
 - Wire: RFC-0 sealed (`spec/rfc-0/`, byte-frozen); RFC-0.1 additive landed (`spec/rfc-0.1/`, R0–R5).
 - Corpus: ODPS 0.8.0, m1–m8 checksummed; hub ODPC byte-identical.
-- Plugins: hermes 0.13.19 (`packages/hermes/live/__init__.py:94`); @ctxvm/node 0.1.0, @ctxvm/opencode 0.0.1, @ctxvm/ai-sdk 0.0.1.
+- Plugins: hermes 0.13.22 (`packages/hermes/live/__init__.py:94`); @ctxvm/node 0.1.0, @ctxvm/opencode 0.0.1, @ctxvm/ai-sdk 0.0.1.
 - Papers: Part I committed + WIP revision; Part II untracked (`RR-WP2REV-20261107`); 6-item bundle routed (`RR-WPROUTE-20261112`).
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
 1. G2 applied: caller transfer-caveat in umpire `mcp_server.py` + `00-SPEC.md` §3 (`64b97fb`) and D-U1 resolved (`design/umpire-design-choices.md`, RR-G2APPLIED-20261112).
 2. D13 + D14 ratified and the six-item white-paper bundle routed to the research lane; G5 closed (RR-WPROUTE-20261112).
-3. Plugin 0.13.19 + `sim(S3)` quantization scorer: uncensored `CALL_LOG`, `plugin.engine` + `evictedPagesCount` confirmed, `upstream/` draft deleted (RR-S3-PRECISION-20261113, RR-SIM3S3CHECK-20261112).
+3. Plugin 0.13.22 + `sim(S3)` quantization scorer: uncensored `CALL_LOG`, `plugin.engine` + `evictedPagesCount` confirmed, `upstream/` draft deleted (RR-S3-PRECISION-20261113, RR-SIM3S3CHECK-20261112).
 
 ## In progress (one item: what, blocker, next command)
 Research lane: apply the routed six-item white-paper bundle (`reports/RR-WPROUTE-20261112.md`) to working-tree `research/white-paper/white-paper.md`, `index.md`, and `white-paper-Part-II.md`.
