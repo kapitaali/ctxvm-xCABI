@@ -69,8 +69,10 @@ def score_calls(trace_path: str, budget: int) -> int:
     page (~4,400 of 60,000 ≈ 7.3 %), which made the earlier PASS depend on how many calls fell either
     side of a page boundary.
 
-      predicted   budget - page_max  <  after_k  <=  budget
-      page_max    the largest tokens-per-dropped-page seen in this run (measured, not assumed)
+      predicted   budget - slack  <  after_k  <=  budget
+      slack       one page when the capture records `dropped` per call (0.13.14+), so a single-page
+                  drop is identifiable: slack = max(before - after | dropped == 1). On older captures
+                  it is two minimum-drops, because one drop can overshoot a page by a few tokens.
       PASS        every call inside the interval; the median relative error is reported as a
                   diagnostic and is not the verdict, because it cannot resolve below one page
     """
@@ -89,25 +91,35 @@ def score_calls(trace_path: str, budget: int) -> int:
     # Page size from the DATA, not from a per-call ratio: consecutive `after` levels differ by one
     # dropped page, so the median gap between sorted distinct levels estimates it without needing the
     # `dropped` count (absent in captures written before 0.13.14).
-    # The SMALLEST drop is the one-page case (a request just over the budget loses exactly one page);
-    # larger drops are several pages and would overstate it. Measured: the level-gap heuristic reads
-    # ~330 tokens because per-call transcripts differ slightly, which is why it is not used here.
-    page_est = int(min(c["before"] - c["after"] for c in dropping))
-    page_max = page_est
-    lo = budget - 2 * page_est   # two pages of slack: the last drop can overshoot by one page
-
+    # Two modes, chosen by what the capture actually records:
+    #   0.13.14+  `dropped` is stored per call, so a ONE-page drop is identifiable and the interval is
+    #             exactly one page wide:  budget - page_max < after <= budget
+    #   older     no `dropped`, so the smallest observed drop stands in for one page and the interval
+    #             widens to two of those, because a single drop can overshoot one page by a few tokens
+    #             (measured: call 10 dropped 4,473 while the smallest drop was 4,424, 1.029x).
+    one_page = [c["before"] - c["after"] for c in dropping if c.get("dropped") == 1]
+    if one_page:
+        page_max = int(max(one_page))
+        slack = page_max
+        basis = "one-page drops (dropped == 1)"
+    else:
+        page_max = int(min(c["before"] - c["after"] for c in dropping))
+        slack = 2 * page_max
+        basis = "smallest drop (no per-call dropped count: pre-0.13.14 capture)"
+    page_est = page_max
+    lo = budget - slack
     outside = [c for c in dropping if not (lo < c["after"] <= budget)]
     errs = [abs(c["after"] - budget) / budget for c in dropping]
     print(f"sim(S3): {len(calls)} selections, {len(dropping)} dropped, budget {budget:,}")
-    print(f"sim(S3): page ~{page_est:,} tokens (the smallest drop = the one-page case) -> "
-          f"interval ({lo:,}, {budget:,}]")
+    print(f"sim(S3): page ~{page_est:,} tokens from {basis} -> interval ({lo:,}, {budget:,}]")
     print(f"sim(S3): median |after-budget|/budget {statistics.median(errs):.2%} "
           f"(diagnostic; resolution is one page = {page_est / budget:.1%})")
     if outside:
         for c in outside[:5]:
             print(f"sim(S3): OUTSIDE before={c['before']:,} after={c['after']:,} dropped={c.get('dropped')}")
     ok = not outside
-    print(f"sim(S3): VERDICT {'PASS' if ok else 'FAIL'} (every dropped request inside one page of the budget)")
+    print(f"sim(S3): VERDICT {'PASS' if ok else 'FAIL'} "
+          f"(every dropped request inside {slack:,} tokens of the budget)")
     return 0 if ok else 1
 
 
