@@ -40,7 +40,9 @@ Field notes from docs:
 ## What is missing before submission
 
 1. Release commit SHA (owner-gated tag, D17).
-2. Hermes version pin re-checked against `live/plugin.yaml` (`version: 0.10.6`) at tag time.
+2. Hermes version pin re-checked at tag time against the two authoritative files — `PLUGIN_VERSION` in
+   `live/__init__.py` and `version:` in `live/plugin.yaml`, which the gate asserts agree. No release
+   number is recorded here: an undated one is false within a day of the next bump.
 3. Admission CI must pass (`hermes plugins validate` + security scan). Local copy installs today via `hermes plugins install kapitaali/ctxvm-xCABI` w/ subdir, or copying `packages/hermes/live/` (owner-gated git-URL bypasses review; catalog is the reviewed path).
 
 ## Verdict

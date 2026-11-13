@@ -218,6 +218,10 @@ factors and the cells are void.
 - "safe", "secure by design", "prevents leakage" — the plugin records; it does not guarantee.
 - A number without the command that produced it, and a sample size.
 - A claim about an arm, a version, or a gateway state you did not read from the system.
+- A bare plugin version as current state. Cite the two authoritative files (`PLUGIN_VERSION`,
+  `plugin.yaml`) or date the build you measured. The lane carried 48 distinct version values
+  between 2026-10-24 and 2026-11-13, so an undated number in prose is false within a day; the
+  white paper states the same rule in its Document control table.
 
 ---
 
