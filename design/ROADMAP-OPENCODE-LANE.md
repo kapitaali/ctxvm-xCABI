@@ -542,6 +542,14 @@ pin true every card close.
   `except Exception: pass` (`:1485`) ✓. Also `_coverage_manifest` (`:790`) still writes
   `"engineSelections": _selections_total()` (only `_write_live_stamp` at `:405` writes
   `engineSelectionsProcess`) ✓.
+  *CONFIRMATION CAPTURE VERIFIED (`2d9f6cf`, `reports/RR-W8CCONFIRMEDREV-20261113.md`):* the run
+  bundle, the sidecar, and the scorer all re-run and PASS ✓ (`w8b-20261113-150420-paged`: CELL, 41 calls,
+  210,856 evicted, `engineSelections 16`, `evictedPagesCount 9`, `callSizes 16`, scorer PASS median 0.92%) ✓
+  — two caveats: (1) `_selections.log` holds **81** lines, 39 of them from the plugin's own pytest suite
+  (no `CTXVM_TRACE_DIR` in `test_context_engine.py` ⇒ the engine writes into the live trace dir; reproduced
+  offline: 81 → 121 lines) ✓, so the file must be filtered by the run's timestamp window, not counted ✓;
+  (2) `_swallowed.log` covers **2 of 23** swallow sites in `live/__init__.py` and **0 of 12** in
+  `context_engine.py` ✓ ⇒ its absence proves nothing for the other 33 ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
