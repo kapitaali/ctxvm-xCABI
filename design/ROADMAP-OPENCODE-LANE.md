@@ -566,6 +566,12 @@ pin true every card close.
   qualifier ✓: the page table is derived by `ctxvm-core` from the trace alone ✓, but `turn.render.evictedTokens`
   is a **plugin-written field** the replay reads rather than re-derives ✓, so *“both are independently
   derived”* overstates the eviction half ✓ (86,569 ✓ derived, 4,396 ✓ carried) ✓.
+  *THE TURN-12 PROJECTION IS TURN-INVARIANT (`reports/RR-W8CREPLAY2-20261113.md`):* `export --turn 12/15/19`
+  each give 21 slots ✓ / 86,569 resident ✓ / **0 stubbed** ✓ / 0 violations ✓ — because the trace's
+  `residentTokens` is pinned to the **whole-table** residency ✓ (`packages/hermes/src/plugin.py:229` ✓), and
+  the trace carries **no `page.evict` row at all** ✓ (0 of 81 events ✓) ⇒ the 0-stub result witnesses the
+  **removal** semantics ✓ but is **not a per-turn observation** ✓, and there is **no contrast case** to measure
+  against ✓ (`corpus/m1`'s 4 `page.evict` events are synthetic ✓; the live captures have none ✓).
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
