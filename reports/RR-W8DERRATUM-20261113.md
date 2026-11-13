@@ -2,7 +2,7 @@
 
 Card: review-lane verification of the erratum the hermes lane appended to
 `design/W8D-PREREG-STABLE-20261113.md` §11 on 2026-11-13 (commit `ceb15d2`), checked against the
-0.13.22 capture, the cell-03 Hermes session DBs, the two cell-03 traces, and the engine source.
+0.13.21 capture, the cell-03 Hermes session DBs, the two cell-03 traces, and the engine source.
 
 ---
 
@@ -27,7 +27,7 @@ reason than the erratum gives ✓.
 
 | §11 says | measured | locator |
 |---|---|---|
-| 16 selections dropped something | **16** ✓ | 0.13.22 sidecar `plugin.callSizes` = 16 entries with `dropped ≥ 1` ✓; `plugin.engineSelections = 16` ✓ |
+| 16 selections dropped something | **16** ✓ | 0.13.21 sidecar `plugin.callSizes` = 16 entries with `dropped ≥ 1` ✓; `plugin.engineSelections = 16` ✓ |
 | 75 page-drops in total | **75** ✓ | Σ `dropped` over those 16 entries ✓ |
 | the DISTINCT pages ever removed are 9 | **9** ✓ | sidecar `plugin.evictedPagesCount = 9` ✓ (the live adapter's union set ✓, `packages/hermes/live/__init__.py:834-835` ✓) |
 | billed writes for the pair = 1,254,207 | **1,254,207** ✓ | paged `cache_write_tokens = 1,025,825` ✓ + control `228,382` ✓ (the pair's own DB rows ✓) |
@@ -88,7 +88,17 @@ Two problems with the sentence:
    **1.9208** (paged, turn 19 ✓) and **1.9443** (control, turn 19 ✓).
 
 ⇒ With the units corrected: 1,025,825 provider tokens ÷ 1.9208 = **534,057** engine tokens ✓ against
-941,257 of post-selection request ⇒ the billed writes are **0.567** of it ✓ — and 9/16 = **0.5625** ✓.
+941,257 of post-selection **message content** ✓ ⇒ the billed writes are **0.567** of it ✓ — and 9/16 =
+**0.5625** ✓.
+
+⇒ **What "post-selection request" means here, stated exactly** ✓ (the reviewer's label check ✓):
+`after` is the engine's **assembled message content** ✓ (`packages/hermes/live/context_engine.py:495-502`
+✓), **not** the whole request ✓ — the **static prefix** (system prompt + tool schemas ✓) is not in it ✓
+⇒ measured: the engine's `after` sits a **constant ≈ 4,230** apx4 tokens below the harness's per-call
+`approxInputTokens` ✓ (all 41 selections ✓). ⇒ That is also **why the provider does not re-write it** ✓:
+the static prefix stays cached ✓ — the paged arm's collapsed cached prefix was **exactly** the static one
+✓ (§3 ✓) ⇒ the writes cover the **message content** ✓ ⇒ the right denominator for "what fraction of the
+16 selections' worth of content was written" is `sum(after)` ✓ ⇒ the 0.567 / 9⁄16 identity ✓.
 ⇒ **That number is the tell** ✓ (§3 ✓).
 
 ### 2.3 "Rewrite events, today 16" is **not supported by any artefact**; the structural count is 9
@@ -99,9 +109,28 @@ The 16 is the number of **selections that dropped something** ✓ — a fact ✓
 **sizes** over those 16 selections take **9 distinct values** ✓ and change **9 times** ✓ (0 → 1 → … → 9):
 
 ```
-free capture (0.13.22), the 41 selections of the run window, in order:
+free capture (0.13.21), the 41 selections of the run window, in order:
   dropped = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 | 1 1 2 2 3 3 4 4 5 5 6 6 7 8 9 9
   distinct sizes: [1,2,3,4,5,6,7,8,9]   size-changes: 9   (8 inside the dropping list + the first 0 -> 1)
+```
+
+⇒ **Repro** ✓ (the window must return **exactly 41** lines ✓ — the log is append-only and shared ✓, the
+plugin's own pytest suite writes into it ✓, and a window that returns 41–44 lines mis-pairs the table ✓):
+
+```bash
+python3 - <<'EOF'
+import json, glob, os, re
+cov = sorted(glob.glob(os.path.expanduser(
+    '~/.local/state/ctxvm/traces/local-d60a50c44acf*.coverage.json')))[0]
+d = json.load(open(cov))
+log = open(os.path.expanduser(
+    '~/.local/state/ctxvm/traces/_selections.log')).read().splitlines()
+run = [l for l in log if 'budget=60000' in l
+       and '2026-11-13T15:04:45' <= l[:19] <= '2026-11-13T15:13:00']
+sizes = [int(re.search(r'dropped=(\d+)', l).group(1)) for l in run]
+assert len(run) == 41, len(run)
+print([s for s in sizes if s], sorted(set(sizes)))
+EOF
 ```
 
 ⇒ A selection whose dropped **size** did not change re-dropped the same set **if the dropped sets are
@@ -262,7 +291,7 @@ the request size ✓. It is the **cached prefix** ✓, and in the paged arm's tu
 
 ## 8. Executed agent-doings
 
-- §11's five inputs re-measured from the artefacts ✓ (the 0.13.22 sidecar ✓, the two cell-03 DB rows ✓,
+- §11's five inputs re-measured from the artefacts ✓ (the 0.13.21 sidecar ✓, the two cell-03 DB rows ✓,
   the two cell-03 traces ✓) — all five hold ✓.
 - The **erratum's three arithmetic errors** located and quantified ✓ with repro commands ✓ (§2 ✓).
 - The **model check's internal contradiction** stated and resolved by two independent lines ✓ (the

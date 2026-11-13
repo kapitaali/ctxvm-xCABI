@@ -12,7 +12,9 @@ provider receipts).
 
 `packages/hermes/live/context_engine.py` has **no stub concept at all** (grep for `stub` in the engine:
 one hit, and it is a comment about the host ABC) ✓; the hermes adapter **never emits `page.evict`**
-(grep for `page.evict` in `packages/hermes/src/plugin.py` + `packages/hermes/live/`: **no hits** ✓).
+(the only `page.evict` strings under `packages/hermes/` are a **trace reader** ✓ —
+`packages/hermes/src/uc2_forensics.py:255,257` ✓ — and a **comment** ✓ at
+`packages/hermes/live/__init__.py:832` ✓; **no `PageEvict` is ever constructed** ✓).
 
 And in the core, a slot becomes stubbed **only** through a `PageEvict` (`rust/crates/ctxvm-core/src/page_table.rs:108-115` ✓ — `mode_at` returns `Full` unless a scheduled change says `Stub` ✓). With **0 `page.evict` rows in the capture** ✓, `stubbedSlots = 0` is **entailed by the event vocabulary** ✓ — it cannot be evidence about the request ✓✓.
 
@@ -54,18 +56,29 @@ near the budget ✓ (the stub text is small but present ✓). The decisive witne
 The reviewer says the table claims 21 pages / 86,569 tokens while the request carried 47,805. Two
 corrections to the numbers, and one thing that makes the gap **worse**, not better:
 
-| quantity | reviewer | measured |
-|---|---|---|
-| pages the table claims | 21 | 21 ✓ |
-| tokens the table claims | 86,569 | 86,569 ✓ |
-| pages the request actually carried at turn 19 | 12 | **12** ✓ (21 declared − 9 removed ✓) |
-| page tokens the request carried at turn 19 | 47,805 | **47,805** ✓ (86,569 − 38,764 ✓) |
+**Which capture each number comes from** ✓ (the reviewer's finding 5 ✓ — the card did not label them ✓):
+
+| quantity | reviewer | measured | capture |
+|---|---|---|---|
+| pages the table claims | 21 | 21 ✓ | free 0.13.21 ✓ |
+| tokens the table claims | 86,569 | 86,569 ✓ | free 0.13.21 ✓ |
+| pages the request actually carried at turn 19 | 12 | **12** ✓ (21 declared − 9 removed ✓) | free 0.13.21 ✓ |
+| page tokens the request carried at turn 19 | 47,805 | **47,805** ✓ (86,569 − 38,764 ✓) | free 0.13.21 ✓ |
+| unique removed content behind the 9 | 38,764 | **38,764** ✓ (the sidecar's 9 pages × their declared tokens ✓) | free 0.13.21 ✓ |
+| the provider-receipt ratios (0.563 etc.) | — | see the falsifier block below ✓ | **paid cell-03** ✓ (the only capture with receipts ✓) |
+
+⇒ The paid capture's own `evictedTokens` sum is **275,362** ✓ (not 210,856 ✓ — that is the free
+capture's ✓), and its 0.13.1 sidecar carries **no `evictedPages`** ✓ ⇒ its unique-removed content is
+**not directly measurable** ✓ ⇒ the 12 pages / 47,805 tokens are the free capture's ✓ and the falsifier
+below is the paid capture's ✓ — **different captures, different roles** ✓.
 
 **The correction that makes it worse**: the reviewer compares turn 19's request with a table derived at
 turn 12. But the projection is **turn-invariant on this capture** ✓ — `export --turn 0/5/12/19` all give
 21 slots / 86,569 tokens / 0 stubbed ✓✓ — and the reason is the **flush-tail layout** ✓, not the pinning
 alone ✓: in this capture every `page.declare`/`page.render` row sits **before** the `turn.render` block
-✓ (positions 1–40 vs 41–60 ✓), so `handoff_prefix`'s **positional** cut at turn N
+✓ (1-based rows: the 40 page rows **2–41** ✓, the 20 `turn.render` rows **42–61** ✓, the 20 `call.meta`
+rows **62–81** ✓ — 81 rows total ✓, the replay's 81 events ✓), so `handoff_prefix`'s **positional** cut
+at turn N
 (`rust/crates/ctxvm-core/src/export.rs:48-54` ✓) already contains **all 21 declares** ✓ — including the
 **8 pages declared at turns 13–19** ✓ (the `page.declare` rows carry their own R5 `turn` field ✓ — the
 trace's own `turn` values are 0…19 ✓).
@@ -138,7 +151,7 @@ a limitation line" is **correct** ✓✓.
 ## 3. The reviewer's four recommendations, reviewed
 
 1. **"Stop citing '0 stubs' and 'independently derived' as mechanism evidence"** ✓ — **agree and already
-   applied** ✓: `reports/RR-W8CCONFIRMEDREV-20261112.md` §2 qualifies the eviction count as
+   applied** ✓: `reports/RR-W8CREPLAY-20261112.md` §2 (:38) qualifies the eviction count as
    plugin-written ✓, and this card supersedes the closing card's "independent confirmation" wording ✓.
    **What should replace it**: the **provider receipts** ✓ (ratio 0.563 ✓) and the **request-size series**
    ✓ — independent of the page table ✓✓.
@@ -173,7 +186,8 @@ a limitation line" is **correct** ✓✓.
 4. **"Add the checker rule: if any turn has `evictedTokens > 0`, the sidecar must list the dropped pages
    and their sum must be consistent with it"** ✓ — **agree, and it is implementable today** ✓: the sidecar
    already carries `evictedPages` ✓, `evictedPagesCount` ✓ and per-call `callSizes` (before/after/dropped) ✓;
-   `tools/coverage_check.py` is the gate ✓. Measured on the 0.13.22 capture ✓: the sidecar's 9 evicted
+   `tools/coverage_check.py` is the gate ✓. Measured on the **0.13.21** capture ✓ (`local-d60a50c4…` ✓ — the sidecar's own
+   `plugin.version` ✓): the sidecar's 9 evicted
    pages total **38,764** tracer tokens ✓ against the trace's cumulative `evictedTokens` **210,856** ✓
    ⇒ **the two are NOT directly comparable** ✓ (the trace counter is a per-turn cumulative re-drop sum ✓✓
    — see §4 ✓), so the rule must be stated as: *the sidecar's per-call `before − after` must equal the
@@ -197,9 +211,33 @@ turn | trace evictedTokens | Σ over that turn's calls of (before − after) | p
  19  |     55,914           |          112,638                        | [8, 9, 9]
 ```
 
+**Repro (the exact filter matters ✓ — the log is append-only and shared ✓, and the plugin's own pytest
+suite writes into it ✓, so a window that returns 41–44 lines mis-pairs the table ✓):**
+
+```python
+import json, glob, os, re
+from collections import defaultdict
+cov = sorted(glob.glob(os.path.expanduser(
+    '~/.local/state/ctxvm/traces/local-d60a50c44acf*.coverage.json')))[0]
+d = json.load(open(cov)); pa = d['perApiRequest']            # 41 entries, one per API call
+log = open(os.path.expanduser(
+    '~/.local/state/ctxvm/traces/_selections.log')).read().splitlines()
+run = [l for l in log
+       if 'budget=60000' in l and '2026-11-13T15:04:45' <= l[:19] <= '2026-11-13T15:13:00']
+assert len(run) == len(pa) == 41          # the window must yield exactly 41 lines
+sel = [tuple(int(re.search(rf'{k}=(\d+)', l).group(1)) for k in ('before', 'after', 'dropped'))
+       for l in run]
+turns = defaultdict(list)
+for r in pa: turns[r['turn']].append(r)
+k = 0
+for t in sorted(turns):
+    seg = sel[k:k + len(turns[t])]; k += len(turns[t])
+    print(t, sum(b - a for b, a, _ in seg), [d for _, _, d in seg])
+```
+
 ⇒ The trace's series (4,396 → 55,914 ✓) is the **cumulative removed-set size**, lagging the turn by
 one ✓✓, and the capture's **session sum (210,856)** is **5.44× the unique removed content (38,764)**
-✓✓ — the books already flag this (*"210,856 tokens evicted is easy to misread" ✓*, `RR-SPEND-20261112.md` §2 ✓),
+✓✓ — the books already flag this (*"210,856 tokens evicted is easy to misread" ✓*, `RR-SPEND-20261112.md` §3 ✓),
 and the W8D preregistration's own arithmetic (§9 ✓) multiplies the write volume by **36 rewrite events**
 ✓ — while the *dropped-set* count reaches only **9** ✓✓. ⇒ **"36 rewrite events" in
 `design/W8D-PREREG-STABLE-20261113.md` §9 is not supported by any capture** ✓: the measured numbers are
@@ -216,7 +254,7 @@ each is measured ✓ ⇒ the refusal stands ✓✓. But **two of its numbers nee
   for the pair ✓ (paged 1,025,825 ✓ + control 228,382 ✓) and the per-event write volume must be
   re-derived from **9** events ✓, not 36 ✓.
 
-⇒ **The cheapest way to settle the whole question is zero-spend and already in hand** ✓: the **0.13.22
+⇒ **The cheapest way to settle the whole question is zero-spend and already in hand** ✓: the **0.13.21
 capture** carries per-call `before`/`after` ✓ (`callSizes` ✓, 16 entries ✓) and the **paid** capture
 carries the billed write volume ✓ ⇒ the hold-once write volume can be **replayed** from the capture ✓
 without a run ✓✓ — the same replay the preregistration's own step 1 asks for ✓.
