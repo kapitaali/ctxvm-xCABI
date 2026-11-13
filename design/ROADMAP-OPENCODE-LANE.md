@@ -644,6 +644,21 @@ pin true every card close.
   reveal ✓); the third is **measured** ✓: 75 page-drops × 113 B ≈ **8.5 KB** per session ✓ ⇒ linear ✓ ⇒ ≈20 KB
   per 100 calls ✓ ⇒ ⇒ **D19** is now reviewer-ruled ✓ with the owner's choices named ✓ (placement ✓, names ✓,
   D-number ✓, tolerance ✓).
+  *THE OTHER LANE'S INSTRUMENT VERIFIED, AND THE VERSION SWEEP (`reports/RR-INSTRUMENT023-20261113.md`,
+  `reports/RR-VERSIONDRIFT-20261113.md`):* the hermes lane's `f3078b4` ✓ delivers what the P12 ruling asked
+  for ✓ — per-call removed-page identities **with token counts** ✓ (`live/context_engine.py:508` ✓ and `:561` ✓),
+  the sidecar's 80-entry slice gone ✓, and the checker's rule **fail-closed** ✓ **and** in **both directions** ✓
+  with a stated **10 %** tolerance ✓ ✓ (version-gated at 0.13.23 ✓) ⇒ the instrument ask is answered ✓ ⇒ three
+  caveats remain ✓: the sidecar's per-call record is still **partial** ✓ (the observer fires only for dropping
+  selections ✓ ⇒ the reviewer's "a missing entry for a call with `before > budget`" is **not implementable** ✓ ⇒
+  the shipped rule is the implementable subset ✓), the identity lists are truncated to **6 per page** ✓, and the
+  caps remain ✓ (200 ✓ / 500 ✓) ⇒ ⇒ the version sweep: the authoritative pair is **0.13.23** ✓ (gate-enforced ✓,
+  installed copy byte-identical ✓) ⇒ four stale claims fixed here ✓ (three handoff docs ✓ + the README row ✓,
+  claimed in its commit ✓), four routed to the research lane ✓ (`research/**` ✓), one **reclassified** as dated
+  history ✓ (`design/hermes-catalog-submission.md:43` ✓ — "at tag time" ✓) ⇒ and the **gateway holds 0.13.22** ✓
+  while the disk reads 0.13.23 ✓ ⇒ captures taken now are labelled 0.13.22 ✓ ⇒ **asked, not restarted** ✓
+  (LANES.md ✓) ⇒ ⇒ **prevention for the owner** ✓: a doc that needs the version should *point at* the
+  authoritative pair ✓ instead of restating a number ✓ ⇒ no doc can go stale ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
