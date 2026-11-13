@@ -77,14 +77,36 @@ this turn"* ✓ (which is what it is ✓) and check it against the sidecar's **p
 
 Two placements, and the choice is the owner's ✓:
 
-- **RFC-0.1 (option a)** ✓: a per-turn **dropped-page list** ✓ on `turn.render` ✓ ⇒ visible to a trace-only
-  reader ✓ ⇒ Part II's third branch is derivable ✓ ⇒ costs the five touchpoints ✓.
+- **RFC-0.1 (option a)** ✓: an **optional** list of removed-page identities on the wire ✓ ⇒ visible to a
+  trace-only reader ✓ ⇒ Part II's third branch is derivable ✓ ⇒ costs the five touchpoints ✓.
 - **Sidecar (option b)** ✓: a per-turn `droppedPages` list beside `callSizes` ✓ ⇒ free ✓ ⇒ but the trace
   alone stays silent ✓ ⇒ the paper's view claim must then read *"a view is a function of a trace **and its
   sidecar**"* ⇒ a wording change in Part I §12 ✓ (the research lane's ✓).
 
 ⇒ **The paper forces the choice** ✓: as long as Part I §12 says *"a pure function of a trace"* ✓, the
 identity must be **on the wire** ✓ ⇒ option (a) ✓ ⇒ the sidecar alone is not enough ✓✓.
+
+⇒ **RULED (2026-11-13, the reviewer's answer to packet P12 ✓ — `reports/RR-OMISSIONANSWER-20261113.md` ✓):
+the wire ✓, the sidecar kept as a **documented fallback** ✓ with its cost stated ✓.** Three refinements ✓:
+
+1. **The grain is per call ✓, not per turn ✓** — Hermes buckets ~2 requests per turn ✓ (measured ✓: 42 calls
+   over 20 turns ✓) and the two requests of a turn remove different pages ✓ ⇒ a turn-grain list would merge
+   them ✓ and lose what the per-call check needs ✓ ⇒ ⇒ the placement is **open** ✓: a per-turn event carrying
+   **per-call entries** ✓, or a **new per-call verb** ✓ (five touchpoints ✓, a D-number ✓, a vector ✓) ✓ —
+   the spec's call ✓ ✓.
+2. **The field is optional and omitted-when-unknown ✓** — absence means unknown, never zero ✓ ⇒ and it must be
+   **optional** ✓ because a second harness **cannot report removals today** ✓ (the OpenCode adapter has **no
+   removal concept at all** ✓ ⇒ the omission case is Hermes-only for now ✓) ✓ ⇒ the reviewer's falsifier
+   ("a mandatory wire field gets nothing back") **already fires** ✓ ⇒ ⇒ optional field ✓ + documented
+   fallback ✓ ✓.
+3. **New names ✓** — the recorded `residentTokens` is whole-table residency ✓ and is **not** repurposed ✓ ⇒
+   the scoped quantity and the removals list each get their own name ✓ ⇒ RFC-0.1 ✓ (five touchpoints ✓).
+
+⇒ **A size estimate for the shape** ✓ (the reviewer's second UNKNOWN ✓, answered): the measured session makes
+**75** page-drops ✓ over 41 calls ✓ ⇒ an entry of the shape
+`{"logicalRef":"tool:read_file({…})","contentHash":"sha256:…","tokens":4385}` ✓ is **113 bytes** ✓ ⇒ the whole
+session's list ≈ **8.5 KB** ✓ ⇒ **linear in the removals** ✓ ⇒ ≈ **20 KB** for a 100-call session ✓ ⇒
+affordable ✓ but paid by every trace that reports removals ✓.
 
 ### 4.3 The **check** — the reviewer's item 4, measured ✓
 
@@ -108,6 +130,21 @@ sum must be consistent with it"* ✓. Two corrections and one fact:
 
 ⇒ So the checker's rule has **three** parts ✓, not one ✓: *count present* ✓ → *identity present* ✓ →
 *per-call consistency* ✓ — and the third is blocked on the instrument ✓ (not on the spec ✓).
+
+⇒ **RULED (2026-11-13, the reviewer's answer to P12 ✓)**: the rule is **per call** ✓ and must **fail closed**
+✓ — *"a capture with removals and no list is a violation"* ✓ ⇒ that also fixes the **dormant precondition** ✓
+above ✓ ⇒ and the test is: for every call ✓, the sidecar's `before − after` ✓ equals the sum of that call's
+removed entries' tokens ✓ within a stated tolerance ✓, and a missing entry for a call with `before > budget`
+✓ is a failure ✓ ⇒ ⇒ the **provider's receipts** are the **third witness** ✓ (the ratio 0.563 against the
+trace's 0.570 ✓), **not** the rule ✓ ✓.
+
+⇒ **What that needs from the instrument** ✓ (measured ✓): today's sidecar cannot answer it ✓ — its
+`callSizes` holds **16** entries ✓ = the **dropping selections only** ✓ ⇒ **25 of the 41 calls have no
+before/after at all** ✓ ⇒ and the engine's own record is **capped**: `CALL_LOG` keeps the last **200** ✓
+(`packages/hermes/live/context_engine.py:503` ✓) and the sidecar helper returns the last **80** ✓
+(`packages/hermes/live/__init__.py:656-657` ✓) ⇒ ⇒ the ask to the hermes lane now reads: keep the per-call
+removed **identities** ✓ **and every call's** before/after ✓, **uncensored** ✓ — otherwise the rule the ruling
+asks for has nothing to read ✓ ✓.
 
 ### 4.4 The **turn-scoped view** — the data is already on the wire, but the core cannot simply switch
 
@@ -153,6 +190,12 @@ a **version-gated semantics change** ✓ (RFC-0.1 ✓, the five touchpoints ✓,
 **Recommendation: (a)** ✓ — because the paper's own view claim demands it ✓ (§0 ✓, §4.2 ✓) — **with the
 scoped view added to the export in parallel** ✓ (§4.4 ✓, an output addition ✓, no wire change ✓) and the
 **checker rule** completed once the instrument carries per-call identities ✓ (§4.3 ✓).
+
+⇒ **RULED (2026-11-13)**: the reviewer picks **(a)** ✓ — the wire ✓ — with the sidecar as the **documented
+fallback** ✓, the field **optional** ✓, the grain **per call** ✓, the rule **per call and fail-closed** ✓, and
+new field names ✓ ⇒ ⇒ the owner's remaining choices ✓ are the **placement** ✓ (a per-turn event with per-call
+entries ✓ vs a new per-call verb ✓), the **names** ✓, the **D-number** ✓ (one with the D18 compatibility line
+✓ or separate ✓), and the **tolerance** ✓ ✓.
 
 ⇒ **What is free today, before any decision** ✓: the README row ✓ (landed ✓ — *"residentTokens is table
 residency, not request residency"* ✓), the sidecar's page list ✓ (already there ✓), the checker's shape rule

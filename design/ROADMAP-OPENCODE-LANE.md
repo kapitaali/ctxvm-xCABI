@@ -627,6 +627,23 @@ pin true every card close.
   inference are **one engine** ✓ (`export.rs:149-154` ✓) and the recorded residency is whole-table ✓ ⇒ a
   replacement would make every v0.1 capture with declared turns **diverge** ✓ ⇒ **D19 (proposed)** is on the
   owner's table ✓.
+  *P12 ANSWERED — THE WIRE (`reports/RR-OMISSIONANSWER-20261113.md`):* the reviewer ruled **the wire** ✓ from the
+  packet alone ✓, with three refinements ✓: the grain is **per call** ✓ (Hermes buckets ~2 requests per turn ✓ —
+  42 calls over 20 turns ✓ — and the two requests of a turn remove different pages ✓ ⇒ the proposal's per-turn
+  list is corrected ✓ and the **placement is open** ✓: a per-turn event carrying per-call entries ✓ vs a new
+  per-call verb ✓); the check is **per call and fail closed** ✓ (a capture with removals and no list is a
+  violation ✓ ⇒ it also fixes the dormant precondition ✓ ⇒ and the instrument ask grows ✓: the sidecar's
+  `callSizes` holds the **16 dropping selections only** ✓ ⇒ 25 of the 41 calls have no before/after ✓ and the
+  engine's record is **capped** ✓ (200 ✓ / 80 ✓) ⇒ ⇒ per-call identities **plus every call's** before/after,
+  **uncensored** ✓); and **new names** ✓ (the recorded `residentTokens` is whole-table ✓ and is not repurposed ✓).
+  **One of their premises is wrong** ✓: the OpenCode adapter **does** write a coverage sidecar ✓
+  (`packages/opencode/live/ctxvm.ts:388-391` ✓) ⇒ the ruling stands ✓ (the sidecar is not the trace ✓) but the
+  reason is corrected in the card ✓, not in their words ✓. **Two of their three UNKNOWNs answered** ✓: OpenCode
+  **cannot report removals today** ✓ ⇒ the field must be **optional** ✓ (their falsifier already fires ✓), and
+  RFC-0.1 R5's `page.declare.turn` **suffices** for "pages that existed at turn N" ✓ (the tracer declares on
+  reveal ✓); the third is **measured** ✓: 75 page-drops × 113 B ≈ **8.5 KB** per session ✓ ⇒ linear ✓ ⇒ ≈20 KB
+  per 100 calls ✓ ⇒ ⇒ **D19** is now reviewer-ruled ✓ with the owner's choices named ✓ (placement ✓, names ✓,
+  D-number ✓, tolerance ✓).
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
