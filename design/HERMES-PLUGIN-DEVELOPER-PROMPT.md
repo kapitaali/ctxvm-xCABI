@@ -126,12 +126,15 @@ Consequences you must design around:
 5. **Run the gate unpiped and capture the status:**
    `bash tools/run-ci.sh > /tmp/ci.log 2>&1; echo "GATE=$?"`
    A pipe in front of `&&` returns the pipe's status; that error has landed a commit while red.
-6. **Sync the installed copy — FOUR files, not three:**
-   `live/__init__.py` -> `__init__.py`, `live/context_engine.py` -> `context_engine.py`,
-   `src/plugin.py` -> `plugin.py` (the flat `from plugin import …` at the top of `__init__.py`
-   resolves to this file), `live/plugin.yaml` -> `plugin.yaml`. Then import-verify from a clean cwd.
-   Editing `src/plugin.py` and syncing only the three `live/` files leaves the installed observer
-   running old code while the version string says otherwise.
+6. **Sync the installed copy with the script, never by hand:** `bash tools/sync-plugin.sh`
+   It derives the module set from the imports in `live/__init__.py` (a new sibling cannot be
+   forgotten), copies `live/*` and `src/*` into the plugin root, verifies every file by SHA-256,
+   clears stale `__pycache__`, import-checks the installed copy with only it on `sys.path`, asserts
+   `PLUGIN_VERSION` == `plugin.yaml` version, and compares the running process's start time against
+   the files' mtime. `--check` verifies without writing and exits 1 on drift.
+   The old four-file list is a special case of this set — `src/plugin.py` -> `plugin.py` exists because
+   of the flat `from plugin import …`. Syncing only the `live/` files leaves the installed observer on
+   old code while the version string says otherwise; the script makes that impossible to miss.
 7. **Restart only when plugin code changed** — and say so; the operator restarts, not you.
 8. **Live-verify with the cheapest probe that can answer the question**, then check the sidecar.
 9. **Report**: `reports/RR-<CARD>-<date>.md`, one LOG row (four pipes), day-file section, commit.
@@ -245,9 +248,11 @@ session_start never fires          capture relies on lazy pre_llm_call
 turn counter = 0 in one-shot       a property of -z sessions, not a plugin defect
 engine emits no selection record   a gap; sidecar observation only
 retention with suffixed names      implemented, untested
-installed dir                       carries old-layout leftovers: live/, src/, test_plugin.py,
-                                   BUG_REPORT.md. ctxvm.py is the T17 re-export kept on purpose
-                                   (not imported by the tracer). Clean the rest, keep that
+installed dir                       clean of the old layout (live/, src/, test_plugin.py,
+                                   BUG_REPORT.md are gone). ctxvm.py is NOT installed: it is the
+                                   T17 re-export, not imported by the tracer, so an import-derived
+                                   sync excludes it. Decide install-or-drop; the two files currently
+                                   disagree (H15 says keep it)
 docs/quickstart.md                 top-level dir not listed in AGENTS §3 (owner layout call)
 ```
 

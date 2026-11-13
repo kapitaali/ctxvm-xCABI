@@ -111,15 +111,21 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
 
 ## 4. Deployment hygiene (small, prevents the class of bug that cost today)
 
-- [ ] **H14. Write `tools/sync-plugin.sh`.** Copies the four files and verifies by hash, failing loudly
-  if any differs; prints the installed and repo `PLUGIN_VERSION`.
+- [x] **H14. (done 2026-11-13, `RR-SYNCPLUGIN-20261113`) Write `tools/sync-plugin.sh`.** Copies the
+  module set and verifies by hash, failing loudly if any differs; prints the installed and repo
+  `PLUGIN_VERSION`. *Deviation from the text:* the set is **derived from the imports** in
+  `live/__init__.py` rather than listed as four files, because a hand list is what leaves a new
+  sibling uninstalled. It also clears `__pycache__`, import-checks the copy, and compares the running
+  process's start against the files' mtime. `--check` = verify only, exit 1 on drift.
   *Why:* three of today's false conclusions came from a running process older than the file, or a
   partially synced copy.
   *Done when:* the script exists, is run after a version bump, and its exit code is 0; it is referenced
   from `design/HERMES-PLUGIN-DEVELOPER-PROMPT.md` §5.
 
-- [ ] **H15. Clean the installed directory.** Remove `live/`, `src/`, `test_plugin.py`,
-  `BUG_REPORT.md`; keep `ctxvm.py` (the T17 re-export).
+- [ ] **H15. Clean the installed directory.** REWRITE BEFORE TICKING: the leftovers (`live/`, `src/`,
+  `test_plugin.py`, `BUG_REPORT.md`) are already gone, and `ctxvm.py` — the one file the item keeps —
+  is also absent. An import-derived sync excludes it by construction (`plugins.py` does not import it),
+  so the item is now a decision, not a cleanup: install the re-export or drop the obligation.
   *Done when:* `ls ~/.hermes/plugins/ctxvm-tracer/` shows exactly
   `__init__.py context_engine.py ctxvm.py plugin.py plugin.yaml __pycache__` and a probe still captures.
 
