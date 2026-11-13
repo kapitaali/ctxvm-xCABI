@@ -131,3 +131,31 @@ bytes.
 So the honest statement is not "the clamp is exact within one page" but "the clamp is exact within one
 page in one capture and missed it by 0.3 % in another" — a page-granular policy whose overshoot depends
 on where the page boundary falls. That is the precision a reader should assume.
+
+## Erratum 2 (2026-11-13, after `RR-SHAPEGAP-20261113`)
+
+Two claims in this card, and one in the chat summary of the replay, were overstated. Both are withdrawn
+and replaced with what the evidence supports.
+
+**1. "0 stubs in the derived table is independent confirmation that this policy removes pages."** Wrong,
+and the review lane is right about why: a slot becomes stubbed only through a `PageEvict`, our adapter
+emits none, so `stubbedSlots = 0` is **entailed by the event vocabulary** — it cannot be evidence about
+the request. The witnesses for removal are (a) the engine source, which has no stub path at all,
+(b) `turn.render.evictedTokens`, and (c) the request-size series. Not the projection.
+
+**2. "Zero divergences in replay is an independent witness."** Partly by construction: the plugin pins the
+trace's `residentTokens` to the core's whole-table tally, so the residency half agrees by design. The
+replay **is** a determinism and internal-consistency witness — three runs, one hash, and the checks have
+teeth (the review lane's mutations produce `residentTokensMismatch` and `renderModeMismatch`, exit 1) —
+but it is **not** evidence about the treatment.
+
+**3. And a defect neither of us had noticed, now on record:** on a flush-tail trace the derived page table
+is **not turn-scoped**. Every `page.declare` row precedes the `turn.render` block, so the export's
+positional cut includes all 21 declares at turn 0 as well as turn 19. The table therefore claims 21 pages /
+86,569 tokens where the request carried 12 pages / 47,805 — and the **provider's own receipts** say the
+model saw 56.3 % of the control's tokens, so the removal is real and the **table is the false part**.
+
+That is a representation gap in v0, not a bug in this line's measurement: `page.evict` requires a
+`stubText` a removal policy never has, `evictedTokens` is unchecked in v0, and the derived table is not
+turn-scoped. The consequence for the paper's "did vs saw" dichotomy is that a removal policy has no third
+branch, and it is written up for the white-paper lane in `RR-SHAPEGAP-20261113` §2.

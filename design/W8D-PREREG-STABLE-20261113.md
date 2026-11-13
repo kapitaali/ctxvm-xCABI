@@ -151,3 +151,34 @@ not a redesign of this policy.
 
 The falsifier H4 in §4 therefore stands unused: the experiment it was written for is not worth running,
 and its being skipped is the result.
+
+## 11. Erratum (2026-11-13, after `RR-SHAPEGAP-20261113`) — the §9 numbers were wrong; the refusal stands
+
+The review lane checked §9 against the captures and three of its inputs were unsupported. Corrected from
+the 0.13.22 capture's `callSizes` and the paid pair's billed writes:
+
+```
+§9 said                              measured
+rewrite events, today      36        16 selections dropped something; 75 page-drops in total;
+                                     the DISTINCT pages ever removed are 9
+billed writes          1,408,011     1,254,207 for the pair (paged 1,025,825 + control 228,382);
+                                     the 1.4 M figure was the account day, not the pair
+writes per rewrite        39,111     64,114 per dropping selection (1,025,825 ÷ 16)
+hold reduction             4.0x      16 events -> 9 = 1.8x
+needed                     6.9x      25,020 per call ÷ ~2,400 allowance = 10.4x
+```
+
+Model check, and it is the useful part: `sum(after)` over the 16 dropping selections is **941,257**
+against **1,025,825** billed — a ratio of **0.918**, i.e. **a rewrite writes essentially the whole
+post-selection request**, which is why hold-once helps so little: it reduces how often, not how much.
+
+```
+hold-once: 9 events × 64,114 = 577,027 writes → 14,074 per call
+allowance: ~2,400 per call
+=> FAIL by 5.9x   (the direction of §10 is unchanged; only its magnitudes were)
+```
+
+The refusal in §10 therefore stands, and is now stronger than when it was written: the earlier version
+assumed a 4× reduction with a 6.9× requirement, the measured version is a 1.8× reduction against 10.4×.
+What a different shape would have to deliver is correspondingly larger: a write volume per rewrite below
+**~11,000 tokens** (9 × 11,000 ÷ 41 ≈ 2,400), not the ~7,000 the first draft implied.
