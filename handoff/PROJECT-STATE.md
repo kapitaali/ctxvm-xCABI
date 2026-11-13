@@ -1,4 +1,4 @@
-# State (updated 2026-11-12, by ctxvm repo agent (opencode); D13+D14 ratified & routed, W8C S3, plugin 0.13.15
+# State (updated 2026-11-12, by ctxvm repo agent (opencode); G2/D-U1 applied, D13+D14 routed, plugin 0.13.15
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
@@ -11,17 +11,17 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
 
 ## Done (last 3 items: one line each, with locators)
-1. D13 + D14 ratified and the six-item white-paper bundle routed to the research lane; G5 closed (RR-WPROUTE-20261112).
-2. Plugin 0.13.15 + `sim(S3)` quantization scorer: uncensored `CALL_LOG`, `plugin.engine` + `evictedPagesCount` confirmed, `upstream/` draft deleted (RR-W8SIM3-20261112, RR-SIM3S3CHECK-20261112).
-3. W8C paid cell-03 (`openai/gpt-6-luna`): $0.2534 total, 0.57x final request, 2.11x dollars, 4.49x cache writes; paid spend stopped (RR-PAIDRESULT-20261112).
+1. G2 applied: caller transfer-caveat in umpire `mcp_server.py` + `00-SPEC.md` §3 (`64b97fb`) and D-U1 resolved (`design/umpire-design-choices.md`, RR-G2APPLIED-20261112).
+2. D13 + D14 ratified and the six-item white-paper bundle routed to the research lane; G5 closed (RR-WPROUTE-20261112).
+3. Plugin 0.13.15 + `sim(S3)` quantization scorer: uncensored `CALL_LOG`, `plugin.engine` + `evictedPagesCount` confirmed, `upstream/` draft deleted (RR-S3-PRECISION-20261113, RR-SIM3S3CHECK-20261112).
 
 ## In progress (one item: what, blocker, next command)
 Research lane: apply the routed six-item white-paper bundle (`reports/RR-WPROUTE-20261112.md`) to working-tree `research/white-paper/white-paper.md`, `index.md`, and `white-paper-Part-II.md`.
 
 ## Next three (ordered, one line each)
-1. Owner: approve G2 (caller transfer-caveat sentence in umpire `mcp_server.py` + `00-SPEC.md` §3, ratifying into D-U1; pre-verified in RR-UMPIREREADY-20261111).
-2. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) and ratify the release rule at D6/D17.
-3. Owner: D17 publication timing after the routed D13/D14 white-paper edits land in `research/**`.
+1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) and ratify the release rule at D6/D17.
+2. Owner: D17 publication timing after the routed D13/D14 white-paper edits land in `research/**` (G6).
+3. Owner: G3 (W9 equivalence-test preregistration before any new held-out transfer capture).
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
@@ -32,7 +32,7 @@ Research lane: apply the routed six-item white-paper bundle (`reports/RR-WPROUTE
 - 2026-11-09: D14 answered (P3 verdicts); P4 answered: ts stays optional; ordering clause for umpire §2 (RR-P4TS-20261109).
 - 2026-11-10: D-U1 (P5) caveat; D-U3 (P6) same-build; D-U2 (P7) two zero-spend baselines first (RR-P7BASE-20261110).
 - 2026-11-11: F1–F7 closed; P10+P11 answered; W8B closed negative (`design/W8B-CLOSURE-20261111.md`); D18 RFC-0.1 note (`spec/rfc-0.1/COMPATIBILITY.md`, `82f6a03`).
-- 2026-11-12: D-U10 (G1) applied (RR-G1APPLIED-20261112); Prediction-block rule ratified (`685c999`); paid spend stopped after cell-03 ($0.2534, RR-PAIDRESULT-20261112); D13 + D14 ratified and 6-item paper bundle routed (RR-WPROUTE-20261112, G5 closed).
+- 2026-11-12: D-U10 (G1) + D-U1 (G2) applied (RR-G1APPLIED-20261112, RR-G2APPLIED-20261112); Prediction-block rule ratified (`685c999`); paid spend stopped after cell-03 ($0.2534, RR-PAIDRESULT-20261112); D13 + D14 ratified and 6-item paper bundle routed (RR-WPROUTE-20261112, G5 closed).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 (Pkt 1) RATIFIED & ROUTED 2026-11-12: Pillar-1 splits + echo sweep (`design/diff-normalisation.md`, `reports/RR-WPROUTE-20261112.md` Items 1–2).
