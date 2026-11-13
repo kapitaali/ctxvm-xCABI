@@ -1,12 +1,13 @@
-# Umpire design-choice register (A6) — inputs only, no choice made
+# Umpire design-choice register (A6) — D-U1 and D-U10 resolved; D-U2..D-U9 inputs
 
-**Date:** 2026-11-09. Sources: umpire `README.md`, `00-SPEC.md` §2/§5, `calibration/README.md`, `design/W9-TRANSFER.md`, `README-MCP.md`, `reports/*` (ompire repo, read-only). Packet P4 (ts) and A5 finding link in.
+**Date:** 2026-11-09 (updated 2026-11-12: **D-U1** and **D-U10** resolved by owner). Sources: umpire `README.md`, `00-SPEC.md` §2/§3/§5, `calibration/README.md`, `design/W9-TRANSFER.md`, `README-MCP.md`, `reports/*` (umpire repo). Packet P4 (`ts`) and P5 (calibration transfer) and A5 finding link in.
 
 ## Register
 
 ### D-U1 — Calibration scope (seed: corpus-fitted calibration transfers?)
 Options: (a) per `(pin, seed, label set)` artifacts only; (b) per-pin generic calibration + label-set adaptation; (c) no calibration, raw only.
-Trade-offs: per-scope is honest (calibration/README: per pin/seed/label/distribution, harness refuses mismatch) but sparse; generic risks miscalibration on new label sets. Evidence needed: W9 transfer arms at n=180: ECE rises A1 7.5→12.2%, A2 4.9→6.8%, paired 95% includes zero — "no detectable degradation" at n=180 (RR-W9TRANSFER-20261101). Reversibility: artifact is sidecar; swap is cheap. Decides: owner (D-U).
+Trade-offs: per-scope is honest (calibration/README: per pin/seed/label/distribution, harness refuses mismatch) but sparse; generic risks miscalibration on new label sets.
+**Resolved 2026-11-12 (owner; G2 / Packet P5 approved, `reports/RR-G2APPLIED-20261112.md`):** Option **(a)** adopted — publish per-corpus `(pin, seed, label set)` calibration artifacts only, with **no transfer claim** until a held-out evaluation across $\ge 5$ new label sets (sizing $n \approx 180 \times (h/2)^2$, cluster bootstrap across sets, cross-fitting) passes a preregistered $\pm 2$-point equivalence test (Brier/log-loss primary, ECE secondary), and carry the timeless caller caveat verbatim on all three umpire surfaces (`umpire/mcp_server.py` `INSTRUCTIONS` and `decide` tool description, and `umpire/00-SPEC.md` §3, commit `64b97fb`): *"Calibrated confidence was fitted on umpire's own label sets and has not been shown to transfer, so treat it as an uncalibrated score for your labels until you check it on a sample of your own labelled rows."* Dated evidence kept here so the spec stays timeless: in W9 (`design/W9-TRANSFER.md`, `RR-W9TRANSFER-20261101`, $n=180 = \text{test} \cup \text{val}$ on `cal-precision-v3.json` `cal-v1:057a5a35a9d4ec71`), paired 95% CIs included zero ("no detectable degradation" at $n=180$), but ECE point estimates worsened (`A1` 7.5→12.2% = +4.7 pp; `A2` 4.9→6.8% = +1.9 pp).
 
 ### D-U2 — Baseline comparisons the evaluation lacks
 Options: (a) add embedding-NN, logistic regression, small fine-tuned classifier, stronger model with structured output + logprobs; (b) pick one; (c) none (corpus-fitted only).

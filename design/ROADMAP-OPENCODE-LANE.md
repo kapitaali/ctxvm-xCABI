@@ -652,19 +652,16 @@ pin true every card close.
   changed ✓ (umpire commit `1f7eae8`; umpire gate ALL GATES GREEN ✓). **MET.**
   *Owner:* approval + D-number — **given 2026-11-12** ✓.
 
-- [ ] **G2. Calibrated-confidence caller sentence (from P5).** Verbatim text in
-  `reports/RR-P5CAL-20261110.md`; insertion point: wherever `calibrate()`'s contract text lives
-  (MCP tool description / umpire spec). Ratifies INTO registered D-U1. **READY TO APPLY
-  (2026-11-11, `reports/RR-UMPIREREADY-20261111.md`):** the surfaces are re-verified
-  (`umpire/mcp_server.py:67-77` INSTRUCTIONS, `:80-85` the `decide` description, `00-SPEC.md:90-109`
-  §3) and **G2 is NOT a no-op**: the MCP's existing caveat ("not a correctness guarantee and is
-  opt-in") is a *different, weaker* claim; the **transfer** caveat — the substance of G2 and of the P5
-  answer — appears **nowhere** in the MCP text or §3. The ratification home is this repo's
-  `design/umpire-design-choices.md` (D-U1); the register's header says "inputs only, no choice made",
-  so this lane's recommendation is a short "## Resolved" section at the end.
+- [x] **G2. Calibrated-confidence caller sentence (from P5) — APPLIED (2026-11-12, `reports/RR-G2APPLIED-20261112.md`).**
+  Verbatim text from `reports/RR-P5CAL-20261110.md` committed into `umpire/mcp_server.py`
+  (`INSTRUCTIONS` at `:74–77` and `TOOLS[0]["description"]` for `decide` at `:85–88`) and
+  `umpire/00-SPEC.md` §3 (`:116–118`) (umpire commit `64b97fb`, `reports/RR-G2CALLER-20261112.md`;
+  umpire gate `ALL GATES GREEN` ✓). Ratified into **D-U1** (option (a)) in
+  `design/umpire-design-choices.md` with the timeless-spec / dated-register split ✓, and
+  `handoff/QUESTIONS-ARCHIVE.md` P5 updated with the ratification locator ✓.
   *Done when:* sentence committed into the umpire books AND `handoff/QUESTIONS-ARCHIVE.md` P5
-  updated with the ratification locator.
-  *Owner:* approval (D-U1 exists already).
+  updated with the ratification locator. **MET.**
+  *Owner:* approval — **given 2026-11-12** ✓.
 
 - [ ] **G3. Equivalence-test preregistration (W9 follow-on).** BEFORE any new capture run:
   margin ±2 points; Brier/log-loss primary, ECE secondary; ≥5 held-out NEW label sets with cluster
@@ -840,17 +837,17 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
    verdict, and the file wins over a summary.** The other lane's remaining items stand
    (`design/W8B-LANE-PROMPT.md`): the shape erratum in `design/W8B-FREE-PLAN.md`, the W8SIM "5.3%"
    scoping, and the "C3" rename (the P11 third level is done - `reports/RR-P11LEVEL2-20261111.md`).
-3. **G1 is applied** ✓ (the clause in `umpire/00-SPEC.md` §2; D-U10 in the register). **G2** (the
-   caller sentence — the transfer caveat is genuinely missing from the MCP) is still to be
-   ratified. **The spend ruling** (`reports/RR-SPEND-20261112.md`): one paid pair, ceiling $1, four
-   conditions before it — and the owner's **refined prediction-block rule is RATIFIED** and now
-   sits in the rule's home (`reports/W8-SPEND.md` §Prediction ✓). **The cost bracket is computed**
-   (`reports/RR-COSTBRACKET-20261112.md`): LOW ≈ $0.21, CENTRAL ≈ $0.30, HIGH ≈ $0.70 per pair,
-   ratio 1.0–2.4× (the historical precedent 7.2×), with the **driver ceiling at 100 calls for the
-   pair** so the $1 is real ✓.
+3. **G1 (`D-U10`) and G2 (`D-U1`) are both applied** ✓ (G1: the ordering clause in `umpire/00-SPEC.md`
+   §2, `1f7eae8`; G2: the caller transfer-caveat sentence in `umpire/mcp_server.py` `INSTRUCTIONS` +
+   `decide` description and `umpire/00-SPEC.md` §3, `64b97fb`; both ratified in
+   `design/umpire-design-choices.md`, `reports/RR-G1APPLIED-20261112.md`, `reports/RR-G2APPLIED-20261112.md`).
+   **The spend ruling** (`reports/RR-SPEND-20261112.md`): one paid pair completed (`$0.2534` in cell-03,
+   `reports/RR-PAIDRESULT-20261112.md`), paid spend stopped, and the owner's **refined prediction-block
+   rule is RATIFIED** in `reports/W8-SPEND.md` §Prediction ✓.
 4. **G5 (D13/D14 ratification + six-item white-paper bundle routing) is DONE** (`reports/RR-WPROUTE-20261112.md`).
-   Remaining owner gates: **G2** (caller transfer-caveat sentence in `umpire`), **G4** (`design/redaction-block.md`
-   §4-LIST go/defer), and **G6 / D17** (publication timing). W8's fate is settled (G7 closed: negative, 2026-11-10).
+   Remaining owner gates: **G4** (`design/redaction-block.md` §4-LIST go/defer), **G3** (W9 equivalence-test
+   preregistration before any new transfer capture), and **G6 / D17** (publication timing). W8's fate is
+   settled (G7 closed: negative, 2026-11-10).
 
 Update law: tick a box only with the command's output in hand; on every card close, re-date the
 state-of-record line and revise §14 of the operating prompt (not this file) for volatile facts

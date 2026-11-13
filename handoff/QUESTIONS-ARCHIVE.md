@@ -58,7 +58,10 @@ n=180 = test ∪ validation amendment (`:103-105`; train excluded to protect the
 `:109-110`); artifact `cal-precision-v3.json` = `umpire-calibration-precision/0.1`,
 `cal-v1:057a5a35a9d4ec71`, bootstrap n=2000 seed 42, 10-bin ECE, test n=120, committed `47e0ee0`.
 Rows-per-scope: per-scope rows beyond this one scope do not exist yet — why the transfer claim
-cannot stand. Full: `reports/RR-P5CAL-20261110.md`.
+cannot stand. Full: `reports/RR-P5CAL-20261110.md`. **Ratified & applied 2026-11-12 (G2 / D-U1 option (a)):**
+caller sentence committed into `umpire/mcp_server.py` (`INSTRUCTIONS` + `decide` description) and
+`umpire/00-SPEC.md` §3 (`64b97fb`, `reports/RR-G2CALLER-20261112.md`); **D-U1** resolved in
+`design/umpire-design-choices.md` (`reports/RR-G2APPLIED-20261112.md`).
 
 ## P6 — D-U3 determinism scope: same-build only or cross-machine?
 
