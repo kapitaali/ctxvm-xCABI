@@ -126,7 +126,7 @@ measured, and the docs say so where it matters.
 | track | state |
 |---|---|
 | **engine (M0)** | `rust/` — codec (strict JSONL, byte-identical vectors) + page table + deterministic renderer + replay/profile/diff/export/stream CLIs · **77 tests** (78 with `--features tiktoken`), 0 warnings |
-| **paging engine** | `packages/hermes/live/context_engine.py` — host-side page selection/drop under a token budget; reports `turn.render.evictedTokens`; plugin **0.13.1** |
+| **paging engine** | `packages/hermes/live/context_engine.py` — host-side page selection/drop under a token budget; reports `turn.render.evictedTokens`; plugin **0.13.23** |
 | **standard (RFC-0)** | `spec/rfc-0/` — normative semantics + strict JSON Schema; conformance **PASS (682 checks)** over 27 fixtures, 17 of them corpus traces |
 | **standard (RFC-0.1)** | `spec/rfc-0.1/` — additive shape + validator (`validate_schema_v0_1.py`); CI runs it as a separate gate |
 | **measurement** | `corpus/m1`–`m8` (17 traces: seed, live OpenCode, Hermes, resume pairs, AI-SDK) each with `provenance.json` + `checksums.sha256` · `benchmarks/metrics/` reference impl (66 tests) + eviction-policy simulator · ODPS manifest `productVersion 0.8.0` validated by SDK 0.4.0 |
