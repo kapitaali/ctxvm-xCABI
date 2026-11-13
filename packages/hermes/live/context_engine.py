@@ -498,8 +498,17 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                              self._assemble(request_messages, units, keep_hard, dropped, repositioned))
             else:
                 _after = _before
-            CALL_LOG.append({"before": _before, "after": _after,
-                             "dropped": len(dropped), "budget": self._v_budget})
+            CALL_LOG.append({
+                "i": len(CALL_LOG),
+                "before": _before, "after": _after,
+                "dropped": len(dropped), "budget": self._v_budget,
+                # Per-call identities: which pages THIS call removed, with their own token counts.
+                # The wire may take a year to carry this; the sidecar can carry it now.
+                "removed": [
+                    {"tokens": units[i].tokens, "ids": sorted(units[i].id_toks)[:6]}
+                    for i in sorted(dropped) if i in units
+                ],
+            })
             del CALL_LOG[:-200]
         except Exception:
             pass
@@ -547,6 +556,11 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                     "dropped": [sorted(units[i].id_toks) for i in sorted(dropped) if i in units],
                     "repositioned": sorted(repositioned),
                     "droppedCount": len(dropped),
+                    "callIndex": len(CALL_LOG) - 1,
+                    "removed": [
+                        {"tokens": units[i].tokens, "ids": sorted(units[i].id_toks)[:6]}
+                        for i in sorted(dropped) if i in units
+                    ],
                     # Per-CALL sizes, because a turn has two requests and a turn-level series cannot
                     # score the simulator: measured 2026-11-12, the naive model misses the onset by a
                     # turn and the total by 31 %, and both residuals come from that aggregation.

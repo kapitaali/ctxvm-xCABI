@@ -354,6 +354,39 @@ def main(argv: list) -> int:
         if hv is not None and not isinstance(hv, str):
             _fail(violations, "plugin", "plugin.harnessVersion must be a string or null")
 
+        # Fail-closed per-call rule (P12 ruling, 2026-11-13): every call the policy had to drop on
+        # must name what it removed, and the named tokens must account for the size change. A capture
+        # with removals and no list is a violation, not a gap.
+        def _v23(v):        # local: the older `_v` is defined further down the function
+            try:
+                return tuple(int(x) for x in str(v).split(".")[:3])
+            except Exception:
+                return (0,)
+        calls = plugin.get("callSizes")
+        budget = plugin.get("budgetTokens")
+        if _v23(plugin.get("version")) >= (0, 13, 23) and isinstance(calls, list) and calls:
+            for c in calls:
+                if not isinstance(c, dict):
+                    _fail(violations, "plugin", "callSizes entries must be objects")
+                    continue
+                before, after = c.get("before"), c.get("after")
+                if not (isinstance(before, int) and isinstance(after, int)):
+                    _fail(violations, "plugin", f"call {c.get('i')}: before/after must be integers")
+                    continue
+                removed = c.get("removed") or []
+                if after < before and not removed:
+                    _fail(violations, "plugin",
+                          f"call {c.get('i')}: {before - after} tokens left the request but no "
+                          f"removed pages are named")
+                    continue
+                if after < before and isinstance(budget, int) and before > budget:
+                    named = sum(int(r.get("tokens") or 0) for r in removed if isinstance(r, dict))
+                    actual = before - after
+                    if actual and abs(named - actual) / actual > 0.10:
+                        _fail(violations, "plugin",
+                              f"call {c.get('i')}: removed pages name {named} tokens against an "
+                              f"actual drop of {actual} (tolerance 10 %)")
+
         # A treatment that reports evictions must say WHICH pages left the request. A token count
         # alone cannot distinguish "the engine dropped the middle" from "something else changed the
         # prefix" — measured 2026-11-12, before the engine reported identities.
