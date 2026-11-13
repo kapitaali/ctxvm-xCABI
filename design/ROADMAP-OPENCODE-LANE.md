@@ -560,6 +560,12 @@ pin true every card close.
   cannot run as written (cell-03 has no `_selections.log` ✓) while the 0.13.22 capture already answers it:
   its dropped-set sizes are **monotone** ✓, so hold-once is a set-level no-op ✓ and falsifier H4's bracket
   admits its own falsifier ✓.
+  *CAPTURE REPLAY VERIFIED (`reports/RR-W8CREPLAY-20261112.md`):* replay of `local-d60a50c4…` re-runs exactly ✓ —
+  81 events ✓, 0 divergences ✓, 0 violations ✓, exit 0 ✓, stdout hash `fe27e29c813c4e06` three times ✓ ✓, and
+  `export --turn 12` gives 21 slots ✓, 86,569 resident tokens ✓, **0 stubbed** ✓, slot 0 = `part-01.txt` ✓ — one
+  qualifier ✓: the page table is derived by `ctxvm-core` from the trace alone ✓, but `turn.render.evictedTokens`
+  is a **plugin-written field** the replay reads rather than re-derives ✓, so *“both are independently
+  derived”* overstates the eviction half ✓ (86,569 ✓ derived, 4,396 ✓ carried) ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
