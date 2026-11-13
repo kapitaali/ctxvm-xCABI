@@ -109,14 +109,32 @@ sum must be consistent with it"* ✓. Two corrections and one fact:
 ⇒ So the checker's rule has **three** parts ✓, not one ✓: *count present* ✓ → *identity present* ✓ →
 *per-call consistency* ✓ — and the third is blocked on the instrument ✓ (not on the spec ✓).
 
-### 4.4 The **turn-scoped table** — a derivation fix, **no wire change** ✓
+### 4.4 The **turn-scoped view** — the data is already on the wire, but the core cannot simply switch
 
-The representation gap's third part ✓ (§1 ✓) is the **positional cut** ✓, not the wire ✓ ⇒ the fix is in
-`handoff_prefix` ✓ (`rust/crates/ctxvm-core/src/export.rs:48-54` ✓): cut on the **declared** turn ✓ —
-and RFC-0.1 **R5 already gives `page.declare` its own `turn`** ✓ (`spec/rfc-0.1/RFC-0.1-xCABI.md:37-39` ✓)
-⇒ the core can scope the projection per turn ✓ ⇒ **zero wire change** ✓✓ ⇒ and it must keep the sealed
-behaviour for v0 traces ✓ (v0 declares carry no turn ✓ ⇒ v0 keeps today's projection ✓ — a compatibility
-note, not a break ✓).
+The representation gap's third part ✓ (§1 ✓) is the **positional cut** ✓. The first draft of this card
+called the fix *"a derivation fix with **no wire change**"* ✓ — **corrected here** ✓, because the export's
+projection is **coupled to the replay's inference** ✓:
+
+- the export builds its projection from the **same `Playback`** ✓ the divergence check uses ✓
+  (`rust/crates/ctxvm-core/src/export.rs:149-154` ✓, `rust/crates/ctxvm-core/src/replay.rs:59,76` ✓) ⇒ the
+  projection and the inference are **one engine** ✓;
+- the projection's roster is **every declared page** ✓ (`projection_at` → `slots_at` ✓,
+  `rust/crates/ctxvm-core/src/render.rs:104-111` ✓) and the **inferred** residency the trace records is the
+  **whole table** ✓ (the plugin pins it ✓, `packages/hermes/src/plugin.py:229` ✓) ⇒ cutting the *events* by
+  the declared turn would change the **inference** as well ✓ ⇒ every v0.1 capture with declared turns would
+  then **diverge** ✓ (recorded 86,569 ✓ against a scoped inference ✓) ⇒ ⇒ a scoped view **cannot replace**
+  the table projection ✓ without changing the recorded field's **semantics** ✓ (⇒ RFC-0.1 ✓, the five
+  touchpoints ✓, the plugin's pinning ✓, a conformance vector ✓).
+
+⇒ **What is free today** ✓: the **data** is already on the wire for v0.1 traces ✓ — RFC-0.1 **R5** gives
+`page.declare` its own `turn`** ✓ (`spec/rfc-0.1/RFC-0.1-xCABI.md:37-39` ✓) ⇒ a **consumer** can compute the
+scoped view today ✓ (and v0 traces carry no declare turn ✓ ⇒ they keep today's whole-table reading ✓ — a
+compatibility note ✓, not a break ✓) ⇒ and the **export** can print the scoped view as an **additional**
+field beside the table tally ✓ (an output addition ✓, **no wire change** ✓✓) ⇒ that is the cheap half ✓.
+
+⇒ So the recommendation is **two** changes, not one ✓: the **scoped view as an additional export field** ✓
+(free ✓, code only ✓) and — **only if** the paper wants the *recorded* field to mean per-turn residency ✓ —
+a **version-gated semantics change** ✓ (RFC-0.1 ✓, the five touchpoints ✓, the plugin ✓, a vector ✓).
 
 ---
 
@@ -133,12 +151,12 @@ note, not a break ✓).
 ```
 
 **Recommendation: (a)** ✓ — because the paper's own view claim demands it ✓ (§0 ✓, §4.2 ✓) — **with the
-turn-scoped derivation fixed in parallel** ✓ (§4.4 ✓, no wire change ✓) and the **checker rule** completed
-once the instrument carries per-call identities ✓ (§4.3 ✓).
+scoped view added to the export in parallel** ✓ (§4.4 ✓, an output addition ✓, no wire change ✓) and the
+**checker rule** completed once the instrument carries per-call identities ✓ (§4.3 ✓).
 
 ⇒ **What is free today, before any decision** ✓: the README row ✓ (landed ✓ — *"residentTokens is table
 residency, not request residency"* ✓), the sidecar's page list ✓ (already there ✓), the checker's shape rule
-✓ (already there ✓), and the export's turn-scoped cut ✓ (a core change ✓, no spec ✓).
+✓ (already there ✓), and the export's **scoped view as an extra field** ✓ (a core change ✓, no spec ✓).
 
 ⇒ **Not asked here** ✓: the D-number itself ✓ (the owner assigns ✓), the `design/` placement ✓ (the owner
 clears ✓), and the paper edits ✓ (the research lane's ✓).
@@ -153,6 +171,12 @@ clears ✓), and the paper edits ✓ (the research lane's ✓).
   ✓, and the core's positional cut ✓.
 - The three options costed against the **five-touchpoint law** ✓ and the **v0-sealed law** ✓, with the
   paper's own §12 as the forcing constraint ✓.
-- The recommended shape split into **count** ✓, **identity** ✓, **check** ✓, **turn-scoped derivation** ✓ —
-  two of the four parts need **no spec change** ✓.
+- The recommended shape split into **count** ✓, **identity** ✓, **check** ✓, **scoped view** ✓ —
+  two of the four parts need **no spec change** ✓ (the scoped view as an extra export field ✓; the consumer-side
+  computation ✓ — the data is already on the wire ✓).
+- **This card's own first draft corrected** ✓: the scoped view **cannot replace** the table projection ✓,
+  because the export's projection and the replay's inference are one engine ✓ (`export.rs:149-154` ✓,
+  `replay.rs:59,76` ✓) and the recorded residency is whole-table ✓ ⇒ a replacement would make every v0.1
+  capture with declared turns diverge ✓ ⇒ the scoped view is an **addition** ✓, and a *semantics* change stays
+  version-gated ✓.
 - No spec, adapter, `design/` or `research/**` file was edited ✓; nothing pushed ✓.

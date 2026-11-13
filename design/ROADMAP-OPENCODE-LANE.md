@@ -621,8 +621,11 @@ pin true every card close.
   version-gated ✓) but is **dormant** on the capture that needs it ✓ (the sidecar's plugin block carries **no
   `evictedTokens` key** ✓), and the "sum" cannot be checked against the trace's cumulative counter ✓ ⇒ it must
   be checked **per call** ✓ ⇒ blocked on the per-call identities ✓ (the routed ask ✓); and the **turn-scoped
-  projection** is a **derivation fix with no wire change** ✓ — RFC-0.1 **R5** already gives `page.declare` its
-  own `turn` ✓ ⇒ the export can cut on it ✓ (v0 traces keep today's projection ✓) ⇒ **D19 (proposed)** is on the
+  projection**: the **data** is already on the wire ✓ (RFC-0.1 **R5** gives `page.declare` its own `turn` ✓)
+  ⇒ a consumer can compute it today ✓ and the export can print it as an **extra field** ✓ (no wire change ✓)
+  — but it **cannot replace** the table projection ✓, because the export's projection and the replay's
+  inference are **one engine** ✓ (`export.rs:149-154` ✓) and the recorded residency is whole-table ✓ ⇒ a
+  replacement would make every v0.1 capture with declared turns **diverge** ✓ ⇒ **D19 (proposed)** is on the
   owner's table ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
