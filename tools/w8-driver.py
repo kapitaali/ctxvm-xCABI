@@ -349,7 +349,7 @@ def verify(args) -> int:
                    f"{plugin.get('budgetTokens')} / {plugin.get('budgetSource')}"))
     # Arm-aware: a CONTROL session must select nothing — zero is the correct answer there, and
     # requiring > 0 labelled a correct control VOID (measured 2026-11-11, W8C cell-01).
-    _sel = plugin.get("engineSelections") or 0
+    _sel = plugin.get("engineSelectionsProcess") or plugin.get("engineSelections") or 0
     _arm = plugin.get("arm")
     # Arm-conditioned, never inferred from the engine SETTING: a paged session whose sidecar fell
     # back to the compressor default must not pass as a control that behaved (reviewer, 2026-11-12).
@@ -357,7 +357,11 @@ def verify(args) -> int:
     if _control:
         checks.append(("control selects nothing", _sel == 0, str(_sel)))
     else:
-        checks.append(("engine selections > 0", _sel > 0, str(_sel)))
+        # Deliberately NOT a check: the selection counter is process-wide (one observer slot serves
+        # every session), so it cannot attest this capture. The treatment is proven by the trace:
+        # `turn.render.evictedTokens` below is per session and per turn.
+        checks.append(("engine entered (process-wide counter)", bool(plugin.get("engineEntered")),
+                       str(plugin.get("engineEntered"))))
         if _sel == 0:
             # The treatment never acted. That is VOID, not a NO-OP: a no-op is a decision the engine
             # made, and a null engine is the engine never being asked. Usually the root config's
@@ -464,9 +468,8 @@ def _assert_engaged(session_name: str, run_dir: Path, arm: str) -> str | None:
                f"setting={stamp.get('engineSetting')!r})")
         (run_dir / "ENGAGEMENT-ABORT").write_text(msg + "\n", encoding="utf-8")
         return msg
-    if stamp.get("engine") is None or not stamp.get("engineSelections"):
-        msg = (f"treatment never engaged after prompt 1: engine={stamp.get('engine')!r} "
-               f"selections={stamp.get('engineSelections')} "
+    if not int(stamp.get("engineEntered") or 0) > 0:
+        msg = (f"treatment never engaged after prompt 1: entered={stamp.get('engineEntered')} "
                f"root={stamp.get('rootEngineSetting')!r} home={stamp.get('homeEngineSetting')!r} "
                f"setting={stamp.get('engineSetting')!r}")
         (run_dir / "ENGAGEMENT-ABORT").write_text(msg + "\n", encoding="utf-8")

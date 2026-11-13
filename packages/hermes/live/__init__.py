@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.18"
+PLUGIN_VERSION = "0.13.19"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -399,7 +399,10 @@ def _write_live_stamp(session_id: str) -> None:
             "arm": pol.get("arm"),
             "engineSetting": pol.get("engine"),
             "engine": (layers.get("engineRegistered") if pol.get("arm") == "paged" else None),
-            "engineSelections": (_state().get("selections_by_session", {}) or {}).get(session_id, 0),
+            # PROCESS-WIDE, not per session: one observer slot serves every session, so this counts
+            # selections seen while this capture was open, including another session's. The
+            # per-session fact is the trace's turn.render.evictedTokens.
+            "engineSelectionsProcess": _selections_total(),
             "engineEntered": _entered_total(),
             "rootEngineSetting": layers.get("rootEngineSetting"),
             "homeEngineSetting": layers.get("homeEngineSetting"),
@@ -778,9 +781,11 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # either, and the runner must enforce the single-arm gateway.
             # Per SESSION, not per process: a session that the engine never touched must not inherit
             # an arm's counts (measured 2026-11-13: the operator's own session reported 42 selections).
+            # Arm-conditioned and counter-free: this session is the treatment AND the engine was
+            # entered at least once in this process. Whether it actually selected is answered by the
+            # trace (`turn.render.evictedTokens`), which is per session.
             "engine": (_state().get("engine_registered")
-                       if ((_session_policy or {}).get("arm") == "paged"
-                           and (_state().get("selections_by_session", {}) or {}).get(session_id, 0) > 0)
+                       if ((_session_policy or {}).get("arm") == "paged" and _entered_total() > 0)
                        else None),
             # See _engine_layers: which layer said what, so a null engine names its cause.
             **_engine_layers(),
@@ -1467,17 +1472,12 @@ def register(ctx) -> None:
                         # process-global slot, so without this a selection made for the arm lands in
                         # whichever session last installed it (measured 2026-11-13: the operator's
                         # control session reported 42 selections).
-                        # Attribute to the session that IS the treatment. The closure's session id
-                        # has twice been another session's (the observer is one global slot), so the
-                        # target is resolved from the stamped policies, not from the closure.
-                        _pols = _state().get("policy_by_session") or {}
-                        if (_pols.get(_sid) or {}).get("arm") == "paged":
-                            _target = _sid
-                        else:
-                            _paged = [s for s, p in _pols.items() if (p or {}).get("arm") == "paged"]
-                            _target = _paged[0] if len(_paged) == 1 else None
-                        if _target is None:
-                            return
+                        # Write to the closure's session. Re-attributing from the stamped policies
+                        # was tried (0.13.18) and made it worse: the arm kept a count of 41 while
+                        # losing its own page detail. Per-session truth comes from the TRACE
+                        # (`turn.render.evictedTokens`), not from these counters; they are labelled
+                        # process-wide below and the verifier no longer depends on them.
+                        _target = _sid
                         if _refs:
                             _st = _state()
                             _st.setdefault("evicted_refs_by_session", {}) \
