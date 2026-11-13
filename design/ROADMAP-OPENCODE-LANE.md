@@ -503,6 +503,21 @@ pin true every card close.
   located: `plugin.engine: null` (`_engine_activated_for` still checks instance `_engine_selections_for`)
   and `plugin.evictedPagesCount: 0` (`context_engine._value_tokens` splits on `.` while
   `plugin.identity_tokens` keeps `.txt`) ✓.
+  *CRITICAL AUDIT OF W8SIM3 & UPSTREAM DRAFT (2026-11-12, `reports/RR-SIM3CRITIQUE-20261112.md`):*
+  (1) The 2-calls-per-turn diagnosis holds even on `sim(S)`'s `drop_k` denominator (median error **8.63%
+  ≤ 10%**, mean 8.71%, max 17.44% across the 16 dropping calls) ✓. (2) However, `RR-W8SIM3`'s physical
+  explanation of the residual (*"the protected-set/scaffold gap"*) is wrong: both `before` and `after`
+  sum `_tokens_for(m)` over the full request (`context_engine.py:495-496`), and the residual is
+  **whole-page quantization** (~4,400-token pages ≈ 7.3% of budget) — calls 1–9 have errors
+  `0.28%–1.21%` (`after = 59,283..59,834`), while calls 10–16 cross a page boundary by 91 tokens and
+  have errors **`6.01%–8.21%`** (`after = 55,449..56,599`, **7 of 16 above the 5% threshold**; the
+  16-sample median is `1.16%` only because the 8th/9th sorted values are `1.06%/1.11%` while the 10th
+  jumps to `6.01%`) ✓. (3) `CALL_LOG.append` (`:495`) sits *after* `if not dropped and not
+  repositioned: return None` (`:492-493`), censoring the 25 non-dropping calls so `score_calls()`'s
+  sign check is one-sided ✓. (4) `upstream/hermes-context-engine-hook.md` (`e430322`) should be
+  **deleted** (`git rm`), not edited, and `RR-W8CTRANSPORT-20261112` §1–§2 carries an explicit erratum
+  (the absent `_entered.log` in 0.13.7 `f1879a3` was an unimported `Path` / undefined `ENTERED`
+  swallowed by `except Exception: pass`, fixed in `22404cd`) ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
