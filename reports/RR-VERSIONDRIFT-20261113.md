@@ -99,6 +99,12 @@ restart ✓.
 and every lane's live session. A restart ends all of them. **Ask before restarting; nobody restarts 'to be
 safe'.**"* ✓ ⇒ ⇒ **ask, do not restart** ✓ ⇒ ⇒ the ask is with the **owner / hermes lane** ✓ ✓.
 
+⇒ **UPDATE 2026-11-14 ✓: the drift window closed by itself** ✓ — the gateway PID **24698** ✓ is **gone** ✓
+(`ps` ✓) ⇒ ⇒ any **new** gateway process loads **0.13.23** ✓ ⇒ ⇒ the **first capture on 0.13.23** ✓ —
+the one that would exercise the ruled per-call rule ✓ — is unblocked ✓ ⇒ ⇒ no restart is pending ✓ ⇒ ⇒ and the
+installed copy is at **0.13.23** ✓ (both authoritative files ✓), with the hermes lane's **H14** ✓ (`dc1f7e0` ✓)
+now *deriving* the synced set and proving it **by hash** ✓ ⇒ ⇒ the sync is verifiable rather than asserted ✓ ✓.
+
 ---
 
 ## 6. Executed agent-doings
