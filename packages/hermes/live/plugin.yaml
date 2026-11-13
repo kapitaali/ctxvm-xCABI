@@ -1,5 +1,5 @@
 name: ctxvm-tracer
-version: 0.13.21
+version: 0.13.22
 description: "Telemetry-first xCABI trace capture for Hermes agent loops. Mirrors tool results, turn renders, and faults into RFC-0 JSONL without mutating messages (v0 observe-only)."
 author: "ctxvm project"
 provides_hooks:

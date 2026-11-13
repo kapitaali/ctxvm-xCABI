@@ -101,3 +101,33 @@ next capture — this erratum does not claim them working, only the code that sh
 
 **What is unaffected:** every headline result. `turn.render.evictedTokens` never depended on this path,
 and the cells, the paid bill, the cross-harness factor and the stop on spend all stand.
+
+## Confirmation capture (2026-11-13, plugin 0.13.21)
+
+The first capture in this line where every per-session field is populated together, and the first with
+the swallow recorder armed.
+
+```
+run              w8b-20261113-150420-paged   CELL   41 calls   864,596 in   523.6 s   $0.00
+_swallowed.log   ABSENT — nothing was swallowed during the run
+_selections.log  41 lines, one per selection:
+                 arm=paged budget=60000 before=95360 after=56358 dropped=9 resident=86806
+sidecar          engine 'ctxvm' · engineSelections 16 · evictedPagesCount 9
+                 callSizes 16, dropped values 1…9
+scorer S3        page 4,411 from dropped == 1 → interval (55,589, 60,000] → PASS, median 0.92 %
+```
+
+`engineSelections` now means what it says: **16 selections actually rewrote the request**, out of 41
+entries, and it belongs to this session. The 0.13.20 erratum's two rows are confirmed working on live
+bytes.
+
+**On the one-page bound, both readings are now on record and neither is retracted:**
+
+```
+2026-11-13 12:37 capture   16 of 17 inside, one at 4,423 = 1.003 pages   FAIL by 14 tokens
+2026-11-13 15:04 capture   16 of 16 inside                               PASS, median 0.92 %
+```
+
+So the honest statement is not "the clamp is exact within one page" but "the clamp is exact within one
+page in one capture and missed it by 0.3 % in another" — a page-granular policy whose overshoot depends
+on where the page boundary falls. That is the precision a reader should assume.

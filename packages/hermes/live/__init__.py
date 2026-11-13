@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.21"
+PLUGIN_VERSION = "0.13.22"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -814,6 +814,8 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # See _engine_layers: which layer said what, so a null engine names its cause.
             **_engine_layers(),
             "engineSelections": (_state().get("selections_by_session", {}) or {}).get(session_id, 0),
+            # Process-wide, labelled: one observer slot serves every session. Informational only.
+            "engineSelectionsProcess": _selections_total(),
             # The arm this SESSION belongs to, resolved from its home at hook time, and the
             # engine that profile declares. `engine` above says the process used the engine;
             # `engineSetting` says which arm asked for it. A control session with engine ctxvm
