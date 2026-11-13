@@ -289,7 +289,35 @@ the request size ✓. It is the **cached prefix** ✓, and in the paged arm's tu
 
 ---
 
-## 8. Executed agent-doings
+## 8. What landed **after** this card — Erratum 2 of the prereg (`3dc1fca`)
+
+The other lane appended **§12 "Erratum 2"** to `design/W8D-PREREG-STABLE-20261113.md` ✓ (commit
+`3dc1fca` ✓, 2026-11-13 18:57 ✓) **after** this card was written ✓. Read against this card:
+
+**Two things it gets right** ✓:
+1. **Provenance** ✓ — the per-arm billed split ✓ (paged 1,025,825 ✓ + control 228,382 ✓) came from **this
+   lane** ✓ and the provider export in `experiments/` is **per key** ✓ with both arms on one credential ✓ ⇒
+   the other lane **cannot** separate it from the tree ✓ ⇒ labelling it ✓ is the honest move ✓ ✓.
+2. **A capture-only gate** ✓ — recomputed from the 0.13.21 capture alone ✓ (16 dropping selections ✓,
+   `sum(after) = 941,257` ✓, mean 58,829 ✓, 41 calls ✓, 9 distinct pages ✓) ⇒ 9 × 58,829 = **529,457** ✓ →
+   **12,914** per call ✓ against the ~2,400 allowance ✓ ⇒ **FAIL by 5.4×** ✓ ✓ (the arithmetic checks ✓:
+   941,257 ÷ 16 = 58,828.6 ✓, × 9 = 529,457 ✓, ÷ 41 = 12,915 ✓).
+
+**One premise it inherits from §11, and this card corrects** ✓: §12's *"event reduction achieved **1.8×**
+(16 → 9)"* ✓ uses the **selections** count as the **rewrite** count ✓ ⇒ under this card's corrected count
+✓ (§3 ✓: the billed volume fits **9** whole-request writes ✓ — 1,015,146–1,027,545 provider tokens against
+the measured 1,025,825 ✓ — while 16 would need **1,804,703** ✓) the write volume is the **same** under
+hold-once ✓ ⇒ the margin is **today's own** (24,424 write tokens per call ✓ ≈ **10×** over allowance ✓),
+not 5.4× ✓ ⇒ **the refusal is unchanged ✓** and hold-once buys **nothing** at this shape ✓.
+
+⇒ **Also agreed**: §12 withdraws the cross-capture **"12 pages / 47,805 tokens"** from the closing card ✓
+✓ — the same defect the reviewer raised against this lane's card ✓ ⇒ and this lane's card now labels the
+capture behind those numbers ✓ (`reports/RR-REVIEWERRATA-20261113.md` §2.5 ✓).
+
+⇒ Nothing in this card is superseded ✓; §12's provenance labels and its capture-only gate are **improvements**
+✓, and its event count still needs this card's correction ✓.
+
+## 9. Executed agent-doings
 
 - §11's five inputs re-measured from the artefacts ✓ (the 0.13.21 sidecar ✓, the two cell-03 DB rows ✓,
   the two cell-03 traces ✓) — all five hold ✓.
