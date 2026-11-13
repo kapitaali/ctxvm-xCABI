@@ -95,3 +95,21 @@ that refusal is the **reusable artefact** ✓ (it would have said this on 11 Nov
   runs were 0.13.3 ✓✓).
 - Kit: this card + LOG row + the day file + the roadmap's W8C pointer. No host byte touched ✓; no file of
   the other lane's edited ✓; nothing pushed ✓.
+
+---
+
+## 8. Erratum / Retraction (appended 2026-11-12, `reports/RR-SIM3CRITIQUE-20261112.md`)
+
+- **Retracted**: §1–§4's conclusion that the `--oneshot` transport does not assemble requests through
+  `assemble_api_request` and that an upstream Hermes bug report is warranted.
+- **Cause of the false witness**: When this card checked `_entered.log` and read `packages/hermes/live/context_engine.py`,
+  commit `22404cd` (plugin `0.13.9`) had already added `from pathlib import Path` and `ENTERED = {"n": 0}`
+  to `context_engine.py`. The sessions under diagnosis had run under plugin `0.13.7` (`f1879a3`), which
+  referenced `ENTERED["n"]` and `Path(...)` inside bare `try: … except Exception: pass` blocks without
+  defining `ENTERED` or importing `Path`. Every call into `select_context()` raised `NameError`, was
+  swallowed silently, and left `_entered.log` absent and `engineEntered = 0`.
+- **Measured reality**: Under `0.13.9+`, `--oneshot` reaches `select_context()` on every request
+  (`engineEntered = 57` in `w8b-20261112-161822`; `engineEntered = 47`, `engineSelections = 41` in
+  `w8b-20261112-201127`). The upstream draft `upstream/hermes-context-engine-hook.md` (`e430322`) has
+  been deleted (`d491912`).
+

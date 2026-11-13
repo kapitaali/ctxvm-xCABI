@@ -518,6 +518,11 @@ pin true every card close.
   **deleted** (`git rm`), not edited, and `RR-W8CTRANSPORT-20261112` §1–§2 carries an explicit erratum
   (the absent `_entered.log` in 0.13.7 `f1879a3` was an unimported `Path` / undefined `ENTERED`
   swallowed by `except Exception: pass`, fixed in `22404cd`) ✓.
+  *VERIFIED 0.13.14 & SIM(S3) BOUND (`d491912`, `reports/RR-SIM3S3CHECK-20261112.md`):* `upstream/hermes-context-engine-hook.md`
+  deleted ✓; §8 retraction appended directly to `reports/RR-W8CTRANSPORT-20261112.md` ✓; `CALL_LOG`
+  moved before the L7 return (`context_engine.py:494-505`) ✓; `_engine_activated_for` and stem-joined
+  `refs_for_identity_tokens` verified in-process (201 hermes tests green) ✓; `sim(S3)` bound
+  `(51,152, 60,000]` verified on the 16 dropping calls ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
