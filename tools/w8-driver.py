@@ -349,7 +349,11 @@ def verify(args) -> int:
                    f"{plugin.get('budgetTokens')} / {plugin.get('budgetSource')}"))
     # Arm-aware: a CONTROL session must select nothing — zero is the correct answer there, and
     # requiring > 0 labelled a correct control VOID (measured 2026-11-11, W8C cell-01).
-    _sel = plugin.get("engineSelectionsProcess") or plugin.get("engineSelections") or 0
+    # Per-session first. The process-wide counter (engineSelectionsProcess) counts selections made
+    # while this capture was open, including another session's, so it can never attest a control.
+    _sel = plugin.get("engineSelections")
+    if not isinstance(_sel, int):
+        _sel = 0
     _arm = plugin.get("arm")
     # Arm-conditioned, never inferred from the engine SETTING: a paged session whose sidecar fell
     # back to the compressor default must not pass as a control that behaved (reviewer, 2026-11-12).

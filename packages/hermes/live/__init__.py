@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.19"
+PLUGIN_VERSION = "0.13.20"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -789,7 +789,7 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
                        else None),
             # See _engine_layers: which layer said what, so a null engine names its cause.
             **_engine_layers(),
-            "engineSelections": _selections_total(),
+            "engineSelections": (_state().get("selections_by_session", {}) or {}).get(session_id, 0),
             # The arm this SESSION belongs to, resolved from its home at hook time, and the
             # engine that profile declares. `engine` above says the process used the engine;
             # `engineSetting` says which arm asked for it. A control session with engine ctxvm
@@ -1452,35 +1452,26 @@ def register(ctx) -> None:
                 _vm = vm
 
                 def _record_selection(payload, _sid=_sid, _vm=_vm):
+                    # `_target` FIRST. 0.13.18/0.13.19 used it fifteen lines before assigning it,
+                    # which raised UnboundLocalError on every call and was swallowed below — the same
+                    # bug class as 0.13.7's unimported Path: an except that hides its own cause.
+                    _target = _sid
                     try:
-                        _tr = _vm.tracer_for(_sid)
+                        _tr = _vm.tracer_for(_target)
                         _tr.note_evicted(int(payload.get("evictedTokens") or 0))
-                        # Which pages, not just how many tokens (the reviewer's blind spot): the
-                        # engine reports content identities, the tracer resolves them to refs.
                         _before = payload.get("beforeTokens")
                         _after = payload.get("afterTokens")
                         if isinstance(_before, int) and isinstance(_after, int):
                             _st = _state()
                             _st.setdefault("call_sizes_by_session", {}) \
-                                .setdefault(_target, []).append({"before": _before, "after": _after,
-                                                          "dropped": payload.get("droppedCount")})
+                                .setdefault(_target, []).append(
+                                    {"before": _before, "after": _after,
+                                     "dropped": payload.get("droppedCount")})
                             _st.setdefault("selections_by_session", {})[_target] = \
                                 _st.setdefault("selections_by_session", {}).get(_target, 0) + 1
-
                         _refs = _tr.refs_for_identity_tokens(payload.get("dropped"))
-                        # Attribute only to a session whose OWN arm is paged. The observer is one
-                        # process-global slot, so without this a selection made for the arm lands in
-                        # whichever session last installed it (measured 2026-11-13: the operator's
-                        # control session reported 42 selections).
-                        # Write to the closure's session. Re-attributing from the stamped policies
-                        # was tried (0.13.18) and made it worse: the arm kept a count of 41 while
-                        # losing its own page detail. Per-session truth comes from the TRACE
-                        # (`turn.render.evictedTokens`), not from these counters; they are labelled
-                        # process-wide below and the verifier no longer depends on them.
-                        _target = _sid
                         if _refs:
-                            _st = _state()
-                            _st.setdefault("evicted_refs_by_session", {}) \
+                            _state().setdefault("evicted_refs_by_session", {}) \
                                 .setdefault(_target, set()).update(_refs)
                     except Exception:  # noqa: BLE001 - observability must never break a turn
                         pass

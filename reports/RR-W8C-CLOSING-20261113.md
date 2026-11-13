@@ -64,3 +64,40 @@ The next question is not another measurement of this policy: it is whether a cla
 no prefix caching, where the same 203,975 unsent tokens would be priced at the input rate. That is a new
 preregistration under the ratified rule, not a continuation, and it needs the owner's decision before any
 spend.
+
+## Erratum (2026-11-13, after `RR-W8CCLOSINGREV-20261113` / `02c4fc8`)
+
+The review lane found the mechanical cause of the loss I had attributed to attribution logic, and the
+attestation table above was therefore wrong on two rows.
+
+**The bug.** In 0.13.18/0.13.19 `_record_selection` used `_target` at the `call_sizes_by_session` write
+and at the `selections_by_session` write, but assigned `_target = _sid` fifteen lines later. Python
+compiles `_target` as a function-local, so every call raised
+
+```
+UnboundLocalError: cannot access local variable '_target' where it is not associated with a value
+```
+
+after `note_evicted` had already run (which is why `turn.render.evictedTokens` survived), and the
+`except Exception: pass` swallowed it. Result: `callSizes: []`, `evictedPagesCount: 0`, and
+`selections_by_session` empty — while `engineSelections` still showed 41 because the manifest read the
+module-global `_selections_total()`. Same class as 0.13.7's unimported `Path`: an `except` that hides its
+own cause.
+
+**Fixed in 0.13.20.**
+
+```
+_target = _sid is bound FIRST, before tracer_for, note_evicted and every write
+manifest: "engineSelections" is per session again; "engineSelectionsProcess" keeps the global
+driver: the control check reads the per-session count, never the process-wide one
+```
+
+Proven in-process before commit: the callback writes `call_sizes_by_session`, `selections_by_session`
+and `evicted_refs_by_session` for the session, with no swallowed exception.
+
+**Rows corrected:** `evictedPages / count` and `callSizes before/after/dropped` were **dead in 0.13.18
+and 0.13.19**, not "per session ✓". They are per session again in 0.13.20 and must be confirmed on the
+next capture — this erratum does not claim them working, only the code that should make them work.
+
+**What is unaffected:** every headline result. `turn.render.evictedTokens` never depended on this path,
+and the cells, the paid bill, the cross-harness factor and the stop on spend all stand.
