@@ -147,6 +147,11 @@ a limitation line" is **correct** ✓✓.
    consumer-facing surface states it** ✓ — `README.md`'s limitations table and the RFC-0 text ✓ do not ✓.
    ⇒ A one-line addition to the RFC-0.1 **normative** text would need the five-touchpoint law ✓ (owner
    gate ✓); a **sidecar/doc** statement is free ✓.
+   ⇒ **DONE (2026-11-13)** ✓: the README's *Measured limitations* table now carries the row ✓ —
+   *"`residentTokens` is table residency, not request residency"* ✓ (21 pages / 86,569 tokens claimed ✓
+   against 12 pages / 47,805 carried ✓; RFC-0 v0 has no omission verb ✓; `evictedTokens` unchecked in v0
+   ✓; the derived table not turn-scoped ✓) — with the evidence pointers to this card ✓ and
+   `reports/RR-W8DERRATUM-20261113.md` ✓. The **RFC-0.1 normative** statement stays owner-gated ✓.
 3. **"Open a proposal-only design card on representing omission"** ✓ — **agree in substance, with a
    correction on the option set** ✓:
    - The reviewer's own framing is right that `page.evict`-with-empty-stub *"asserts a substitution that
