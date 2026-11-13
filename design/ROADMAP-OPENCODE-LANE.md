@@ -572,6 +572,20 @@ pin true every card close.
   the trace carries **no `page.evict` row at all** ✓ (0 of 81 events ✓) ⇒ the 0-stub result witnesses the
   **removal** semantics ✓ but is **not a per-turn observation** ✓, and there is **no contrast case** to measure
   against ✓ (`corpus/m1`'s 4 `page.evict` events are synthetic ✓; the live captures have none ✓).
+  *REPRESENTATION GAP CONFIRMED BY THE PROVIDER'S OWN RECEIPTS (`reports/RR-SHAPEGAP-20261113.md`):* the
+  reviewer's four points verified against code and captures ✓ — **"0 stubs" is entailed by the event
+  vocabulary** ✓ (the hermes engine has no stub concept ✓ and the adapter never emits `page.evict` ✓), the
+  replay agreement is a **determinism + internal-consistency** witness ✓ (not vacuous ✓ — mutating
+  `residentTokens` or a render mode trips a divergence ✓), the plateau cannot separate removal from
+  substitution ✓, and the **representation gap is real and larger than stated** ✓: the projection is
+  **turn-invariant** ✓ (21 slots / 86,569 at turns 0–19 ✓) because the flush tail is **positional** ✓, so at
+  turn 0 it already claims 21 pages that exist only at turn 19 ✓. **The reviewer's falsifier, run on the
+  paid capture, does not fire** ✓: provider receipts put the paged request at **0.563** of the control's at
+  turn 19 ✓ (trace's own ratio 0.570 ✓) ⇒ the model **did not** see all 21 pages ✓ ⇒ the removal
+  measurement is right ✓ and the **derived table is the false part** ✓. Also: `turn.render.evictedTokens` is a
+  **lagging cumulative** ✓ (session sum 210,856 = **5.44×** the unique removed content 38,764 ✓) ⇒ the W8D
+  prereg's "36 rewrite events" is unsupported ✓ (measured: **9** pages ever removed ✓, **16** dropping
+  selections ✓) and its write-volume per event must be re-derived ✓ — zero-spend, from the capture ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
