@@ -105,7 +105,9 @@ def score_calls(trace_path: str, budget: int) -> int:
     else:
         page_max = int(min(c["before"] - c["after"] for c in dropping))
         slack = 2 * page_max
-        basis = "smallest drop (no per-call dropped count: pre-0.13.14 capture)"
+        basis = ("smallest drop (no single-page drop in this capture, or dropped not recorded)"
+                 if not any("dropped" in c for c in dropping) else
+                 "smallest drop (no dropped == 1 call in this capture)")
     page_est = page_max
     lo = budget - slack
     outside = [c for c in dropping if not (lo < c["after"] <= budget)]

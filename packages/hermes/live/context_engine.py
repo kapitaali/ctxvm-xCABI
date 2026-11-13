@@ -518,6 +518,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                     "evictedTokens": evicted,
                     "dropped": [sorted(units[i].id_toks) for i in sorted(dropped) if i in units],
                     "repositioned": sorted(repositioned),
+                    "droppedCount": len(dropped),
                     # Per-CALL sizes, because a turn has two requests and a turn-level series cannot
                     # score the simulator: measured 2026-11-12, the naive model misses the onset by a
                     # turn and the total by 31 %, and both residuals come from that aggregation.
