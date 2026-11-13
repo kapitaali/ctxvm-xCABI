@@ -682,12 +682,14 @@ pin true every card close.
   rules it further-deferred in writing.
   *Owner:* go/defer.
 
-- [ ] **G5. D13/D14 ratification + white-paper bundle routing.** The six paper items
-  (Pillar-1 split; `:635` echo sweep; the P2 demo sentence; the R1 3-to-0 contrast;
-  the consent-paragraph replacement; Part II's card-citation rule) live in
-  `reports/RR-DAY-20261109.md`; they are owner-routed white-paper lane work.
-  *Done when:* PROJECT-STATE Next-three line 1 rotates away (i.e., the bundle is routed/executed).
-  *Owner:* ratify + route.
+- [x] **G5. D13/D14 ratification + white-paper bundle routing — DONE (2026-11-12, `reports/RR-WPROUTE-20261112.md`).**
+  The six paper items (Pillar-1 split; `:635` echo sweep; the P2 demo sentence; the R1 3-to-0 contrast;
+  the consent-paragraph replacement; Part II's card-citation rule + `RR-FIELDAUD-20261107` audit pointer)
+  plus the W8/W8B/W8C empirical update are ratified and routed in `reports/RR-WPROUTE-20261112.md`
+  with exact working-tree file paths (`research/white-paper/white-paper.md`, `index.md`, `white-paper-Part-II.md`),
+  line numbers, before/after text, and verification commands (`research/**` untouched per `handoff/LANES.md`).
+  *Done when:* PROJECT-STATE Next-three line 1 rotates away (done 2026-11-12).
+  *Owner:* ratified + routed.
 
 - [ ] **G6. Publication (D17).** W10 prepare-only; publish/submit/tag only with approval.
   *Done when:* an orchestrated publication task appears with D17 resolved.
@@ -846,8 +848,9 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
    (`reports/RR-COSTBRACKET-20261112.md`): LOW ≈ $0.21, CENTRAL ≈ $0.30, HIGH ≈ $0.70 per pair,
    ratio 1.0–2.4× (the historical precedent 7.2×), with the **driver ceiling at 100 calls for the
    pair** so the $1 is real ✓.
-4. Rule the redaction go/defer (G4); D13/D14 + D17 remain the big gates. W8's fate is settled (G7
-   closed: negative, 2026-11-10).
+4. **G5 (D13/D14 ratification + six-item white-paper bundle routing) is DONE** (`reports/RR-WPROUTE-20261112.md`).
+   Remaining owner gates: **G2** (caller transfer-caveat sentence in `umpire`), **G4** (`design/redaction-block.md`
+   §4-LIST go/defer), and **G6 / D17** (publication timing). W8's fate is settled (G7 closed: negative, 2026-11-10).
 
 Update law: tick a box only with the command's output in hand; on every card close, re-date the
 state-of-record line and revise §14 of the operating prompt (not this file) for volatile facts
