@@ -1,62 +1,51 @@
-# State (updated 2026-11-12, by ctxvm repo agent (opencode); G2/D-U1 applied, D13+D14 routed, plugin 0.13.15
+# State (updated 2026-11-13, by ctxvm repo agent (opencode); G2/D-U1 applied, D13+D14 routed, W8C+W8D reviewed)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
 
 ## Artifacts and versions
-- Wire: RFC-0 sealed (`spec/rfc-0/`, byte-frozen); RFC-0.1 additive landed (`spec/rfc-0.1/`, R0–R5).
-- Corpus: ODPS 0.8.0, m1–m8 checksummed; hub ODPC byte-identical.
-- Plugins: hermes 0.13.22 (`packages/hermes/live/__init__.py:94`); @ctxvm/node 0.1.0, @ctxvm/opencode 0.0.1, @ctxvm/ai-sdk 0.0.1.
-- Papers: Part I committed + WIP revision; Part II untracked (`RR-WP2REV-20261107`); 6-item bundle routed (`RR-WPROUTE-20261112`).
-- Everyday capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000 (RR-WP2REV §Verification).
+- Wire: RFC-0 sealed (`spec/rfc-0/`); RFC-0.1 additive landed (`spec/rfc-0.1/`). Corpus: ODPS 0.8.0, m1–m8 checksummed; hub byte-identical. Plugins: hermes 0.13.22 (`packages/hermes/live/__init__.py:94`); node 0.1.0, opencode 0.0.1, ai-sdk 0.0.1.
+- Papers: Part I committed + WIP revision; Part II untracked (`RR-WP2REV-20261107`); 6-item bundle routed (`RR-WPROUTE-20261112`). Capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000.
 
 ## Done (last 3 items: one line each, with locators)
-1. G2 applied: caller transfer-caveat in umpire `mcp_server.py` + `00-SPEC.md` §3 (`64b97fb`) and D-U1 resolved (`design/umpire-design-choices.md`, RR-G2APPLIED-20261112).
-2. D13 + D14 ratified and the six-item white-paper bundle routed to the research lane; G5 closed (RR-WPROUTE-20261112).
-3. Plugin 0.13.22 + `sim(S3)` quantization scorer: uncensored `CALL_LOG`, `plugin.engine` + `evictedPagesCount` confirmed, `upstream/` draft deleted (RR-S3-PRECISION-20261113, RR-SIM3S3CHECK-20261112).
+1. W8C replay verified (0.13.22 capture): 81 events, 0 divergences, stdout hash `fe27e29c813c4e06` ×3; `export --turn 12` = 21 slots / 86,569 / 0 stubbed (`RR-W8CREPLAY*`).
+2. Representation gap confirmed by the provider's receipts: the derived table is turn-invariant (21 slots / 86,569, turns 0–19) and false about the request (12 pages / 47,805 carried); provider ratio 0.563 vs the trace's 0.570 ⇒ removal right, table false (`RR-SHAPEGAP-20261113`).
+3. W8D erratum reviewed: five inputs verified, three arithmetic errors (denominator 42 not 41; "0.918" inverted + tokenizers mixed; "16 rewrite events" unsupported ⇒ 9), model check self-contradicting (9 whole-request writes fit within 0.2 %, 16 miss by 1.76×) ⇒ hold-once is a set-level no-op (`RR-W8DERRATUM-20261113`).
 
 ## In progress (one item: what, blocker, next command)
-Research lane: apply the routed six-item white-paper bundle (`reports/RR-WPROUTE-20261112.md`) to working-tree `research/white-paper/white-paper.md`, `index.md`, and `white-paper-Part-II.md`.
+- Research lane: apply the routed six-item bundle (`reports/RR-WPROUTE-20261112.md`) to `research/white-paper/white-paper.md`, `index.md`, `white-paper-Part-II.md`. Blocker: the research lane's own edits.
+- Hermes lane (ask, zero spend): keep the per-call dropped **identities** beside `callSizes` in the sidecar — the observer computes them (`live/context_engine.py:545-548`), the adapter folds them into a union (`live/__init__.py:1498-1500`) ⇒ W8D §5 step 1 becomes a lookup.
 
 ## Next three (ordered, one line each)
-1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) and ratify the release rule at D6/D17.
-2. Owner: D17 publication timing after the routed D13/D14 white-paper edits land in `research/**` (G6).
-3. Owner: G3 (W9 equivalence-test preregistration before any new held-out transfer capture).
+1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + ratify the release rule at D6/D17.
+2. Owner: D17 timing after the routed D13/D14 edits land in `research/**` (G6).
+3. Owner: G3 (W9 equivalence-test preregistration before any new held-out capture).
 
 ## Decisions made (date, decision, reason)
-- 2026-10-30/31: D3-c = OTel layered mapping, not native; D4 adopts RFC-0.1; D8 splits → schemaVersion first (RR-DECISIONS-20261030, RR-RFC01E1-20261031).
-- 2026-11-01: D12 — est* estimates keep page-table semantics (RR-W8PREREG-20261101).
-- 2026-11-06: W8 keeps vBudget 24,000; only tasks with a floor below it measure (RR-ENGINEGAP-20261106 rec. 2).
-- 2026-11-07: W8 ruled FAILED; capture stays default-on; contract restored (RR-W8CHUNK-20261107-2b + RR-W8INDEX).
-- 2026-11-08: D3-c approved; D13 answered (P1); P2 answered + seq 7 located (`identifier_scan` swap-in).
-- 2026-11-09: D14 answered (P3 verdicts); P4 answered: ts stays optional; ordering clause for umpire §2 (RR-P4TS-20261109).
-- 2026-11-10: D-U1 (P5) caveat; D-U3 (P6) same-build; D-U2 (P7) two zero-spend baselines first (RR-P7BASE-20261110).
-- 2026-11-11: F1–F7 closed; P10+P11 answered; W8B closed negative (`design/W8B-CLOSURE-20261111.md`); D18 RFC-0.1 note (`spec/rfc-0.1/COMPATIBILITY.md`, `82f6a03`).
-- 2026-11-12: D-U10 (G1) + D-U1 (G2) applied (RR-G1APPLIED-20261112, RR-G2APPLIED-20261112); Prediction-block rule ratified (`685c999`); paid spend stopped after cell-03 ($0.2534, RR-PAIDRESULT-20261112); D13 + D14 ratified and 6-item paper bundle routed (RR-WPROUTE-20261112, G5 closed).
+- 2026-10-30 → 2026-11-10: D3-c OTel layered; D4 adopts RFC-0.1; D8 splits → schemaVersion first; D12 est* keep page-table semantics; W8 vBudget 24,000, W8 ruled FAILED, capture default-on; D13+D14 answered; P4 ts optional + umpire ordering; D-U1 caveat, D-U3 same-build, D-U2 two zero-spend baselines (RR-DECISIONS-20261030 … RR-P7BASE-20261110).
+- 2026-11-11: F1–F7 closed; P10+P11 answered; W8B closed negative; D18 RFC-0.1 note (`82f6a03`).
+- 2026-11-12: D-U10 (G1) + D-U1 (G2) applied; Prediction-block rule ratified (`685c999`); paid spend stopped after cell-03 ($0.2534, RR-PAIDRESULT-20261112); D13+D14 ratified, bundle routed (G5 closed).
+- 2026-11-13: W8C review chain closed — "0 stubs" withdrawn (entailed by the event vocabulary), `evictedTokens` is a lagging cumulative (210,856 = 5.44× the unique 38,764), the W8D erratum corrected three ways, hold-once refused as a set-level no-op; no paid spend (`RR-SHAPEGAP-20261113`, `RR-W8DERRATUM-20261113`).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
-- D13 (Pkt 1) RATIFIED & ROUTED 2026-11-12: Pillar-1 splits + echo sweep (`design/diff-normalisation.md`, `reports/RR-WPROUTE-20261112.md` Items 1–2).
-- D14 (Pkt 3) RATIFIED & ROUTED 2026-11-12: capture default-on in owner-run builds; release rule bound at D6/D17; redaction card proposal-only, sidecar-first (`design/redaction-block.md`, `reports/RR-WPROUTE-20261112.md` Items 5–6). Owner next: §4-LIST go/defer (G4).
+- D13 RATIFIED & ROUTED 2026-11-12: Pillar-1 splits + echo sweep (`design/diff-normalisation.md`, RR-WPROUTE Items 1–2).
+- D14 RATIFIED & ROUTED 2026-11-12: capture default-on in owner-run builds; release rule bound at D6/D17; redaction card proposal-only, sidecar-first (`design/redaction-block.md`, RR-WPROUTE Items 5–6). Owner next: §4-LIST go/defer (G4).
 - D15 paper structure: keep Part I + II; merge only after D13/D14 edits land. Recommend keep.
-- D16 W8 amendment: W8/W8B closed negative; W8C measured and paid spend stopped after cell-03 (0.57x final request, 2.11x cost due to 4.49x cache writes; cache-stable ceiling ~$0.009/session, RR-POLICYCHOICE-20261112). Next policy work is zero-spend simulation only.
+- D16 W8 amendment: W8/W8B closed negative; W8C measured, paid spend stopped after cell-03 (0.57x final request, 2.11x cost from 4.49x cache writes); W8D refused on arithmetic — hold-once cannot change the dropped set (already monotone), and the zero-spend gate cannot discriminate ⇒ next policy work is zero-spend only (RR-POLICYCHOICE-20261112, RR-W8DERRATUM-20261113).
 - D17 publication: (a) now; (b) after D13–D15; (c) hold. Recommend (b).
 
 ## Do not touch (sealed specs, frozen fixtures, plugin defaults)
-`spec/rfc-0/` byte-sealed; the RFC-0.1 additive law (all five touchpoints, ts last); `corpus/` checksums; `design/` plans of record; `08.1-UPDATE-PROMPT.md`; `research/**` (white-paper lane); capture default-on + plugin version bumps (need a card); append-only `reports/LOG.md`.
+`spec/rfc-0/` byte-sealed; RFC-0.1 additive law (five touchpoints, ts last); `corpus/` checksums; `design/` plans of record; `08.1-UPDATE-PROMPT.md`; `research/**` (white-paper lane); capture default-on + plugin bumps (card needed); append-only `reports/LOG.md`.
 
 ## Evidence rules (the integrity rules, three lines)
 1. Every number carries a repo locator + repro command; gate totals from `bash tools/run-ci.sh` are authoritative, never hardcoded (AGENTS.md §2, §5).
-2. Unverified claims stay marked UNVERIFIED, never asserted; first mention carries a locator.
-3. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% belongs to an external controller (AGENTS.md law 7).
+2. Unverified claims stay marked UNVERIFIED. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% is an external controller's (AGENTS.md law 7).
 
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
-- Conformance gate: GREEN 2026-11-12 (local hermetic `run-ci.sh` + `ci-rehearsal.py --committed` → ALL GATES GREEN); hosted witness №123 `f16df322` (2026-11-12) green.
-- XERJ Hub listing UNVERIFIED — live `hub.xerj.org/llms.txt` re-check (RR-XERJ-20261029).
-- openai price row + cache-read nulls UNVERIFIED (`prices.json`) — owner source.
-- Part II METR secondary figures UNVERIFIED until a primary locator exists.
-- Hard-fault-recall ≥95% gate UNMEASURED (n=4 < 30) — pooled runs.
+- Conformance gate: GREEN 2026-11-13 (`run-ci.sh` → ALL GATES GREEN); hosted witness №123 `f16df322` (2026-11-12) green.
+- XERJ Hub listing UNVERIFIED (re-check `hub.xerj.org/llms.txt`). openai price row + cache-read nulls UNVERIFIED (`prices.json`). Part II METR secondary figures UNVERIFIED. Hard-fault-recall ≥95% gate UNMEASURED (n=4).
+- W8D rewrite-event count: 9 (billed volume) vs 16 (selections) — per-call identities not persisted ⇒ UNVERIFIED until the sidecar keeps them.
 
 ## Blocked (item, what it waits for)
-- W8 spend: >= $7.14 billed 11-10 + $0.2534 cell-03 (11-12); paid W8C spend stopped until a zero-spend simulation predicts a win (RR-PAIDRESULT-20261112).
-- Publication: owner (D17). W12 beyond Steps 0–1: D7 ruled hold (`design/runtime-abi/00-reconciliation-and-justification.md`).
-- `/tmp/w8` run tree: DESTROYED (erratum `RR-W8INDEX-20261107` @ `a1d2efb`); go-forward runs → `~/.local/state/ctxvm/w8-runs`.
+- W8 spend: >= $7.14 billed 11-10 + $0.2534 cell-03 (11-12); paid spend stopped until a zero-spend simulation predicts a win; W8D refused on arithmetic (RR-W8DERRATUM-20261113).
+- Publication: owner (D17). W12 beyond Steps 0–1: D7 ruled hold. `/tmp/w8` run tree: DESTROYED (`RR-W8INDEX-20261107`); go-forward runs → `~/.local/state/ctxvm/w8-runs`.
