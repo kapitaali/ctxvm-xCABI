@@ -603,6 +603,27 @@ pin true every card close.
   (H1 predicts 9–14 ✓; today's run already yields 9 ✓) ⇒ the one missing measurement is the per-call dropped
   **identity** list ✓ (the observer computes it ✓; the adapter folds it into a union ✓) ⇒ one sidecar field would
   make step 1 a lookup ✓ at zero spend ✓.
+  *OMISSION REPRESENTATION, PROPOSED (`reports/RR-OMISSION-20261113.md`):* the reviewer's open item 3, closed as a
+  **proposal** ✓ (no spec, no adapter, no `design/` file ✓ — the owner clears new ones ✓), and item 4 measured ✓.
+  The measured gap ✓: the derived table claims 21 pages / 86,569 tokens ✓ (`export --turn 0/5/12/19` ✓,
+  turn-invariant ✓) while the request carried 12 pages / 47,805 ✓; v0 has **no omission verb** ✓ (`page.evict`
+  requires `stubText` ✓); the count is **unchecked in v0** ✓ (OPEN T-OVICT ✓) and is in fact a **lagging
+  cumulative** ✓ (210,856 = **5.44×** the unique 38,764 ✓); the derived table is **not turn-scoped** ✓ (the cut
+  is positional ✓); the corpus has **no contrast case** ✓ (the only 4 `page.evict` rows are synthetic ✓) ⇒ a
+  trace-only reader cannot say which pages a request omitted ✓. **Why now** ✓: the second consumer already
+  exists in the paper's own design ✓ — Part I §12 makes a view *"a pure function of a trace"* ✓
+  (`white-paper.md:549` ✓) ⇒ "leave it unrepresented" would contradict a claim the same paper makes ✓ ⇒ the
+  decision cannot wait for Part II's view claims ✓. **Recommended shape: count + identity + checked** ✓ —
+  four parts, **two of them free** ✓: the **count** exists ✓ (`turn.render.evictedTokens` ✓) but needs a
+  per-turn meaning ✓ and a check ✓; the **identity** must be **on the wire** ✓ (an RFC-0.1 per-turn
+  dropped-page list ✓) or Part I §12's "pure function of a trace" must become "of a trace and its sidecar" ✓;
+  the **check** is **three** parts ✓, not one ✓ — the shape rule already exists ✓ (`tools/coverage_check.py` ✓,
+  version-gated ✓) but is **dormant** on the capture that needs it ✓ (the sidecar's plugin block carries **no
+  `evictedTokens` key** ✓), and the "sum" cannot be checked against the trace's cumulative counter ✓ ⇒ it must
+  be checked **per call** ✓ ⇒ blocked on the per-call identities ✓ (the routed ask ✓); and the **turn-scoped
+  projection** is a **derivation fix with no wire change** ✓ — RFC-0.1 **R5** already gives `page.declare` its
+  own `turn` ✓ ⇒ the export can cut on it ✓ (v0 traces keep today's projection ✓) ⇒ **D19 (proposed)** is on the
+  owner's table ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
