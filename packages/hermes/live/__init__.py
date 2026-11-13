@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.17"
+PLUGIN_VERSION = "0.13.18"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -1457,23 +1457,31 @@ def register(ctx) -> None:
                         if isinstance(_before, int) and isinstance(_after, int):
                             _st = _state()
                             _st.setdefault("call_sizes_by_session", {}) \
-                                .setdefault(_sid, []).append({"before": _before, "after": _after,
+                                .setdefault(_target, []).append({"before": _before, "after": _after,
                                                           "dropped": payload.get("droppedCount")})
-                            _st.setdefault("selections_by_session", {})[_sid] = \
-                                _st.setdefault("selections_by_session", {}).get(_sid, 0) + 1
+                            _st.setdefault("selections_by_session", {})[_target] = \
+                                _st.setdefault("selections_by_session", {}).get(_target, 0) + 1
 
                         _refs = _tr.refs_for_identity_tokens(payload.get("dropped"))
                         # Attribute only to a session whose OWN arm is paged. The observer is one
                         # process-global slot, so without this a selection made for the arm lands in
                         # whichever session last installed it (measured 2026-11-13: the operator's
                         # control session reported 42 selections).
-                        _own = (_state().get("policy_by_session") or {}).get(_sid) or {}
-                        if _own.get("arm") != "paged":
+                        # Attribute to the session that IS the treatment. The closure's session id
+                        # has twice been another session's (the observer is one global slot), so the
+                        # target is resolved from the stamped policies, not from the closure.
+                        _pols = _state().get("policy_by_session") or {}
+                        if (_pols.get(_sid) or {}).get("arm") == "paged":
+                            _target = _sid
+                        else:
+                            _paged = [s for s, p in _pols.items() if (p or {}).get("arm") == "paged"]
+                            _target = _paged[0] if len(_paged) == 1 else None
+                        if _target is None:
                             return
                         if _refs:
                             _st = _state()
                             _st.setdefault("evicted_refs_by_session", {}) \
-                                .setdefault(_sid, set()).update(_refs)
+                                .setdefault(_target, set()).update(_refs)
                     except Exception:  # noqa: BLE001 - observability must never break a turn
                         pass
 
