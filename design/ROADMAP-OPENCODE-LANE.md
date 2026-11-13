@@ -493,6 +493,16 @@ pin true every card close.
   the budget is **60,000 apx4-char tokens** ✓✓ (≈240,000 chars ✓) while every quoted request size is in
   **provider** tokens ✓✓, and the books' floor (48,650 ✓) **mixes the two** ✓✓ ⇒ the next block must name
   the unit ✓✓ and compare the keep law's floor in **apx4** ✓✓ ✓.
+  *CALL-GRANULARITY SCORER VERIFIED PASS (2026-11-12, `reports/RR-SIM3CHECK-20261112.md` on `78cc6e9`):*
+  reproduced from `local-b7d235587eef…jsonl` (`w8b-20261112-201127`, plugin 0.13.13, $0.00): 41
+  selections (`engineEntered: 47`), 16 dropping selections in `callSizes`, **median |error| 1.2%**, sign
+  exact → **PASS** against the preregistered rule (`2b6c950`), `turn.render.evictedTokens` sum
+  **227,963** across 7 turns ✓. Confirms the zero counters were instance-identity splits fixed by
+  module-global `OBSERVER`, `ACTIVATIONS['select']`, and `CALL_LOG` (`1af40e7`, `bf6fcb1`), and default
+  home `~/.hermes` is now forced to `compressor` (`1af40e7`) ✓. Two non-blocking sidecar residuals
+  located: `plugin.engine: null` (`_engine_activated_for` still checks instance `_engine_selections_for`)
+  and `plugin.evictedPagesCount: 0` (`context_engine._value_tokens` splits on `.` while
+  `plugin.identity_tokens` keeps `.txt`) ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
