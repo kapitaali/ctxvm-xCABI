@@ -523,6 +523,16 @@ pin true every card close.
   moved before the L7 return (`context_engine.py:494-505`) ✓; `_engine_activated_for` and stem-joined
   `refs_for_identity_tokens` verified in-process (201 hermes tests green) ✓; `sim(S3)` bound
   `(51,152, 60,000]` verified on the 16 dropping calls ✓.
+  *OPENCODE VS HERMES TURN-ACCOUNTING REVIEW (`78b3382`, `reports/RR-OCDIFFREV-20261113.md`):* confirms
+  the 6 vs 13 `turn.render` / 12 vs 13 request measurement on `longcat-2.5` (free, $0.00) and the `m7`
+  premise correction (`m7` = Hermes, `m2/m5/m6` = OpenCode, `m8` = AI-SDK) ✓. Four added findings:
+  (1) prompts 2–6 on OpenCode made 2.0 requests/prompt (batching `read` + `shell`), so the 13 vs 12
+  request difference is a single sequential `shell` call on prompt 1 ✓; (2) `@ctxvm/opencode` emits
+  `0/N` `providerUsage` because `plugin.ts` only hooks pre-request `session.context` and never calls
+  `noteUsage()` (even though OpenCode assistant messages carry `.tokens`), while Hermes emits `6/6`
+  last-write-wins per user turn (dropping call 1 of 2 from `call.meta`) ✓; (3) `@ctxvm/opencode` still
+  emits v0 `identifier_scan` `faultOfResidentPage` rows (`12` vs `0` on Hermes 0.12.0+) ✓; (4)
+  `README.md:114,116` can cite `RR-OCDIFF-20261113` and `m5` vs `m7` ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
