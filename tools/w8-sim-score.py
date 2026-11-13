@@ -115,8 +115,14 @@ def score_calls(trace_path: str, budget: int) -> int:
     print(f"sim(S3): median |after-budget|/budget {statistics.median(errs):.2%} "
           f"(diagnostic; resolution is one page = {page_est / budget:.1%})")
     if outside:
+        # Report the overshoot as a fraction of one page. The verdict stays FAIL: widening the margin
+        # until the data passes is the sin the review lane named, so the size of the violation is
+        # stated and the bound is left as declared.
         for c in outside[:5]:
-            print(f"sim(S3): OUTSIDE before={c['before']:,} after={c['after']:,} dropped={c.get('dropped')}")
+            slack_used = budget - c["after"]
+            print(f"sim(S3): OUTSIDE before={c['before']:,} after={c['after']:,} "
+                  f"dropped={c.get('dropped')} slack={slack_used:,} "
+                  f"= {slack_used / page_est:.3f} pages")
     ok = not outside
     print(f"sim(S3): VERDICT {'PASS' if ok else 'FAIL'} "
           f"(every dropped request inside {slack:,} tokens of the budget)")
