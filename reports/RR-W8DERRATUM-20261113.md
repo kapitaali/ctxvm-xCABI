@@ -104,9 +104,11 @@ free capture (0.13.22), the 41 selections of the run window, in order:
   distinct sizes: [1,2,3,4,5,6,7,8,9]   size-changes: 9   (8 inside the dropping list + the first 0 -> 1)
 ```
 
-⇒ A selection whose dropped **size** did not change re-dropped the same set ⇒ the retained content is
-the same ⇒ the request's leading prefix is the same ⇒ **no cache write** ✓ ⇒ the number of
-prefix-changing rewrites is **9**, not 16 ✓.
+⇒ A selection whose dropped **size** did not change re-dropped the same set **if the dropped sets are
+nested** ✓ ⇒ the retained content is the same ⇒ the request's leading prefix is the same ⇒ **no cache
+write** ✓ ⇒ the number of prefix-changing rewrites is **9**, not 16 ✓. (The nesting is the one thing the
+artefacts do not carry directly ✓ — see the caveat below ✓ — and §3 settles the count from the billed
+volume independently ✓.)
 
 ⇒ **And the "hold once" premise already holds today** ✓: the sidecar's union of pages ever dropped is
 **9** ✓ and the final dropped set's size is **9** ✓ ⇒ every page ever dropped is still dropped at the
@@ -144,8 +146,8 @@ turn | trace approxInputTokens | provider cachedInputTokens | k = provider / tra
 
 1. **The tokenizer factor** on this pair is **1.92–1.94** ✓ (control turn 19: 203,842 ÷ 104,842 =
    **1.9443** ✓) ⇒ the correction §2.2 needs ✓.
-2. **The paged arm's cached prefix collapsed to 14,504 tokens from turn 12 to turn 18** ✓ — and 14,504
-   is the **turn-0 value** ✓ (14,554 ✓, within 50 tokens ✓), i.e. the **static prefix alone** ✓ ⇒ the
+2. **The paged arm's cached prefix collapsed to 14,504 tokens from turn 12 to turn 18** ✓ — the turn-0 cached
+   prefix was **14,554** ✓ (50 tokens more ✓) ⇒ the reusable prefix was the **static** one ✓ ⇒ the
    provider could reuse **none** of the message content in those turns ✓ ⇒ **each rewrite re-wrote the
    message content** ✓ ⇒ a rewrite writes ≈ the **whole** post-selection request ✓ — which is §11's
    own model check ✓, independently witnessed by the provider's receipts ✓.

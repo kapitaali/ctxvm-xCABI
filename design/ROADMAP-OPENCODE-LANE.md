@@ -595,7 +595,7 @@ pin true every card close.
   **9 → 9 = 1.0×** ✓, not 16 → 9 = 1.8× ✓. **The model check contradicts itself** ✓: 16 whole-request writes
   would cost 1,804,703 provider tokens against the measured 1,025,825 ✓ (1.76× ✓), while **9** whole-request
   writes fit with a residual of **0.2 %** ✓ ✓ — and the provider's receipts witness the whole-request write ✓
-  (the paged arm's cached prefix collapsed to 14,504 ✓ = the turn-0 static prefix ✓, so no message content was
+  (the paged arm's cached prefix collapsed to 14,504 ✓ — the turn-0 cached prefix was 14,554 ✓ — so no message content was
   reusable ✓). ⇒ **The refusal stands and is stronger** ✓: today's own **24,424** write tokens/call against the
   1,868–2,428 allowance ✓ ≈ **10× over** ✓ — and hold-once does not touch it ✓, because **the dropped set is
   already monotone** ✓ (the union of pages ever dropped = 9 ✓ equals the final set's size ✓ ⇒ the policy never
