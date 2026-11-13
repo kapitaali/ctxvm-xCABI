@@ -5,7 +5,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 
 ## Artifacts and versions
 - Wire: RFC-0 sealed (`spec/rfc-0/`); RFC-0.1 additive landed (`spec/rfc-0.1/`). Corpus: ODPS 0.8.0, m1–m8 checksummed; hub byte-identical. Plugins: hermes 0.13.22 (`packages/hermes/live/__init__.py:94`); node 0.1.0, opencode/ai-sdk 0.0.1.
-- Papers: Part I committed + WIP revision; Part II untracked (`RR-WP2REV-20261107`); 6-item bundle routed (`RR-WPROUTE-20261112`). Capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000.
+- Papers: Part I committed + WIP; Part II untracked (`RR-WP2REV-20261107`); 6-item bundle routed (`RR-WPROUTE-20261112`). Capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000.
 
 ## Done (last 3 items: one line each, with locators)
 1. W8C replay verified (0.13.21 capture): 81 events, 0 divergences, stdout hash `fe27e29c813c4e06` ×3; `export --turn 12` = 21 slots / 86,569 / 0 stubbed (`RR-W8CREPLAY*`).
@@ -17,12 +17,12 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Hermes lane (ask, zero spend): keep the per-call dropped **identities** beside `callSizes` in the sidecar (observer computes them: `live/context_engine.py:545-548`; adapter folds them into a union: `live/__init__.py:1498-1500`) ⇒ W8D step 1 becomes a lookup.
 
 ## Next three (ordered, one line each)
-1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + ratify the release rule at D6/D17.
+1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + the release rule at D6/D17.
 2. Owner: D17 timing after the routed D13/D14 edits land in `research/**` (G6).
-3. Owner: G3 (W9 equivalence-test preregistration before any new held-out capture).
+3. Owner: G3 (W9 equivalence-test preregistration before a held-out capture).
 
 ## Decisions made (date, decision, reason)
-- 2026-10-30 → 2026-11-10: D3-c OTel layered; D4 adopts RFC-0.1; D8 splits → schemaVersion first; D12 est* keep page-table semantics; W8 ruled FAILED, capture default-on; D-U1 caveat, D-U3 same-build, D-U2 two zero-spend baselines (RR-DECISIONS-20261030 … RR-P7BASE-20261110).
+- 2026-10-30 → 2026-11-10: D3-c OTel layered; D4 adopts RFC-0.1; D8 splits → schemaVersion first; D12 est* keep page-table semantics; W8 ruled FAILED, capture default-on; D-U1 caveat, D-U3 same-build, D-U2 two baselines (RR-DECISIONS-20261030 … RR-P7BASE-20261110).
 - 2026-11-11: F1–F7 closed; P10+P11 answered; W8B closed negative; D18 RFC-0.1 note (`82f6a03`).
 - 2026-11-12: D-U10 (G1) + D-U1 (G2) applied; Prediction-block rule ratified (`685c999`); paid spend stopped after cell-03 ($0.2534, RR-PAIDRESULT-20261112); D13+D14 ratified, bundle routed (G5 closed).
 - 2026-11-13: W8C review chain closed — "0 stubs" withdrawn (entailed by the vocabulary), `evictedTokens` is a lagging cumulative (210,856 = 5.44× the unique 38,764), the W8D erratum corrected three ways, hold-once refused as a set-level no-op (`RR-SHAPEGAP-20261113`, `RR-W8DERRATUM-20261113`).
@@ -33,10 +33,10 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - D15 paper structure: keep Part I + II; merge only after D13/D14 edits land. Recommend keep.
 - D16 W8 amendment: W8/W8B closed negative; W8C measured, paid spend stopped after cell-03 (0.57x final request, 2.11x cost from 4.49x cache writes); W8D refused on arithmetic — hold-once cannot change the dropped set (already monotone), and the zero-spend gate cannot discriminate ⇒ next policy work is zero-spend only (RR-POLICYCHOICE-20261112, RR-W8DERRATUM-20261113).
 - D17 publication: (a) now; (b) after D13–D15; (c) hold. Recommend (b).
-- D19 (proposed) omission: (a) RFC-0.1 per-turn dropped-page list ⇒ Part II's third branch holds; (b) sidecar-only ⇒ free, but Part I §12's "pure function of a trace" must change; (c) neither ⇒ contradicts §12. Recommend (a) + the turn-scoped export cut (`RR-OMISSION-20261113`).
+- D19 omission representation: REVIEWER-RULED 2026-11-13 = the wire (optional, omitted-when-unknown, per-call list of removed-page identities; sidecar = documented fallback; per-call fail-closed check; scoped view = an addition under a new name) (`RR-OMISSIONANSWER`); owner: ratify + pick placement, names, D-number.
 
 ## Do not touch (sealed specs, frozen fixtures, plugin defaults)
-`spec/rfc-0/` byte-sealed; RFC-0.1 additive law (five touchpoints, ts last); `corpus/` checksums; `design/` plans of record; `08.1-UPDATE-PROMPT.md`; `research/**` (white-paper lane); capture default-on + plugin bumps (card needed); append-only `reports/LOG.md`.
+`spec/rfc-0/` byte-sealed; RFC-0.1 additive law (five touchpoints, ts last); `corpus/` checksums; `design/` plans of record; `08.1-UPDATE-PROMPT.md`; `research/**` (white-paper lane); capture default-on + plugin bumps (card); append-only `reports/LOG.md`.
 
 ## Evidence rules (the integrity rules, three lines)
 1. Every number carries a repo locator + repro command; gate totals from `bash tools/run-ci.sh` are authoritative, never hardcoded (AGENTS.md §2).
@@ -49,4 +49,4 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 
 ## Blocked (item, what it waits for)
 - W8 spend: >= $7.14 billed 11-10 + $0.2534 cell-03 (11-12); stopped until a zero-spend simulation predicts a win; W8D refused on arithmetic (RR-W8DERRATUM-20261113).
-- Publication: owner (D17). W12 beyond Steps 0–1: D7 ruled hold. `/tmp/w8` run tree DESTROYED (`RR-W8INDEX-20261107`); go-forward runs → `~/.local/state/ctxvm/w8-runs`.
+- Publication: owner (D17). W12 beyond Steps 0–1: D7 ruled hold. `/tmp/w8` tree DESTROYED (`RR-W8INDEX-20261107`); go-forward runs → `~/.local/state/ctxvm/w8-runs`.
