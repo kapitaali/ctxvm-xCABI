@@ -659,6 +659,21 @@ pin true every card close.
   while the disk reads 0.13.23 ✓ ⇒ captures taken now are labelled 0.13.22 ✓ ⇒ **asked, not restarted** ✓
   (LANES.md ✓) ⇒ ⇒ **prevention for the owner** ✓: a doc that needs the version should *point at* the
   authoritative pair ✓ instead of restating a number ✓ ⇒ no doc can go stale ✓.
+  *REVIEW-SIDE INPUT FOR THE HERMES LANE'S H9 (`reports/RR-H9-INPUT-20261113.md`):* H9 = *"Record what the engine
+  decided"* ✓ (`design/ROADMAP-HERMES-LANE.md:76-84` ✓) ⇒ **input only** ✓ (no spec, no adapter, no `design/`
+  edit ✓) ⇒ **two of its four fields are already delivered** ✓ (0.13.23's per-call `removed` ✓ **is**
+  `droppedPages`/`droppedTokens` ✓) ⇒ ⇒ **re-scope H9** ✓ to the **reason** ✓ + the **floor** ✓ + the **prefix
+  hash** ✓ ⇒ ⇒ the reason is **one line from where H9 wants it** ✓ (`_plan` ✓ :743 ✓ :744-745 ✓ :757-769 ✓ ⇒
+  H9's three reasons are `_plan`'s three exits ✓) ⇒ ⇒ **but** the observer's guard ✓ (:553 ✓) fires only for
+  dropping selections ⇒ ⇒ a `fits` reason would never be reported ⇒ ⇒ emit it for **every** selection ✓ ⇒ ⇒
+  the **enum is incomplete** ✓ (`_plan` returns `(dropped, repositioned)` ✓) ⇒ ⇒ **the floor is per call** ✓
+  (measured ✓: the smallest `before` in the 0.13.21 window is **6,009** ✓ and the floor grows with the last-six
+  window ✓ ⇒ ⇒ H10 needs the **turn** ✓) ⇒ ⇒ **`prefixHash` needs the owner's canonical form** ✓ (P11 ✓) and it
+  closes the loop with the cache line ✓ (the 4.49× writes ✓ and the prefix collapsing to the static **14,504** ✓
+  are the provider's view of the same event ✓) ⇒ ⇒ and a **measurement** ✓: the reason distribution H9 would
+  have written is **fits 25 | evicted 16 | floor_bust 0** ✓ ⇒ ⇒ the `floor_bust` string is **silent in this
+  shape** ✓ ⇒ ⇒ H9's value is shape-dependent ✓ ⇒ ⇒ the honest argument is *"only the engine knows the floor"*
+  ✓ ⇒ ⇒ **H9 and H10 are one change** ✓ ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
