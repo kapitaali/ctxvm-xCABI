@@ -503,6 +503,34 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
             del CALL_LOG[:-200]
         except Exception:
             pass
+        try:
+            # One line per selection, with the numbers a reader would otherwise have to infer.
+            _dbg_before = sum(_tokens_for(m) for m in request_messages)
+            _dbg_after = _dbg_before
+            if dropped or repositioned:
+                _dbg_after = sum(_tokens_for(m) for m in self._assemble(
+                    request_messages, units, keep_hard, dropped, repositioned))
+            import os as _os, time as _time
+            _d = Path(_os.environ.get("CTXVM_TRACE_DIR") or
+                      (Path(_os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
+                       / "ctxvm" / "traces"))
+            _d.mkdir(parents=True, exist_ok=True)
+            with open(_d / "_selections.log", "a", encoding="utf-8") as _f:
+                _f.write(f"{_time.strftime('%Y-%m-%dT%H:%M:%S')} arm={(pol or {}).get('arm')} "
+                         f"budget={self._v_budget} before={_dbg_before} after={_dbg_after} "
+                         f"dropped={len(dropped)} "
+                         f"resident={sum(u.tokens for u in units.values()) if isinstance(units, dict) else 0}\n")
+        except Exception as _exc:  # noqa: BLE001 - a log line must never break a selection
+            try:
+                import os as _os2
+                _d2 = Path(_os2.environ.get("CTXVM_TRACE_DIR") or
+                           (Path(_os2.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
+                            / "ctxvm" / "traces"))
+                _d2.mkdir(parents=True, exist_ok=True)
+                with open(_d2 / "_swallowed.log", "a", encoding="utf-8") as _f2:
+                    _f2.write(f"select_context_log: {type(_exc).__name__}: {_exc}\n")
+            except Exception:
+                pass
         if not dropped and not repositioned:
             return None  # L7: nothing changed → byte-identical request
 

@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.20"
+PLUGIN_VERSION = "0.13.21"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -380,6 +380,30 @@ def _clear_env_for_tests() -> None:
     os.environ.pop("CTXVM_FEATURES", None)
     if hasattr(sys, _STATE_ATTR):
         delattr(sys, _STATE_ATTR)
+
+
+def _swallow(where: str, exc: BaseException) -> None:
+    """Record a swallowed exception. An `except: pass` has now hidden three day-long bugs.
+
+    Every guard in this plugin is fail-open on purpose — observability must never break a turn — but a
+    silent swallow turns a broken instrument into a confident wrong result. One line per site is enough
+    to tell "nothing happened" from "something threw".
+    """
+    try:
+        import time as _time
+        d = Path(os.environ.get("CTXVM_TRACE_DIR") or
+                 (Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
+                  / "ctxvm" / "traces"))
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "_swallowed.log"
+        if f.exists() and f.stat().st_size > 2_000_000:
+            return
+        with open(f, "a", encoding="utf-8") as fh:
+            fh.write(f"{_time.strftime('%Y-%m-%dT%H:%M:%S')} {where}: "
+                     f"{type(exc).__name__}: {exc}\n")
+    except Exception:  # noqa: BLE001 - the recorder itself must never raise
+        pass
+
 
 
 def _write_live_stamp(session_id: str) -> None:
@@ -1441,8 +1465,8 @@ def register(ctx) -> None:
             # when it is needed (0.13.8).
             try:
                 _write_live_stamp(kwargs.get("session_id", "") or "")
-            except Exception:  # noqa: BLE001
-                pass
+            except Exception as _exc:  # noqa: BLE001
+                _swallow("write_live_stamp", _exc)
             _maybe_write_through(vm, stats)
             # W8C step 2: point the engine's observer at THIS session's tracer, so a selection that
             # happens on the next request is recorded in the right capture (one engine, many arms).
@@ -1473,8 +1497,8 @@ def register(ctx) -> None:
                         if _refs:
                             _state().setdefault("evicted_refs_by_session", {}) \
                                 .setdefault(_target, set()).update(_refs)
-                    except Exception:  # noqa: BLE001 - observability must never break a turn
-                        pass
+                    except Exception as _exc:  # noqa: BLE001 - observability must never break a turn
+                        _swallow("record_selection", _exc)
 
                 engine.set_observer(_record_selection)
         elif TRACE_FEATURE in features:
