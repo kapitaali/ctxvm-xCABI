@@ -533,6 +533,15 @@ pin true every card close.
   last-write-wins per user turn (dropping call 1 of 2 from `call.meta`) ✓; (3) `@ctxvm/opencode` still
   emits v0 `identifier_scan` `faultOfResidentPage` rows (`12` vs `0` on Hermes 0.12.0+) ✓; (4)
   `README.md:114,116` can cite `RR-OCDIFF-20261113` and `m5` vs `m7` ✓.
+  *REVIEW OF W8C CLOSING (`7ca4672`, plugin `0.13.19`, `reports/RR-W8CCLOSINGREV-20261113.md`):*
+  empirical results and trace `evictedTokens > 0` proof stand ✓; however, the reason `0.13.18` lost
+  `evictedPagesCount` (`0`) and `callSizes` (`0`) was **not** policy re-attribution — in both `0.13.18`
+  (`3f0f7a0`) and `0.13.19` (`7ca4672`), `packages/hermes/live/__init__.py:1465` uses `_target` **15
+  lines before `_target = _sid` is assigned at `:1480`**, raising `UnboundLocalError: cannot access
+  local variable '_target' where it is not associated with a value` on every call and swallowing it in
+  `except Exception: pass` (`:1485`) ✓. Also `_coverage_manifest` (`:790`) still writes
+  `"engineSelections": _selections_total()` (only `_write_live_stamp` at `:405` writes
+  `engineSelectionsProcess`) ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
