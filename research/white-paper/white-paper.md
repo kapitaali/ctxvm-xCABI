@@ -681,6 +681,7 @@ The field does not need another private pager. It needs a way to measure the con
 | Working title | Virtual memory for LLM agent context: the xCABI standard and the ctxvm engine |
 | Format | Markdown single source (MyST for website, Markdown → LaTeX/WeasyPrint for PDF) |
 | Style | ASD-STE100-inspired (active voice, defined terms, no idioms, no marketing language) |
+| Version references | A plugin version appears only where a result depends on the build, and then dated to that build. Descriptive prose names the source file (`live/__init__.py`), never a release number — the plugin carried 48 distinct version values between 2026-10-24 and 2026-11-13 and no CI step reads this document, so a bare "current version" is false within a day of being written. State a build the way §3.8 states the gate: with its witness date. |
 | Audience | Coders, scientists, generally computer-literate readers |
 | Phases complete | P1 (§1–2), P2 (§3), P3 (§4), P4 (§5–9 + references), P5 (final draft + PDF + website), P6 (safety related work §8.7–§8.11), P7 (threat model to research agenda, §9–§17, 5 Nov 2026), P8 (review pass: headline scope, compliance condition, sampling controls, redaction section) |
 | External claims | Verified against primary sources at the level stated per item: abstracts for the 19 arXiv sources, the AISI blog text for the auditing claims, the regulation text for Articles 12 and 55. Body-level figures are marked. |
