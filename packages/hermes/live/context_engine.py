@@ -489,15 +489,25 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                          f"resident={sum(u.tokens for u in units.values()) if isinstance(units, dict) else 0}\n")
         except Exception:
             pass
-        if not dropped and not repositioned:
-            return None  # L7: nothing changed → byte-identical request
-        assembled = self._assemble(request_messages, units, keep_hard, dropped, repositioned)
+        # Log EVERY selection, dropping or not: a call log that only holds drops makes the scorer's
+        # sign test one-sided (every entry "predicted drop" by construction) — measured 2026-11-12.
         try:
-            CALL_LOG.append({"before": sum(_tokens_for(m) for m in request_messages),
-                             "after": sum(_tokens_for(m) for m in assembled)})
+            _before = sum(_tokens_for(m) for m in request_messages)
+            if dropped or repositioned:
+                _after = sum(_tokens_for(m) for m in
+                             self._assemble(request_messages, units, keep_hard, dropped, repositioned))
+            else:
+                _after = _before
+            CALL_LOG.append({"before": _before, "after": _after,
+                             "dropped": len(dropped), "budget": self._v_budget})
             del CALL_LOG[:-200]
         except Exception:
             pass
+        if not dropped and not repositioned:
+            return None  # L7: nothing changed → byte-identical request
+
+        assembled = self._assemble(request_messages, units, keep_hard, dropped, repositioned)
+
         # W8C: tell the observer what this selection cost. Until 2026-11-11 the engine rewrote the
         # request and said nothing, so the trace reported evictedTokens 0 on a session whose
         # residency was capped at the budget — a real treatment that no capture could witness.
@@ -512,7 +522,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                     # score the simulator: measured 2026-11-12, the naive model misses the onset by a
                     # turn and the total by 31 %, and both residuals come from that aggregation.
                     "beforeTokens": sum(_tokens_for(m) for m in request_messages),
-                    "afterTokens": sum(_tokens_for(m) for m in assembled),
+                    "afterTokens": _after,
                 })
         except Exception:  # noqa: BLE001 - reporting must never break a selection
             pass

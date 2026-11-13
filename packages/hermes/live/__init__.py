@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.13"
+PLUGIN_VERSION = "0.13.14"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -576,7 +576,7 @@ def _engine_selections_from_instance() -> Optional[int]:
 def _engine_activated_for(profile: Optional[str] = None) -> Optional[str]:
     """Engine name only if the engine actually selected for THIS profile's sessions."""
     try:
-        return _state().get("engine_registered") if _engine_selections_for(profile) > 0 else None
+        return _state().get("engine_registered") if _selections_total() > 0 else None
     except Exception:  # noqa: BLE001
         return _engine_activated()
 

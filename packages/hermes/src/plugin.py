@@ -382,12 +382,19 @@ class Tracer:
         out: List[str] = []
         if not isinstance(dropped, list):
             return out
+        def _stem(tok: str) -> str:
+            # `_value_tokens` and `identity_tokens` disagree on punctuation and extensions
+            # ("part-01" vs "part-01.txt"), so the join compares stems, not raw strings.
+            base = str(tok).replace("\\", "/").rsplit("/", 1)[-1]
+            return base.split(".", 1)[0].lower()
+
         for toks in dropped:
             if not isinstance(toks, list):
                 continue
-            want = set(t for t in toks if isinstance(t, str))
+            want = {_stem(t) for t in toks if isinstance(t, str) and len(str(t)) >= 3}
             for ref, page in self._declared.items():
-                if want & set(page.get("identities") or []):
+                have = {_stem(t) for t in (page.get("identities") or [])}
+                if want & have:
                     out.append(ref)
                     break
         return out
