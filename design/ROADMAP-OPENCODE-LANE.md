@@ -550,6 +550,16 @@ pin true every card close.
   offline: 81 → 121 lines) ✓, so the file must be filtered by the run's timestamp window, not counted ✓;
   (2) `_swallowed.log` covers **2 of 23** swallow sites in `live/__init__.py` and **0 of 12** in
   `context_engine.py` ✓ ⇒ its absence proves nothing for the other 33 ✓.
+  *W8D PREREGISTRATION REVIEWED (`3d91fb9`, `reports/RR-W8DREVIEW-20261112.md`):* the refusal to spend is
+  RIGHT ✓ and stronger than stated ✓, but three arithmetic seams are open ✓ — (1) “unsent content 203,975” is
+  the net request reduction, not the unsent content (894,814 ✓), and the input rate belongs to the cold-prefix
+  shape ✓, so the measured penalty is **11.6×** ✓ (the books' ratio ✓), not 3.1–4.1× ✓; (2) §9's “36 rewrite
+  events” has no locator ✓ and the pair's own billed write volume is **1,254,207** ✓ (not the export's
+  1,408,011 ✓, which includes 14 non-pair requests ✓); (3) the decisive measured number is **24,424 write
+  tokens/call** ✓ (DB ✓) against a 1,868–2,428 allowance ✓ ⇒ **~10× over allowance today** ✓ — and §5 step 1
+  cannot run as written (cell-03 has no `_selections.log` ✓) while the 0.13.22 capture already answers it:
+  its dropped-set sizes are **monotone** ✓, so hold-once is a set-level no-op ✓ and falsifier H4's bracket
+  admits its own falsifier ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
