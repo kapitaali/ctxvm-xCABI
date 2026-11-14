@@ -694,6 +694,20 @@ pin true every card close.
   **checker** must require the **per-call** list ✓, not the union count ✓ ⇒ ⇒ the first live witness becomes
   possible ✓: the gateway PID 24698 is gone ✓ ⇒ any new gateway loads **0.13.23** ✓ ⇒ the next capture would
   exercise the rule ✓ ⇒ (five synthetic sidecars, zero spend ✓, no code change ✓).
+  *H9 LANDING REVIEWED (`reports/RR-H9LANDING-20261114.md`):* the other lane's H9 landed ✓ (`e480186` ✓, plugin
+  **0.13.24** ✓) ⇒ ⇒ **what held** ✓: the reason fires on **every** selection ✓ (205 ⇒ 205 plan payloads ✓, the eviction
+  channel still silent on a no-op ✓ ⇒ L7 intact ✓), the wire and `ts` untouched ✓, the installed copy byte-identical ✓
+  ⇒ ⇒ **seven measured defects** ✓ (none needing a schema change ✓): **`fits` also names a rewritten request** ✓ (the
+  reason comes from the drop set alone ✓ ⇒ **554** reposition-only decisions ✓ would be `fits` ✓ — a live code path ✓,
+  **0** of them in real traffic so far ✓); **`prefixHash`'s window moves with the cut** ✓ ⇒ two calls with an identical
+  head hash differently ✓ ⇒ it cannot answer the question it claims ✓; **the floor series and the turn are dropped** ✓
+  ⇒ ⇒ H10 still has no bytes ✓; **the checker types the words and never checks the numbers** ✓ (five contradictory
+  plans accepted ✓, negatives included ✓); **the plan block's presence is not version-gated** ✓ ⇒ a broken emitter is
+  invisible ✓; **the tolerance clause is keyed on the settings budget** ✓ ⇒ both halves of the ruled rule are still
+  unenforced in the default shape ✓; and two smaller ones ✓ (the plan's `residentTokens` is request residency ✓; the
+  plan's `callIndex` and the per-call `i` disagree past the cap ✓) ⇒ ⇒ **eight asks** ✓ (six one-liners ✓) ⇒ ⇒ **the
+  version drift is closed** ✓ (pid 23669 ✓ holds 0.13.24 ✓) ⇒ ⇒ the newest live capture is the **control** arm ✓ ⇒ ⇒
+  the ruled per-call rule still needs a **paged** capture ✓ ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND

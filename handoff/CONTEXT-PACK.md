@@ -10,6 +10,7 @@
 7. Measurement stack: metric formulas + fixtures + policy simulator (`benchmarks/metrics/`), packaged as ODPS data products.
 8. W8's "does paging help?" is CLOSED FAILED: paging never bent the request curve; the task was search-bound (`reports/RR-W8INDEX-20261107.md`).
 9. What a trace does NOT record: a page OMITTED from the request — RFC-0 v0 has no omission verb (`page.evict` requires `stubText`), `turn.render.evictedTokens` is unchecked in v0 (OPEN T-OVICT) and is a LAGGING CUMULATIVE, and `turn.render.residentTokens` is TABLE residency, not request residency (`reports/RR-SHAPEGAP-20261113.md`, `reports/RR-OMISSION-20261113.md`).
+10. The sidecar's `enginePlan` names the plan's **reason** (`fits` | `floor_bust` | `evicted`) but does **not** say whether the request changed (`fits` also covers a reposition-only rewrite), its `residentTokens` is **request** residency (not the wire's table residency), and its `prefixHash` is a probe whose window moves with the cut (`reports/RR-H9LANDING-20261114.md`).
 
 ## 2. Glossary (one line each, from the repo)
 - page — content a tool result contributes to a turn, addressed without carrying its bytes (white-paper.md §4.1; RFC-0 event table).

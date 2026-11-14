@@ -30,9 +30,10 @@ which paths, which files cannot be owned, and how a shared file is claimed. Read
   `design/w8-run-plan.md` §4e. Do not start a paid cell.
 - REDLINE measures **1.0968x** at 16k against a claimed 1.5x (`reports/RR-REDLINE-20261108.md`):
   a negative result, recorded. Do not restate the 1.5x claim anywhere.
-- Plugin `ctxvm-tracer` **0.13.23** on disk (authoritative: `live/__init__.py` + `live/plugin.yaml`,
-  gate-enforced). The **running gateway still holds 0.13.22** (PID 24698, started before the swap), so a
-  capture taken now is labelled 0.13.22 — ask before any restart. Only the hermes lane syncs the copy.
+- Plugin `ctxvm-tracer` **0.13.24** on disk (authoritative: `live/__init__.py` + `live/plugin.yaml`,
+  gate-enforced). The **running gateway holds it** (PID 23669, started after the 09:31 sync), so a capture
+  taken now is labelled 0.13.24 — but the newest one is the **control** arm, so the **paged** capture is
+  still owed. Only the hermes lane syncs the copy.
 
 ## 2. Work split (who does what)
 
