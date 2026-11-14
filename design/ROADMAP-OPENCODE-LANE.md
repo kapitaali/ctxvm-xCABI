@@ -684,6 +684,16 @@ pin true every card close.
   whole-table residency ✓ ⇒ a replacement would make v0.1 captures diverge ✓) ⇒ ⇒ **D19 (proposed)** stays on the
   owner's table ✓ (placement ✓, names ✓, D-number ✓, tolerance ✓) ✓ and the answer text is verbatim in
   `handoff/QUESTIONS.md` ✓.
+  *THE RULED PER-CALL RULE IS HALF LIVE (`reports/RR-CHECKER-GAPS-20261114.md`):* the P12 ruling has three clauses ✓
+  and the shipped checker (`f3078b4` ✓) enforces **two** ✓ — a dropping call must **name** what it removed ✓
+  (enforced ✓) and the named tokens must account for the size change ✓ (enforced ✓, 10 % tolerance ✓) — but
+  **"a capture with removals and no list is a violation" is NOT enforced** ✓ ⇒ a sidecar with `callSizes`
+  emptied passes with exit 0 ✓ and still passes with the union count present ✓ ⇒ ⇒ **two one-line asks** ✓:
+  the **adapter** must write `plugin.evictedTokens` ✓ (the session's removal total ✓ — the plugin block has no
+  such key ✓ ⇒ the shape rule's precondition is never satisfied ✓ ⇒ **dormant in production** ✓) and the
+  **checker** must require the **per-call** list ✓, not the union count ✓ ⇒ ⇒ the first live witness becomes
+  possible ✓: the gateway PID 24698 is gone ✓ ⇒ any new gateway loads **0.13.23** ✓ ⇒ the next capture would
+  exercise the rule ✓ ⇒ (five synthetic sidecars, zero spend ✓, no code change ✓).
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
