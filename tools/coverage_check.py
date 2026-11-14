@@ -387,6 +387,37 @@ def main(argv: list) -> int:
                               f"call {c.get('i')}: removed pages name {named} tokens against an "
                               f"actual drop of {actual} (tolerance 10 %)")
 
+        # H9 plan block: absent on captures from an older build, so it is typed only when present.
+        # A reason outside the three names is a violation, not a gap: the whole point of the block
+        # is that the reason is one of a closed set a verifier can branch on.
+        plan = plugin.get("enginePlan")
+        if plan is not None:
+            if not isinstance(plan, dict):
+                _fail(violations, "plugin", "plugin.enginePlan must be an object or null")
+            else:
+                if plan.get("reason") not in ("fits", "floor_bust", "evicted"):
+                    _fail(violations, "plugin",
+                          "plugin.enginePlan.reason must be one of fits, floor_bust, evicted")
+                for key in ("floorTokens", "residentTokens", "droppedCount", "droppedTokens",
+                            "repositionedCount", "budgetTokens", "callIndex"):
+                    if key in plan and not _int(plan[key]):
+                        _fail(violations, "plugin",
+                              f"plugin.enginePlan.{key} must be a non-negative integer")
+                ph = plan.get("prefixHash")
+                if ph is not None and not (isinstance(ph, str) and ph.startswith("sha256:")):
+                    _fail(violations, "plugin",
+                          "plugin.enginePlan.prefixHash must be a sha256: string or null")
+        tally = plugin.get("enginePlanTally")
+        if tally is not None:
+            if not isinstance(tally, dict):
+                _fail(violations, "plugin", "plugin.enginePlanTally must be an object")
+            else:
+                for key, value in tally.items():
+                    if key not in ("fits", "floor_bust", "evicted") or not _int(value):
+                        _fail(violations, "plugin",
+                              f"plugin.enginePlanTally.{key}: expected a non-negative integer "
+                              f"under fits/floor_bust/evicted")
+
         # A treatment that reports evictions must say WHICH pages left the request. A token count
         # alone cannot distinguish "the engine dropped the middle" from "something else changed the
         # prefix" — measured 2026-11-12, before the engine reported identities.

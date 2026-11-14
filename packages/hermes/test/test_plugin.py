@@ -1932,6 +1932,39 @@ class SessionAttributionTests(unittest.TestCase):
         self.assertEqual((naive["budgetTokens"], naive["budgetSource"]), (200000, "default"))
         self.assertEqual((paged["budgetTokens"], paged["budgetSource"]), (60000, "settings"))
 
+    def test_the_plan_block_is_attributed_to_its_own_session(self):
+        """H9 — one process, several sessions: a plan block belongs to the session that planned.
+
+        The engine is a single object in the gateway and the plan channel is a module-global slot,
+        so the sidecar must read the per-session record or a control capture would carry the
+        treatment's reason. `enginePlan` is null — not guessed — for a session with no plan.
+        """
+        from live import _coverage_manifest
+        _clear_env_for_tests()
+        _state()["plan_by_session"] = {
+            "sess-a": {"reason": "floor_bust", "floorTokens": 900, "residentTokens": 950,
+                       "droppedCount": 0, "droppedTokens": 0, "repositionedCount": 0,
+                       "budgetTokens": 700, "prefixHash": "sha256:abc", "callIndex": 3},
+            "sess-b": {"reason": "evicted", "floorTokens": 100, "residentTokens": 9000,
+                       "droppedCount": 4, "droppedTokens": 7000, "repositionedCount": 1,
+                       "budgetTokens": 2000, "prefixHash": "sha256:def", "callIndex": 4},
+        }
+        _state()["plan_tally_by_session"] = {
+            "sess-a": {"fits": 0, "floor_bust": 1, "evicted": 0},
+            "sess-b": {"fits": 2, "floor_bust": 0, "evicted": 1},
+        }
+        trace = self._trace()
+        a = _coverage_manifest("sess-a", "a.jsonl", trace)["plugin"]
+        b = _coverage_manifest("sess-b", "b.jsonl", trace)["plugin"]
+        self.assertEqual(a["enginePlan"]["reason"], "floor_bust")
+        self.assertEqual(b["enginePlan"]["reason"], "evicted")
+        self.assertEqual(a["enginePlanTally"]["floor_bust"], 1)
+        self.assertEqual(b["enginePlanTally"]["fits"], 2)
+        self.assertEqual(b["enginePlan"]["droppedTokens"], 7000)
+        self.assertEqual(a["enginePlan"]["budgetTokens"], 700)
+        c = _coverage_manifest("sess-c", "c.jsonl", trace)["plugin"]
+        self.assertIsNone(c["enginePlan"], "a session with no plan must not borrow another's")
+
 
 class CoverageManifestTests(unittest.TestCase):
     """W17 — the coverage sidecar rides every FULL flush and answers to ONE

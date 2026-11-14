@@ -261,7 +261,10 @@ ENTERED = {"n": 0}
 # Module-global observer slot. Per-session callbacks have now been lost to instance identity three
 # times (clone at build, second registration, sidecar reading another object); a module global cannot
 # be out of step with the code that fires it.
-OBSERVER: Dict[str, Any] = {"cb": None}
+OBSERVER: Dict[str, Any] = {"cb": None, "plan": None}
+# Two channels on purpose. `cb` reports EVICTIONS and stays silent on a no-op (L7, pinned by a test);
+# `plan` reports the budget DECISION on every selection, including the two no-change reasons, because
+# "the plan found nothing" and "the engine was never asked" are different facts (H9).
 # Per-selection request sizes, module-global for the same reason as the observer: the capture must be
 # able to read what the engine did without depending on which instance or which state dict it finds.
 CALL_LOG: List[Dict[str, int]] = []
@@ -471,7 +474,31 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         self._credit_demand(request_messages)
 
         keep_hard = self._hard_keep(request_messages, units)
-        dropped, repositioned = self._plan(request_messages, units, keep_hard)
+        dropped, repositioned, plan_facts = self._plan(request_messages, units, keep_hard)
+        # H9: report the DECISION on every selection, including both no-change reasons. The eviction
+        # channel below is silent on a no-op by design (L7), so before this block a reader could not
+        # separate "the plan found nothing" from "the engine was never asked" — three closed cells
+        # were diagnosed with arithmetic that this states in one word.
+        try:
+            if OBSERVER["plan"] is not None:
+                _changed = set(dropped)
+                for _u in units.values():
+                    if _u.key in repositioned:
+                        _changed.add(_u.result_index)
+                _cut = min(_changed) if _changed else len(request_messages)
+                # A fixed probe of the leading protected block, NOT the provider's cache key: it
+                # answers "did the head of the request change between calls" (H11's question) and
+                # nothing else. Eight messages is the system prompt plus the head-protected window.
+                _probe = request_messages[: min(_cut, 8)]
+                _digest = hashlib.sha256(
+                    json.dumps(_probe, sort_keys=True, default=str).encode("utf-8")
+                ).hexdigest()[:16]
+                OBSERVER["plan"](dict(plan_facts,
+                                      budgetTokens=self._v_budget,
+                                      prefixHash="sha256:" + _digest,
+                                      callIndex=len(CALL_LOG)))
+        except Exception:  # noqa: BLE001 - reporting must never break a selection
+            pass
         try:
             # The decision, recorded where it is made: the live counters said "entered 57, selected 0"
             # and could not say whether the plan found nothing or the call never got that far.
@@ -672,10 +699,17 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                 if toks and not toks.isdisjoint(words):
                     page["prose_mentions"] = page.get("prose_mentions", 0) + 1  # telemetry, never a pin
 
-    def set_observer(self, callback: Any) -> None:
-        """Install the per-session observer the plugin uses to record selections (W8C)."""
+    def set_observer(self, callback: Any, plan_callback: Any = None) -> None:
+        """Install the per-session observers the plugin uses to record selections (W8C, H9).
+
+        `callback` receives evictions only (L7: an unchanged request reports nothing).
+        `plan_callback` receives every selection's plan facts — reason, floor, dropped tokens,
+        prefix probe — so a capture can say why a request did or did not change.
+        """
         self._observer_ref[0] = callback
         OBSERVER["cb"] = callback
+        if plan_callback is not None:
+            OBSERVER["plan"] = plan_callback
 
     def note_refault(self, args: Any) -> int:
         """W8C: the model asked for the same page again — pin it, at CALL time.
@@ -733,16 +767,30 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         return keep
 
     def _plan(self, messages: List[Dict[str, Any]], units: Dict[int, _PageUnit],
-              keep_hard: Set[int]) -> Tuple[Set[int], Set[str]]:
+              keep_hard: Set[int]) -> Tuple[Set[int], Set[str], Dict[str, Any]]:
         """The budget decision. Returns (dropped result indices, repositioned
-        page keys). The invariant both outputs inherit: hard keeps never drop,
+        page keys, plan facts).
+
+        The facts answer "why did this request change, or not" — the question three closed cells
+        answered by arithmetic on resident and headroom (H9). ``reason`` is one of:
+        ``fits`` (everything the plan could keep fits; pinned pages may still reposition),
+        ``floor_bust`` (the keep law's floor alone reaches vBudget, so nothing can be evicted),
+        ``evicted`` (the budget bit and at least one page left the request).
+
+        The invariant both outputs inherit: hard keeps never drop,
         pinned pages never drop, and pinned pages reposition into the L1(c)
         block. Pin-crunch (pinned + floor + scaffold already above
         vBudget): nothing else can come out — the non-pinned pages all drop,
         which is the smallest achievable request that still honors L5."""
         floor_tokens = sum(_tokens_for(messages[i]) for i in keep_hard)
+        resident_tokens = sum(_tokens_for(m) for m in messages)
         if floor_tokens >= self._v_budget:
-            return set(), set()  # L5: keep law owns this request; pages never rescue
+            # L5: keep law owns this request; pages never rescue
+            return set(), set(), {
+                "reason": "floor_bust", "floorTokens": floor_tokens,
+                "residentTokens": resident_tokens, "droppedCount": 0,
+                "droppedTokens": 0, "repositionedCount": 0,
+            }
         scaffold_tokens = sum(_tokens_for(messages[i]) for i in range(len(messages))
                               if i not in keep_hard and i not in units)
         present_keys = {u.key for u in units.values()}
@@ -766,7 +814,15 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
             else:
                 dropped = {x.result_index for x in walk[idx :]}
                 break
-        return dropped, set(pinned_keys)
+        facts = {
+            "reason": "evicted" if dropped else "fits",
+            "floorTokens": floor_tokens,
+            "residentTokens": resident_tokens,
+            "droppedCount": len(dropped),
+            "droppedTokens": sum(units[i].tokens for i in dropped if i in units),
+            "repositionedCount": len(pinned_keys),
+        }
+        return dropped, set(pinned_keys), facts
 
     # ---- pass 4: assembly ---------------------------------------------------------
 

@@ -626,9 +626,10 @@ class EngineLawTests(unittest.TestCase):
         tx = [_msg("system", "s"), _msg("user", "u"),
               _msg("assistant", "", tool_calls=[_call("c1", "notes/a.md")]),
               _msg("tool", _result(100, "a"), tool_call_id="c1")]
-        dropped, repos = engine._plan(
+        dropped, repos, facts = engine._plan(
             tx, engine._classify(tx), engine._hard_keep(tx, engine._classify(tx)))
         self.assertEqual((dropped, repos), (set(), set()))
+        self.assertEqual(facts["reason"], "fits")
 
     # -- copying / lifecycle ----------------------------------------------------
 
@@ -904,6 +905,83 @@ class SelectionReportingTests(unittest.TestCase):
         engine.set_observer(seen.append)
         engine.select_context([_msg("system", "sys"), _msg("user", "go")])
         self.assertEqual(seen, [], "an unchanged request reports nothing (L7)")
+
+
+class EnginePlanRecordTests(unittest.TestCase):
+    """H9 — the plan says WHY, in one word, on every selection.
+
+    Three closed experiment cells were diagnosed by arithmetic on `resident` and `headroom`; a
+    `reason` of fits / floor_bust / evicted would have said it in one line. The eviction channel is
+    silent on a no-op by design (L7, pinned above), so the plan channel is a SECOND slot rather
+    than a change to the first: making `cb` fire on every call would break the law it protects.
+    """
+
+    def _pressured(self, budget: int = 30_000):
+        engine = ce.build_engine(v_budget=budget)
+        tx = [_msg("system", "sys"), _msg("user", "go")]
+        for i in range(1, 9):
+            tx.append(_msg("assistant", "", tool_calls=[_call(f"c{i}", f"notes/f{i}.md")]))
+            tx.append(_msg("tool", _result(22_000, f"f{i}"), tool_call_id=f"c{i}"))
+        return engine, tx
+
+    def _plans(self, engine):
+        plans = []
+        engine.set_observer(lambda payload: None, plans.append)
+        return plans
+
+    def test_fits_is_named_when_nothing_has_to_leave(self):
+        engine = ce.build_engine()
+        plans = self._plans(engine)
+        self.assertIsNone(engine.select_context([_msg("system", "s"), _msg("user", "u")]))
+        self.assertEqual(len(plans), 1, "the plan channel reports the no-op too")
+        self.assertEqual(plans[0]["reason"], "fits")
+        self.assertEqual(plans[0]["droppedCount"], 0)
+        self.assertEqual(plans[0]["droppedTokens"], 0)
+
+    def test_floor_bust_is_named_when_the_keep_law_owns_the_request(self):
+        # A budget below the preregistered 24,000 is CLAMPED, not honoured (vBudget confirms or
+        # raises), so the floor has to be pushed over a legal budget rather than the budget pulled
+        # under a small floor: 130k characters of system prompt is ~32.5k tokens at 4 chars/token.
+        engine = ce.build_engine(v_budget=24_000)
+        plans = self._plans(engine)
+        tx = [_msg("system", "s" * 130_000), _msg("user", "and a user turn")]
+        self.assertIsNone(engine.select_context(tx))
+        self.assertEqual(plans[0]["reason"], "floor_bust")
+        self.assertEqual(plans[0]["budgetTokens"], 24_000)
+        self.assertGreater(plans[0]["floorTokens"], plans[0]["budgetTokens"],
+                           "floor_bust means the floor alone reached the budget")
+
+    def test_evicted_names_the_drop_and_its_tokens(self):
+        engine, tx = self._pressured()
+        plans = self._plans(engine)
+        self.assertIsNotNone(engine.select_context(list(tx)))
+        self.assertEqual(plans[0]["reason"], "evicted")
+        self.assertGreater(plans[0]["droppedCount"], 0)
+        self.assertGreater(plans[0]["droppedTokens"], 0)
+        self.assertGreater(plans[0]["residentTokens"], plans[0]["budgetTokens"])
+        self.assertTrue(plans[0]["prefixHash"].startswith("sha256:"))
+
+    def test_the_eviction_channel_stays_silent_while_the_plan_channel_reports(self):
+        engine = ce.build_engine()
+        evictions, plans = [], []
+        engine.set_observer(evictions.append, plans.append)
+        engine.select_context([_msg("system", "s"), _msg("user", "u")])
+        self.assertEqual(evictions, [], "L7: an unchanged request reports no eviction")
+        self.assertEqual(len(plans), 1, "every selection reports its plan")
+
+    def test_prefix_probe_is_stable_across_identical_heads(self):
+        engine = ce.build_engine()
+        plans = self._plans(engine)
+        head = [_msg("system", "sys"), _msg("user", "go")]
+        engine.select_context(list(head))
+        engine.select_context(list(head))
+        self.assertEqual(len(plans), 2)
+        stable = plans[0]["prefixHash"]
+        self.assertEqual(stable, plans[1]["prefixHash"])
+        # a different head must change the probe, or it measures nothing
+        engine.select_context([_msg("system", "other"), _msg("user", "go")])
+        self.assertEqual(len(plans), 3)
+        self.assertNotEqual(plans[2]["prefixHash"], stable)
 
 
 if __name__ == "__main__":

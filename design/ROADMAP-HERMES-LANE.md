@@ -73,10 +73,14 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
 
 ## 2. Close the engine's observational gap (free to design, small to build)
 
-- [ ] **H9. Record what the engine decided.** The engine emits no record of its own decision, so a
-  NO-OP and a real selection look the same from outside. Add an `enginePlan` block to the **coverage
-  sidecar** (not the trace): `reason` in {`fits`, `floor_bust`, `evicted`}, `floorTokens`,
-  `droppedPages`, `droppedTokens`, `prefixHash`.
+- [x] **H9. (done 2026-11-14, `RR-ENGINEPLAN-20261114`) Record what the engine decided.** The engine
+  emits no record of its own decision, so a NO-OP and a real selection look the same from outside.
+  The **coverage sidecar** (not the trace) now carries `enginePlan` — `reason` in {`fits`,
+  `floor_bust`, `evicted`}, `floorTokens`, `residentTokens`, `droppedCount`, `droppedTokens`,
+  `repositionedCount`, `budgetTokens`, `prefixHash`, `callIndex` — plus `enginePlanTally`, and the
+  plan is reported on **every** selection while the eviction channel keeps its L7 silence.
+  *Deviation:* `droppedPages` became `droppedCount` (an int; the identities already live in
+  `evictedPages`), and `prefixHash` is a fixed probe of the leading protected block, not a cache key.
   *Why:* the last three cells were diagnosed by arithmetic on `resident` and `headroom`; the reason
   string would have said `floor_bust` in one line.
   *Done when:* a unit test drives `_plan` through all three reasons and asserts the sidecar field; the

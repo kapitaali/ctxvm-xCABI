@@ -246,7 +246,9 @@ factors and the cells are void.
 ```
 session_start never fires          capture relies on lazy pre_llm_call
 turn counter = 0 in one-shot       a property of -z sessions, not a plugin defect
-engine emits no selection record   a gap; sidecar observation only
+engine emits no selection record   CLOSED 2026-11-14: `plugin.enginePlan` + `enginePlanTally`
+                                   (reason, floor, dropped tokens, prefix probe) on every call;
+                                   the restart that puts it live is owed
 retention with suffixed names      implemented, untested
 installed dir                       clean of the old layout (live/, src/, test_plugin.py,
                                    BUG_REPORT.md are gone). ctxvm.py is NOT installed: it is the

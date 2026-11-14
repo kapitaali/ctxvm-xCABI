@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.23"
+PLUGIN_VERSION = "0.13.24"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -838,6 +838,14 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # Every selection's request size before and after, so a simulator can be scored at the
             # granularity the policy actually decides at (two calls per turn).
             "callSizes": (_state().get("call_sizes_by_session", {}) or {}).get(session_id, []),
+            # H9: WHY the last plan did what it did, in one word — fits / floor_bust / evicted.
+            # Three closed cells were diagnosed by arithmetic on resident and headroom; the reason
+            # states it directly. Per SESSION like the rest of the arm fields, and null (not
+            # guessed) for a session whose build had no plan channel.
+            "enginePlan": ((_state().get("plan_by_session") or {}).get(session_id or "") or None),
+            # One session can plan differently on different calls (fits, then evicted). The last
+            # plan alone would read as if the session had one reason, so the tally rides beside it.
+            "enginePlanTally": ((_state().get("plan_tally_by_session") or {}).get(session_id or "")),
         },
         "captures": {
             "turns": len(turns),
@@ -1510,7 +1518,27 @@ def register(ctx) -> None:
                     except Exception as _exc:  # noqa: BLE001 - observability must never break a turn
                         _swallow("record_selection", _exc)
 
-                engine.set_observer(_record_selection)
+                def _record_plan(payload, _sid=_sid):
+                    # H9: the plan channel fires on EVERY selection (including fits/floor_bust),
+                    # so a capture can name the reason instead of inferring it from resident and
+                    # headroom. Per session, like every other arm field: a process-global slot
+                    # would report whichever session planned last.
+                    _target = _sid
+                    try:
+                        _st = _state()
+                        _st.setdefault("plan_by_session", {})[_target] = dict(payload or {})
+                        _tally = _st.setdefault("plan_tally_by_session", {}).setdefault(
+                            _target, {"fits": 0, "floor_bust": 0, "evicted": 0})
+                        _reason = (payload or {}).get("reason")
+                        if _reason in _tally:
+                            _tally[_reason] += 1
+                    except Exception as _exc:  # noqa: BLE001 - observability never breaks a turn
+                        _swallow("record_plan", _exc)
+
+                try:
+                    engine.set_observer(_record_selection, _record_plan)
+                except TypeError:  # an engine copy without the plan channel still gets the observer
+                    engine.set_observer(_record_selection)
         elif TRACE_FEATURE in features:
             stats["skipped_untraced"] += 1
         for uc in _enabled_stubs(features):
