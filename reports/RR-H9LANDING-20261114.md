@@ -1,4 +1,4 @@
-# RR-H9LANDING-20261114 — review of the hermes lane's H9 landing (`e480186`, plugin 0.13.24): **seven measured defects**, five of them one-line fixes, and the ruled per-call rule still has no live witness
+# RR-H9LANDING-20261114 — review of the hermes lane's H9 landing (`e480186`, plugin 0.13.24): **seven measured defects**, **four** of them one-line fixes, and the ruled per-call rule still has no live witness
 
 Card: review-lane verification of the other lane's H9 landing (`e480186` ✓, `reports/RR-ENGINEPLAN-20261114.md` ✓,
 plugin **0.13.24** ✓) against the review-side input card (`reports/RR-H9-INPUT-20261113.md` ✓) and the P12 ruling
@@ -20,8 +20,8 @@ edited here ✓; the asks in §8 are proposals for the hermes lane ✓.
 | the installed copy is in sync ✓ | 4 files byte-identical ✓ (`sync-plugin.sh --check` ✓: `PLUGIN_VERSION: repo 0.13.24 \| installed 0.13.24 \| manifest 0.13.24` ✓) | **HELD** ✓ |
 | the gateway holds the build ✓ | pid **23669** started after the 09:31:36 sync ✓ ⇒ it holds **0.13.24** ✓ | **CLOSED** ✓ (the RR-VERSIONDRIFT ask is moot ✓) |
 
-⇒ ⇒ **the landing is real and the reason field works** ✓ ⇒ ⇒ **seven defects, all in the block's own semantics or its
-check** ✓ ⇒ ⇒ **none of them needs a schema change** ✓ ⇒ ⇒ **five are one-line fixes** ✓ ⇒ ⇒ and the ruled
+⇒ ⇒ **the landing is real and the reason field works** ✓ ⇒ ⇒ **seven** defects ✓ (the probe's byte form ✓ is part of
+defect 2 ✓ — the same field ✓) ⇒ ⇒ all in the block's own semantics or its check ✓ ⇒ ⇒ **none of them needs a schema change** ✓ ⇒ ⇒ **four** are **one-line** fixes ✓ (A1 ✓, A4 ✓, A5 ✓, A8 ✓) ⇒ ⇒ and the ruled
 per-call rule still has **no live witness** ✓ (§6 ✓).
 
 ---
@@ -89,7 +89,9 @@ is **false for the cross-plan case** ✓ ⇒ ⇒ the card's own basis sentence �
 at the first message this plan changed"*) is **accurate** ✓ ⇒ ⇒ the defect is that the two sentences disagree ✓
 ⇒ ⇒ a reader who compares two `prefixHash` values cannot tell *head changed* from *cut moved* ✓.
 
-⇒ ⇒ **the fix is one line** ✓: hash a **fixed** window ✓ (`request_messages[:8]` ✓, or a window that stops at a
+⇒ ⇒ **the fix is one line** ✓: hash a **fixed** window ✓ — and hash it in the **C3 byte form** ✓
+(§7(d) ✓: the probe's byte form diverges from the conformance vector in **every** case ✓) ⇒ ⇒ both halves are
+one line each ✓ (`request_messages[:8]` ✓, or a window that stops at a
 **fixed** message count ✓) ⇒ ⇒ the hash then means what the card says it means ✓ ⇒ ⇒ and it stays comparable
 across arms ✓ ✓.
 
@@ -193,7 +195,7 @@ the fail-closed half unenforced ✓) ⇒ ⇒ **both halves of the ruled rule are
 
 ---
 
-## 7. Two smaller measurements ✓
+## 7. Three smaller measurements ✓ (the first is defect 2's second half ✓)
 
 **(a) `residentTokens` now means two things inside one sidecar file** ✓ ⇒ the plan's value is **request** residency ✓
 (`context_engine.py:786` ✓: `sum(_tokens_for(m) for m in messages)` ✓) ⇒ ⇒ the wire's and `perCall[]`'s value is
@@ -217,7 +219,37 @@ can be recorded into B's bucket ✓ (measured ✓: `A: 0, B: 1` ✓) ⇒ ⇒ the
 (pre-existing ✓) ⇒ ⇒ but H9 adds a **per-session** field on top of it ✓ ⇒ ⇒ the mixup becomes **observable in a
 named field** ✓ ⇒ ⇒ worth one line in the hermes lane's card ✓, not a blocker ✓ ✓.
 
-**(d) The hermes suite is environment-sensitive** ✓ ⇒ ⇒ the landing's *"207 passed"* ✓ reproduces only in a clean
+**(d) The probe's **byte form** is not the repo's **C3** form** ✓ ⇒ ⇒ a digest that cannot be compared across
+implementations ✓. The probe hashes `json.dumps(_probe, sort_keys=True, default=str)` ✓
+(`context_engine.py:492-497` ✓) ⇒ ⇒ measured against the **conformance vector** ✓
+(`rust/crates/ctxvm-conformance/vectors/canonical-form-cases.jsonl` ✓ — the executable form of C3 ✓):
+
+```
+the C3 form  (ensure_ascii=False, minimal separators) vs the vector: 8 match, 0 mismatch
+the H9 form  (json.dumps defaults)                   vs the vector: 0 match, 8 mismatch
+```
+
+⇒ ⇒ **C3 is the repo's normative canonical form for a hash input** ✓ (D18 ✓, applied 2026-11-11 ✓:
+*"the canonical form of a hash input is specified by the conformance test … and is normative for every
+implementation"* ✓) ⇒ ⇒ and the TS mirror already implements it ✓ (`packages/node/src/ident.ts:35` ✓,
+`canonicalJson` ✓ — 24/24 node tests green in a clean env ✓) ⇒ ⇒ so the H9 probe **diverges from the vector in
+every canonical case** ✓ ⇒ ⇒ three measured differences ✓: whitespace separators ✓, ASCII-escaped non-ASCII ✓,
+and `default=str` ✓ (which **coerces** anything non-JSON ✓ — the very thing C3 forbids ✓: *"An inadmissible
+input MUST be rejected, never coerced"* ✓) ⇒ ⇒ and `default=str` on a `set` is **PYTHONHASHSEED-dependent** ✓
+(measured ✓: three seeds ⇒ three byte strings ✓ ⇒ ⇒ **not reproducible** ✓ ✓).
+
+⇒ ⇒ **scope, honestly** ✓: the probe is a **sidecar** field ✓, not a wire field ✓ ⇒ ⇒ C3's letter binds hash
+inputs **in the RFC-0.1 note** ✓ ⇒ ⇒ so this is **not** a violation of a sealed spec ✓ ⇒ ⇒ it is a **latent**
+divergence ✓ ⇒ ⇒ harmless while only the Python plugin writes it ✓ ⇒ ⇒ and **wrong** the moment anyone compares
+the digest across implementations ✓ (the TS mirror ✓ is a **third** form ✓ ⇒ ⇒ **one line**: hash the C3 byte
+form ✓ (`ensure_ascii=False` ✓ + minimal separators ✓) ✓ ✓.
+
+⇒ ⇒ **and a note for the owner** ✓: the hermes plugin's own `canonical_json` ✓
+(`packages/hermes/src/plugin.py:35` ✓) matches the vector in **3** of 8 cases ✓ (it ASCII-escapes ✓) ⇒ ⇒ it
+serves the **RFC-0 §6** reference digest ✓ (sealed ✓, unchanged ✓) ⇒ ⇒ **not** a violation ✓ ⇒ ⇒ but it is
+**not** the C3 form ✓ ⇒ ⇒ so "use the plugin's own helper" would be the **wrong** pointer ✓ ⇒ ⇒ the pointer is
+the **vector** ✓ ✓.
+**(e) The hermes suite is environment-sensitive** ✓ ⇒ ⇒ the landing's *"207 passed"* ✓ reproduces only in a clean
 environment ✓ ⇒ ⇒ with the gateway's ambient `CTXVM_*` variables exported ✓, **11** tests fail ✓ (measured ✓:
 `CTXVM_TRACE_TS=0` alone ⇒ 9 failures ✓; `CTXVM_BUDGET_TOKENS` ⇒ 1 ✓; `CTXVM_HERMES_VERSION` ⇒ 1 ✓) ⇒ ⇒ with
 `env -i` ⇒ **207 passed, 15 subtests** ✓ ⇒ ⇒ a re-runner should know that before calling the suite red ✓ ⇒ ⇒
@@ -230,7 +262,8 @@ environment ✓ ⇒ ⇒ with the gateway's ambient `CTXVM_*` variables exported 
 | # ✓ | ask ✓ | where ✓ | size ✓ |
 |---|---|---|---|
 | A1 ✓ | give the rewrite a name of its own ✓ (a fourth reason ✓, or rename `fits` to say "nothing dropped" ✓) | `context_engine.py:818` ✓ | 1 line ✓ |
-| A2 ✓ | hash a **fixed** window ✓, so `prefixHash` answers the question it claims ✓ | `context_engine.py:488-492` ✓ | 1 line ✓ |
+| A2 ✓ | hash a **fixed** window ✓, in the **C3 byte form** ✓ (`ensure_ascii=False` ✓ + minimal separators ✓,
+the vector ✓), so `prefixHash` answers the question it claims ✓ and one input ⇒ one digest ✓ | `context_engine.py:488-497` ✓ | 2 lines ✓ |
 | A3 ✓ | cross-check the reason against the counters ✓ (three one-liners ✓) and reject negative counters ✓ | `tools/coverage_check.py:401-405` ✓ | 4 lines ✓ |
 | A4 ✓ | version-gate the plan block's **presence** ✓, the way the per-call rule is gated ✓ | `tools/coverage_check.py:390` ✓ | 1 line ✓ |
 | A5 ✓ | key the tolerance clause on the **engine's** budget ✓ (the plan block carries it ✓) | `tools/coverage_check.py:366,382` ✓ | 1 line ✓ |
@@ -238,9 +271,15 @@ environment ✓ ⇒ ⇒ with the gateway's ambient `CTXVM_*` variables exported 
 | A7 ✓ | make the plan's index the **same** integer the per-call list uses ✓, and say the cap ✓ | `context_engine.py:499` ✓, `live/__init__.py:1506` ✓ | 2 lines ✓ |
 | A8 ✓ | rename the plan's `residentTokens` ✓ (or state the two meanings beside it ✓) | `context_engine.py:786` ✓ | 1 line ✓ |
 
-⇒ ⇒ **the owner's side** ✓: the **canonical form of `prefixHash`** ✓ is still the owner's ✓ (P11 ✓) ⇒ ⇒ A2 is the
-lane's *interim* form ✓ ⇒ ⇒ and the P11 pointer should be settled before the field reaches a **published** capture ✓
-⇒ ⇒ **one open decision, already routed** ✓ ✓.
+⇒ ⇒ **sizes** ✓: **four** asks are **one line** each ✓ (A1 ✓, A4 ✓, A5 ✓, A8 ✓), **three** are 2–4 lines ✓
+(A2 ✓, A3 ✓, A7 ✓), and **one** is ~10 lines ✓ (A6 ✓) ⇒ ⇒ the LOG row's split of that count ✓ is off by two ✓ ⇒ ⇒ an
+**erratum row** ✓ follows it ✓ ✓.
+
+⇒ ⇒ **the owner's side** ✓: **two** different questions ✓ ⇒ ⇒ (i) the **byte form of a hash input** ✓ is **settled** ✓ —
+C3 ✓, and the probe must use it ✓ (A2 ✓) ⇒ ⇒ (ii) the **probe's own canonicalisation** ✓ — *what* is hashed ✓, in
+*which order* ✓, over *which window* ✓ — is still the **owner's** ✓ (P11 ✓) ⇒ ⇒ A2's window is the lane's *interim*
+choice ✓ ⇒ ⇒ and the P11 pointer should be settled before the field reaches a **published** capture ✓ ⇒ ⇒ **one open
+decision, already routed** ✓ ✓.
 
 ---
 
