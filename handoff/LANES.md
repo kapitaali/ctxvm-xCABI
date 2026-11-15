@@ -11,11 +11,14 @@ A lane **owns** a set of paths. A shared file is **claimed by a commit**, never 
 |---|---|---|
 | **hermes lane** | `packages/hermes/**`, `tools/**` (gate, runner, checkers), `design/w8-*`, `design/W8-*`, `reports/RR-W8*`, the installed plugin copy at `~/.hermes/plugins/ctxvm-tracer/` | `packages/opencode`, `packages/ai-sdk`, `packages/node`, `research/**` |
 | **opencode lane** | `packages/opencode/**`, `packages/ai-sdk/**`, `packages/node/**`, their fixtures | `packages/hermes`, `research/**` |
+| **dsh lane** | `packages/deepseek/**` (the `@ctxvm/dsh` DeepSeek Harness adapter), `reports/RR-W22*` | `packages/{node,opencode,ai-sdk,hermes,py}`, `tools/**`, `research/**`, `spec/**`, `corpus/**`, `design/**` (a `design/W22-*` card here needs owner clearance first) |
 | **research lane** | `research/**` | everything else; `research/**` is read-never-edit for every other lane |
 | **experiment lane** | `experiments/**` (gitignored **deliberately, until there is enough data to publish**), the benchmark workspace outside this repo, `reports/RR-REDLINE-*` | `packages/**`, `spec/**`, `corpus/**` |
 | **review lane** | `handoff/**` (PROJECT-STATE, QUESTIONS, packets), `reports/RR-DAY-*`, the day indexes | `packages/**`, `research/**` |
 | **reviewer** (external) | nothing here — answers pasted packets only | the repository |
 | **owner** | pushes, ratifies D-decisions, clears `design/**` placement, releases | — |
+
+**dsh lane, plan of record.** W22's design lives in the dsh checkout (`<dsh-checkout>` = `~/Apps/deepseek-harness`), at `design/W22-DSH-ADAPTER-20261114.md`, not in this repo. A mirrored `design/W22-*` card here is proposed and awaits owner clearance; until then this lane's card is not in `design/`, and its code at `packages/deepseek/` is untracked.
 
 Shared by all: `AGENTS.md`, `08-HANDOFF.md`, `08.1-UPDATE-PROMPT.md`. Changes there are policy:
 propose them to the review lane or the owner, do not edit them in passing.
