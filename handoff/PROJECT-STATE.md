@@ -8,14 +8,14 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Papers: Part I committed + WIP; Part II untracked (`RR-WP2REV-20261107`); 6-item bundle **applied** ✓; PDF stale (`RR-PAPER-REVIEW`). Capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000.
 
 ## Done (last 3 items: one line each, with locators)
-1. W8C replay verified (0.13.21 capture): 81 events, 0 divergences, stdout hash `fe27e29c813c4e06` ×3; `export --turn 12` = 21 slots / 86,569 / 0 stubbed (`RR-W8CREPLAY*`).
-2. Representation gap confirmed by the provider's receipts: the derived table is turn-invariant (21 slots / 86,569, turns 0–19) and false about the request (12 pages / 47,805); provider ratio 0.563 ⇒ table false (`RR-SHAPEGAP-20261113`).
-3. W8D erratum reviewed: five inputs verified, three arithmetic errors (denominator 42 not 41; "0.918" inverted + tokenizers mixed; "16 rewrite events" unsupported ⇒ 9), model check self-contradicting (9 writes fit, 16 miss by 1.76×) ⇒ hold-once is a no-op (`RR-W8DERRATUM-20261113`).
 
+1. (Items 1–2 rotated verbatim 2026-11-15 to `handoff/PROJECT-STATE-ARCHIVE.md`.)
+2. W8D erratum reviewed: five inputs verified, three arithmetic errors (denominator 42 not 41; "0.918" inverted + tokenizers mixed; "16 rewrite events" unsupported ⇒ 9), model check self-contradicting (9 writes fit, 16 miss by 1.76×) ⇒ hold-once is a no-op (`RR-W8DERRATUM-20261113`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: bundle + version claims applied ✓; PDF rebuild + M0 count owed (paper A1/A2); two claim-scoping asks (paper A3/A4) (`RR-PAPER-REVIEW`).
 - Hermes lane: per-call dropped **identities** DONE in `f3078b4` ✓; H9 landed in `e480186` — review found 7 defects, 5 one-line asks (`RR-H9LANDING`).
 
+- **dsh lane (W22):** registered 2026-11-15 (`RR-W22-20261115`); `packages/deepseek` (`@ctxvm/dsh`) captures from dsh profile `nvidia`; headless v0.1 trace validates (exit 0) + replays clean. Gaps: no tsconfig entry ⇒ gate silent; fold stub; test needs `@deepseek-ai/schemastery`; validator + `design/W22-*` = owner.
 - Gateway: holds the current build (pid 23669, started after the 09:31 sync) ⇒ captures are labelled 0.13.24; the first **paged** one is still owed (`RR-H9LANDING`).
 ## Next three (ordered, one line each)
 1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + the release rule at D6/D17.
