@@ -34,6 +34,10 @@ which paths, which files cannot be owned, and how a shared file is claimed. Read
   gate-enforced). The **running gateway holds it** (PID 23669, started after the 09:31 sync), so a capture
   taken now is labelled 0.13.24 — but the newest one is the **control** arm, so the **paged** capture is
   still owed. Only the hermes lane syncs the copy.
+- The white paper's WIP is good (the routed bundle and the version claims are applied), but its **PDF
+  deliverable is stale against its own source** and two of its claims outrun the shipped emitters
+  (`reports/RR-PAPER-REVIEW-20261115.md`). Research lane: rebuild the PDF + its two page counts, refresh the
+  M0 count (paper A1/A2). Owner: scope the `page.render` sentence and the one-liner (paper A3/A4).
 
 ## 2. Work split (who does what)
 
