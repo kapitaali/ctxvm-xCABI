@@ -1,11 +1,11 @@
-# State (updated 2026-11-14, ctxvm repo agent (opencode); D13+D14 routed, W8C+W8D reviewed, H9 landing reviewed)
+# State (updated 2026-11-15, ctxvm repo agent (opencode); D13+D14 routed, W8C+W8D reviewed, H9 landing + white paper reviewed)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
 
 ## Artifacts and versions
 - Wire: RFC-0 sealed (`spec/rfc-0/`); RFC-0.1 additive landed (`spec/rfc-0.1/`). Corpus: ODPS 0.8.0, m1–m8 checksummed; hub byte-identical. Plugins: hermes (authoritative: `live/__init__.py:94` + `live/plugin.yaml:2`; **0.13.24** on 2026-11-14, H9 landed); node 0.1.0, opencode/ai-sdk 0.0.1.
-- Papers: Part I committed + WIP; Part II untracked (`RR-WP2REV-20261107`); 6-item bundle routed (`RR-WPROUTE`). Capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000.
+- Papers: Part I committed + WIP; Part II untracked (`RR-WP2REV-20261107`); 6-item bundle **applied** ✓; PDF stale (`RR-PAPER-REVIEW`). Capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000.
 
 ## Done (last 3 items: one line each, with locators)
 1. W8C replay verified (0.13.21 capture): 81 events, 0 divergences, stdout hash `fe27e29c813c4e06` ×3; `export --turn 12` = 21 slots / 86,569 / 0 stubbed (`RR-W8CREPLAY*`).
@@ -13,13 +13,13 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 3. W8D erratum reviewed: five inputs verified, three arithmetic errors (denominator 42 not 41; "0.918" inverted + tokenizers mixed; "16 rewrite events" unsupported ⇒ 9), model check self-contradicting (9 writes fit, 16 miss by 1.76×) ⇒ hold-once is a no-op (`RR-W8DERRATUM-20261113`).
 
 ## In progress (one item: what, blocker, next command)
-- Research lane: apply the routed six-item bundle (`RR-WPROUTE`) to `research/white-paper/` (3 files) and refresh the four stale plugin-version claims (`RR-VERSIONDRIFT`). Blocker: the research lane's own edits.
+- Research lane: bundle + version claims applied ✓; PDF rebuild + M0 count owed (paper A1/A2); two claim-scoping asks (paper A3/A4) (`RR-PAPER-REVIEW`).
 - Hermes lane: per-call dropped **identities** DONE in `f3078b4` ✓; H9 landed in `e480186` — review found 7 defects, 5 one-line asks (`RR-H9LANDING`).
 
 - Gateway: holds the current build (pid 23669, started after the 09:31 sync) ⇒ captures are labelled 0.13.24; the first **paged** one is still owed (`RR-H9LANDING`).
 ## Next three (ordered, one line each)
 1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + the release rule at D6/D17.
-2. Owner: D17 timing after the routed D13/D14 edits land (G6).
+2. Owner: scope the paper's `page.render` sentence and one-liner (paper A3/A4); D17 after the edits land (G6).
 3. Owner: G3 (W9 equivalence-test preregistration).
 
 ## Decisions made (date, decision, reason)
