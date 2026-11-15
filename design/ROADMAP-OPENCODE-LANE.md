@@ -708,6 +708,27 @@ pin true every card close.
   plan's `callIndex` and the per-call `i` disagree past the cap ✓) ⇒ ⇒ **eight asks** ✓ (six one-liners ✓) ⇒ ⇒ **the
   version drift is closed** ✓ (pid 23669 ✓ holds 0.13.24 ✓) ⇒ ⇒ the newest live capture is the **control** arm ✓ ⇒ ⇒
   the ruled per-call rule still needs a **paged** capture ✓ ✓.
+  *WHITE PAPER REVIEWED AGAINST ITS OWN DELIVERABLE (`reports/RR-PAPER-REVIEW-20261115.md`):* the research lane's WIP is
+  **good** ✓ — the routed six-item bundle is applied ✓ (all six ✓) and the four routed version claims are applied ✓ (no bare
+  version left ✓) ⇒ ⇒ two checks came back **clean** ✓: the paper's example trace **is** the frozen corpus's first three lines
+  **verbatim** ✓ and validates under the sealed v0 schema ✓, and the paid live capture validates under RFC-0.1 ✓ ⇒ ⇒ but
+  **six findings** ✓: the **PDF deliverable is stale against its own source** ✓ (rebuilt 2026-11-06 ✓ ⇒ none of the routed
+  items ✓ ⇒ none of the W8/W8B/W8C results ✓ ⇒ still the withdrawn §7 wording ✓ ⇒ and that wording is in **no** commit ✓
+  and **not** in the working tree ✓ ⇒ ⇒ the deliverable is **unreproducible** ✓); **four page counts disagree** ✓ (HEAD 23 ✓
+  / 15 ✓ / 22 ✓, tree 24 ✓ / 24 ✓, rebuild 25 ✓ ⇒ the rebuild is environment-bound ✓ — the original tool versions are not
+  recorded ✓); the **M0 count is stale by four** ✓ (73/74 ✓ ⇒ measured 77/78 ✓ ⇒ moved at `82f6a03` ✓ ⇒ and it was already
+  one low at the PDF's commit ✓); **"`page.render` … for every page, every turn" is true of the wire and false of the shipped
+  adapters** ✓ (two emitters write `mode: "full"` once per page ✓ ⇒ **0** stub renders in 2,050 renders across **176** live
+  captures ✓ ⇒ the repo's only stubs are the **hand-built** `corpus/m1/session-thrashing.jsonl` ✓ ⇒ ⇒ a live trace cannot
+  say which pages a given turn's request contained ✓); the **one-liner** ✓ *"reconstruct and replay the exact request the
+  harness sent"* ✓ survives in **six** places ✓ while the trace holds **no request bytes** ✓ (`residentTokens` constant at
+  **86,569** ✓ against a request that grew 12,060 → 59,747 ✓ and 14,557 → 114,766 provider-receipt tokens ✓ ⇒ the
+  content-blindness is stated once ✓ but **not** in §16 ✓ ⇒ the paper's own rule is not met ✓); and the research lane
+  **corrected my routed card** ✓ (item 4's `"reason"` ✓ ⇒ the wire field is `"source"` ✓ ⇒ and its v0 framing was a
+  counterfactual ✓ ⇒ erratum row ✓ ✓) ⇒ ⇒ **five asks** ✓ (**A1 + A2** research lane ✓: rebuild the PDF and set both page
+  counts from it ✓, refresh the M0 count with command and date ✓; **A3 + A4** owner ✓: scope the `page.render` sentence ✓
+  and scope the one-liner ✓ ⇒ the review lane's recommendation is to keep the one-liner and state the limit **once in
+  §16** ✓; **A5** erratum ✓ here ✓) ⇒ ⇒ **read-only** ✓ ⇒ no `research/**` edit ✓ ⇒ no spend ✓ ⇒ gate green ✓ ✓.
   *LOG REWIND (2026-11-11, `reports/RR-LOGREWIND-20261111.md`):* the working-tree `reports/LOG.md`
   had been rewound by ten committed rows (279 in HEAD vs 271 in the tree) and one committed row's text
   reversed; restored to the committed bytes. The rule now in force: append to the working tree AND
