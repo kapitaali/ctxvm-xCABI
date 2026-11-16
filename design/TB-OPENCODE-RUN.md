@@ -1,10 +1,11 @@
 # TB-OPENCODE-RUN — proposal: the output-completeness run in OpenCode, with a raised call ceiling
 
-Status: **PROPOSAL / plan of record for a run, not a cell.** Author: review lane, 2026-11-16, at the owner's
-request ("plan for a run but in opencode. raise the call ceiling. use the prompt in design/"). The plan of record
-for what T-B measures stays `design/TB-PLAN.md` (rev 2); `design/TB-FREE-RUN.md` is the Hermes run plan. This card
-fixes **which harness runs the next shape**. No model call is made by writing it. Owner authorization for a free
-run, and the re-preregistration it needs, are still required before phase 1.
+Status: **AUTHORIZED 2026-11-16 / plan of record for a run, not a cell.** Author: review lane, 2026-11-16, at the
+owner's request ("plan for a run but in opencode. raise the call ceiling. use the prompt in design/"). The owner
+explicitly authorized the re-preregistration and the free run on 2026-11-16 ("yes it is authorized"); recorded in
+`reports/RR-TBAUTH-20261116.md`. The plan of record for what T-B measures stays `design/TB-PLAN.md` (rev 2);
+`design/TB-FREE-RUN.md` is the Hermes run plan. This card fixes **which harness runs the next shape**. Phase 0 is
+verified (`RR-TBPHASE0-20261116`); phase 1 may proceed. No paid call is authorized by this card.
 
 ## 1. Why this run exists
 
@@ -101,7 +102,9 @@ prompt to retry until green.
 
 ## 9. What must be true before prompt 1 (preconditions)
 
-1. Owner signs this card's re-preregistration (new fixture digest, 193 prompts, 450 ceiling).
+1. **DONE 2026-11-16.** Owner authorized this card's re-preregistration (fixture digest
+   `36561425bf57ac156def80a7653ebceccb9a55b24f3c475f585370040156fbec`, 193 prompts, provisional 450 ceiling);
+   `reports/RR-TBAUTH-20261116.md`.
 2. The OpenCode session driver is shown in a dry run: `opencode run --session <id> --model … "<prompt>"` for
    P1–P3, with `opencode session export <id> --sanitize` producing a parseable reply ledger.
 3. The fixture's `F < 60000 < C` gate is printed from the engine tokenizer for the 192×150 shape.
