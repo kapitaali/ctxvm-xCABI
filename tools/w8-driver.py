@@ -69,12 +69,23 @@ PROMPTS: list[str] = [
     for i in range(1, 20)
 ] + [ARTEFACT_PROMPT]
 
+# A task shape other than T-A v2 arrives as a prompt file (--prompts-file). The generic validator
+# below judges that shape; the T-A v2 checks that follow judge the built-in one. Nothing else in this
+# driver is task-specific: the seal step is gated on SEALED_PARTS being non-empty, which is empty for a
+# shape with no sealed parts.
+PROMPTS_FROM_FILE = False
 
 
 # ----------------------------------------------------------------------------- run
 
 def validate_prompts() -> list[str]:
     errors: list[str] = []
+    if PROMPTS_FROM_FILE:
+        if len(PROMPTS) < 10:
+            errors.append(f"need >= 10 prompts, have {len(PROMPTS)}")
+        if "artefact.json" not in PROMPTS[-1]:
+            errors.append("final prompt does not require writing artefact.json")
+        return errors
     if len(PROMPTS) < 10:
         errors.append(f"need >= 10 prompts, have {len(PROMPTS)}")
     for i in range(3):
@@ -210,8 +221,8 @@ def run(args) -> int:
         "workspace": str(ws),
         "prompts": len(PROMPTS),
         "prompt_rules": [RULE_READ, RULE_FINAL],
-        "middle_prompts": len(PROMPTS[3:-1]),
-        "seal_after_prompt": SEAL_AFTER_TURN,
+        "middle_prompts": len(PROMPTS[3:-1]) if SEALED_PARTS else None,
+        "seal_after_prompt": SEAL_AFTER_TURN if SEALED_PARTS else None,
         "sealed_parts": SEALED_PARTS,
         "max_turns": args.max_turns,
         "expect_budget": args.expect_budget,
@@ -226,7 +237,8 @@ def run(args) -> int:
         for i, p in enumerate(PROMPTS, 1):
             print(f"[prompt {i:02d}] " + " ".join(build_cmd(i, p, args)))
         print(f"dry-run: session={args.session_name} prompts={len(PROMPTS)} "
-              f"middle={len(PROMPTS[3:-1])} seal_after={SEAL_AFTER_TURN} (no model call made)")
+              f"middle={len(PROMPTS[3:-1]) if SEALED_PARTS else '-'} "
+              f"seal_after={SEAL_AFTER_TURN if SEALED_PARTS else '-'} (no model call made)")
         return 0
 
     env = dict(os.environ)
@@ -236,7 +248,7 @@ def run(args) -> int:
     moved: list[str] = []
     try:
         for i, p in enumerate(prompts, 1):
-            if i == SEAL_AFTER_TURN + 1:
+            if SEALED_PARTS and i == SEAL_AFTER_TURN + 1:
                 moved = seal(ws, run_dir)
                 print(f"[seal] removed {len(moved)} parts from the fixture: {', '.join(moved)}")
             cmd = build_cmd(i, p, args)
@@ -500,9 +512,21 @@ def main() -> int:
                     help="stop the arm once the session has made this many provider calls (0 = no ceiling)")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--capture", help="verify mode: capture .jsonl to accept or reject")
+    ap.add_argument("--prompts-file",
+                    help="JSON list of prompts for a task shape other than T-A v2 (T-B v3)")
+    ap.add_argument("--sealed-parts", default="",
+                    help="comma-separated parts to seal, or none (default: the T-A v2 three)")
     ap.add_argument("--profile-prefix", default="w8",
                     help="profile name prefix (default w8; use w8b for the free-model re-run)")
     args = ap.parse_args()
+    global PROMPTS, SEALED_PARTS, PROMPTS_FROM_FILE
+    if args.prompts_file:
+        PROMPTS = json.loads(Path(args.prompts_file).expanduser().read_text(encoding="utf-8"))
+        if not isinstance(PROMPTS, list) or not all(isinstance(x, str) for x in PROMPTS):
+            ap.error(f"--prompts-file must hold a JSON list of strings: {args.prompts_file}")
+        SEALED_PARTS = [] if args.sealed_parts.strip().lower() in ("", "none") else [
+            s.strip() for s in args.sealed_parts.split(",") if s.strip()]
+        PROMPTS_FROM_FILE = True
     if args.capture:
         return verify(args)
     missing = [k for k in ("arm", "session_name", "workspace", "run_dir") if not getattr(args, k)]

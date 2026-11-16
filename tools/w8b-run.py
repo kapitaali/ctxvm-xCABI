@@ -43,6 +43,57 @@ TRACES = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / 
 BUDGET = 70000
 PARTS = 20
 
+# One runner, two task shapes (design/TB-PLAN.md §6). The T-A v2 shape keeps its built-in prompts in
+# the driver; T-B v3 supplies a prompt file, because its prompts are derived from the fixture (the
+# revisit lookups name real rows). Everything else - arm isolation, key sync, preflight, the bundle -
+# is shared, which is why this is a table and not a second runner.
+TASKS = {
+    "ta2": {"fixture_glob": "part-*.txt", "parts": PARTS,
+            "checker": ROOT / "tools/w8-checker-ta-v2.py", "budget": 70000},
+    "tb": {"fixture_glob": "data-*.csv", "parts": 48,
+           "checker": ROOT / "tools/tb-check.py", "budget": 60000},
+}
+
+
+def build_tb_prompts(fixture: Path, run_dir: Path) -> list[str]:
+    """T-B v3: one prompt per file, then a reconciliation that REVISITS three early files.
+
+    The lookups are the point (design/TB-PLAN.md §3): a per-file reply carries aggregates, not rows, so
+    a lookup can only be answered from a file's bytes. If paging dropped that page the model must
+    re-read it — a hard fault — or answer wrongly. The answer key is written beside the prompts so the
+    reply can be scored later without re-deriving which row was asked for.
+    """
+    files = sorted(fixture.glob("data-*.csv"))
+    prompts = [
+        f"Read fixture/{path.name} with read_file. Reply with one line per category that appears, in the "
+        f"form <category> <count> <sum> <min_id> <max_id>, and nothing else. The columns are id, category, value."
+        for path in files
+    ]
+    picks: list[dict] = []
+    for name in ("data-02.csv", "data-07.csv", "data-11.csv"):
+        path = fixture / name
+        if not path.exists():
+            continue
+        rows = [ln.split(",") for ln in path.read_text(encoding="utf-8").splitlines()[1:] if ln.strip()]
+        if not rows:
+            continue
+        row = rows[len(rows) // 3]
+        picks.append({"file": name, "id": int(row[0]), "category": row[1], "value": int(row[2])})
+    (run_dir / "lookups.json").write_text(json.dumps(picks, indent=2) + "\n", encoding="utf-8")
+    lookups = " ".join(f'({i + 1}) the row with id {p["id"]} in {p["file"]}: give its category and value.'
+                       for i, p in enumerate(picks))
+    prompts.append(
+        "You have read every file in fixture/ in this session. Now write artefact.json in the working "
+        "directory: a JSON object with exactly four keys - \"categories\", \"top_category\", \"top_file\", "
+        "\"grand_total\". \"categories\" maps each category (names sorted ascending) to an object with "
+        "count, sum, min_id and max_id over ALL files; \"top_category\" = the largest sum, ties by category "
+        "name ascending; \"top_file\" = the basename contributing the most rows to top_category, ties by "
+        "basename ascending; \"grand_total\" = the sum of value over every row in every file. Use 2-space "
+        "indentation and a single trailing newline. THEN, in your reply, answer these three lookups from "
+        f"the file contents: {lookups} Answer each as <category> <value>."
+    )
+    return prompts
+
 # Two ways to run the same experiment on someone else's free tier. The provider is not a detail:
 # it decides the model id, the profile pair (model/provider are PROFILE settings because the CLI
 # refuses creation overrides on resume), and which API key must exist.
@@ -89,6 +140,14 @@ PROVIDERS = {
         "note": "Nous Portal free models (stepfun/step-3.7-flash:free, meituan/longcat-2.5:free); --model picks",
     },
 }
+
+
+def workspace_for(task_name: str, arm: str) -> Path:
+    """One workspace per task. T-A v2 reads part-*.txt and T-B reads data-*.csv, so sharing a directory
+    would leave the other task's fixture readable - the first T-B dry run had 68 files in a 48-file
+    fixture for exactly that reason. The suffix is empty for the original shape, so its paths do not move."""
+    suffix = "" if task_name == "ta2" else f"-{task_name}"
+    return ROOT / "experiments" / "w8b" / f"ws{suffix}-{arm}"
 
 
 def sh(cmd: list[str], timeout: int | None = None) -> subprocess.CompletedProcess:
@@ -249,7 +308,8 @@ def ensure_profiles(spec: dict) -> None:
               f"({', '.join(p.name for p in found)})")
 
 
-def preflight(arms: list[str], spec: dict, budget: int = 70000) -> list[str]:
+def preflight(arms: list[str], spec: dict, budget: int = 70000, task: dict | None = None) -> list[str]:
+    task = task or TASKS["ta2"]
     # The owner's rule: exactly one pair. A third profile under this prefix means something
     # provisioned one; refuse rather than run against an ambiguous arm.
     found = profiles_for(spec["prefix"])
@@ -295,18 +355,20 @@ def preflight(arms: list[str], spec: dict, budget: int = 70000) -> list[str]:
             b = cfg("plugins.entries.ctxvm-tracer.settings.budgetTokens", arm, spec["prefix"])
             if str(budget) not in (b or ""):
                 errs.append(f"w8b-paged budget is {b!r}; expected {budget}")
-        ws = ROOT / "experiments" / "w8b" / f"ws-{arm}"
+        ws = workspace_for(task.get("name", "ta2"), arm)
         fixture = ws / "fixture"
         if not fixture.is_dir():
             errs.append(f"workspace fixture missing: {fixture}")
         else:
-            n = len(list(fixture.glob("part-*.txt")))
-            if n != PARTS:
-                errs.append(f"{fixture} has {n} parts; expected {PARTS}")
+            n = len(list(fixture.glob(task["fixture_glob"])))
+            if n != task["parts"]:
+                errs.append(f"{fixture} has {n} {task['fixture_glob']}; expected {task['parts']}")
         # A stale artefact is archived, not deleted: the previous run's output is evidence.
         # It just must not be in place when the next run starts.archived in main().
     if not DRIVER.exists():
         errs.append(f"driver missing: {DRIVER}")
+    if not task["checker"].exists():
+        errs.append(f"checker missing: {task['checker']}")
     return errs
 
 
@@ -324,22 +386,30 @@ def capture_for(sid: str) -> Path | None:
     return p if p.exists() else None
 
 
-def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000) -> dict:
+def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000,
+            task: dict | None = None) -> dict:
+    task = task or TASKS["ta2"]
     title = f"{run_id}-{arm}"
     run_dir = Path.home() / ".local" / "state" / "ctxvm" / "w8-runs" / run_id / arm
     run_dir.mkdir(parents=True, exist_ok=True)
-    ws = ROOT / "experiments" / "w8b" / f"ws-{arm}"
+    ws = workspace_for(task.get("name", "ta2"), arm)
     env = dict(os.environ)
     env["HERMES_HOME"] = str(PROFILES / f"{spec['prefix']}-{arm}")
     started = time.time()
+    ctl: list[str] = []
+    if task is not TASKS["ta2"]:
+        prompts_path = run_dir / "prompts.json"
+        prompts_path.write_text(json.dumps(build_tb_prompts(ws / "fixture", run_dir)), encoding="utf-8")
+        ctl = ["--prompts-file", str(prompts_path), "--sealed-parts", "none"]
+        print(f"[{arm}] task tb: {len(json.loads(prompts_path.read_text()))} prompts from {prompts_path}")
     print(f"\n[{arm}] driver -> {run_dir}")
     r = subprocess.run([sys.executable, str(DRIVER), "--arm", arm, "--session-name", title,
                         "--workspace", str(ws), "--run-dir", str(run_dir),
                         "--profile-prefix", spec["prefix"], "--expect-budget", str(budget),
                         "--timeout", str(timeout),
                         "--max-calls", str(spec.get("max_calls") or 0)] +
-                       (["--assert-engaged"] if arm == "paged" else []),
-                       text=True, capture_output=True, env=env, timeout=PARTS * timeout + 300)
+                       (["--assert-engaged"] if arm == "paged" else []) + ctl,
+                       text=True, capture_output=True, env=env, timeout=task["parts"] * timeout + 300)
     (run_dir / "driver.out").write_text(r.stdout, encoding="utf-8")
     (run_dir / "driver.err").write_text(r.stderr, encoding="utf-8")
     print(r.stdout.strip().splitlines()[-1] if r.stdout.strip() else "(no driver output)")
@@ -392,7 +462,7 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000
     if arm == "paged":
         art = ws / "artefact.json"
         if art.exists():
-            c = sh([sys.executable, str(CHECKER), str(ws / "fixture"), str(art)])
+            c = sh([sys.executable, str(task["checker"]), str(ws / "fixture"), str(art)])
             (run_dir / "checker.txt").write_text(c.stdout + c.stderr, encoding="utf-8")
             print(f"[{arm}] checker exit {c.returncode}: {c.stdout.strip().splitlines()[-1] if c.stdout.strip() else ''}")
             out["checker_rc"] = c.returncode
@@ -430,19 +500,28 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000
 
 
 
-PROBE_PROMPT = ("Use the read_file tool to read fixture/part-01.txt and reply with its byte count. "
-                "You have exactly three tools: read_file, search_files, write_file. "
-                "Do not ask for any other tool.")
+PROBE_PROMPTS = {
+    "ta2": ("Use the read_file tool to read fixture/part-01.txt and reply with its byte count. "
+            "You have exactly three tools: read_file, search_files, write_file. "
+            "Do not ask for any other tool."),
+    "tb": ("Use the read_file tool to read fixture/data-01.csv and reply with its row count. "
+           "You have exactly three tools: read_file, search_files, write_file. "
+           "Do not ask for any other tool."),
+}
+PROBE_PROMPT = PROBE_PROMPTS["ta2"]
 
 
-def probe(spec: dict, run_id: str, arm: str = "paged") -> dict:
+def probe(spec: dict, run_id: str, arm: str = "paged", task: dict | None = None) -> dict:
     """One prompt: can this model drive the read_file surface? Nothing else is measured."""
+    task = task or TASKS["ta2"]
     title = f"{run_id}-probe-{arm}"
-    ws = ROOT / "experiments" / "w8b" / f"ws-{arm}"
+    ws = workspace_for(task.get("name", "ta2"), arm)
     env = dict(os.environ)
     env["HERMES_HOME"] = str(PROFILES / f"{spec['prefix']}-{arm}")
     started = time.time()
-    cmd = ["hermes", "chat", "-q", PROBE_PROMPT, "--oneshot", "-c", title,
+    cmd = ["hermes", "chat", "-q",
+           PROBE_PROMPTS.get(task.get("name", "ta2"), PROBE_PROMPTS["ta2"]),
+           "--oneshot", "-c", title,
            "--create-if-missing", "--in", str(ws)]
     r = subprocess.run(cmd, text=True, capture_output=True, env=env, timeout=300)
     out = {"probe": True, "model": spec["model"], "provider": spec["provider"],
@@ -527,6 +606,8 @@ def main() -> int:
     ap.add_argument("--budget", type=int, default=70000,
                     help="the paged arm's vBudget; must match the committed prediction block")
     ap.add_argument("--run-id", default=time.strftime("w8b-%Y%m%d-%H%M%S"))
+    ap.add_argument("--task", choices=sorted(TASKS), default="ta2",
+                    help="ta2 = T-A v2 (built-in prompts); tb = T-B v3 (prompt file + revisit lookups)")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--record", action="store_true", help="append the chunklog rows (repo edit)")
     ap.add_argument("--skip-key-check", action="store_true",
@@ -542,7 +623,9 @@ def main() -> int:
         ensure_profiles(spec)
         sync_profile_keys(spec)
 
-    errs = preflight(arms, spec, args.budget)
+    task = dict(TASKS[args.task])
+    task["name"] = args.task
+    errs = preflight(arms, spec, args.budget, task)
     if errs:
         print("PREFLIGHT FAILED — nothing ran:", file=sys.stderr)
         for e in errs:
@@ -551,7 +634,7 @@ def main() -> int:
 
     bundle0 = Path.home() / ".local" / "state" / "ctxvm" / "w8-runs" / args.run_id / "stale"
     for arm in arms:
-        ws = ROOT / "experiments" / "w8b" / f"ws-{arm}"
+        ws = workspace_for(args.task, arm)
         art = ws / "artefact.json"
         if art.exists():
             bundle0.mkdir(parents=True, exist_ok=True)
@@ -561,7 +644,7 @@ def main() -> int:
 
     if args.probe:
         arms = ["naive", "paged"] if args.arm == "both" else [args.arm]
-        results = [probe(spec, args.run_id, a) for a in arms]
+        results = [probe(spec, args.run_id, a, task) for a in arms]
         if len(results) == 2:
             same = (results[0].get("engine"), results[0].get("engineSelections") is not None and
                     (results[0].get("engineSelections") or 0) > 0) ==                    (results[1].get("engine"), (results[1].get("engineSelections") or 0) > 0)
@@ -574,14 +657,16 @@ def main() -> int:
     if args.dry_run:
         for arm in arms:
             print(f"[{arm}] python3 tools/w8-driver.py --arm {arm} --session-name {args.run_id}-{arm} "
-                  f"--workspace experiments/w8b/ws-{arm} --run-dir <state>/w8-runs/{args.run_id}/{arm} "
+                  f"--workspace experiments/w8b/ws{"-" + args.task if args.task != "ta2" else ""}-{arm} --run-dir <state>/w8-runs/{args.run_id}/{arm} "
                   f"--profile-prefix {spec['prefix']} --expect-budget {args.budget} --timeout {args.timeout} "
                   f"--max-calls {spec.get('max_calls') or 0}")
-        print(f"dry-run OK — provider {args.provider}, {len(arms)} arm(s), {PARTS} prompts each, "
-              f"{args.timeout}s cap, model {spec['model']}")
+        print(f"dry-run OK — task {args.task}, provider {args.provider}, {len(arms)} arm(s), "
+              f"{task['parts']} prompts each, {args.timeout}s cap, model {spec['model']}")
         return 0
 
-    results = [run_arm(a, args.run_id, args.timeout, spec, args.budget) for a in arms]
+    if getattr(args, "arm", None) in ("naive", "paged") and not args.probe:
+        arms = [args.arm]          # a scoring run needs one arm; the control is a cell property
+    results = [run_arm(a, args.run_id, args.timeout, spec, args.budget, task) for a in arms]
     for r in results:
         r["provider"] = args.provider
         r["model"] = spec["model"]
