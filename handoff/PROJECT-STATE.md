@@ -15,7 +15,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Research lane: bundle + version claims applied ✓; PDF rebuild + M0 count owed (paper A1/A2); two claim-scoping asks (paper A3/A4) (`RR-PAPER-REVIEW`).
 - Hermes lane: per-call dropped **identities** DONE in `f3078b4` ✓; H9 landed in `e480186` — review found 7 defects, 5 one-line asks (`RR-H9LANDING`).
 
-- **dsh lane (W22):** registered 2026-11-15 (`RR-W22-20261115`); `packages/deepseek` (`@ctxvm/dsh`) captures from dsh profile `nvidia`; headless v0.1 trace validates (exit 0) + replays clean. Gaps: no tsconfig entry ⇒ gate silent; fold stub; test needs `@deepseek-ai/schemastery`; validator + `design/W22-*` = owner.
+- **dsh lane (W22):** landed `9a87ba2` 2026-11-16 (`RR-W22-20261115`); `packages/deepseek` captures on profile `nvidia`; headless v0.1 trace validates (exit 0) + replays clean. Gaps: no tsconfig entry ⇒ gate silent; fold stub; test needs schemastery; validator + `design/W22-*` = owner.
 - Gateway: holds the current build (pid 23669, started after the 09:31 sync) ⇒ captures are labelled 0.13.24; the first **paged** one is still owed (`RR-H9LANDING`).
 ## Next three (ordered, one line each)
 1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + the release rule at D6/D17.
