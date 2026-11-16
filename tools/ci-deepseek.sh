@@ -1,25 +1,24 @@
 #!/usr/bin/env bash
-# ci-deepseek.sh — the gate's coverage of @ctxvm/dsh (`packages/deepseek`), INTERIM scope.
+# ci-deepseek.sh — the gate's coverage of @ctxvm/dsh (`packages/deepseek`). Whole test directory.
 #
-# The false green this exists for: `packages/deepseek` landed (9a87ba2) and the gate ran nothing in it.
-# `grep deepseek tools/run-ci.sh` returned 0 while every run printed ALL GATES GREEN, so an adapter
-# with a failing page-table and an unrun integration test looked covered. This step is the minimum that
-# ends that, and it names exactly what it does NOT cover.
+# History, because the scope changed and why matters:
+#   2026-11-16 (interim): the adapter landed (9a87ba2) and the gate ran nothing in it — `grep deepseek
+#     tools/run-ci.sh` returned 0 while every run printed ALL GATES GREEN. `page-table.test.ts` could not
+#     even import `@deepseek-ai/schemastery` (private registry, npm install E404) and `replay.test.ts`
+#     skips without `CTXVM_TEST_TRACE`, so the step ran one file and printed the other two as NOT GATED.
+#   2026-11-16 (now): option (ii) landed — `a57592b` made the schemastery import lazy and injectable
+#     (`src/page-table.ts`, `makePageTableStateSchema`), so page-table runs in a bare checkout and the
+#     step covers the whole directory.
 #
-# Three things it does that a naive step would not:
-#   1. Creates the workspace link ITSELF, relative and repo-computed. The tree carries a hand-made
-#      ABSOLUTE link (/home/<user>/…/packages/node); a fresh clone has no link at all and every test
-#      fails with ERR_MODULE_NOT_FOUND from src/tracer.ts. A gate must not depend on either.
-#   2. Runs ONE FILE explicitly, because the directory run cannot pass yet: page-table.test.ts needs
-#      `@deepseek-ai/schemastery` (a private registry package — `npm install` gets E404), and
-#      replay.test.ts skips unless CTXVM_TEST_TRACE points at a captured trace.
-#   3. Fails on a skip and on a zero count. "rc=0 with the step" is worthless if the tests never ran —
-#      a skip must not read as a pass.
+# Two rules survive the widening, because they are what makes the step evidence rather than decoration:
+#   1. The workspace link is created HERE, `ln -sfn ../../../node`, relative and repo-computed. The tree
+#      once carried a hand-made ABSOLUTE link; no clone has one, and every test fails with
+#      ERR_MODULE_NOT_FOUND from src/tracer.ts without it.
+#   2. A skip is not a pass. Exactly one skip is expected and is named on every run — the replay
+#      integration test, which needs a captured trace nobody has committed. Any OTHER skip fails, and so
+#      does a short count. When a tracked fixture lands, delete ALLOWED_SKIP and the per-name check.
 #
-# Interim until the dsh lane makes the schemastery import injectable (reviewer option ii); then switch
-# GATED to the whole directory and delete the NOT-GATED line.
-#
-# Exit 0 clean, 1 a failing or skipped or absent test, 2 the prerequisite is missing.
+# Exit 0 clean, 1 a failing test, an unexpected skip, or a short count, 2 a missing prerequisite.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -27,10 +26,11 @@ cd "$ROOT" || exit 2
 
 PKG="packages/deepseek"
 LINK="$PKG/node_modules/@ctxvm/node"
-GATED="$PKG/test/event-map.test.ts"
-MIN_TESTS=5
+SUITE="$PKG/test/"
+MIN_TESTS=7                                                                # event-map 5 + page-table 2
+ALLOWED_SKIP="captured trace validates and replays without divergence"     # replay.test.ts, no fixture
 
-[ -f "$GATED" ] || { echo "ci-deepseek: $GATED is missing — the package moved?" >&2; exit 2; }
+[ -d "$SUITE" ] || { echo "ci-deepseek: $SUITE is missing — the package moved?" >&2; exit 2; }
 
 # 1. the link, created here every run, with a target that holds in any checkout
 mkdir -p "$(dirname "$LINK")"
@@ -40,29 +40,39 @@ if [ ! -f "$LINK/dist/index.js" ]; then
   exit 2
 fi
 
-echo "ci-deepseek: gated file: $GATED (link $LINK -> ../../../node)"
-echo "ci-deepseek: NOT GATED: $PKG/test/page-table.test.ts (needs @deepseek-ai/schemastery, private registry)"
-echo "ci-deepseek: NOT GATED: $PKG/test/replay.test.ts (skips without CTXVM_TEST_TRACE; no tracked fixture)"
+echo "ci-deepseek: suite: $SUITE (link $LINK -> ../../../node)"
+echo "ci-deepseek: one skip is declared, by name: $ALLOWED_SKIP (needs CTXVM_TEST_TRACE)"
 
 out="$(mktemp)"
 trap 'rm -f "$out"' EXIT
-node --test "$GATED" >"$out" 2>&1
+node --test "$SUITE" >"$out" 2>&1
 rc=$?
 cat "$out"
 
 pass="$(sed -n 's/^ℹ pass \([0-9][0-9]*\)$/\1/p' "$out" | tail -1)"
 fail="$(sed -n 's/^ℹ fail \([0-9][0-9]*\)$/\1/p' "$out" | tail -1)"
 skip="$(sed -n 's/^ℹ skipped \([0-9][0-9]*\)$/\1/p' "$out" | tail -1)"
-echo "ci-deepseek: gated run — pass=${pass:-?} fail=${fail:-?} skipped=${skip:-?} (minimum ${MIN_TESTS} passing)"
+echo "ci-deepseek: run — pass=${pass:-?} fail=${fail:-?} skipped=${skip:-?} (minimum ${MIN_TESTS} passing)"
+
+# every skip by name: the declared one is reported, anything else is a failure
+while IFS= read -r name; do
+  [ -n "$name" ] || continue
+  if [ "$name" = "$ALLOWED_SKIP" ]; then
+    echo "ci-deepseek: skipped (declared, named): $name"
+  else
+    echo "ci-deepseek: FAILED — unexpected SKIP: $name (a skip is not a pass)" >&2
+    exit 1
+  fi
+done < <(grep -oE '^﹣ .* # SKIP' "$out" | sed -e 's/^﹣ //' -e 's/ # SKIP$//' -e 's/ ([0-9.]*ms)$//')
 
 [ "$rc" -eq 0 ] || { echo "ci-deepseek: FAILED — node --test exited $rc" >&2; exit 1; }
 [ "${fail:-1}" -eq 0 ] || { echo "ci-deepseek: FAILED — ${fail} test(s) failed" >&2; exit 1; }
 [ "${pass:-0}" -ge "$MIN_TESTS" ] || {
-  echo "ci-deepseek: FAILED — only ${pass:-0} passing test(s), expected at least ${MIN_TESTS}; a gated file that runs fewer is a coverage regression" >&2
+  echo "ci-deepseek: FAILED — only ${pass:-0} passing test(s), expected at least ${MIN_TESTS}; a suite that runs fewer is a coverage regression" >&2
   exit 1
 }
-[ "${skip:-1}" -eq 0 ] || {
-  echo "ci-deepseek: FAILED — ${skip} gated test(s) SKIPPED; a skip is not a pass" >&2
+[ "${skip:-99}" -le 1 ] || {
+  echo "ci-deepseek: FAILED — ${skip} skips; only one is declared (${ALLOWED_SKIP})" >&2
   exit 1
 }
-echo "ci-deepseek: OK — ${pass} passing, 0 failed, 0 skipped in the gated file"
+echo "ci-deepseek: OK — ${pass} passing, 0 failed, ${skip} declared skip, whole test directory"
