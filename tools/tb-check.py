@@ -6,6 +6,7 @@ Three modes, all of them fail-closed on arguments:
   tb-check.py <fixture-dir> <artefact.json>          score the reconciliation artefact
   tb-check.py <fixture-dir> --per-reply <replies>    score each per-file reply (H4's measurement)
   tb-check.py <fixture-dir> --prove                  prove the checker can fail (six perturbations)
+  tb-check.py --lookups <lookups.json> <reply-file>  score the three revisit lookups (P16/P17)
 
 Why recompute: an expected artefact shipped beside the fixture, or a checker that compares a
 reference copy against a reference copy, is a tautology. This reads the CSV bytes and derives the
@@ -24,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -220,6 +222,66 @@ def mode_per_reply(fixture: Path, replies_path: Path) -> int:
     return 0 if passed == total else 1
 
 
+def parse_lookup_answers(text: str) -> list[tuple[str, int]]:
+    """Pull `<category> <value>` answers out of a reply, in the order they appear.
+
+    Two accepted shapes, because a model may answer either way: a bare/‑numbered token pair
+    (`1) epsilon -327`, `epsilon -327`) or a prose clause (`the row ... is epsilon, -327`). The
+    artefact JSON in the same reply cannot be mistaken for an answer: a JSON key is quoted
+    (`"epsilon":`), and the numeric keys there (`"sum":`) never start with a category name.
+    """
+    found: list[tuple[str, int]] = []
+    for line in text.splitlines():
+        stripped = line.strip().strip("|").strip()
+        if not stripped:
+            continue
+        tokens = re.sub(r"^[\s*(\[]*\d+[).:\]]\s*", "", stripped).split()
+        if len(tokens) >= 2 and tokens[0].strip("*,:;") in CATEGORIES:
+            tail = tokens[1].strip("*,:;")
+            if re.fullmatch(r"-?\d+", tail):
+                found.append((tokens[0].strip("*,:;"), int(tail)))
+    if found:
+        return found
+    # prose fallback: `<category>` then a signed integer within a few characters
+    for match in re.finditer(
+            r"\b(" + "|".join(CATEGORIES) + r")\b[^\n\d-]{0,12}(-?\d+)", text):
+        found.append((match.group(1), int(match.group(2))))
+    return found
+
+
+def mode_lookups(lookups_path: Path, reply_path: Path) -> int:
+    """Score the reconciliation's three exact-row answers against the key written at prompt time.
+
+    The rows are the only part of T-B that paging can actually damage (assistant prose is never
+    dropped), so this is the accuracy surface H3 is judged on, with the refetch count beside it.
+    """
+    try:
+        key = json.loads(lookups_path.read_text(encoding="utf-8"))
+        reply = reply_path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        print(f"tb-check: {exc}", file=sys.stderr)
+        return 2
+    except json.JSONDecodeError as exc:
+        print(f"tb-check: lookups key is not JSON: {exc}", file=sys.stderr)
+        return 2
+    if not isinstance(key, list) or not key:
+        print("tb-check: lookups key is empty", file=sys.stderr)
+        return 2
+    answers = parse_lookup_answers(reply)
+    passed = 0
+    for i, item in enumerate(key):
+        want = (item.get("category"), item.get("value"))
+        got = answers[i] if i < len(answers) else None
+        ok = got == want
+        passed += ok
+        print(f"  lookup {i + 1} ({item.get('file')} id {item.get('id')}): "
+              f"{'PASS' if ok else 'FAIL'} — want {want}, got {got}")
+    if len(answers) > len(key):
+        print(f"  note: {len(answers) - len(key)} extra answer(s) parsed and ignored")
+    print(f"lookup accuracy: {passed}/{len(key)} = {passed / len(key):.1%}")
+    return 0 if passed == len(key) else 1
+
+
 def mode_prove(fixture: Path) -> int:
     """Prove the checker can fail: one correct artefact, then six deliberate perturbations."""
     rows = read_fixture(fixture)
@@ -296,8 +358,17 @@ def main(argv: list[str]) -> int:
     ap.add_argument("fixture", help="directory holding data-*.csv")
     ap.add_argument("artefact", nargs="?", help="artefact.json to score")
     ap.add_argument("--per-reply", metavar="REPLIES", help="JSONL of {file, reply} rows")
+    ap.add_argument("--lookups", metavar="LOOKUPS", help="score a reconciliation reply against lookups.json")
     ap.add_argument("--prove", action="store_true", help="prove the checker can fail (six perturbations)")
     args = ap.parse_args(argv)
+
+    if args.lookups:
+        # argv is `--lookups <key> <reply-file>`, so the reply arrives in the `fixture` positional.
+        reply = args.artefact or args.fixture
+        if not reply:
+            print("tb-check: --lookups needs a reply file", file=sys.stderr)
+            return 2
+        return mode_lookups(Path(args.lookups).expanduser(), Path(reply).expanduser())
 
     fixture = Path(args.fixture).expanduser()
     if not fixture.is_dir():

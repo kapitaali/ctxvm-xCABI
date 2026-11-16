@@ -52,3 +52,37 @@ prompt 1, which is what makes the dry run worth running.
 - **Per-reply capture** — the driver writes `stdout-NN.txt` per prompt, so the replies exist; turning them
   into `tb-check --per-reply` input is a runner-side loop, not yet written.
 - **Phase 1 is owner-gated.** Nothing here calls a model.
+
+---
+
+## Addendum — phase 0(c): the two scores T-B needs, and a stale-file trap the probes found
+
+`tb-check.py` gains **`--lookups <key> <reply-file>`**: it scores the reconciliation's three exact-row
+answers against `lookups.json`, which the prompt builder wrote when the prompts were made. A reply is
+parsed two ways — a bare or numbered token pair (`1) epsilon -327`), or a prose clause — because both
+are natural answers; a JSON key cannot be mistaken for one (`"epsilon":` is quoted, and the artefact's
+numeric keys never begin with a category name).
+
+The runner gains **`score_tb_outputs()`**: it turns the driver's `stdout-NN.txt` files into
+`replies.jsonl`, runs `--per-reply`, and scores the reconciliation reply with `--lookups`, writing both
+transcripts beside the run. Nothing in it calls a model, so re-scoring an old run is free.
+
+**Proof, on synthetic outputs built by an independent awk implementation of the same aggregates:**
+
+| Probe | Observed |
+|---|---|
+| 48 correct per-file replies + 3 correct lookups | `per-reply 48/48` exit 0; `lookups 3/3` exit 0 |
+| one reply's count +7 | `per-reply 47/48` exit 1, naming `data-05.csv` and the wrong category |
+| one lookup answer wrong | `lookups 2/3` exit 1, naming lookup 2 with `want ('delta', 207), got ('delta', 999)` |
+| prose-shaped answers (`… id 5069 … is epsilon, -327`) | `3/3`, so the fallback parser works |
+
+**The trap the first probe round exposed, and the fix.** Three probes "passed" when they should have
+failed, because `tb-check --per-reply` scored a **stale `replies.jsonl`** left by the previous synthetic
+run while I had corrupted the `stdout` files instead. `replies.jsonl` is derived, so the scoring path now
+**deletes it when no per-prompt stdout files exist** and says so on stderr, rather than letting a previous
+run's replies be scored as this run's. Re-run through `score_tb_outputs`, both corruptions went red as
+they should. A probe that cannot fail proves nothing; here it took the second round to notice that mine
+could not.
+
+Also fixed: `--lookups` takes the key as its flag value and the reply as the positional, which is what
+`tb-check.py --lookups key.json stdout-49.txt` actually parses.

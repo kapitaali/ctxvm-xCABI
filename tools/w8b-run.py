@@ -372,6 +372,51 @@ def preflight(arms: list[str], spec: dict, budget: int = 70000, task: dict | Non
     return errs
 
 
+def score_tb_outputs(run_dir: Path, ws: Path, task: dict) -> dict:
+    """Turn the driver's per-prompt stdout files into the two scores T-B needs.
+
+    The driver writes stdout-NN.txt for every prompt, so the per-file replies and the reconciliation
+    reply are already on disk: nothing here calls a model, and a re-score of an old run is free. The
+    per-reply score is H4's measurement; the lookup score is the accuracy surface H3 is judged on,
+    because assistant prose is never dropped and only an exact row forces a re-read.
+    """
+    out: dict = {}
+    replies = run_dir / "replies.jsonl"
+    rows = []
+    for i in range(1, task["parts"] + 1):
+        path = run_dir / f"stdout-{i:02d}.txt"
+        if path.exists():
+            rows.append({"file": f"data-{i:02d}.csv",
+                         "reply": path.read_text(encoding="utf-8", errors="replace")})
+    if not rows and replies.exists():
+        # replies.jsonl is DERIVED. A stale one left by an earlier run would be scored as if it were
+        # this run's, which is how a probe first "passed" against a workspace whose stdout files had
+        # already been corrupted. Delete it and say so.
+        replies.unlink()
+        print(f"[{run_dir.parent.name}] no per-prompt stdout files; removed a stale replies.jsonl",
+              file=sys.stderr)
+    if rows:
+        replies.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+        c = sh([sys.executable, str(task["checker"]), str(ws / "fixture"), "--per-reply", str(replies)])
+        (run_dir / "per-reply.txt").write_text(c.stdout + c.stderr, encoding="utf-8")
+        out["per_reply_rc"] = c.returncode
+        m = re.search(r"per-reply accuracy: (\d+)/(\d+)", c.stdout)
+        if m:
+            out["per_reply"] = f"{m.group(1)}/{m.group(2)}"
+        print(f"[{run_dir.parent.name}] per-reply {out.get('per_reply', '?')} (exit {c.returncode})")
+    final = run_dir / f"stdout-{task['parts'] + 1:02d}.txt"
+    key = run_dir / "lookups.json"
+    if final.exists() and key.exists():
+        c = sh([sys.executable, str(task["checker"]), "--lookups", str(key), str(final)])
+        (run_dir / "lookups.txt").write_text(c.stdout + c.stderr, encoding="utf-8")
+        out["lookup_rc"] = c.returncode
+        m = re.search(r"lookup accuracy: (\d+)/(\d+)", c.stdout)
+        if m:
+            out["lookups"] = f"{m.group(1)}/{m.group(2)}"
+        print(f"[{run_dir.parent.name}] lookups {out.get('lookups', '?')} (exit {c.returncode})")
+    return out
+
+
 def session_id(arm: str, title: str, prefix: str) -> str | None:
     db = PROFILES / f"{prefix}-{arm}" / "state.db"
     if not db.exists():
@@ -466,6 +511,12 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000
             (run_dir / "checker.txt").write_text(c.stdout + c.stderr, encoding="utf-8")
             print(f"[{arm}] checker exit {c.returncode}: {c.stdout.strip().splitlines()[-1] if c.stdout.strip() else ''}")
             out["checker_rc"] = c.returncode
+    if task.get("name") == "tb":
+        try:
+            out.update(score_tb_outputs(run_dir, ws, task))
+        except Exception as exc:  # noqa: BLE001 - scoring must not void a capture that exists
+            print(f"[{arm}] tb scoring failed: {exc}", file=sys.stderr)
+            out["scoring_error"] = str(exc)
 
     db = PROFILES / f"{spec['prefix']}-{arm}" / "state.db"
     if sid and db.exists():
