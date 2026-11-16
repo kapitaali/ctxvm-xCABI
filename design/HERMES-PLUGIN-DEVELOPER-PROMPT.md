@@ -221,6 +221,8 @@ factors and the cells are void.
 - "safe", "secure by design", "prevents leakage" — the plugin records; it does not guarantee.
 - A number without the command that produced it, and a sample size.
 - A claim about an arm, a version, or a gateway state you did not read from the system.
+- A recursive delete aimed at `~`, `$HOME`, `/` or a path computed from a variable that may be empty —
+  `AGENTS.md` law 10. Cleanup names the exact subdirectory; the home directory is never a target root.
 - A bare plugin version as current state. Cite the two authoritative files (`PLUGIN_VERSION`,
   `plugin.yaml`) or date the build you measured. The lane carried 48 distinct version values
   between 2026-10-24 and 2026-11-13, so an undated number in prose is false within a day; the

@@ -81,6 +81,12 @@ docs/                        reader-facing docs (quickstart); added by A3, 2026-
 9. **Capture is default-on and private.** Traces land in
    `${XDG_STATE_HOME:-~/.local/state}/ctxvm/traces` at `0700`. Real-session traces never leave the
    machine and never enter `corpus/` unredacted.
+10. **Never delete recursively above a named subdirectory.** No `rm -rf ~`, no `rm -rf $HOME`, no
+    `rm -rf /`, and no bare path that could resolve to the home directory — an empty `$VAR`, a `~` that
+    expansion missed, a workspace root that is the home. Cleanup names the exact directory
+    (`rm -rf ~/.hermes/cache/scratch/run-xyz`), never its parent. A destructive command that could reach
+    the home directory is a bug even when it is "just cleanup", and a pointer to the wrong variable makes
+    it one. Owner rule, 2026-11-16; non-negotiable.
 
 ## 5. Verification culture
 
