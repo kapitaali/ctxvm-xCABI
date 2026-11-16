@@ -8,24 +8,30 @@
  *   surface          → mark pages resident/stub
  *   compaction       → mark shadowed pages evicted
  */
-import z from '@deepseek-ai/schemastery'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import type { SessionEvent, SessionHeader } from '@deepseek-ai/dsh-session/types'
 import type { PageTableState } from './types.ts'
 
-export const pageTableStateSchema: z<PageTableState> = z.object({
-  pages: z.dict(z.object({
-    kind: z.string(),
-    contentHash: z.string(),
-    tokens: z.number(),
-    status: z.union([z.const('resident'), z.const('stub'), z.const('evicted')]),
-  })),
-  order: z.array(z.string()),
-})
+// @deepseek-ai/schemastery is part of the DSH runtime and may not be
+// available when this module is loaded outside DSH (e.g. in tests).
+// The schema is loaded lazily on first access; init()/apply() do not require it.
+let _pageTableStateSchema: any = null
+
+/** Inject the schemastery schema (called by the DSH runtime at load time). */
+export function setPageTableStateSchema(schema: any): void {
+  _pageTableStateSchema = schema
+}
+
+/** Read the lazily-loaded schema (null until the DSH runtime has set it). */
+export function getPageTableStateSchema(): any {
+  return _pageTableStateSchema
+}
 
 export const ctxvmPageTableProjection: ProjectionDefinition<'ctxvmPageTable', PageTableState> = {
   key: 'ctxvmPageTable',
-  stateSchema: pageTableStateSchema,
+  get stateSchema(): any {
+    return _pageTableStateSchema
+  },
   stateVersion: 1,
   init(_header: SessionHeader, _inheritedEventCount: number): PageTableState {
     return { pages: {}, order: [] }
