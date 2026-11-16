@@ -12,16 +12,22 @@
  * Diagnostics: console.error('[ctxvm] …') — captured in the host log. Mirror
  * mode still never raises into the loop.
  */
+import z from '@deepseek-ai/schemastery'
 import type { Context } from '@deepseek-ai/cordis'
-import { Config, type CtxvmDshConfig } from './config.ts'
+import { makeConfig, type CtxvmDshConfig } from './config.ts'
 import { mapEvent } from './event-map.ts'
 import { ensureTracer, flushTracer } from './tracer.ts'
-import { ctxvmPageTableProjection } from './page-table.ts'
+import { ctxvmPageTableProjection, makePageTableStateSchema, setPageTableStateSchema } from './page-table.ts'
 import type { SessionTracer } from './types.ts'
 
 export const name = 'ctxvm-tracer'
 export const inject = ['sessionProjections']
-export { Config }
+
+// P15 option (ii): inject the DSH runtime's schemastery at plugin load so the
+// exported Config schema is real (cordis resolveConfig validates the row config
+// and applies defaults) and the projection's stateSchema is set before register().
+setPageTableStateSchema(makePageTableStateSchema(z))
+export const Config = makeConfig(z)
 
 const log = (...args: unknown[]): void => console.error('[ctxvm]', ...args)
 

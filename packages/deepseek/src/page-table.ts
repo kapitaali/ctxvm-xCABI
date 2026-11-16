@@ -7,24 +7,36 @@
  *   tool/call        → lookup by logicalRef; resident page ⇒ fault ledger row
  *   surface          → mark pages resident/stub
  *   compaction       → mark shadowed pages evicted
+ *
+ * schemastery is part of the DSH runtime only. The schema is built by an
+ * injected factory (makePageTableStateSchema) that the runtime entry
+ * (src/index.ts) calls at load; init()/apply() never touch the schema, so
+ * tests load this module without schemastery installed (P15 option ii).
  */
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import type { SessionEvent, SessionHeader } from '@deepseek-ai/dsh-session/types'
 import type { PageTableState } from './types.ts'
 
-// @deepseek-ai/schemastery is part of the DSH runtime and may not be
-// available when this module is loaded outside DSH (e.g. in tests).
-// The schema is loaded lazily on first access; init()/apply() do not require it.
-let _pageTableStateSchema: any = null
+type Z = typeof import('@deepseek-ai/schemastery').default
 
-/** Inject the schemastery schema (called by the DSH runtime at load time). */
-export function setPageTableStateSchema(schema: any): void {
-  _pageTableStateSchema = schema
+/** Build the page-table state schema from the runtime's schemastery `z` (P15 option ii). */
+export function makePageTableStateSchema(z: Z) {
+  return z.object({
+    pages: z.dict(z.object({
+      kind: z.string(),
+      contentHash: z.string(),
+      tokens: z.number(),
+      status: z.union([z.const('resident'), z.const('stub'), z.const('evicted')]),
+    })),
+    order: z.array(z.string()),
+  })
 }
 
-/** Read the lazily-loaded schema (null until the DSH runtime has set it). */
-export function getPageTableStateSchema(): any {
-  return _pageTableStateSchema
+let _pageTableStateSchema: unknown
+
+/** Inject the built schema; called by the runtime entry (src/index.ts) at load. */
+export function setPageTableStateSchema(schema: unknown): void {
+  _pageTableStateSchema = schema
 }
 
 export const ctxvmPageTableProjection: ProjectionDefinition<'ctxvmPageTable', PageTableState> = {

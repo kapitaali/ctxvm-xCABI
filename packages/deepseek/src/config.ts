@@ -1,34 +1,15 @@
 /**
- * W22 — plugin configuration schema (schemastery `z`, the DSH convention:
- *   import z from '@deepseek-ai/schemastery'
- *   export const Config: z<Config> = z.object({ ... })
+ * W22 — plugin configuration schema. schemastery is part of the DSH runtime and
+ * is not installed outside it, so the schema is built by an injected factory:
+ * the runtime entry (src/index.ts) calls makeConfig(z) with the real schemastery
+ * `z` at plugin load and re-exports the result as `Config`. Tests never load this
+ * module, so they run without schemastery installed (P15 option ii).
+ *
  * The bundle patch inserts the row with defaults; the profile patch layer
  * overrides `config` wholesale by addressing row id `ctxvm-tracer`.
- *
- * schemastery is part of the DSH runtime and may not be available outside
- * DSH (e.g. in tests). Config is loaded lazily; call setConfig() with the
- * schemastery `z` value from the DSH runtime before accessing Config.
  */
 
-let _Config: any = null
-
-/** Inject the schemastery schema (called by the DSH runtime at load time). */
-export function setConfig(z: any): void {
-  if (_Config) return
-  _Config = z.object({
-    enabled: z.boolean().default(false),
-    traceDir: z.string().default('${XDG_STATE_HOME:-~/.local/state}/ctxvm/traces'),
-    tokenizerId: z.string().default('apx4-char'),
-    budgetTokens: z.number().step(1).min(1).default(200_000),
-    pageSizeTokens: z.number().step(1).min(1),
-    agentIdPrefix: z.string().default('dsh'),
-  })
-}
-
-/** Read the lazily-loaded config schema (null until setConfig has been called). */
-export function getConfig(): any {
-  return _Config
-}
+type Z = typeof import('@deepseek-ai/schemastery').default
 
 export interface CtxvmDshConfig {
   /** Master switch. Mirror-mode capture runs only when true. */
@@ -45,5 +26,15 @@ export interface CtxvmDshConfig {
   agentIdPrefix: string
 }
 
-/** Config schema (null until setConfig has been called with schemastery `z`). */
-export const Config: any = null
+/** Build the Config schema from the runtime's schemastery `z` (P15 option ii). */
+export function makeConfig(z: Z) {
+  return z.object({
+    enabled: z.boolean().default(false),
+    traceDir: z.string().default('${XDG_STATE_HOME:-~/.local/state}/ctxvm/traces'),
+    tokenizerId: z.string().default('apx4-char'),
+    budgetTokens: z.number().step(1).min(1).default(200_000),
+    // No .required() → optional, matching schemastery's absence-is-undefined rule.
+    pageSizeTokens: z.number().step(1).min(1),
+    agentIdPrefix: z.string().default('dsh'),
+  })
+}
