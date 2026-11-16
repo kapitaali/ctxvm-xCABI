@@ -73,6 +73,14 @@ recorded (echo law).
 - No cost-saving claim (none measured). No "deterministic" without a named machine scope.
 - Do not stage unrelated WIP; the untracked list is the collision surface. Never `git add -A`.
   Never push. Attribution `kapitaali <teppo@kapitaali.com>`.
+- **Never delete recursively above a named subdirectory.** No `rm -rf ~`, `rm -rf $HOME`, `rm -rf /`, and
+  no bare path that could resolve to the home directory (an unset `$VAR`, a `~` the shell did not expand).
+  Cleanup names the exact directory — `rm -rf ~/.hermes/cache/scratch/<run>` — never its parent. Owner
+  rule 2026-11-16; non-negotiable, and it outranks convenience on every cleanup.
+- Never suggest, type, or endorse `rm -rf ~` or any recursive delete targeting `~`, `$HOME`, `/`,
+  or a bare path that could resolve to the home directory. If cleanup is needed, name the exact
+  subdirectory explicitly (e.g. the literal `~` artifact dir inside the repo root) and never use
+  `~` as the target root. Non-negotiable.
 - Shared files, restated because they cost the most: `reports/LOG.md` and
   `handoff/PROJECT-STATE.md` are claimed by a commit, never by a message. Commit your hunks only.
 
