@@ -61,3 +61,14 @@ full wired run is a separate, later authorization after that smoke and a fresh p
 - Dirty files elsewhere (`design/W8-EXECUTOR-PROMPT.md`, `reports/RR-W8B-20261110.md`,
   `tools/w8-run-env.sh`, `research/**`, plus untracked design/W8C drafts) belong to other lanes and
   were not staged or changed.
+
+## 6. Erratum — shared LOG collision (same day)
+
+When this card was committed (`d06cf06`), another lane's uncommitted LOG row
+`| RR-TBWIRED-20261116 | tb-wired | … |` was already present in the working-tree `reports/LOG.md`
+and was therefore captured by my explicit `git add` of that shared file. That lane then landed its
+own commit `a39f617` with `design/TB-WIRED-PLAN.md` and `reports/RR-TBWIRED-20261116.md`, so its row
+is now committed but carried in **my** commit rather than its own. Committed rows are never
+rewritten; this erratum names the misattribution. §5's "one LOG row" claim is corrected: my commit
+carried two rows, one of which belonged to the other lane. No file of theirs was edited by this
+lane, and the two plan cards remain separate proposals for the owner to reconcile.
