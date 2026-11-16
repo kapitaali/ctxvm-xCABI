@@ -15,11 +15,11 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Research lane: bundle + version claims applied ✓; PDF rebuild + M0 count owed (paper A1/A2); A3 answered (P13), A4 queued (P14) (`RR-PAPER-REVIEW`).
 - Hermes lane: per-call dropped **identities** DONE in `f3078b4` ✓; H9 landed in `e480186` — review found 7 defects, 5 one-line asks (`RR-H9LANDING`).
 
-- **dsh lane (W22):** landed `9a87ba2` 2026-11-16 (`RR-W22-20261115`); `packages/deepseek` captures on profile `nvidia`; headless v0.1 trace validates (exit 0) + replays clean. Gaps: no tsconfig entry ⇒ gate silent; fold stub; test needs schemastery; card cleared (P15), dsh to file; validator open.
+- **dsh lane (W22):** landed `9a87ba2`; `254fa7c` fixed the config regression. Acceptance #4 BLOCKED on the headless Nous path (`RR-DSH-NOUS-20261116`); owner: confirm a completed Nous web turn. test-headless has no ctxvm bundle.
 - Gateway: holds the current build (pid 23669, started after the 09:31 sync) ⇒ captures are labelled 0.13.24; the first **paged** one is still owed (`RR-H9LANDING`).
 ## Next three (ordered, one line each)
 1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + the release rule at D6/D17.
-2. Owner: scope the paper's `page.render` sentence and one-liner (paper A3/A4); D17 after the edits land (G6).
+2. Owner: send P14 (paper one-liner, A4); D17 after the paper edits land (G6).
 3. Owner: G3 (W9 equivalence-test preregistration).
 
 ## Decisions made (date, decision, reason)
