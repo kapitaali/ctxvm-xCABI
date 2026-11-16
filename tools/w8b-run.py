@@ -432,7 +432,7 @@ def capture_for(sid: str) -> Path | None:
 
 
 def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000,
-            task: dict | None = None) -> dict:
+            task: dict | None = None, limit: int = 0) -> dict:
     task = task or TASKS["ta2"]
     title = f"{run_id}-{arm}"
     run_dir = Path.home() / ".local" / "state" / "ctxvm" / "w8-runs" / run_id / arm
@@ -442,10 +442,12 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000
     env["HERMES_HOME"] = str(PROFILES / f"{spec['prefix']}-{arm}")
     started = time.time()
     ctl: list[str] = []
+    if limit:
+        ctl += ["--limit", str(limit)]      # phase 1b: three files, then stop
     if task is not TASKS["ta2"]:
         prompts_path = run_dir / "prompts.json"
         prompts_path.write_text(json.dumps(build_tb_prompts(ws / "fixture", run_dir)), encoding="utf-8")
-        ctl = ["--prompts-file", str(prompts_path), "--sealed-parts", "none"]
+        ctl += ["--prompts-file", str(prompts_path), "--sealed-parts", "none"]
         print(f"[{arm}] task tb: {len(json.loads(prompts_path.read_text()))} prompts from {prompts_path}")
     print(f"\n[{arm}] driver -> {run_dir}")
     r = subprocess.run([sys.executable, str(DRIVER), "--arm", arm, "--session-name", title,
@@ -632,8 +634,28 @@ def probe(spec: dict, run_id: str, arm: str = "paged", task: dict | None = None)
             seen = out.get("scanMentions") or 0
             out["scanNote"] = ("mentions counted here" if seen else
                                "no mention expected in one prompt; asserted on the 2-prompt diagnostic")
-            out["precondition"] = ("READY" if selections > 0
-                                   else "NOT READY — engine never selected; a pair cannot start")
+            # A ONE-TURN probe cannot select: the keep law protects the whole request and `_plan`
+            # returns early at any budget. Reading `engineSelections == 0` as "never engaged" made
+            # this probe report NOT READY on a live 0.13.24 capture whose own plan block said
+            # `reason: fits, floorTokens 10552, budgetTokens 60000, engineEntered 354` (2026-11-16).
+            # The plan channel is what distinguishes "asked and declined" from "never asked".
+            plan = plug.get("enginePlan") or {}
+            entered = plug.get("engineEntered") or 0
+            reason = plan.get("reason")
+            out["enginePlan"] = plan or None
+            out["engineEntered"] = entered
+            if selections > 0:
+                out["precondition"] = "READY — the engine selected"
+            elif reason in ("fits", "floor_bust"):
+                out["precondition"] = (
+                    f"READY — engine entered ({entered}), plan={reason} "
+                    f"(floor {plan.get('floorTokens')} / resident {plan.get('residentTokens')} "
+                    f"vs budget {plan.get('budgetTokens')}); a one-turn probe cannot select")
+            elif entered > 0:
+                out["precondition"] = (f"PARTIAL — engine entered ({entered}) but the sidecar carries no "
+                                       f"plan: the plan channel is missing (a pre-0.13.24 build?)")
+            else:
+                out["precondition"] = "NOT READY — engine never entered; a pair cannot start"
     if out["tool_calls"] and any(t in ("read_file", "search_files", "write_file") for t in out["tools"]):
         out["verdict"] = "TOOL CALLS OK"
     if out.get("precondition") and not out["precondition"].startswith("READY"):
@@ -645,8 +667,9 @@ def probe(spec: dict, run_id: str, arm: str = "paged", task: dict | None = None)
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=None, help="override the provider's default model id")
-    ap.add_argument("--arm", choices=["naive", "paged", "both"], default="paged",
-                    help="which arm the probe uses (both = the contrast check)")
+    ap.add_argument("--arm", choices=["naive", "paged", "both"], default=None,
+                    help="which arm the probe uses (both = the contrast check); for a run, an explicit "
+                         "--arm picks one arm and otherwise --arms decides")
     ap.add_argument("--probe", action="store_true",
                     help="one capability prompt on the paged arm, then stop (no cells)")
     ap.add_argument("--provider", choices=sorted(PROVIDERS), default="nvidia",
@@ -657,6 +680,8 @@ def main() -> int:
     ap.add_argument("--budget", type=int, default=70000,
                     help="the paged arm's vBudget; must match the committed prediction block")
     ap.add_argument("--run-id", default=time.strftime("w8b-%Y%m%d-%H%M%S"))
+    ap.add_argument("--limit", type=int, default=0,
+                    help="run only the first N prompts per arm (phase 1b: 3 files, scored)")
     ap.add_argument("--task", choices=sorted(TASKS), default="ta2",
                     help="ta2 = T-A v2 (built-in prompts); tb = T-B v3 (prompt file + revisit lookups)")
     ap.add_argument("--dry-run", action="store_true")
@@ -694,14 +719,14 @@ def main() -> int:
             print(f"archived stale artefact: {art} -> {dst}")
 
     if args.probe:
-        arms = ["naive", "paged"] if args.arm == "both" else [args.arm]
+        arms = ["naive", "paged"] if args.arm == "both" else [args.arm or "paged"]
         results = [probe(spec, args.run_id, a, task) for a in arms]
         if len(results) == 2:
-            same = (results[0].get("engine"), results[0].get("engineSelections") is not None and
-                    (results[0].get("engineSelections") or 0) > 0) ==                    (results[1].get("engine"), (results[1].get("engineSelections") or 0) > 0)
+            same = (results[0].get("engine"), results[0].get("budget")) ==                    (results[1].get("engine"), results[1].get("budget"))
             print(json.dumps({"contrast": "NO CONTRAST — both arms look identical" if same
                               else "CONTRAST OK", "arms": [{k: r.get(k) for k in
-                              ("model", "engine", "engineSelections", "profile", "budget", "precondition")}
+                              ("model", "engine", "engineSelections", "engineEntered", "enginePlan",
+                               "profile", "budget", "precondition")}
                               for r in results]}, indent=2))
         return 0
 
@@ -710,14 +735,16 @@ def main() -> int:
             print(f"[{arm}] python3 tools/w8-driver.py --arm {arm} --session-name {args.run_id}-{arm} "
                   f"--workspace experiments/w8b/ws{"-" + args.task if args.task != "ta2" else ""}-{arm} --run-dir <state>/w8-runs/{args.run_id}/{arm} "
                   f"--profile-prefix {spec['prefix']} --expect-budget {args.budget} --timeout {args.timeout} "
-                  f"--max-calls {spec.get('max_calls') or 0}")
+                  f"--max-calls {spec.get('max_calls') or 0}"
+                  + (f" --limit {args.limit}" if args.limit else ""))
         print(f"dry-run OK — task {args.task}, provider {args.provider}, {len(arms)} arm(s), "
               f"{task['parts']} prompts each, {args.timeout}s cap, model {spec['model']}")
         return 0
 
     if getattr(args, "arm", None) in ("naive", "paged") and not args.probe:
         arms = [args.arm]          # a scoring run needs one arm; the control is a cell property
-    results = [run_arm(a, args.run_id, args.timeout, spec, args.budget, task) for a in arms]
+    results = [run_arm(a, args.run_id, args.timeout, spec, args.budget, task, args.limit)
+               for a in arms]
     for r in results:
         r["provider"] = args.provider
         r["model"] = spec["model"]

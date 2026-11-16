@@ -172,10 +172,18 @@ def prompt_text(i: int, prompt: str) -> str:
 
 
 def build_cmd(i: int, prompt: str, args) -> list[str]:
-    cmd = ["hermes", "chat", "-q", prompt_text(i, prompt), "--oneshot", "-c", args.session_name,
-           "--in", args.workspace]
+    # THE SURFACE IS PINNED AT CREATION. Measured 2026-11-16 (tb-1b-naive2): a profile with
+    # `toolsets: [file]` still produced a session whose trace declared `tool:terminal(...)` — the model
+    # wrote a Python script and ran it — so the profile key alone did not hold on the `hermes chat` path.
+    # `-t file` on the creation call is the documented override, and a resume keeps the launch policy,
+    # so later prompts must NOT pass it.
+    cmd = ["hermes"]
     if i == 1:
-        cmd.insert(5, "--create-if-missing")
+        cmd += ["-t", "file"]
+    cmd += ["chat", "-q", prompt_text(i, prompt), "--oneshot", "-c", args.session_name,
+            "--in", args.workspace]
+    if i == 1:
+        cmd += ["--create-if-missing"]
     # --max-turns is REFUSED on this flow: a named session with --create-if-missing
     # rejects it as a creation override even on a fresh name (measured 2026-11-10).
     # The call ceiling is `agent.max_turns` in the profile instead, which survives
@@ -234,9 +242,12 @@ def run(args) -> int:
     (run_dir / "session.json").write_text(json.dumps(manifest, indent=2) + "\n")
 
     if args.dry_run:
-        for i, p in enumerate(PROMPTS, 1):
+        # honour --limit here too: printing 49 prompts for a three-prompt phase-1b run reads like the
+        # limit did not take (2026-11-16).
+        _shown = PROMPTS[: args.limit] if args.limit else PROMPTS
+        for i, p in enumerate(_shown, 1):
             print(f"[prompt {i:02d}] " + " ".join(build_cmd(i, p, args)))
-        print(f"dry-run: session={args.session_name} prompts={len(PROMPTS)} "
+        print(f"dry-run: session={args.session_name} prompts={len(_shown)} "
               f"middle={len(PROMPTS[3:-1]) if SEALED_PARTS else '-'} "
               f"seal_after={SEAL_AFTER_TURN if SEALED_PARTS else '-'} (no model call made)")
         return 0
