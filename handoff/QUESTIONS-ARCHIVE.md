@@ -491,3 +491,25 @@ The P12 row (722 B) was compacted to a pointer so the P13 and P14 rows (the two 
 ## Errata (2026-11-16, tenth pass): QUESTIONS.md row compaction for the 3,072 B cap
 
 The P2–P11 rows were shaved to pointers so the P15 row (W22 CI coverage: clear the design-card placement?) fits the cap. Every dropped word survives verbatim in its own section above or the cited RR card; no heading was touched. The queue now runs at 2,990/3,072 B.
+
+## P15 — W22 CI coverage: clear the design-card placement?
+
+**answered 2026-11-16**, then **re-checked the same day at `be72ae8`** (fresh-clone pull). Full record: `handoff/packets/P15-w22-ci.md`. The reviewer's answer, verbatim (from the packet alone — they had not seen the dsh draft, the adapter, or the CI scripts):
+
+> **1. Placement: cleared, with one reword.** Put the card in `design/W22-CI-COVERAGE.md`.
+> **Why clear it.** The gap is measured: `grep` finds no `deepseek` hit in `tools/run-ci.sh` or the workflow, and no tsconfig references the package. The gate is green while the adapter is uncovered, which is the false-green class this lane has hit before.
+> **The reword.** State the gap as "the adapter's tests are not run by the gate," not "the adapter is untested." The packet's own run shows 5 of 5 on `event-map.test.ts`, so the tests exist and pass when called by hand.
+> **The D-number.** UNKNOWN (reviewer can't see the ledger). Use the next free number. The card changes no spec, schema, corpus, or wire byte.
+> **Falsifier:** an existing CI step that already exercises the package through a path the `grep` missed. (Checked 2026-11-16 from the repo: still no hit — falsifier not triggered.)
+> **2. The `run-ci.sh` step: owner directs, hermes lane implements. Don't defer.** The hermes lane owns `tools/**`, so they edit it. Prefer the test step (option A) to the tsconfig list (option B); add B later for type coverage. Acceptance: the step must run the whole `test/` directory. Guards: it must fail when a test fails and print the count it ran; a skip must not read as a pass (supply a tracked fixture for `replay.test.ts`, or report skips by name).
+> **3. Schemastery: option (ii), the injectable schema factory** (recommendation). (i) puts another system's runtime dep into repo CI and the hand-made link is absolute — a CI machine won't have that path. (iii) leaves page-table untested outside DSH. (ii) keeps the test self-contained; its cost is a small change inside `packages/deepseek/**`, routed through the dsh lane, not the reviewer. Interim alternative: (iii) plainly labelled (event-map and replay gated, page-table not), then (ii) as follow-up. Falsifier: a factory that changes what the test checks.
+> **Correction to fold into the card:** say CI must not depend on a hand-made link at all — a relative link would also be wrong on another machine.
+> UNKNOWN: D-number; adapter code.
+
+The pull (fresh clone at `be72ae8`), verbatim:
+
+> The gap is real; `packages/deepseek` is landed (`9a87ba2`); `design/W22-CI-COVERAGE.md` is not in the tree, so placement is still pending. **What changes:** (1) the packet's 5/5 depends on the hand-made link — in a fresh clone even `event-map.test.ts` fails (`ERR_MODULE_NOT_FOUND @ctxvm/node`), so the CI step must create the link itself (idempotent `ln -sfn`, repo-relative). The ai-sdk precedent runs the other way (`flush.ts` imports `../../node/src/index.ts` — confirmed at `packages/ai-sdk/src/flush.ts:18`); switching deepseek to that would break the dsh bundle, so that choice belongs to the dsh lane. (2) **Option (i) is out:** `npm install --omit=peer` fails E404 on `@deepseek-ai/dsh-type-meta`, not on the public registry (confirmed 2026-11-16 via `npm view`). Choice is (ii) or (iii); still recommend (ii). (3) (ii) needs a source change (`src/page-table.ts:11`, `src/config.ts:8` import schemastery as a value at load time) — the dsh lane makes that edit; until it lands, use (iii) as interim. (4) **Acceptance amended:** interim step runs `event-map.test.ts` explicitly and prints page-table and replay as not gated, by name; whole-directory run once (ii) lands. Caveat: the "5 pass / 1 fail / 1 skip" is a claim about the owner's checkout (unreproducible in a fresh clone without the link); E404 does not depend on that. **Updated QUESTIONS line:** placement cleared; step hermes-implemented, creates the link itself; (i) infeasible, (ii) with (iii) interim; interim runs event-map explicitly with named non-gated files; whole dir once (ii) lands. UNKNOWN: D-number; how CI installs ai-sdk.
+
+## Errata (2026-11-16, eleventh pass): QUESTIONS.md row compaction for the 3,072 B cap
+
+The P15 row landed as a pointer (verdict essence + archive pointer) so no further shaving was needed; the queue runs under the cap. Every word of the answer survives verbatim in the section above.
