@@ -18,7 +18,7 @@ Statuses: queued/sent/answered.
 | P12 | omission: on the wire or in the sidecar? | **answered 2026-11-13** | the wire (per-call list of removed-page identities, fail-closed check); the scoped view is an addition under a new name. Full answer: archive §P12 + `RR-OMISSIONANSWER`. |
 | P13 | paper: the `page.render` sentence vs the shipped adapters | **queued 2026-11-15** | Scope the sentence to the format, the adapters, or both: the wire can carry `stub`, no shipped adapter emits it (0 in 2,050 live renders). Packet: `handoff/packets/P13-paper-claims.md`. |
 | P14 | paper: the one-liner "reconstruct and replay the exact request" | **queued 2026-11-15** | Narrow it, or state the limit once in §16: the trace holds no request bytes. Packet: `handoff/packets/P14-paper-oneliner.md`. |
-| P15 | W22 CI coverage: clear `design/W22-CI-COVERAGE.md`? | **queued 2026-11-16** | Clear the card's design/ placement (owner) + route the run-ci step to the hermes lane: adapter landed but gate-silent (5/1/1 outside DSH). Packet: `handoff/packets/P15-w22-ci.md`. |
+| P15 | W22 CI coverage: clear `design/W22-CI-COVERAGE.md`? | **sent 2026-11-16** | Clear the card's design/ placement (owner) + route the run-ci step to the hermes lane: adapter landed but gate-silent (5/1/1 outside DSH). Packet: `handoff/packets/P15-w22-ci.md`. |
 
 Queue law: packets live in `handoff/packets/`; answers summarize here with date + decision.
 
