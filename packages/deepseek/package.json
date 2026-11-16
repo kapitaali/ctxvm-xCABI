@@ -1,0 +1,39 @@
+{
+  "name": "@ctxvm/dsh",
+  "version": "0.0.1",
+  "private": true,
+  "description": "W22 — DeepSeek Harness adapter for ctxvm: mirror-mode xCABI v0 trace capture from the dsh session log, page-table projection, validate/replay.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "src",
+    "cordis.patch.yml",
+    "locale",
+    "icon.svg",
+    "docs",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "@ctxvm/node": "file:../node"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-session": "*"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "ctxvm tracer (W22)",
+    "description": "Mirror-mode xCABI trace capture for DeepSeek Harness sessions: writes a replayable JSONL trace per session and derives the page table.",
+    "detail": "Phase 1 of the W22 plan: observe-only capture from the session log, validated against spec/rfc-0 and replayed with ctxvm-conformance. No model-visible behavior change."
+  }
+}

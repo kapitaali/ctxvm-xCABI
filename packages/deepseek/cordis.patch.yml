@@ -1,0 +1,10 @@
+# W22 bundle patch for @ctxvm/dsh — inserts the ctxvm-tracer plugin row.
+# The profile patch layer may address this row by id (ctxvm-tracer); last write
+# wins per row, and a patch replaces the whole `config` rather than merging.
+- insert:
+    - id: ctxvm-tracer
+      name: '@ctxvm/dsh'
+      config:
+        enabled: true
+        budgetTokens: 200000
+        tokenizerId: apx4-char
