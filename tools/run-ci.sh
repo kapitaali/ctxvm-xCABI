@@ -136,7 +136,12 @@ run_counted "@ctxvm/node suite" node bash -c 'cd packages/node && node --test te
 run_step "npm ci (@ctxvm/node)" bash -c 'cd packages/node && npm ci --no-audit --no-fund' 
 bash tools/check-node-build.sh
 run_counted "@ctxvm/opencode suite" node bash -c 'cd packages/opencode && node --test test/' 
-run_counted "@ctxvm/ai-sdk suite" node bash -c 'cd packages/ai-sdk && node --test test/' 
+run_counted "@ctxvm/ai-sdk suite" node bash -c 'cd packages/ai-sdk && node --test test/'
+# W22 / @ctxvm/dsh: the adapter landed (9a87ba2) and nothing ran its tests — the gate stayed green
+# while a page-table import was unresolvable and an integration test never ran. Interim scope: one file,
+# named, with the two it does not cover printed on every run. The step creates the workspace link
+# itself (the tree carries a hand-made absolute one, which no clone has).
+run_counted "deepseek @ctxvm/dsh suite (event-map; page-table+replay not gated)" node bash -c 'bash tools/ci-deepseek.sh' 
 run_counted "@ctxvm/hermes suite" pytest bash -c 'cd packages/hermes && python -m pytest test/ -q' 
 run_counted "@ctxvm/py suite" pytest bash -c 'cd packages/py && python -m pytest test/ -q' 
 run_step "plugin.yaml version matches PLUGIN_VERSION" bash -c 'ver=$(sed -n "s/^version: *//p" packages/hermes/live/plugin.yaml); grep -q "PLUGIN_VERSION = \"$ver\"" packages/hermes/live/__init__.py'
