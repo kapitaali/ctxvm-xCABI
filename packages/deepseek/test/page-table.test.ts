@@ -37,6 +37,20 @@ test('tool/call then tool/result declares a resident page with the toolRef ident
   assert.deepEqual(s.order, [ref])
 })
 
+test('tool/result with no message does not throw (session resume regression)', () => {
+  let s = init()
+  s = apply(s, { type: 'tool/call', seq: 1, callId: 'c1', name: 'bash', arguments: '{"cmd":"ls"}' })
+  // Stored dsh sessions can carry tool/result with message undefined; the
+  // projection must still fold so session resume does not fail.
+  s = apply(s, { type: 'tool/result', seq: 2, surfaceOp: 'append' })
+  // With no message there is no toolCallId to pair, so identity falls back to
+  // the fail-safe 'unknown' name rather than the preceding call's name.
+  const refs = Object.keys(s.pages)
+  assert.equal(refs.length, 1, `expected one page; have ${refs}`)
+  assert.equal(s.pages[refs[0]].contentHash, contentHash(''))
+  assert.equal(s.pages[refs[0]].status, 'resident')
+})
+
 test('re-declared page keeps first-declare-wins content hash but refreshes tokens/status', () => {
   let s = init()
   s = apply(s, { type: 'tool/call', seq: 1, callId: 'c1', name: 'bash', arguments: '{"cmd":"ls"}' })

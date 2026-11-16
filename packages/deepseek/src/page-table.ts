@@ -68,7 +68,13 @@ function textOfContent(content: unknown): string {
     return content.filter(b => b && (b as { type?: string }).type === 'text')
       .map(b => (b as { text: string }).text).join('')
   }
-  return canonicalJson(content as never)
+  // A tool/result in a stored dsh session can carry no message at all (all 154
+  // in the failing session did). canonicalJson(undefined) is undefined, which
+  // made contentHash(undefined) throw and broke session projection on resume.
+  // Absent content is a fact, not a zero or a guess: hash the empty body so the
+  // fold stays total and the page is still declared with its tool identity.
+  const canonical = canonicalJson(content as never)
+  return typeof canonical === 'string' ? canonical : ''
 }
 
 /** Pure: returns a new state, never mutates `state`. */
