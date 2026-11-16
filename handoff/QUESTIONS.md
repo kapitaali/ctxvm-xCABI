@@ -17,7 +17,7 @@ Statuses: queued/sent/answered.
 | P11 | canonical ordering: who owns it? | **answered 2026-11-11** | (c) owner, (a) pointer; test FIRST (model/page table/report, never bytes). `RR-P11CANON`. |
 | P12 | omission: on the wire or in the sidecar? | **answered 2026-11-13** | the wire (per-call list of removed-page identities, fail-closed check); the scoped view is an addition under a new name. Full answer: archive §P12 + `RR-OMISSIONANSWER`. |
 | P13 | paper: the `page.render` sentence | **answered 2026-11-16** | (c) merged+tightened (reviewer's wording); drop the lead-in; scope the table row, the mirror, every other occurrence; optional P12 clause. Archive §P13. |
-| P14 | paper: the one-liner "reconstruct and replay the exact request" | **queued 2026-11-15** | Narrow it, or state the limit once in §16: the trace holds no request bytes. Packet: `handoff/packets/P14-paper-oneliner.md`. |
+| P14 | paper: the one-liner "reconstruct and replay the exact request" | **answered 2026-11-16** | (a): narrow the headline at six sites, fix `:247`, full limit as a seventh §16 bullet; Part II line 77 is the same overclaim. Archive §P14. |
 | P15 | W22 CI coverage: clear `design/W22-CI-COVERAGE.md`? | **answered 2026-11-16** | Placement cleared (D-number owed); reword to gate-does-not-run-tests; step owner-directed/hermes-implemented (interim: event-map + named skips; whole dir once (ii) lands); schemastery (ii), (iii) interim. Archive §P15. |
 
 Queue law: packets live in `handoff/packets/`; answers summarize here with date + decision.

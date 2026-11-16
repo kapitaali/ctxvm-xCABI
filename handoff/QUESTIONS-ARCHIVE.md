@@ -525,3 +525,55 @@ The P15 row landed as a pointer (verdict essence + archive pointer) so no furthe
 ## Errata (2026-11-16, twelfth pass): no compaction needed
 
 The P13 answered row lands as a pointer within the cap (queue under 3,072 B). Every word of the answer survives verbatim in the section above.
+
+## P14 — the one-liner "reconstruct and replay the exact request"
+
+**answered 2026-11-16** (from the packet alone; the reviewer had not read the paper's lines or the capture script). Full record: `handoff/packets/P14-paper-oneliner.md`. The answer, verbatim:
+
+> **1. Verdict: (a), with §16 holding the full limit. I disagree with the agent's recommendation of (b).**
+>
+> - **The sentence is false as written, in six places.** A limit stated once in §16 doesn't travel with the headline. Readers quote the bold line, and nothing there warns them. The paper's own rule ("what a trace cannot do is in §16, in one place") is about limits, and this is an overclaim in the headline.
+> - **Suggested one-liner**, built from the claim I narrowed in Part II:
+>
+>   > **Context tracing is not logging — it is the ability to re-derive and replay the structure of the request the harness sent (which pages, with what identities, hashes and token counts), not its bytes.**
+>
+> - **Optional second sentence** where space allows: "Content can be reconstructed only where the sources behind the page hashes still exist." Part II says this, so the two papers should agree.
+> - **Falsifier:** a shipped adapter that stores request content, or a demonstrated join of trace plus sources that rebuilds a request byte for byte. Either would let the claim widen.
+>
+> **2. Add a seventh bullet to §16, and put the narrowed wording at the six sites instead of pointers.**
+>
+> - A pointer beside a false claim doesn't fix it. Replace the sentence at all six places (`white-paper.md:17`, `:237`, `:633`, and the `index.md` mirrors).
+> - §16 gets the full statement, in one place, as its own rule requires.
+> - Suggested bullet, with one correction to the packet's candidate (b):
+>
+>   > A trace cannot reconstruct the request's bytes. It records page identities, content hashes, token counts, and an estimated size for each request. That estimate is character-based and can differ from the provider's count. The shipped adapters do not emit stub renders, so a turn's omissions are not recorded.
+>
+> **3. Fix the sentence at `:247` itself.** "The exact rendered message array" is a standalone factual claim about the trace's content, and it is false for the same reason. Replace it with "the per-turn render record: page declarations, token totals, and the request's estimated size." Don't rely on §16 for this one.
+>
+> **Correction to the packet's own wording.** Candidate (b) says "the measured size of each request." The packet's own numbers show that is an estimate. On the paid paged capture, `approxInputTokens` grows 12,060 to 59,747, while the provider's receipts grow 14,557 to 114,766. The gap widens from about 1.2× to 1.9×.
+> - UNKNOWN whether this is estimate error or a larger last request within a Hermes turn (a turn buckets about two requests).
+> - Either way, "measured" is the wrong word, and any ratio built on `approxInputTokens` carries the estimate's error. That belongs in §16 too.
+>
+> **For `handoff/QUESTIONS.md`:**
+> P14 answered 2026-11-16: (a), not (b). Replace the one-liner at all six sites with the narrowed claim ("re-derive and replay the structure of the request, not its bytes"), fix `:247` in place, and add a seventh §16 bullet with the full limit. Say "estimated size," not "measured": on the paid capture `approxInputTokens` reached 59,747 against 114,766 in provider receipts (cause UNKNOWN: estimate error or a larger last request per Hermes turn). Keep the sentence consistent with Part II. Falsifier: an adapter that stores request content, or a trace-plus-sources join that reproduces request bytes. UNKNOWN: whether tool results can be re-read for a content join.
+>
+> That clears 13, 14, and 15.
+
+## Review-lane check of the answer's premises (2026-11-16, not part of the reviewer's text)
+
+- **The six sites and `:247` are as described.** The one-liner is at `white-paper.md:17, :237, :633` and `index.md:23, :243, :639`; the `:247` sentence is at `white-paper.md:247` (`index.md:253`).
+- **The size estimate is character-based, as the answer says.** On the paid capture's final turn, `approxInputTokens` = `requestChars` ÷ 4 exactly (238,988 ÷ 4 = 59,747). Checked on turn 19 only. Ratios: 114,766 ÷ 59,747 = 1.92; 14,557 ÷ 12,060 = 1.21.
+- **Part II does NOT already say the narrowed claim, so the reviewer's premise is wrong.** `research/white-paper-Part-II.md:77` says "This paper therefore states its central claim in the narrow form: a context trace lets a reader reconstruct and replay the **exact request** the harness sent." That is the same overclaim, under a label that calls it narrow. The sentence about "sources behind the page hashes" does not occur anywhere in Part II. So the optional second sentence has no source in the record yet.
+- **The narrowed phrase occurs nowhere in the working tree** (0 hits in all three files), so no site has been changed.
+- **Consequence:** Part II must change too, or the two papers will disagree. The "narrow form" label has to go with it.
+
+## Routing (research lane; `research/**` is read-never-edit for the review lane)
+
+1. Replace the one-liner at `white-paper.md:17, :237, :633` and `index.md:23, :243, :639` with the narrowed claim.
+2. Fix `:247` (`index.md:253`) in place, per the answer's item 3.
+3. Add the seventh §16 bullet (the full limit), per the answer's item 2, in both files.
+4. **Also** change `Part-II.md:77` and drop its "narrow form" label. It is the same overclaim.
+5. Add the "sources behind the page hashes" sentence to Part II first, if it is kept. It has no source yet.
+6. Use "estimated size" everywhere the token estimate is named. The answer's §16 bullet already does.
+
+The review lane's own recommendation, (b), is withdrawn. The reviewer's (a) is the recorded answer. Owner override is possible; the books record (a) until one is given.
