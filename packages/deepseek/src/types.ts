@@ -12,6 +12,8 @@ export interface SessionTracer {
   calls: Map<string, { name: string; args: unknown }>
   /** Trace file path once written. */
   tracePath?: string
+  /** Events seen before request/header, replayed once the identity is known. */
+  pending?: unknown[]
 }
 
 /** Page table fold state (pure; registered as a session projection). */

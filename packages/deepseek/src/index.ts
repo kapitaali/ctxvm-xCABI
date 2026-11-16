@@ -16,7 +16,7 @@ import z from '@deepseek-ai/schemastery'
 import type { Context } from '@deepseek-ai/cordis'
 import { makeConfig, type CtxvmDshConfig } from './config.ts'
 import { mapEvent } from './event-map.ts'
-import { ensureTracer, flushTracer } from './tracer.ts'
+import { ensureTracer, finalizeTracer, flushTracer } from './tracer.ts'
 import { ctxvmPageTableProjection, makePageTableStateSchema, setPageTableStateSchema } from './page-table.ts'
 import type { SessionTracer } from './types.ts'
 
@@ -65,6 +65,7 @@ export function apply(ctx: Context, config: CtxvmDshConfig): void {
       const st = sessions.get(String(session.id))
       if (st) {
         sessions.delete(String(session.id))
+        finalizeTracer(st, config)
         if (st.tracer) {
           try {
             const p = flushTracer(st, config)
@@ -80,6 +81,7 @@ export function apply(ctx: Context, config: CtxvmDshConfig): void {
       log('effect cleanup; flushing', sessions.size, 'live session(s)')
       offCreated(); offEvent(); offDisposed()
       for (const st of sessions.values()) {
+        finalizeTracer(st, config)
         if (st.tracer) {
           try {
             const p = flushTracer(st, config)

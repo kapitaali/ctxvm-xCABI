@@ -13,7 +13,9 @@
  *   compaction/summary → shadowedSeqs' pages become evicted
  *
  * Page identity reuses @ctxvm/node's minters (toolRef/contentHash/approx4) so
- * the projection's logicalRefs match the trace's exactly.
+ * the projection's logicalRefs match the trace's exactly. All event reads go
+ * through eventData(), which merges DSH's `{type, seq, time, data}` envelope
+ * with its surface metadata.
  *
  * schemastery is part of the DSH runtime only. The schema is built by an
  * injected factory (makePageTableStateSchema) that the runtime entry
@@ -24,6 +26,7 @@ import { approx4, canonicalJson, contentHash, toolRef } from '@ctxvm/node'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import type { SessionEvent, SessionHeader } from '@deepseek-ai/dsh-session/types'
 import type { PageEntry, PageTableState } from './types.ts'
+import { eventData, asRecord, asString, asNumberArray } from './event-data.ts'
 
 type Z = typeof import('@deepseek-ai/schemastery').default
 
@@ -49,31 +52,16 @@ export function setPageTableStateSchema(schema: unknown): void {
   _pageTableStateSchema = schema
 }
 
-/** Minimal structural view of the flattened event the session/event boundary passes. */
-interface FlatEvent {
-  type: string
-  seq?: number
-  callId?: string
-  name?: string
-  arguments?: string
-  message?: { toolCallId?: string; content?: unknown }
-  surfaceOp?: 'append' | { op: 'replace'; startSeq: number; endSeq: number }
-  sourceEventSeqs?: number[]
-  shadowedSeqs?: number[]
-}
-
 function textOfContent(content: unknown): string {
   if (typeof content === 'string') return content
   if (Array.isArray(content)) {
-    return content.filter(b => b && (b as { type?: string }).type === 'text')
-      .map(b => (b as { text: string }).text).join('')
+    return content.filter(b => asRecord(b)?.type === 'text')
+      .map(b => asString(asRecord(b)?.text)).join('')
   }
-  // A tool/result in a stored dsh session can carry no message at all (all 154
-  // in the failing session did). canonicalJson(undefined) is undefined, which
-  // made contentHash(undefined) throw and broke session projection on resume.
-  // Absent content is a fact, not a zero or a guess: hash the empty body so the
-  // fold stays total and the page is still declared with its tool identity.
-  const canonical = canonicalJson(content as never)
+  // Stored tool/result rows can have no message at all. canonicalJson(undefined)
+  // is undefined and contentHash(undefined) throws; absent content stays a fact
+  // (empty body hash), never a fabricated token count (RR-DSHPROJ-20261116).
+  const canonical = content === undefined || content === null ? undefined : canonicalJson(content as never)
   return typeof canonical === 'string' ? canonical : ''
 }
 
@@ -94,20 +82,21 @@ function markPages(state: PageTableState, seqs: readonly number[], status: PageE
   return changed ? { ...state, pages } : state
 }
 
-function applySurfaceOp(state: PageTableState, ev: FlatEvent): PageTableState {
-  const op = ev.surfaceOp
-  if (!op || op === 'append') return state
-  if (op.op !== 'replace') return state
-  const shadowed = ev.sourceEventSeqs?.length
-    ? ev.sourceEventSeqs
-    : range(op.startSeq, op.endSeq)
-  return markPages(state, shadowed, 'stub')
-}
-
 function range(start: number, end: number): number[] {
   const out: number[] = []
   for (let s = start; s <= end; s++) out.push(s)
   return out
+}
+
+function applySurfaceOp(state: PageTableState, ev: Record<string, unknown>): PageTableState {
+  const op = asRecord(ev.surfaceOp)
+  if (!op || op.op !== 'replace') return state
+  const start = op.startSeq
+  const end = op.endSeq
+  const shadowed = asNumberArray(ev.sourceEventSeqs)?.length
+    ? asNumberArray(ev.sourceEventSeqs)!
+    : (typeof start === 'number' && typeof end === 'number' ? range(start, end) : [])
+  return markPages(state, shadowed, 'stub')
 }
 
 export const ctxvmPageTableProjection: ProjectionDefinition<'ctxvmPageTable', PageTableState> = {
@@ -121,18 +110,21 @@ export const ctxvmPageTableProjection: ProjectionDefinition<'ctxvmPageTable', Pa
     return { pages: {}, order: [], calls: {} }
   },
   apply(state: PageTableState, event: SessionEvent): PageTableState {
-    const ev = event as unknown as FlatEvent
+    const ev = eventData(event)
+    const seq = typeof ev.seq === 'number' ? ev.seq : 0
     switch (ev.type) {
       case 'tool/call': {
+        const raw = asString(ev.arguments)
         let args: unknown
-        try { args = JSON.parse(ev.arguments ?? '') } catch { args = ev.arguments }
-        const calls = { ...state.calls, [String(ev.callId)]: { name: String(ev.name), args } }
+        try { args = JSON.parse(raw) } catch { args = raw }
+        const calls = { ...state.calls, [asString(ev.callId)]: { name: asString(ev.name), args } }
         return { ...state, calls }
       }
       case 'tool/result': {
-        const call = state.calls[String(ev.message?.toolCallId)]
+        const message = asRecord(ev.message)
+        const call = state.calls[asString(message?.toolCallId)]
         const ref = toolRef(undefined, call?.name ?? 'unknown', (call?.args ?? null) as never)
-        const text = textOfContent(ev.message?.content)
+        const text = textOfContent(message?.content)
         const hash = contentHash(text)
         const tokens = approx4(text)
         const pages = { ...state.pages }
@@ -143,13 +135,13 @@ export const ctxvmPageTableProjection: ProjectionDefinition<'ctxvmPageTable', Pa
           pages[ref] = { ...existing, tokens, status: 'resident' }
           next = { ...state, pages }
         } else {
-          pages[ref] = { kind: 'tool_result', contentHash: hash, tokens, status: 'resident', seq: ev.seq ?? 0 }
+          pages[ref] = { kind: 'tool_result', contentHash: hash, tokens, status: 'resident', seq }
           next = { ...state, pages, order: [...state.order, ref] }
         }
         return applySurfaceOp(next, ev)
       }
       case 'compaction/summary': {
-        return markPages(state, ev.shadowedSeqs ?? [], 'evicted')
+        return markPages(state, asNumberArray(ev.shadowedSeqs) ?? [], 'evicted')
       }
       default: {
         // other surface events (user/system/assistant/developer messages): only

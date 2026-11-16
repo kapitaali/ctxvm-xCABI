@@ -18,6 +18,9 @@ import { join } from 'node:path'
 import { createTrace, type Tracer } from '@ctxvm/node'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { CtxvmDshConfig } from './config.ts'
+import { eventData, asRecord, asString } from './event-data.ts'
+import { mapEvent } from './event-map.ts'
+import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import type { SessionTracer } from './types.ts'
 
 /**
@@ -50,21 +53,42 @@ export function openTracer(
 }
 
 /**
- * Create the session's tracer on first use. When the first event is a
- * request/header, its EpochHeader supplies the real provider/model for
- * session.open; otherwise placeholders are used and call.meta stays
- * source:"unknown" for that turn.
+ * Create the session's tracer once DSH commits a request/header with real
+ * provider/model. Earlier events are buffered and replayed in order, since
+ * @ctxvm/node fixes session.open identity at createTrace time. A session that
+ * ends without a header is finalized with the fail-safe placeholders.
  */
 export function ensureTracer(st: SessionTracer, firstEvent: unknown, config: CtxvmDshConfig): void {
   if (st.tracer) return
+  const ev = eventData(firstEvent as never)
+  if (ev.type !== 'request/header') {
+    st.pending ??= []
+    if (st.pending.length < 2048) st.pending.push(firstEvent)
+    return
+  }
   let model = 'unknown'
   let provider = 'dsh'
-  const ev = firstEvent as { type?: string; header?: { config?: { provider?: string; model?: string } } }
-  if (ev?.type === 'request/header' && ev.header?.config) {
-    provider = ev.header.config.provider ?? provider
-    model = ev.header.config.model ?? model
+  const header = asRecord(ev.header)
+  const headerConfig = asRecord(header?.config)
+  if (headerConfig) {
+    provider = asString(headerConfig.provider) || provider
+    model = asString(headerConfig.model) || model
   }
   st.tracer = openTracer(st.sessionId, { model, provider }, config).tracer
+  replayPending(st)
+}
+
+/** Flush a session that never committed a request/header, keeping the trace total. */
+export function finalizeTracer(st: SessionTracer, config: CtxvmDshConfig): void {
+  if (st.tracer) return
+  st.tracer = openTracer(st.sessionId, { model: 'unknown', provider: 'dsh' }, config).tracer
+  replayPending(st)
+}
+
+function replayPending(st: SessionTracer): void {
+  const pending = st.pending ?? []
+  st.pending = []
+  for (const event of pending) mapEvent(st, event as SessionEvent)
 }
 
 /** Write the finished trace to <traceDir>/<sessionId>-<ts>.jsonl. Returns the path. */

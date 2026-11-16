@@ -1,12 +1,16 @@
 /**
  * W22 — page table fold unit tests (§4.2). Run: node --test test/
- * No schemastery needed: page-table.ts keeps only a type-only import of it
- * (P15 option ii, landed 254fa7c); init()/apply() never touch the schema.
+ * Fixtures use DSH's {type, seq, time, data} envelope; no schemastery needed
+ * since 254fa7c (type-only import in page-table.ts).
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { toolRef, contentHash } from '@ctxvm/node'
 import { ctxvmPageTableProjection } from '../src/page-table.ts'
+
+function env(type: string, data: Record<string, unknown> = {}, seq = 0, extra: Record<string, unknown> = {}): never {
+  return { type, seq, time: 1794841561000, data, ...extra } as never
+}
 
 const apply = (s: never, e: never) => ctxvmPageTableProjection.apply(s, e) as never as import('../src/types.ts').PageTableState
 const init = () => ctxvmPageTableProjection.init({} as never, 0)
@@ -17,15 +21,15 @@ test('init yields an empty page table', () => {
 
 test('apply is pure and does not mutate input state', () => {
   const state = init()
-  const next = apply(state, { type: 'turn/start', turn: 0 })
+  const next = apply(state, env('turn/start', { turn: 0 }, 1))
   assert.deepEqual(state, { pages: {}, order: [], calls: {} })
   assert.ok(next)
 })
 
 test('tool/call then tool/result declares a resident page with the toolRef identity', () => {
   let s = init()
-  s = apply(s, { type: 'tool/call', seq: 1, callId: 'c1', name: 'bash', arguments: '{"cmd":"ls"}' })
-  s = apply(s, { type: 'tool/result', seq: 2, message: { toolCallId: 'c1', content: 'file.txt' }, surfaceOp: 'append' })
+  s = apply(s, env('tool/call', { callId: 'c1', name: 'bash', arguments: '{"cmd":"ls"}' }, 1))
+  s = apply(s, env('tool/result', { message: { toolCallId: 'c1', content: 'file.txt' } }, 2))
   const ref = toolRef(undefined, 'bash', { cmd: 'ls' } as never)
   const page = s.pages[ref]
   assert.ok(page, `expected page at ${ref}; have ${Object.keys(s.pages)}`)
@@ -39,12 +43,8 @@ test('tool/call then tool/result declares a resident page with the toolRef ident
 
 test('tool/result with no message does not throw (session resume regression)', () => {
   let s = init()
-  s = apply(s, { type: 'tool/call', seq: 1, callId: 'c1', name: 'bash', arguments: '{"cmd":"ls"}' })
-  // Stored dsh sessions can carry tool/result with message undefined; the
-  // projection must still fold so session resume does not fail.
-  s = apply(s, { type: 'tool/result', seq: 2, surfaceOp: 'append' })
-  // With no message there is no toolCallId to pair, so identity falls back to
-  // the fail-safe 'unknown' name rather than the preceding call's name.
+  s = apply(s, env('tool/call', { callId: 'c1', name: 'bash', arguments: '{"cmd":"ls"}' }, 1))
+  s = apply(s, env('tool/result', {}, 2))
   const refs = Object.keys(s.pages)
   assert.equal(refs.length, 1, `expected one page; have ${refs}`)
   assert.equal(s.pages[refs[0]].contentHash, contentHash(''))
@@ -53,11 +53,11 @@ test('tool/result with no message does not throw (session resume regression)', (
 
 test('re-declared page keeps first-declare-wins content hash but refreshes tokens/status', () => {
   let s = init()
-  s = apply(s, { type: 'tool/call', seq: 1, callId: 'c1', name: 'bash', arguments: '{"cmd":"ls"}' })
-  s = apply(s, { type: 'tool/result', seq: 2, message: { toolCallId: 'c1', content: 'aaa' }, surfaceOp: 'append' })
+  s = apply(s, env('tool/call', { callId: 'c1', name: 'bash', arguments: '{"cmd":"ls"}' }, 1))
+  s = apply(s, env('tool/result', { message: { toolCallId: 'c1', content: 'aaa' } }, 2))
   const ref = toolRef(undefined, 'bash', { cmd: 'ls' } as never)
   const firstHash = s.pages[ref].contentHash
-  s = apply(s, { type: 'tool/result', seq: 3, message: { toolCallId: 'c1', content: 'a much longer result body' }, surfaceOp: 'append' })
+  s = apply(s, env('tool/result', { message: { toolCallId: 'c1', content: 'a much longer result body' } }, 3))
   assert.equal(s.pages[ref].contentHash, firstHash)
   assert.ok(s.pages[ref].tokens > 1)
   assert.equal(s.pages[ref].status, 'resident')
@@ -66,21 +66,18 @@ test('re-declared page keeps first-declare-wins content hash but refreshes token
 
 test('surface replace op marks shadowed pages stub, never regresses evicted', () => {
   let s = init()
-  s = apply(s, { type: 'tool/call', seq: 1, callId: 'c1', name: 'bash', arguments: '{"cmd":"ls"}' })
-  s = apply(s, { type: 'tool/result', seq: 2, message: { toolCallId: 'c1', content: 'x' }, surfaceOp: 'append' })
+  s = apply(s, env('tool/call', { callId: 'c1', name: 'bash', arguments: '{"cmd":"ls"}' }, 1))
+  s = apply(s, env('tool/result', { message: { toolCallId: 'c1', content: 'x' } }, 2))
   const ref = toolRef(undefined, 'bash', { cmd: 'ls' } as never)
-  // user/message replacing surface node 2 (the tool/result) shadows it
-  s = apply(s, { type: 'user/message', seq: 5, surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [2] })
+  s = apply(s, env('user/message', {}, 5, { surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [2] }))
   assert.equal(s.pages[ref].status, 'stub')
-  // compaction/summary evicts the shadowed seqs
-  s = apply(s, { type: 'compaction/summary', seq: 6, shadowedSeqs: [2] })
+  s = apply(s, env('compaction/summary', { shadowedSeqs: [2] }, 6))
   assert.equal(s.pages[ref].status, 'evicted')
-  // a later replace must not regress evicted → stub
-  s = apply(s, { type: 'user/message', seq: 7, surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [2] })
+  s = apply(s, env('user/message', {}, 7, { surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [2] }))
   assert.equal(s.pages[ref].status, 'evicted')
 })
 
 test('unmapped events leave state untouched (same reference)', () => {
   const s = init()
-  assert.equal(apply(s, { type: 'request/header', seq: 1 }), s)
+  assert.equal(apply(s, env('request/header', { header: {} }, 1)), s)
 })
