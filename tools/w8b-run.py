@@ -400,10 +400,16 @@ def score_tb_outputs(run_dir: Path, ws: Path, task: dict) -> dict:
         c = sh([sys.executable, str(task["checker"]), str(ws / "fixture"), "--per-reply", str(replies)])
         (run_dir / "per-reply.txt").write_text(c.stdout + c.stderr, encoding="utf-8")
         out["per_reply_rc"] = c.returncode
-        m = re.search(r"per-reply accuracy: (\d+)/(\d+)", c.stdout)
+        m = re.search(r"file-exact accuracy: (\d+)/(\d+)", c.stdout)
         if m:
-            out["per_reply"] = f"{m.group(1)}/{m.group(2)}"
-        print(f"[{run_dir.parent.name}] per-reply {out.get('per_reply', '?')} (exit {c.returncode})")
+            out["per_reply_exact"] = f"{m.group(1)}/{m.group(2)}"
+        m = re.search(r"tuple coverage, files attempted: (\d+)/(\d+) = ([\d.]+%)", c.stdout)
+        if m:
+            out["tuple_coverage_attempted"] = f"{m.group(1)}/{m.group(2)} ({m.group(3)})"
+        m = re.search(r"tuple coverage, whole fixture: +(\d+)/(\d+) = ([\d.]+%)", c.stdout)
+        if m:
+            out["tuple_coverage_fixture"] = f"{m.group(1)}/{m.group(2)} ({m.group(3)})"
+        print(f"[{run_dir.parent.name}] file-exact {out.get('per_reply_exact', '?')}, coverage attempted {out.get('tuple_coverage_attempted', '?')} (exit {c.returncode})")
     final = run_dir / f"stdout-{task['parts'] + 1:02d}.txt"
     key = run_dir / "lookups.json"
     if final.exists() and key.exists():

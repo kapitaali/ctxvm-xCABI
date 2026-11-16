@@ -202,6 +202,17 @@ def mode_artefact(fixture: Path, artefact: Path) -> int:
 
 
 def mode_per_reply(fixture: Path, replies_path: Path) -> int:
+    """Two measures, printed together, because one alone is a contradiction waiting to be read.
+
+    - **file-exact accuracy**: a reply counts only if it reproduces every expected category exactly.
+      A truncated reply scores zero even when every number it did give is right.
+    - **tuple coverage and precision**: how many of the expected (category, count, sum, min_id, max_id)
+      tuples the replies actually carried, and how many of those were correct.
+
+    Measured 2026-11-16: the same twelve replies are 0/12 file-exact and 69/96 tuples at 100 % precision.
+    Reporting only the first says the model cannot count; only the second hides that 28 % of the answer
+    never arrived. A reader must see both.
+    """
     rows = read_fixture(fixture)
     expected_by_file = {name: aggregates(rows[name]) for name in rows}
     try:
@@ -220,17 +231,43 @@ def mode_per_reply(fixture: Path, replies_path: Path) -> int:
             print(f"tb-check: replies line {n}: {exc}", file=sys.stderr)
             return 2
         seen[name] = reply
-    passed = 0
+
+    exact = 0
+    parsed_total = correct_total = expected_total = attempted_total = attempted_files = 0
     for name in sorted(expected_by_file):
+        want = {c: (v["count"], v["sum"], v["min_id"], v["max_id"])
+                for c, v in expected_by_file[name].items()}
+        expected_total += len(want)
         if name not in seen:
-            print(f"  {name}: MISSING (no reply recorded)")
+            print(f"  {name}: MISSING (no reply recorded) — tuples 0/{len(want)}")
             continue
-        ok, detail = score_reply(seen[name], expected_by_file[name])
-        passed += ok
-        print(f"  {name}: {'PASS' if ok else 'FAIL'} — {detail}")
+        got, extra = parse_reply(seen[name])
+        correct = {c: t for c, t in got.items() if want.get(c) == t}
+        attempted_files += 1
+        attempted_total += len(want)
+        parsed_total += len(got)
+        correct_total += len(correct)
+        ok = got == want
+        exact += ok
+        missing = sorted(set(want) - set(got))
+        wrong = sorted(c for c in set(want) & set(got) if want[c] != got[c])
+        detail = "ok" if ok else (f"missing {missing}, wrong {wrong}, extra lines {len(extra)}")
+        print(f"  {name}: {'PASS' if ok else 'FAIL'} — tuples {len(correct)}/{len(want)} | {detail}")
+
     total = len(expected_by_file)
-    print(f"per-reply accuracy: {passed}/{total} = {passed / total:.1%}")
-    return 0 if passed == total else 1
+    print(f"file-exact accuracy: {exact}/{total} = {exact / total:.1%}  "
+          f"(a reply counts only if every expected category is right)")
+    if parsed_total:
+        # THREE denominators, named, because "coverage" over the whole fixture and over the files that
+        # were actually attempted differ by the files that never ran (12 of 48 here: 71.9 % vs 18.0 %).
+        print(f"tuple coverage, files attempted: {parsed_total}/{attempted_total} = "
+              f"{parsed_total / attempted_total:.1%}  ({attempted_files}/{total} files answered)"
+              f"  | tuple precision: {correct_total}/{parsed_total} = {correct_total / parsed_total:.1%}")
+        print(f"tuple coverage, whole fixture:   {parsed_total}/{expected_total} = "
+              f"{parsed_total / expected_total:.1%}")
+    else:
+        print("tuple coverage: 0 — no tuple parsed from any reply")
+    return 0 if exact == total else 1
 
 
 def parse_lookup_answers(text: str) -> list[tuple[str, int]]:
