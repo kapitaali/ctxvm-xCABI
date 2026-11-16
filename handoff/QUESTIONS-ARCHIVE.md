@@ -487,3 +487,7 @@ The queue row's summary, verbatim:
 ## Errata (2026-11-15, ninth pass): QUESTIONS.md row compaction for the 3,072 B cap
 
 The P12 row (722 B) was compacted to a pointer so the P13 and P14 rows (the two paper-scoping questions) fit the cap. Every fact removed from the row survives verbatim in the section above and in the cited RR cards; no heading was touched. The cap, not the content, is the binding constraint.
+
+## Errata (2026-11-16, tenth pass): QUESTIONS.md row compaction for the 3,072 B cap
+
+The P2–P11 rows were shaved to pointers so the P15 row (W22 CI coverage: clear the design-card placement?) fits the cap. Every dropped word survives verbatim in its own section above or the cited RR card; no heading was touched. The queue now runs at 2,990/3,072 B.
