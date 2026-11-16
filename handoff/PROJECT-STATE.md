@@ -12,7 +12,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 1. (Items 1–2 rotated verbatim 2026-11-15 to `handoff/PROJECT-STATE-ARCHIVE.md`.)
 2. W8D erratum reviewed: five inputs verified, three arithmetic errors (denominator 42 not 41; "0.918" inverted + tokenizers mixed; "16 rewrite events" unsupported ⇒ 9), model check self-contradicting (9 writes fit, 16 miss by 1.76×) ⇒ hold-once is a no-op (`RR-W8DERRATUM-20261113`).
 ## In progress (one item: what, blocker, next command)
-- Research lane: bundle + version claims applied ✓; PDF rebuild + M0 count owed (paper A1/A2); two claim-scoping asks (paper A3/A4) (`RR-PAPER-REVIEW`).
+- Research lane: bundle + version claims applied ✓; PDF rebuild + M0 count owed (paper A1/A2); A3 answered (P13), A4 queued (P14) (`RR-PAPER-REVIEW`).
 - Hermes lane: per-call dropped **identities** DONE in `f3078b4` ✓; H9 landed in `e480186` — review found 7 defects, 5 one-line asks (`RR-H9LANDING`).
 
 - **dsh lane (W22):** landed `9a87ba2` 2026-11-16 (`RR-W22-20261115`); `packages/deepseek` captures on profile `nvidia`; headless v0.1 trace validates (exit 0) + replays clean. Gaps: no tsconfig entry ⇒ gate silent; fold stub; test needs schemastery; card cleared (P15), dsh to file; validator open.
