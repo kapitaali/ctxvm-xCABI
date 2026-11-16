@@ -172,16 +172,16 @@ def prompt_text(i: int, prompt: str) -> str:
 
 
 def build_cmd(i: int, prompt: str, args) -> list[str]:
-    # THE SURFACE IS PINNED AT CREATION. Measured 2026-11-16 (tb-1b-naive2): a profile with
-    # `toolsets: [file]` still produced a session whose trace declared `tool:terminal(...)` — the model
-    # wrote a Python script and ran it — so the profile key alone did not hold on the `hermes chat` path.
-    # `-t file` on the creation call is the documented override, and a resume keeps the launch policy,
-    # so later prompts must NOT pass it.
-    cmd = ["hermes"]
-    if i == 1:
-        cmd += ["-t", "file"]
-    cmd += ["chat", "-q", prompt_text(i, prompt), "--oneshot", "-c", args.session_name,
-            "--in", args.workspace]
+    # NOTE — the toolset is NOT pinned here, and that is a recorded blocker rather than an oversight.
+    # A profile with `toolsets: [file]` still produced a session whose trace declared `tool:terminal(...)`
+    # (measured 2026-11-16), so the key the `hermes chat` path reads is not the profile's `toolsets`.
+    # Adding `-t file` to the creation call was tried and REVERTED: with `--create-if-missing` the CLI
+    # creates the session and then re-enters as a resume, which refuses the override in 4.6 s
+    # ("Resume retains gateway session policy; creation overrides are unsupported on resume"). Since
+    # build_cmd is shared, that would have broken the T-A v2 shape too. Finding the right key is its own
+    # card; until then a run that reaches a shell is DATA-INVALID and says so.
+    cmd = ["hermes", "chat", "-q", prompt_text(i, prompt), "--oneshot", "-c", args.session_name,
+           "--in", args.workspace]
     if i == 1:
         cmd += ["--create-if-missing"]
     # --max-turns is REFUSED on this flow: a named session with --create-if-missing
