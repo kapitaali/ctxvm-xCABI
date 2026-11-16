@@ -475,3 +475,15 @@ ruleless, and the test should include one numeric case.
 **Falsifiers adopted (any one changes the ruling):** a pair of lines in the two orders whose parsed
 models differ; differing page tables or replay reports; any digest or chain computed over serialised
 bytes (TRIGGERED — see above); a consumer relying on key order to dispatch.
+
+## P12 — omission: on the wire or in the sidecar?
+
+**answered 2026-11-13**. Full record: `reports/RR-OMISSIONANSWER-20261113.md` (and its erratum `reports/RR-OMISSION-20261113.md`; the answer text is also in `handoff/QUESTIONS.md` §P12 at the time of the ruling).
+
+The queue row's summary, verbatim:
+
+> wire (optional, omitted-when-unknown list of removed-page identities with token counts, per request not per turn; sidecar kept as documented fallback); check per call (`before − after` equals the sum of removed entries; fail closed when removals exist and the list is absent; provider receipts as a third witness); scoped view is an addition under a new field name, never a change to the recorded `residentTokens`; no `page.evict` reuse. Falsifier: disagreement with provider receipts beyond estimate error, or a second harness that cannot report removals. UNKNOWN: OpenCode capability; trace size; whether R5 suffices for existence at turn N.
+
+## Errata (2026-11-15, ninth pass): QUESTIONS.md row compaction for the 3,072 B cap
+
+The P12 row (722 B) was compacted to a pointer so the P13 and P14 rows (the two paper-scoping questions) fit the cap. Every fact removed from the row survives verbatim in the section above and in the cited RR cards; no heading was touched. The cap, not the content, is the binding constraint.

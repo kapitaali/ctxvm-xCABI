@@ -15,7 +15,9 @@ Statuses: queued/sent/answered.
 | P9 | close W8 or buy a mechanism test? | **answered 2026-11-10** | A confirmed; the closure states the weaker claim; the narrowing ran. `RR-P9CLOSE`. |
 | P10 | page-id asymmetry: second-consumer trigger? | **answered 2026-11-11** | (b)+(a): ONE RFC-0.1 compatibility-note line (type dispatch, never field-sniffing), no field; D-numbered; vector = fixture. `RR-P10ID`. |
 | P11 | canonical ordering: who owns it? | **answered 2026-11-11** | (c) owner, (a) pointer; test FIRST (equal model/page table/report, never bytes); note = compatibility. `RR-P11CANON`. |
-| P12 | omission: on the wire or in the sidecar? | **answered 2026-11-13** | wire (optional, omitted-when-unknown list of removed-page identities with token counts, per request not per turn; sidecar kept as documented fallback); check per call (`before − after` equals the sum of removed entries; fail closed when removals exist and the list is absent; provider receipts as a third witness); scoped view is an addition under a new field name, never a change to the recorded `residentTokens`; no `page.evict` reuse. Falsifier: disagreement with provider receipts beyond estimate error, or a second harness that cannot report removals. UNKNOWN: OpenCode capability; trace size; whether R5 suffices for existence at turn N. |
+| P12 | omission: on the wire or in the sidecar? | **answered 2026-11-13** | the wire (per-call list of removed-page identities, fail-closed check); the scoped view is an addition under a new name. Full answer: archive §P12 + `RR-OMISSIONANSWER`. |
+| P13 | paper: the `page.render` sentence vs the shipped adapters | **queued 2026-11-15** | Scope the sentence to the format, the adapters, or both: the wire can carry `stub`, no shipped adapter emits it (0 in 2,050 live renders). Packet: `handoff/packets/P13-paper-claims.md`. |
+| P14 | paper: the one-liner "reconstruct and replay the exact request" | **queued 2026-11-15** | Narrow it, or state the limit once in §16: the trace holds no request bytes. Packet: `handoff/packets/P14-paper-oneliner.md`. |
 
 Queue law: packets live in `handoff/packets/`; answers summarize here with date + decision.
 
