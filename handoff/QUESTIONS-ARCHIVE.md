@@ -513,3 +513,15 @@ The pull (fresh clone at `be72ae8`), verbatim:
 ## Errata (2026-11-16, eleventh pass): QUESTIONS.md row compaction for the 3,072 B cap
 
 The P15 row landed as a pointer (verdict essence + archive pointer) so no further shaving was needed; the queue runs under the cap. Every word of the answer survives verbatim in the section above.
+
+## P13 — the `page.render` sentence vs the shipped adapters
+
+**answered 2026-11-16** (from the packet alone — the reviewer had not read the paper's line 265, the table row, or the emitters). Full record: `handoff/packets/P13-paper-claims.md`. The answer, verbatim:
+
+> **1. Verdict: (c), merged and shortened. It must also drop "ctxvm's tracer already records all of this."** Suggested wording: "The `page.render` event can carry the render mode (`full` or `stub`) for a page on a turn. The shipped adapters emit it once per page, at the page's first reveal, always as `full`; no shipped adapter emits `stub`, so a live trace cannot yet say which pages a turn's request carried." The sentence before the quoted one overclaims — reword the lead-in to "The wire can record this; the shipped adapters record part of it," or the reader gets the claim back from the lead-in. Why (c): (a) alone hides the gap; (b) alone hides what the format can express, and a standard's readers need that. Optional second consequence: the wire has no event for omission by removal (P12), so even a future stub-emitting adapter would leave removal policies unrecorded — one clause pointing at that open problem would be honest. Falsifier: a live capture with a `mode: "stub"` render, or a shipped emitter writing `page.evict`. Either changes the factual half and nothing else.
+> **2. Yes, scope the wire-format table's `page.render` row too.** A table row reads as behaviour; a scanner gets the claim with no caveat. Keep the row factual to the format (fields + `renderMode` enumeration) plus a short pointer ("adapter status: section X"). Check the same in `index.md` and any other "every page, every turn" phrase — a search will find them. (Checked 2026-11-16 from the repo: the prose phrase occurs only at `white-paper.md:265` and the `index.md:271` mirror; WIP mtimes unchanged since 2026-11-13.)
+> **3. A stub-emitting adapter changes only half the sentence.** The format half stays true; the behaviour half needs a date and adapter name ("as of the repository's state on <date>"). Do not wait for that adapter — publish the sentence true today. UNKNOWN: publication date; any lane building a stub adapter.
+
+## Errata (2026-11-16, twelfth pass): no compaction needed
+
+The P13 answered row lands as a pointer within the cap (queue under 3,072 B). Every word of the answer survives verbatim in the section above.

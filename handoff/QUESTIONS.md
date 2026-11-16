@@ -16,7 +16,7 @@ Statuses: queued/sent/answered.
 | P10 | page-id asymmetry: second-consumer trigger? | **answered 2026-11-11** | (b)+(a): type-dispatch note line, no field; D-numbered; vector = fixture. `RR-P10ID`. |
 | P11 | canonical ordering: who owns it? | **answered 2026-11-11** | (c) owner, (a) pointer; test FIRST (model/page table/report, never bytes). `RR-P11CANON`. |
 | P12 | omission: on the wire or in the sidecar? | **answered 2026-11-13** | the wire (per-call list of removed-page identities, fail-closed check); the scoped view is an addition under a new name. Full answer: archive §P12 + `RR-OMISSIONANSWER`. |
-| P13 | paper: the `page.render` sentence vs the shipped adapters | **queued 2026-11-15** | Scope the sentence to the format, the adapters, or both: the wire can carry `stub`, no shipped adapter emits it (0 in 2,050 live renders). Packet: `handoff/packets/P13-paper-claims.md`. |
+| P13 | paper: the `page.render` sentence | **answered 2026-11-16** | (c) merged+tightened (reviewer's wording); drop the lead-in; scope the table row, the mirror, every other occurrence; optional P12 clause. Archive §P13. |
 | P14 | paper: the one-liner "reconstruct and replay the exact request" | **queued 2026-11-15** | Narrow it, or state the limit once in §16: the trace holds no request bytes. Packet: `handoff/packets/P14-paper-oneliner.md`. |
 | P15 | W22 CI coverage: clear `design/W22-CI-COVERAGE.md`? | **answered 2026-11-16** | Placement cleared (D-number owed); reword to gate-does-not-run-tests; step owner-directed/hermes-implemented (interim: event-map + named skips; whole dir once (ii) lands); schemastery (ii), (iii) interim. Archive §P15. |
 
