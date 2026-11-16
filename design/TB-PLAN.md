@@ -246,7 +246,9 @@ NO RECORD on either arm; context refusal near 90k (reduce the file count, never 
 
 ## 12. Deliverables
 
-`tools/gen-tb-fixture.py` (landed), `tools/tb-check.py` (+ `--per-reply`), `tools/w8b-run.py --task tb`, a
-prediction block `reports/TB-BLOCK-CELL01-<date>.md` carrying the phase-0 numbers, a card report
+`tools/gen-tb-fixture.py` (landed), `tools/tb-check.py` (+ `--per-reply`, + `--prove`; landed
+2026-11-16 — six perturbations and a trailing-newline observation proved, and its arithmetic cross-checked
+against an independent awk implementation on all eight categories), `tools/w8b-run.py --task tb` (**still
+owed**), a prediction block `reports/TB-BLOCK-CELL01-<date>.md` carrying the phase-0 numbers, a card report
 `reports/RR-TB-<date>.md`, one LOG row, a day-file section, and the verdict either way. **A NO-OP or a
 falsified H4 is the deliverable, not a failure of the card.**
