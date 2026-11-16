@@ -132,22 +132,33 @@ def compare(actual: object, expected: dict) -> list[str]:
 
 
 def parse_reply(text: str) -> tuple[dict[str, tuple[int, int, int, int]], list[str]]:
-    """One `<category> <count> <sum> <min_id> <max_id>` per category; other lines are `extra`."""
-    tuples: dict[str, tuple[int, int, int, int]] = {}
-    extra: list[str] = []
+    """Find `<category> <count> <sum> <min_id> <max_id>` tuples anywhere in a reply.
+
+    Two things forced this shape, both measured on a real free-tier run (2026-11-16):
+    - the host CLI's transcript wraps the model's answer in framing (the echoed Query, a resume hint, a
+      Session/Title/Duration block), which a line-based parser counts as noise;
+    - the same transcript hard-wraps at the terminal width, so two tuples can arrive fused on one line
+      (`zeta 81 -390 32 9986theta 80 5054 131 9956`) — a correct answer that a strict line parser marks
+      wrong.
+
+    So: strip the framing, join, and match the tuple grammar anywhere. A CSV row cannot be mistaken for a
+    tuple (it carries commas and one value, not four integers after a bare category word). Extra text is
+    reported only when nothing parsed, so a near-miss still shows why.
+    """
+    framing = re.compile(r"^(Query:|↻|Session:|Title:|Duration:|Messages:|Resume this session|hermes )")
+    body: list[str] = []
     for line in text.splitlines():
         stripped = line.strip().strip("|").strip()
-        if not stripped:
+        if not stripped or stripped.startswith("─") or framing.match(stripped):
             continue
-        parts = stripped.replace("|", " ").split()
-        if len(parts) == 5 and parts[0] in CATEGORIES:
-            try:
-                tuples[parts[0]] = (int(parts[1]), int(parts[2]), int(parts[3]), int(parts[4]))
-                continue
-            except ValueError:
-                pass
-        extra.append(stripped)
-    return tuples, extra
+        body.append(stripped)
+    joined = " ".join(body)
+    found: dict[str, tuple[int, int, int, int]] = {}
+    grammar = re.compile(r"\b(" + "|".join(CATEGORIES) +
+                         r")\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)")
+    for match in grammar.finditer(joined):
+        found[match.group(1)] = tuple(int(match.group(i)) for i in (2, 3, 4, 5))
+    return found, ([] if found else body[:5])
 
 
 def score_reply(reply: str, expected: dict[str, dict[str, int]]) -> tuple[bool, str]:
