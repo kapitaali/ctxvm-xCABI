@@ -214,6 +214,9 @@ packets pipeline in §4 applies from verify to commit.
    unredacted.
 8. Every number in a doc must be reproducible by a command in this repo; state sample size,
    model, machine, seed, interval where they apply.
+9. Never delete recursively above a named subdirectory (`AGENTS.md` law 10, non-negotiable):
+   no `rm -rf ~`, `$HOME`, `/`, or bare paths that could resolve to home — cleanup names the
+   exact directory.
 
 ## 9. The two gate families — know which one you are inside
 

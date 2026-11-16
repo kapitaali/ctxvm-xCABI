@@ -62,6 +62,9 @@ BEFORE THE FIRST PAID CALL, ask the owner:
 and record both answers at the top of the chunk report. Ask again before starting another
 chunk after this one; do not decide that yourself.
 
+- A recursive delete aimed at `~`, `$HOME`, `/` or a path computed from a variable that may be empty —
+  `AGENTS.md` law 10. Cleanup names the exact subdirectory; the home directory is never a target root.
+
 INTERPRETING THE RESULT — say it plainly in the report:
   - naive solves, paged solves: the slice passed; report NTR from the receipts and the peak
     perApiRequest per arm. Then propose the next chunk, do not start it.

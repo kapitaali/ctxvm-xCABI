@@ -49,6 +49,9 @@ STEP 1 — THE PROBE CALL (this is the only spend)
 Do NOT export any `CTXVM_*` variable in this shell. The gateway's environment decides where the
 capture goes; exporting here changes nothing and confuses the record.
 
+- A recursive delete aimed at `~`, `$HOME`, `/` or a path computed from a variable that may be empty —
+  `AGENTS.md` law 10. Cleanup names the exact subdirectory; the home directory is never a target root.
+
   mkdir -p /tmp/w8probe
   hermes -p w8-paged -z "Reply with the single word OK and nothing else." \
       -m openai/gpt-6-luna --provider nous \

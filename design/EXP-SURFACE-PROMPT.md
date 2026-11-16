@@ -131,6 +131,8 @@ HARD LIMITS
 - Do not "fix" the witness: attribution is runner-side (the `-p` you passed, in the ledger), with
   `engineSelections > 0` on the treatment cell as corroboration.
 - If a cell's refs show a tool you did not expect, stop and report rather than booking a result.
+- A recursive delete aimed at `~`, `$HOME`, `/` or a path computed from a variable that may be empty —
+  `AGENTS.md` law 10. Cleanup names the exact subdirectory; the home directory is never a target root.
 
 ======================================================================
 REPORT SHAPE

@@ -79,6 +79,8 @@ Repo `/home/theb/Documents/ctxvm`, branch `main`. Gates: `bash tools/run-ci.sh` 
 - Report what happened, including NO RECORD, as the outcome; do not promote a diagnostic to a result.
 - Nothing pushed; the owner pushes. The kit (`handoff/`, `reports/LOG.md`, `08-HANDOFF.md`) is
   append-only: append, never rewrite a committed row.
+- A recursive delete aimed at `~`, `$HOME`, `/` or a path computed from a variable that may be empty —
+  `AGENTS.md` law 10. Cleanup names the exact subdirectory; the home directory is never a target root.
 
 ## 5. Addendum (2026-11-11, after your `3455f01`): one item, and one shared-file warning
 

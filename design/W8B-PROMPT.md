@@ -41,6 +41,9 @@ hermes profile list          # both must be listed; a stopped profile cannot ser
 If either check fails, **stop and report**. Do not repair it by creating, deleting, renaming or
 re-cloning a profile. That is the owner's call.
 
+- A recursive delete aimed at `~`, `$HOME`, `/` or a path computed from a variable that may be empty —
+  `AGENTS.md` law 10. Cleanup names the exact subdirectory; the home directory is never a target root.
+
 ## 1. Role and authority
 
 You run a two-arm context-policy experiment on a free-tier model. You do not redesign it, do not touch

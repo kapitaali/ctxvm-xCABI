@@ -65,6 +65,9 @@ that reference is missing.
 Do NOT export `CTXVM_*` in the shell. The budget is a profile setting now, and an env var would mask
 whether the setting works — which is half of what this cell tests.
 
+- A recursive delete aimed at `~`, `$HOME`, `/` or a path computed from a variable that may be empty —
+  `AGENTS.md` law 10. Cleanup names the exact subdirectory; the home directory is never a target root.
+
 ======================================================================
 4. ATTRIBUTION — what you assert, and what you cannot
 ======================================================================
