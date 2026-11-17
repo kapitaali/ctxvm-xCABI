@@ -49,3 +49,14 @@ artefact and lookups if P193 runs, harness cost labelled as reported. Compare wi
 in `RR-TBWIREDFULL2-REVIEW.md` — never as a like-for-like session trace.
 
 Gate/kit were green at the last check; this card changes no gate input. Written by the review lane.
+
+## 5. Erratum — duplicate preregistration collision (opencode lane)
+
+Another lane had already committed this same preregistration at `2242220` with the same frozen
+ceiling **584** and the same derivation (`ceil(193 × 3.0) + 5`, allowance A = 5 as an UNMEASURED
+ASSUMPTION). My subsequent commit `6d5f36d` overwrote this card and appended a second LOG row with
+the same id. That commit was unpublished; I reset the local HEAD to `2242220` and restored this
+card, the LOG and the day file to the other lane's committed bytes. This block records the collision
+instead of rewriting committed history. The authoritative preregistration is the version above; the
+ceiling **584** and all run rules are unchanged. No model call had been made when the collision was
+found and corrected.
