@@ -15,7 +15,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Research lane: bundle + version claims applied ✓; PDF rebuild + M0 count owed (A1/A2); A3 answered (P13); A4 answered (P14; Part II `:77` is the same overclaim) (`RR-PAPER-REVIEW`).
 - Hermes lane: per-call dropped **identities** DONE in `f3078b4` ✓; H9 landed in `e480186` — review found 7 defects, 5 one-line asks (`RR-H9LANDING`).
 
-- **dsh lane (W22):** landed `9a87ba2`; `254fa7c` fixed the config regression. Acceptance #4 BLOCKED on the headless Nous path (`RR-DSH-NOUS-20261116`); owner: confirm a completed Nous web turn. test-headless has no ctxvm bundle.
+- **dsh lane (W22):** Plans A/B/C landed; all 7 acceptance items in `RR-W22-20261115` DONE (#4 on a baseline-controlled normalized diff). v0.1 validator ruled (2026-11-17). Open: corpus drop naming (Phase 2); Plan D is another lane's file.
 - Gateway: holds the current build (pid 23669, started after the 09:31 sync) ⇒ captures are labelled 0.13.24; the first **paged** one is still owed (`RR-H9LANDING`).
 ## Next three (ordered, one line each)
 1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + the release rule at D6/D17.
