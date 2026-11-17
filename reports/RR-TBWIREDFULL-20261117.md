@@ -75,3 +75,14 @@ for a Hermes paged cell.
   `CTXVM*` cleared → ALL GATES GREEN.
 - Explicit staged paths via a private index; `git read-tree HEAD` afterwards;
   `bash tools/git-hygiene.sh` OK. Never pushed.
+
+## 7. Erratum (2026-11-17, review `RR-TBWIREDFULL-REVIEW`) — partial path statement
+
+Sections 2–4 state that `~/.local/state/ctxvm/traces/tb-wired-full-20261117.partial.jsonl` and
+`.partial.meta.json` exist. That is no longer true: a later check found **no files at those paths
+anywhere**. What remains is the in-run `partial-replay.json`, the per-reply outputs and the witness
+log (155 lines for the session, both hook domains, zero cleanup/flush lines). Consequently the
+220-event validator/replay result in §4 cannot be re-run from bytes. The **NO RECORD** verdict does
+not depend on those files — it rests on the absent final capture and the absent cleanup chain in the
+witness log — so the verdict stands. Why the server exited remains UNVERIFIED (`serve.log` has no
+shutdown reason).
