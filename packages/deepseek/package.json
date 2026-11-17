@@ -34,6 +34,7 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
-    "@deepseek-ai/dsh-session": "*"
+    "@deepseek-ai/dsh-session": "*",
+    "@deepseek-ai/schemastery": "*"
   }
 }
