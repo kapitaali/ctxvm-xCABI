@@ -39,3 +39,28 @@ quality, and no claim of one 193-turn trace.
 Owner authorization for the smoke is the next decision; this card does not request a full-run go yet.
 
 Kit: `bash tools/run-ci.sh` rc=0 **ALL GATES GREEN** (2026-11-17, `/tmp/opencode/20261117-dshplan-ci.log`, ambient `CTXVM_*` cleared); `check-handoff.sh` ALL PASS; `git-hygiene.sh` OK.
+
+## Revision after the dsh lane's handoff 15 (same day)
+
+The lane's read-only comment was accepted in full, and `design/TB-DSH-CAPTURE.md` was revised before any
+authorization. Changes:
+
+1. **Session mode fixed:** one persisted DSH session via `--session-id` for every prompt, required because P193
+   says "You have read every file in fixture/ in this session". Smoke and full run use the same mode; the exact
+   command shape and session ids are recorded. Without this, `r_smoke` is undefined.
+2. **Ceiling arithmetic:** `ceil(193 × r_smoke) + A`, using the **per-prompt maximum** from the smoke (not the
+   mean), with A measured by a fourth P193-shaped smoke prompt or explicitly frozen as `5, UNMEASURED
+   ASSUMPTION`. Overrun remains CEILING, never a repaired ceiling.
+3. **Page-ref criterion:** set inclusion of the expected per-file tool refs, not a distinct-ref count; the adapter
+   also declares `tool:unknown(null)` and summary/file pages (verified in the Plan A trace: 3 declares, 2 of them
+   `tool:unknown(null)`). Extra refs recorded as observations; the smoke asserts data-01/02/03 filenames.
+4. **Trace naming:** the trace-name-prefix option removed — grep finds no `CTXVM_TRACE_NAME` in the dsh adapter.
+   Track captures via trace-dir snapshot, session ids, and `<sessionId>-<ts>` paths.
+5. **No hardcoded scores:** the plan states the three denominators and lets `tb-check` print numbers with its
+   command and date (law 5).
+6. **Comparison axes table added** (§6b): one process/one trace-intended OpenCode wired run vs 193 processes/193
+   traces here, with the route difference; no like-for-like claim. The unwired CEILING run is a separate reference.
+7. **Wording:** "no billed token" replaced with harness-reported `cost: 0`, not a provider receipt.
+
+Verified before revising: the absent `CTXVM_TRACE_NAME`, the extra page refs in the Plan A trace, the headless
+`--session-id` option, and P193's own wording. The smoke remains **unauthorized**; this is a plan revision.
