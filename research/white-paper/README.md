@@ -6,7 +6,7 @@ discover.
 
 | File | Role | Built with |
 |---|---|---|
-| `../white-paper.pdf` (committed) | the PDF deliverable, 15 pages | `bash build-pdf.sh` — Markdown → HTML (UTF-8) → WeasyPrint |
+| `../white-paper.pdf` (committed) | the PDF deliverable, 26 pages | `bash build-pdf.sh` — Markdown → HTML (UTF-8) → WeasyPrint 70.0 (markdown 3.11.2) |
 | `white-paper.md` | single source for the PDF | — |
 | `index.md` | source for the website build (MyST entry point) | `sphinx-build` |
 | `conf.py` | Sphinx config; excludes `white-paper.md` and `RESEARCH-PLAN.md` from the site | — |

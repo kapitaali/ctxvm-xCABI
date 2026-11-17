@@ -6,15 +6,15 @@ The context window of a large language model (LLM) is not memory. It is a small,
 
 This paper describes `ctxvm`, a virtual-memory manager for LLM agent context. It has three parts:
 
-1. **xCABI** — an open standard for agent traces. It records pages, renders, evictions, and faults in a deterministic log. Any consumer can replay any turn and get the same bytes.
+1. **xCABI** — an open standard for agent traces. It records pages, renders, evictions, and faults in a deterministic log. Any consumer can replay any turn of a trace and derive the same page-table state and render projection byte-for-byte.
 2. **ctxvm-core** — a Rust engine. It keeps a page table, renders turns deterministically, and replays traces. It never mutates messages. It only observes.
 3. **The measurement stack** — a trace corpus, a metric simulator, and policy leaderboards. These are packaged as open data products (ODPS 4.1).
 
-Version 0 is a read-only flight recorder. You add it to any agent loop. Nothing changes. You get a trace, touch statistics, and waste numbers. Paging control comes later, behind an opt-in policy flag.
+Version 0 is a read-only flight recorder. You add it to any agent loop. Nothing changes. You get a trace, touch statistics, and waste numbers. Paging control comes later, via the Hermes `ctxvm` ContextEngine (§4.4). At the default 24k budget the protected floor exceeds the budget, so the paged arm is inert on real traffic (W8 closed negative, `design/W8-CLOSURE-20261110.md`); at larger budgets the arm evicts and holds the request at the budget, but mid-prefix dropping forfeits the provider prefix cache (W8C, §7).
 
 This paper explains what the framework is, how to use it, and where it stops. Sections 9 to 18 apply the record to three questions that are usually asked of models rather than of harnesses — whether an evaluation can say a model is too dangerous, whether we can see what it is doing, and whether we can make it do what we want — and they state, for each, exactly where the trace stops being evidence.
 
-**Context tracing is not logging — it is the ability to reconstruct and replay the exact request the harness sent.** Every other improvement — token savings, quality, safety, compliance — starts from knowing what the harness actually sent. That knowledge is necessary for each of them and sufficient for none: a faithful record of the input does not by itself evaluate a model, reach its reasoning, or make it behave.
+**Context tracing is not logging — it is the ability to re-derive and replay the structure of the request the harness sent (which pages, with what identities, hashes and token counts), not its bytes.** Every other improvement — token savings, quality, safety, compliance — starts from knowing what the harness actually sent. That knowledge is necessary for each of them and sufficient for none: a faithful record of the input does not by itself evaluate a model, reach its reasoning, or make it behave.
 
 ---
 
@@ -28,10 +28,12 @@ This is the pre-SQL state of agent memory. The mechanism works. The shared layer
 
 ### 1.1 The cost of waste
 
-Measured data shows the scale of the problem:
+Measured data from a single external system shows the scale of the problem (Pichay; no independent replication is cited here):
 
 - Across 857 production sessions and 4.45 billion effective input tokens, 21.8% of tokens are structural waste. The waste breaks down as: unused tool schemas 11.0%, duplicated content 2.2%, stale tool results 8.7%. Stale results are reprocessed at a median amplification of 84.4×. (Source: Mason, arXiv:2603.09023; the system is named Pichay. Verified from the primary source, whose body states 4.45 billion effective input tokens while its abstract states 4.45 million — this paper cites the body.)
 - Pichay reduces context size from 5,038 KB to 339 KB (93% reduction) over 681 production turns, with a fault rate of 0.0254% across 1.4 million simulated evictions. (Source: Mason, arXiv:2603.09023, verified.)
+
+These figures measure context size under Pichay's own replay. They do not measure task accuracy, and ctxvm does not reproduce them.
 
 Waste costs money and latency. Every resident token is recomputed every turn. Tokens the model never reads still consume prompt cost and attention budget.
 
@@ -96,11 +98,11 @@ Term origin: the phrase "virtual context management" traces to MemGPT (arXiv 231
 ctxvm does not invent a new paging algorithm. It builds the shared layer that prior work lacks:
 
 1. A deterministic trace standard (xCABI RFC-0 with strict JSON Schema).
-2. A Rust engine that replays any trace byte-identically.
-3. A metric simulator with four formulas: net token reduction, fault recall, touch ratio, thrash index.
+2. A Rust engine that re-derives any trace's page-table state and render projection byte-identically.
+3. A metric simulator with four formulas: net token reduction, refetch rate / hard fault recall, touch ratio, thrash index.
 4. Packaging as ODPS 4.1 open data products, so corpora and leaderboards are public and verifiable.
 
-Version 0 observes only. Version 1 adds paging control behind an opt-in policy flag.
+Version 0 observes only. Paging control (v1, experimental) is enabled by selecting the Hermes `ctxvm` ContextEngine (`context.engine`, `live/context_engine.py`) — see §4.4 and §7: at the 24k budget the arm is inert (W8 closed negative, `design/W8-CLOSURE-20261110.md`); at larger budgets it pages but forfeits the provider prefix cache (W8C).
 
 ---
 
@@ -112,7 +114,7 @@ ctxvm is a virtual-memory manager for LLM agent context. It ships as three layer
 
 The plan defines three pillars. Each addresses a gap in current agent-context practice.
 
-**Pillar 1 — xCABI, a portable trace standard.** Every agent system keeps a private mutation log. None is cross-harness replayable, diffable, or conformance-testable. xCABI ("eXchangeable Context ABI") fills that gap. It defines a deterministic log of pages, renders, evictions, and faults. A consumer reconstructs any turn without knowing which harness produced the trace.
+**Pillar 1 — xCABI, a portable trace standard.** Every agent system keeps a private mutation log; in the systems reviewed here (§2, §8), we found none that is cross-harness replayable or conformance-testable. xCABI ("eXchangeable Context ABI") fills that gap. It defines a deterministic log of pages, renders, evictions, and faults: traces from different harnesses validate against one schema and replay in one engine, while a cross-harness diff requires the consumer-side normalisation profile proposed for RFC-0.1 (`design/diff-normalisation.md`). Within a single trace, a consumer reconstructs the page-table and render projection of any turn without knowing which harness produced the trace.
 
 **Pillar 2 — Lazy handles at the tool boundary.** Current systems intercept waste after tools return bytes. xCABI returns typed page handles instead of payloads. This fixes re-mention amplification before waste enters the stream. Mason measured stale results reprocessed at a median amplification of 84.4× (verified from arXiv 2603.09023, Section 1). ctxvm does not implement paging control in v0. It builds the measurement surface that makes paging control measurable later.
 
@@ -147,7 +149,7 @@ The draft event vocabulary (from `02-xcabi-events-v0.md`) defines eight event ty
 |-------|---------|---------|
 | `session.open` | agent id, model, provider, budget, tokenizer id | Namespaces a trace |
 | `page.declare` | page descriptor | A page enters the pager |
-| `page.render` | turn #, mode (full or stub) | Ground truth for waste measurement |
+| `page.render` | turn #, mode (`full` or `stub`) | Ground truth for waste measurement — the format carries both modes; adapter status: §3.11 |
 | `page.evict` | turn #, stub text used | The paging decision and what the model was told |
 | `page.fault` | turn #, source, latency | The economics event — a fault measures an eviction mistake |
 | `page.pin` / `page.unpin` | reason | Working-set decisions become auditable |
@@ -163,7 +165,7 @@ xCABI imposes five invariants that make the standard meaningful:
 1. Append-only. Turns are the determinism unit.
 2. Every re-render of the same trace yields the identical message array.
 3. Evictions batch at turn boundaries, never mid-turn. Transcript shape stays stable through stubs.
-4. Different-harness consumers replay any turn exactly.
+4. Same-harness consumers replay any turn exactly. Cross-harness traces converge after vocabulary and turn-unit normalisation, but first imply divergence at event 0 (tool vocabulary, args shape, turn units, token regime) — the W5 run classifies this as harness-faithful minting plus spec ambiguity, not an adapter bug (see `reports/RR-W5-20261030.md`). Byte-identity across harnesses is the aspiration; object-level replay is the measured claim.
 5. Every cost figure in derived analytics subtracts estimated cache misses (`call.meta.cacheEstimate`). Net cost is the only honest number.
 
 ### 3.6 Fault taxonomy
@@ -188,7 +190,7 @@ When a page is evicted, the model sees an inline stub with identity and self-ser
  Re-call read_file(path="src/auth/session.ts") to re-materialize.]
 ```
 
-The stub performs three functions: identify what left, how to recover it, cost less than the page. Pichay shows models understand this untaught. Hints escalate only if fault recall suffers.
+The stub performs three functions: identify what left, how to recover it, cost less than the page. Pichay shows models understand this untaught. Hints escalate only if refetch rate suffers.
 
 ### 3.8 The ctxvm-core engine
 
@@ -199,20 +201,21 @@ The stub performs three functions: identify what left, how to recover it, cost l
 - A replay engine: read JSONL events, re-apply the renderer, compare against the expected final render totals. Divergence exits with code 1 and reports a structured error.
 - Conformance vectors: golden trace files under `ctxvm-conformance/vectors/`. Every event type round-trips byte-identically through the codec.
 
-M0 (the current milestone) is complete: 28+ tests green, 0 warnings, replay determinism byte-identical, conformance validator 108/108 PASS.
+M0 is complete: 77 cargo tests green (78 with `--features ctxvm-tokenizer/tiktoken`), 0 warnings, replay determinism byte-identical — measured 2026-11-16 with `cd rust && cargo test` and `cd rust && cargo test --features ctxvm-tokenizer/tiktoken`. Conformance is 682 checks over 27 fixtures (17 corpus traces), witnessed 2026-10-29. The shipped adapters are `@ctxvm/node` (TS tracer), the OpenCode adapter, the Hermes plugin (source `live/__init__.py`), and the AI SDK middleware. CLIs in the conformance crate are `replay`, `profile`, `diff`, `export`, `tokens`, `stream`. Native napi-rs/PyO3 bindings are planned, not built; the Python binding is a subprocess wrapper over the Rust binaries.
 
-Bindings are planned but not yet built: napi-rs for TypeScript/Node, PyO3/maturin for Python. Adapters (OpenCode, Vercel AI SDK, LangGraph, MCP shim) live above the bindings as thin layers. None of this code exists yet; `design/mcp-shim.md` and `design/adapters.md` contain the integration plans.
+Bindings: native napi-rs for TypeScript/Node and PyO3/maturin for Python are planned, not built. Shipped adapters sit above the bindings as thin layers: the OpenCode adapter, the AI SDK adapter, the Hermes plugin, and the Node tracer. The MCP shim remains a design note (`design/mcp-shim.md`).
 
 ### 3.9 The measurement stack
 
 The measurement stack makes ctxvm usable for research:
 
 - **Metric simulator** (`benchmarks/metrics/metrics.py`): pure Python functions over JSONL event streams implementing four formulas from `07-benchmarks-go-no-go.md`:
-  - `net_token_reduction = 1 - (paged_net_tokens / naive_tokens)`
-  - `fault_recall = recovered_faults / evictions`
+  - `net_token_reduction = 1 - (paged_net_tokens / naive_tokens)` with cache-miss normalisation from the pinned `prices.json` (W3; rankings must not drift with provider pricing)
+  - `refetch_rate = recovered_faults / evictions` (the OLD `fault_recall` under its honest name) plus `hard_fault_recall` = recovered explicit re-calls / hard faults (W3 ground truth, per Pichay §3.2)
   - `touch_ratio = touched_tokens / rendered_tokens` (waste = 1 - touch_ratio)
   - `thrash_index = mean(faults_per_turn)` over sustained-pressure windows
-- **Reference implementation**: 18/18 pytest green, two synthetic fixtures (healthy and thrashing), CLI prints JSON.
+  - Every gate metric carries a deterministic bootstrap CI (`benchmarks/metrics/bootstrap.py`).
+- **Reference implementation**: 66 tests in `benchmarks/metrics` (gate log `171 + 66 + 8` at `run-ci.sh`), two synthetic fixtures (healthy and thrashing), CLI prints JSON.
 - **ODPS 4.1 packaging**: the trace corpus is an open data product (`04-odps-dataproduct-corpus.yaml`), validated `valid`, `compliance_level: full`, `production_ready: true` against SDK 0.4.0. An ODCS v3.0.2 data contract (`contracts/corpus-0.1.odcs.yaml`) lints green via datacontract-cli 1.2.7.
 - **Hub**: `hub/` contains an ODPC v1.0 catalog (`catalog.yaml`) and static HTML (`index.html`), built byte-identically by `tools/build-hub.sh`. hub.ctxvm.dev is a Git repo, not a bespoke server.
 
@@ -231,7 +234,7 @@ These decisions are fixed and must not be revisited without orchestrator approva
 
 ### 3.11 What context tracing actually is
 
-**The one-liner: Context tracing is not logging — it is the ability to reconstruct and replay the exact request the harness sent.**
+**The one-liner: **Context tracing is not logging — it is the ability to re-derive and replay the structure of the request the harness sent (which pages, with what identities, hashes and token counts), not its bytes.**
 
 Conventional observability tells you what the agent did. It records decisions: which tools were called, what arguments were passed, what errors occurred. This is necessary but not sufficient. When an agent produces a wrong answer, a harmful action, or an unexpected result, the question is not "what did the agent do?" but "what did the harness send when it did it?" — with the limits in §9: provider-side system prompts, tokenization, hidden reasoning and cache behaviour are outside the record.
 
@@ -241,7 +244,7 @@ The gap between "did" and "saw" is where most agent bugs live. Consider two scen
 
 2. **The model never saw the information.** The file contents were evicted (stubbed) or never declared. The model made a decision without the relevant context. This is a context-management problem.
 
-Conventional logging cannot distinguish these two cases. It records the tool call but not the context that surrounded it. Context tracing records both: the tool call *and* the page table state, the resident/stubbed token totals, and the exact rendered message array.
+Conventional logging cannot distinguish these two cases. It records the tool call but not the context that surrounded it. Context tracing records both: the tool call *and* the page table state, the resident/stubbed token totals, and the per-turn render record: page declarations, token totals, and the request's estimated size.
 
 **What context tracing enables:**
 
@@ -253,13 +256,13 @@ Conventional logging cannot distinguish these two cases. It records the tool cal
 
 4. **Quality assurance and regression testing.** Traces enable deterministic CI: record a trace from a known-good run, replay it, verify that the agent's context matches. This catches context bugs — pages that should be resident but are stubbed, pages that should be stubbed but are resident — that conventional tests miss.
 
-5. **Capacity planning.** Per-turn, per-page token accounting reveals which pages consumed the most tokens, which turns had the highest context pressure, and where the budget went. The KPI formulas (touch ratio, fault recall, net token reduction, thrash index) answer "can I reduce the budget?" without guessing.
+5. **Capacity planning.** Per-turn, per-page token accounting reveals which pages consumed the most tokens, which turns had the highest context pressure, and where the budget went. The KPI formulas (touch ratio, refetch rate / hard fault recall, net token reduction, thrash index) answer "can I reduce the budget?" without guessing.
 
 6. **Compliance and audit.** The trace is a checksummed record of what the model saw: checksums prove the bytes are unchanged since they were written, which is evidence of accidental corruption and tamper-evidence only against parties without write access to the file. A threat model where the traced agent can reach its own log needs something stronger — hash-chained events or a signed root — and that is not built. The replay engine verifies byte-identical re-render (exit code 0). The `skipped_untraced` counter detects when context was rendered without being declared — a fidelity gap that would be a compliance finding.
 
 **Why this matters for ctxvm specifically:**
 
-ctxvm's tracer already records all of this. The `page.render` event captures the exact render mode (full or stub) for every page, every turn. The `turn.render` event captures resident/evicted token totals and headroom. The `page.fault` event captures when the model re-requested evicted content. The `call.meta` event captures estimated cache hit/miss and latency.
+The wire can record this; the shipped adapters record part of it. The `page.render` event can carry the render mode (`full` or `stub`) for a page on a turn. As of the repository's state on 2026-11-16, the shipped adapters emit it once per page, at the page's first reveal, always as `full`; no shipped adapter emits `stub`, so a live trace cannot yet say which pages a turn's request carried. The wire has no event for omission by removal (P12), so a removal policy's omissions are not recorded either. The `turn.render` event captures resident/evicted token totals and headroom. The `page.fault` event captures when the model re-requested evicted content. The `call.meta` event captures estimated cache hit/miss and latency.
 
 The gap is not in recording — it is in *using* the record. The trace enables deterministic replay, but the replay engine is a verification tool, not an action tool. The trace enables session handoff, but the handoff is within-harness only. The trace enables compliance, but the compliance check requires running `ctxvm replay` manually.
 
@@ -275,100 +278,99 @@ This section is a practitioner's guide. It covers the v0 tracer (read-only, no b
 
 ### 4.1 The v0 tracer (TypeScript)
 
-The tracer is the only integration surface a harness needs. It is approximately ten lines of code:
+The tracer is the integration surface a harness needs. In `@ctxvm/node`:
 
 ```ts
-import { trace } from "@ctxvm/node"
+import { createTrace } from "@ctxvm/node"
 
-const vm = trace({
-  agent: "my-agent",
+const vm = createTrace({
+  agentId: "my-agent",
   model: "openai/gpt-5",
+  provider: "openai",
   budgetTokens: 120_000,
+  tokenizerId: "apx4-char",
 })
 
-// When tool results materialize, declare pages (auto-tokenized)
-const h = vm.page({ kind: "tool_result", ref: "tool:read_file(path=src/auth.ts)", tokens: n })
+// When content materializes, declare a page (tokens auto-estimated)
+vm.page({ tool: "read_file", args: { path: "src/auth.ts" }, content: result })
 
 // Per turn: mirror what the model will actually see
-vm.render(messages)                          // emits turn.render
+vm.render()                                   // emits turn.render + call.meta at finish()
 
-// After the turn: scan model output for identifiers → record faults
-vm.observe(modelOutputText)                  // source: identifier_scan
+// After the turn: scan model output for identifiers -> record faults
+vm.scan({ text: modelOutputText })             // source: identifier_scan
 ```
 
-The tracer never mutates `messages`. It derives and logs only. Adoption is a config step: wrap the agent loop, nothing inside it changes.
+The tracer never mutates messages. It derives and logs only. Adoption is a config step: wrap the agent loop, nothing inside it changes.
 
-An optional auto-shim wraps MCP tool calls: results are auto-declared as pages, and `tool_recall` faults fire by name+args matching (per Pichay). One-line swap from `client.callTool(...)` to `vm.call(...)`.
+An optional MCP auto-shim wraps tool calls: results are auto-declared as pages, and `tool_recall` faults fire by name+args matching (per Pichay). The OpenCode adapter uses `recall()` for pre-execution re-calls.
 
 ### 4.2 Tracer API surface
 
-| Method | Purpose |
+| Function / method | Purpose |
 |--------|---------|
-| `trace(opts)` | Create a VM instance: agent id, model, provider, budget, tokenizer id |
-| `vm.page(desc)` | Declare a page when a tool result materializes; returns a handle |
-| `vm.render(messages)` | Emit `turn.render` — mirror of what the model sees this turn |
-| `vm.observe(text)` | Scan model output for identifiers; record faults via `identifier_scan` |
-| `vm.scan_text(text)` | Standalone identifier scan over arbitrary text |
-| `vm.observe_recall(tool, args)` | Record a `tool_recall` fault when the model re-calls a tool |
-| `vm.fault(handle)` | Explicit fault-in request from the harness |
+| `createTrace(init)` | Create a tracer: `agentId`, `model`, `provider`, `budgetTokens`, `tokenizerId` (default `apx4-char`) |
+| `vm.page(input)` | Declare a page when content materializes; returns `{logicalRef, contentHash, tokens}` |
+| `vm.render()` | Turn boundary: reveals newly declared pages; turn facts flush at `finish()` |
+| `vm.scan({text})` | `identifier_scan` over produced model text (deduped per page per source) |
+| `vm.recall({tool, args})` | Record a `tool_recall` fault for a pre-execution re-call |
+| `vm.onApiRequest(payload)` | Record static per-turn cost (tool schemas, prefix bytes); omitted when the harness cannot see it |
+| `vm.noteUsage(input)` | Attach provider usage receipt (`inputTokens`, `outputTokens`, `cachedInputTokens?`) to the turn |
+| `vm.pin` / `vm.unpin` | Working-set decisions (auditable) |
+| `vm.finish()` | Flush `turn.render` + `call.meta` in turn order; emits the trace |
 
-Errors (dangling pins, unclaimed faults, divergent replays) are logged as events, never thrown. Telemetry-first means the tracer cannot harm the host agent.
+Errors are logged as events, never thrown. Telemetry-first means the tracer cannot harm the host agent.
 
 ### 4.3 CLI surface
 
-The output below is **illustrative, not a measurement**: it is a simulated run, and v0 does not evict.
+Verified commands (binary path `rust/target/release/`, witness run on the frozen corpus):
 
 ```
-ctxvm profile ./session.jsonl
-# (illustrative output — simulated run)
-# Pages: 312        Rendered tokens: 41.8k
-# Never-touched: 65.3% of rendered tokens (27.3k)
-# Worst page: tool:read_file(src/db/schema.sql) 12.1k tokens — 0 touches
-# Faults: 19 (all recovered via tool_recall) → eviction mistakes cost 0.4% net tokens
+$ ./rust/target/release/profile corpus/m1/tracer-healthy.jsonl
+{ "events": 16, "pages": [ ... ] }   # per-page decision history, faults and per-turn tallies
 
-ctxvm replay ./session.jsonl      # byte-identical re-render; exit 1 on divergence
-ctxvm diff a.jsonl b.jsonl        # page-level divergence of two runs
-ctxvm export --odps ./session.jsonl   # dataproduct.yaml + llms.txt (telemetry → packaging)
+$ ./rust/target/release/replay corpus/m1/tracer-healthy.jsonl
+{ "events": 16, "divergences": [], "violations": [{"seq": 7, "kind": "faultOfResidentPage"}] }
+
+$ ./rust/target/release/stream ~/.local/state/ctxvm/traces   # sessions grouped by environment
+$ ./rust/target/release/diff a.jsonl b.jsonl                 # page-level divergence of two runs
+$ ./rust/target/release/export ./session.jsonl --turn 2 --odps
 ```
 
-`ctxvm profile` is the demo moment: it turns a trace into waste numbers. `ctxvm replay` enforces the core invariant — same trace, byte-identical render, exit 1 on divergence. `ctxvm diff` compares two traces at page granularity. `ctxvm export --odps` packages a session as an ODPS data product (manifest + llms.txt + checksum).
+`profile` prints per-page decision history and per-turn residency (agg-only, no divergence exit). `replay` enforces byte-identical re-render (exit 1 on divergence). In the `tracer-healthy.jsonl` output above, `violations` is a logged diagnostic class, not a replay failure ("healthy" in the fixture name means divergence-free, `divergences: []`, exit 0): at `seq: 7` (turn 2, `page.fault` source `identifier_scan`), the model named an identifier whose page (`tool:read_file({"path":"src/auth/session.ts"})` @ `sha256:d5bf10dd`, declared at seq 2 and rendered full at seq 5) was still resident. `diff` compares two traces at page granularity (exit 0 shared prefix, 1 divergent). `export --odps` packages a session as an ODPS data product (manifest + llms.txt + checksum).
 
 ### 4.4 Tracer-first adoption path
 
 The plan's strategy is telemetry-first, control-later. A team adopts ctxvm in three steps:
 
-1. **Add the tracer.** Wrap the agent loop with `trace()`. No message changes, no prompt pollution. You get a trace immediately.
+1. **Add the tracer.** Wrap the agent loop with `createTrace()`. No message changes, no prompt pollution. You get a trace immediately.
 2. **Measure.** Run `ctxvm profile` on recorded sessions. See touch ratio, never-touched pages, fault rate, net token cost. Establish a baseline.
-3. **Page (v1, optional).** Behind an opt-in `policy` flag, enable eviction and pinning. The same trace format and replay engine validate the pager: replay must remain byte-identical, and faults must stay below the target.
+3. **Page (v1, experimental).** Select the Hermes `ctxvm` ContextEngine (`context.engine`, `live/context_engine.py`) to enable eviction and pinning. The same trace format and replay engine validate the pager: replay must remain byte-identical, and faults must stay below the target. Note §7: at the 24k budget the protected floor exceeds the budget (W8 closed negative, `design/W8-CLOSURE-20261110.md`); at 60k–90k budgets the arm evicts and holds the request at the budget, but mid-prefix dropping forfeits the provider prefix cache (W8B/W8C).
 
 At no point does the harness rewrite its message assembly. The tracer mirrors; it does not edit.
 
 ### 4.5 The xCABI trace format
 
-A trace is append-only JSONL: one JSON object per line. Every event carries a turn number, so turns are the determinism unit. A minimal trace looks like:
+A trace is append-only JSONL: one JSON object per line. Turns are the determinism unit. First three lines of the frozen `corpus/m1/tracer-healthy.jsonl` (verbatim, truncated hashes unchanged):
 
 ```json
-{"type":"session.open","agent":"my-agent","model":"openai/gpt-5","provider":"openai","budgetTokens":120000,"tokenizer":"tiktoken"}
-{"type":"page.declare","pageId":["tool:read_file(path=src/auth.ts)","sha256:abc123"],"kind":"tool_result","tokens":8192}
-{"type":"page.render","turn":1,"mode":"full"}
-{"type":"turn.render","turn":1,"residentTokens":8192,"evictedTokens":0,"headroom":111808}
-{"type":"page.evict","turn":1,"stubText":"[Paged out: read src/auth/session.ts (8.2k tok, 187 lines). Re-call read_file(path=\"src/auth/session.ts\") to re-materialize.]"}
-{"type":"page.fault","turn":2,"source":"tool_recall","latencyMs":45}
-{"type":"call.meta","turn":2,"provider":"openai","cacheEstimate":{"hit":0.8,"miss":0.2}}
+{"type":"session.open","agentId":"healthy-demo","model":"openai/gpt-5","provider":"openai","budgetTokens":120000,"tokenizerId":"apx4-char"}
+{"type":"page.declare","page":{"id":{"logicalRef":"file:src/auth.ts","contentHash":"sha256:e23a4626"},"kind":"file","tokens":12}}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:read_file({\"path\":\"src/auth/session.ts\"})","contentHash":"sha256:d5bf10dd"},"kind":"tool_result","tokens":13}}
 ```
 
-The strict JSON Schema (`spec/rfc-0/x-cabi.schema-v0.json`) enforces `additionalProperties: false` at event level while tolerating `x-` extensions. The conformance validator (`spec/rfc-0/validate_schema.py`) runs 108 checks over all fixtures: 108/108 PASS on M0.
+Further events (turn boundaries, faults, `call.meta`) follow the sealed `spec/rfc-0/x-cabi.schema-v0.json` shape; RFC-0.1 emitters add `schemaVersion:"0.1"` on `session.open` and may add `ts` last. Under RFC-0.1 §R1, `page.fault` also accepts `"source": "intentional_rerun"`, which exempts deliberate re-executions from `faultOfResidentPage` under a v0.1 session while sealed v0 continues to log the class (for example, Umpire's `ab-demo` ledger carries 3 `intentional_rerun` faults on a resident page: under v0 the source is rejected, and under RFC-0.1 R1 it is valid and exempt from `faultOfResidentPage`). The sealer validator (`spec/rfc-0/validate_schema.py`) passes 682 checks over 27 fixtures (17 corpus traces), witnessed 2026-10-29; it rejects every v0.1-only line.
 
 ### 4.6 What you can do with a trace
 
 - **Replay any turn byte-identically.** The Rust renderer is a pure function of (events, indices). Two renders of the same trace produce identical output.
-- **Diff two traces.** Page-level comparison shows where two agent sessions diverged.
-- **Package as an ODPS data product.** `ctxvm export --odps` emits a manifest, llms.txt, and checksum. The manifest carries DQ checks (replay determinism, pin lint, redaction scan) and KPIs (fault recall, net token reduction, touch ratio).
+- **Diff two traces.** Page-level comparison shows where two agent sessions diverged (same-harness byte-identity; cross-harness divergence is classified per §3.5).
+- **Package as an ODPS data product.** `ctxvm export --odps` emits a manifest, llms.txt, and checksum. The manifest carries DQ checks (replay determinism, pin lint, redaction scan) and KPIs (refetch rate / hard fault recall, net token reduction, touch ratio).
 - **Audit.** Evictions batch at turn boundaries; every cost figure subtracts estimated cache misses. Net cost is the only honest number.
 
 ### 4.7 Where v0 stops
 
-v0 observes only. It does not evict, pin, or page. It does not consult an LLM or embedding. Semantic faults (`semantic_*`) are v1 plugins, marked non-deterministic, and excluded from the core. If you need paging control, wait for v1 behind the opt-in `policy` flag.
+v0 observes only (core): the tracer does not evict or page, and the engine consults no LLM or embedding. Semantic faults (`semantic_*`) are v1 plugins, marked non-deterministic, and excluded from the core. The W8/W8B/W8C paged arm is the experimental v1 path (ContextEngine selection); its results are in §7 — 24k inertness closed negative, and larger budgets page at the cost of the provider prefix cache — not a stable flag.
 
 ---
 
@@ -380,24 +382,24 @@ ctxvm is a Rust workspace with four crates. The architecture maps 1:1 to the pla
 |-------|----------------|
 | `ctxvm-core` | Page table, budget, policy traits, deterministic renderer, replay engine. Zero heavy dependencies. |
 | `ctxvm-codec` | xCABI serde structures + JSONL (`serde`/`serde_json` live here). |
-| `ctxvm-tokenizer` | Token counting backends behind feature flags (tiktoken default; HF optional). Stub only in M0. |
+| `ctxvm-tokenizer` | Token counting backends behind feature flags (`apx4-char` default; `tiktoken` BPE behind the feature) |
 | `ctxvm-conformance` | Golden vectors + replay conformance checks. Executable truth of the spec. |
 
 ### 5.1 Data flow
 
-1. The harness declares pages as tool results materialize (`page.declare`).
-2. Per turn, `vm.render(messages)` emits `turn.render` — the mirror of what the model sees.
-3. After the turn, `vm.observe(modelOutputText)` scans for identifiers and records faults (`identifier_scan`).
+1. The harness declares pages as content materializes (`page.declare`).
+2. Per turn, `vm.render()` marks the turn boundary; `turn.render` and `call.meta` flush at `finish()` in turn order.
+3. After the turn, `vm.scan({text})` scans model output for identifiers and records faults (`identifier_scan`, deduped per page per source).
 4. Events are appended to a JSONL trace. The trace is the only artifact.
-5. `ctxvm replay` re-applies the renderer to the trace and compares against expected render totals. Divergence exits 1.
+5. `ctxvm replay` re-derives the page table and compares against expected render totals. Divergence exits 1.
 
 ### 5.2 Determinism boundary
 
 Core = pure replayable engine. No LLM, no embedding, no network. Semantic or embedding-based faulting lives in policy plugins, logged as marked non-deterministic event classes. This is a hard boundary, not a preference: it is what makes replay byte-identical and what lets a consumer verify any trace without trusting a model.
 
-### 5.3 Bindings and adapters (planned, not built)
+### 5.3 Bindings and adapters
 
-Bindings sit above `ctxvm-core`: napi-rs for TypeScript/Node, PyO3/maturin for Python. Adapters (OpenCode plugin, Vercel AI SDK middleware, LangGraph, MCP shim) live above the bindings as thin glue. The T7 survey pins anchors at OpenCode commit `e965774f` and vercel/ai commit `36e4ce7c`; each adapter is estimated at ≤50 lines of glue. None of this code exists yet — `design/mcp-shim.md` and `design/adapters.md` contain the plans.
+Adapters are shipped as thin layers above the tracer. `@ctxvm/node` is the TS tracer; the OpenCode adapter, the Hermes plugin and the AI SDK middleware mount on it. The T7 survey pinned anchors at OpenCode commit `e965774f` and vercel/ai commit `36e4ce7c`. Native napi-rs and PyO3 bindings remain planned, not built; the Python binding is a subprocess wrapper over the Rust binaries. The MCP shim remains a design note (`design/mcp-shim.md`).
 
 ### 5.4 Packaging boundary
 
@@ -411,20 +413,20 @@ The metric simulator (`benchmarks/metrics/metrics.py`) implements four formulas 
 
 | Metric | Formula | Meaning |
 |--------|---------|---------|
-| Net token reduction | `1 - (paged_net_tokens / naive_tokens)` | How many tokens the pager saves vs naive stuffing |
-| Fault recall | `recovered_faults / evictions` | Share of evictions the pager recovered from |
+| Net token reduction | `1 - (paged_net_tokens / naive_tokens)` with pinned `prices.json` normalisation | How many tokens the pager saves vs naive stuffing |
+| Refetch rate / hard fault recall | `recovered_faults / evictions` / `recovered_hard_faults / hard_faults` | Re-fetch rate (not detection quality) / W3 ground truth (explicit re-calls only) |
 | Touch ratio | `touched_tokens / rendered_tokens` | Share of rendered tokens the model actually read; waste = 1 - touch ratio |
 | Thrash index | `mean(faults_per_turn)` over sustained-pressure windows | Fault rate under pressure — thrashing detection |
 
-Cache-miss normalization is noted, not invented: net cost subtracts estimated cache misses (`call.meta.cacheEstimate`).
+Cache-miss normalization is noted, not invented: net cost subtracts estimated cache misses (`call.meta.cacheEstimate`). Every gate metric carries a deterministic bootstrap CI, and W3 M0 gates are hard_fault_recall ≥95% (95% CI lower bound, n≥30) and NTR ≥1.5× at preregistered accuracy non-inferiority.
 
 ### 6.1 Reference implementation
 
-Pure Python, 18/18 pytest green, two synthetic fixtures (healthy session, thrashing session), CLI prints JSON. Fixtures pass schema conformance 108/108 via the xCABI validator.
+Pure Python, 66 tests in `benchmarks/metrics` (gate log `171 + 66 + 8`), two synthetic fixtures (healthy session, thrashing session), CLI prints JSON. The v0 schema gate passes 682 checks over 27 fixtures (17 corpus traces); the sealed validator still rejects every v0.1-only line.
 
 ### 6.2 Where metrics go
 
-Metric claims live in `productStrategy.productKPIs` of the ODPS manifest — machine-readable, scraped by the leaderboard. The leaderboard (v1) parses KPIs from manifests: fault recall, net token reduction, touch ratio. Non-deterministic policies must submit variance over ≥3 seeds.
+Metric claims live in `productStrategy.productKPIs` of the ODPS manifest — machine-readable, scraped by the leaderboard. The leaderboard (v1) parses KPIs from manifests: refetch rate / hard fault recall, net token reduction, touch ratio. Non-deterministic policies must submit variance over ≥3 seeds.
 
 ---
 
@@ -432,14 +434,12 @@ Metric claims live in `productStrategy.productKPIs` of the ODPS manifest — mac
 
 These are honest boundaries of the current design. They are not bugs; they are scope decisions.
 
-- **v0 observes only.** No eviction, pinning, or paging. If you need the pager, wait for v1 behind the opt-in `policy` flag.
+- **v0 observes only (core).** No eviction, pinning, or paging in the tracer. The paged arm (`FaultPinPolicy`, the Hermes `ctxvm` ContextEngine) is the v1 experiment. Three closed results: **W8** — at the 24k budget the protected floor owns ~88–95% of request tokens (session-weighted evictable ceiling 5.3% = 25,404 / 479,076), so the arm is inert (`design/W8-CLOSURE-20261110.md`); **W8B** — at 70k and 90k budgets on a 20-turn / 21-page task, 43 selections produced 0 evictions because prose-mention demand pinning pinned 19 of 21 pages (`design/W8B-CLOSURE-20261111.md`); **W8C** — after removing prose-mention pinning, the paged arm holds the request at the budget (free cell-02 0.60× final, paid cell-03 0.57× final) but mid-prefix dropping forfeits the provider prefix cache (uncached input 4.73× control on the free cell; cache writes 4.49× and cache reads 0.61× on the paid cell; paid pair 2.11× dollars) (`design/W8C-PLAN.md`, `reports/RR-PAIDRESULT-20261112.md`). See also `reports/RR-ENGINEGAP-20261106.md`.
 - **No semantic faults in core.** `semantic_*` (embedding/LLM guesses) are v1 plugins, marked non-deterministic. Core determinism requires this exclusion.
-- **No bindings yet.** napi-rs (TS) and PyO3 (Py) are planned, not built. The tracer API in §4 is the target surface, not shipping code.
-- **No adapters yet.** OpenCode and Vercel AI SDK integration plans exist (`design/adapters.md`); no code. The T7 survey anchors at specific commits but no dev build has run.
-- **Fault recall target is unproven.** The M0 gate requires ≥95% fault recall (identifier_scan + tool_recall layered), but this is a target, not a measured result on real sessions.
-- **Net token reduction target is unproven.** ≥1.5× at equal accuracy is the M0 gate; no real-session measurement exists yet.
+- **Adapters shipped; native bindings did not.** `@ctxvm/node`, OpenCode, AI SDK and Hermes adapters exist and are gated. Native napi-rs/PyO3 are planned, not built; the Python binding is a subprocess wrapper.
+- **Paging gate unmeasured.** Hard_fault_recall target (≥95%, CI lower bound, n≥30) has n=4 on real captures. No real session has paged. Net token reduction (≥1.5×) is unmeasured: W8/W8B closed negative (the protected floor owns ~88–95% of request tokens at 24k; prose-mention pinning produced 0 evictions at 70k–90k), and W8C measured a request reduction (0.57–0.60× final) bought with 4.73× uncached input and 0.61× cache reads — no saving may be claimed (§7).
 - **Names are working names.** `ctxvm` and `xCABI` are not final. Renaming is an explicit orchestrator task.
-- **Cache-hit estimates are flagged, not authoritative.** `call.meta` carries estimated hit/miss; providers report where available, otherwise the estimate is flagged as such.
+- **Cache-hit estimates are flagged, not authoritative.** `call.meta` carries estimated hit/miss; provider-reported usage is a separate receipt (`providerUsage`, RFC-0.1 R3). `cacheEstimate.providerReported` stays false by the owner's option-A ruling.
 - **What a trace cannot do is in §16, in one place.** Not a cause, not a guard against false confidence, not evidence about a dishonest harness. Those three limits are stated once there and not repeated here.
 
 ---
@@ -482,7 +482,7 @@ ContextCite learns a surrogate model of how an output changes when parts of the 
 
 ### 8.9 Control protocols
 
-AI control evaluates protocols that stay safe when the model is actively trying to subvert them (Greenblatt et al., arXiv:2312.06942). Ctrl-Z adds resampling: when an action looks suspicious, draw more samples and compare, with a reported reduction in attack success from 58% to 7% at a 5% cost to a benign agent (Bhatt et al., arXiv:2504.10374; the percentages appear in the paper body and were not verified from the abstract). Both need a record of what the agent did, and resampling additionally needs to fork state.
+AI control evaluates protocols that stay safe when the model is actively trying to subvert them (Greenblatt et al., arXiv:2312.06942). Ctrl-Z adds resampling: when an action looks suspicious, draw more samples and compare (Bhatt et al., arXiv:2504.10374; reported effect sizes are body-level and were not verified from the abstract, so this paper cites no numbers). Both need a record of what the agent did, and resampling additionally needs to fork state.
 
 ### 8.10 Monitoring and chain-of-thought faithfulness
 
@@ -519,7 +519,7 @@ The cheapest next step is a hash chain: canonical serialisation already makes a 
 
 Two operations share the word "replay" and must never be confused.
 
-**Byte-identical replay** takes a trace and re-derives the same facts. It is deterministic, it runs offline, and it is the basis of every claim in this paper. Given the same bytes it returns the same bytes.
+**Byte-identical replay** takes a trace and re-derives the same facts. It is deterministic, it runs offline, and it is the basis of every claim in this paper. Given the same trace bytes it returns the same derived projection bytes.
 
 **Intervention replay** changes one thing — remove a page, add a stub, replace a tool result — and calls the model again. The engine stays deterministic; the model does not. The output is a new trace, not a corrected one.
 
@@ -536,7 +536,7 @@ A minimal provenance block for an intervention run has six parts: the parent tra
 
 Three uses of the trace in evaluation are concrete today.
 
-**Context policy is part of the scaffold, and it is usually unreported.** Evaluations establish lower bounds on capability and cannot establish upper bounds (Barnett & Thiergart, arXiv:2412.08653). Scaffold choice is a first-order variable in agent evaluation (arXiv:2510.11977). Since the RFC-0.1 static-prefix field (§R6), a ctxvm trace reports the prefix of every turn — tool schemas loaded, request characters, the host's token estimate — and since the environment key (§R8) it reports the environment the run happened in. A score that does not carry those numbers compares runs under unknown conditions.
+**Context policy is part of the scaffold, and it is usually unreported.** Evaluations establish lower bounds on capability and cannot establish upper bounds (Barnett & Thiergart, arXiv:2412.08653). Scaffold choice is a first-order variable in agent evaluation (arXiv:2510.11977). Since the RFC-0.1 static-prefix field (§R6), a ctxvm trace reports the prefix of every turn — tool schemas loaded, request characters, the host's estimated size — and since the environment key (§R8) it reports the environment the run happened in. A score that does not carry those numbers compares runs under unknown conditions.
 
 **Logs find what scores hide.** HAL's log inspection found agents searching for the benchmark instead of solving the task (arXiv:2510.11977). AISI's published capability estimates rest on manual transcript review combined with an automated monitor over trajectories, and it reports its cheating rates as lower bounds because the monitor can miss cases (AISI, 21 July 2026). A trace standard makes that inspection portable: the same query runs over any harness's trace.
 
@@ -550,7 +550,7 @@ A view is therefore a first-class object, and ctxvm can define it as a pure func
 
 ## 13. Provenance, trust, and enforcement on pages
 
-A page today carries identity and kind, and since the RFC-0.1 side-effect class field (§R7) the class of the call that produced it. It does not carry origin, trust, or permitted readers. That is the gap that CaMeL fills from the other side: it extracts control and data flow from the trusted query so untrusted data cannot change the program flow, and enforces capability policies when tools are called, solving 77% of AgentDojo tasks with provable security against 84% undefended (Debenedetti et al., arXiv:2503.18813).
+A page today carries identity and kind, and since the RFC-0.1 side-effect class field (§R7) the class of the call that produced it. It does not carry origin, trust, or permitted readers. That is the gap that CaMeL fills from the other side: it extracts control and data flow from the trusted query so untrusted data cannot change the program flow, and enforces capability policies when tools are called (Debenedetti et al., arXiv:2503.18813).
 
 Three page attributes would carry the same information inside a trace: **origin** (which input produced this page: user, tool, retrieval, model), **trust** (asserted by the harness at declaration, never inferred from content), and **readers** (which sinks may receive it). With those, a policy check is a pure function of the page table, which keeps it inside the determinism boundary and makes the decision replayable.
 
@@ -558,7 +558,7 @@ The claim this paper can make is narrow: the trace can carry the attributes a ta
 
 ## 14. Control protocols over branching state
 
-Control protocols assume the deployment can stop, resample or roll back. Ctrl-Z resamples suspicious actions and reports a reduction in attack success from 58% to 7% at a 5% cost to a benign agent (arXiv:2504.10374; body-level figures). Resampling needs a state that can be forked: the same conversation, two continuations, compared.
+Control protocols assume the deployment can stop, resample or roll back. Ctrl-Z resamples suspicious actions (arXiv:2504.10374; body-level figures not verified from the abstract, so no numbers are cited here). Resampling needs a state that can be forked: the same conversation, two continuations, compared.
 
 This is where paging and control meet. A page table with copy-on-write branching is exactly a forkable conversation state; that design exists and is not built. A trace that records page identity and turn boundaries is the audit trail for such a fork: which pages were resident on each branch, which render each branch saw.
 
@@ -580,6 +580,7 @@ Two cautions. Compliance guidance notes that tamper resistance is implied by the
 - **It cannot establish causation.** Rendering a page is not causing an answer. Only an intervention (§10) can support a causal claim, and the intervention is not the trace.
 - **It cannot make the harness honest.** See §9.
 - **It can create false confidence.** The most likely misuse of this work is an audit that reads a complete trace and concludes the system was understood. The record covers the input side. Safety claims need the model side, and this paper does not supply it.
+- **It cannot reconstruct the request's bytes.** It records page identities, content hashes, token counts, and an estimated size for each request. That estimate is character-based and can differ from the provider's count. The shipped adapters do not emit stub renders, so a turn's omissions are not recorded.
 
 ## 17. Research agenda
 
@@ -592,12 +593,12 @@ The questions below are the ones this design makes askable. None of them is answ
 | 3 | Which page-level views produce the best monitors? | Less-is-more and extract-and-evaluate (arXiv:2601.21112); hybrid CoT/action scoring (arXiv:2505.23575) | A view-parameterised monitor run | Designed |
 | 4 | How much do capability scores move with context policy? | Lower-bound limits of evaluation (arXiv:2412.08653); scaffold variance (arXiv:2510.11977) | A three-policy comparison at fixed tasks | Not found in this review |
 | 5 | Which pages give an evaluation away? | Evaluation awareness at AUC 0.83 vs 0.92 (arXiv:2505.23836) | Deployment traces, redaction, a classifier | Blocked on redaction |
-| 6 | Can page provenance give taint-style protection? | CaMeL's capability model, 77% vs 84% (arXiv:2503.18813) | Origin/trust/reader attributes and a policy layer | Prototype-able |
+| 6 | Can page provenance give taint-style protection? | CaMeL's capability model (arXiv:2503.18813) | Origin/trust/reader attributes and a policy layer | Prototype-able |
 | 7 | Does evicting an early wrong assumption help? | Multi-turn degradation of 39% (arXiv:2505.06120) | A three-arm experiment incl. an oracle arm | Not started |
 
 The search behind this table covered the 27 sources listed under References and no others; "not found" means not found there.
 
-One measurement already exists and it argues for caution in row 1. Across 24 traces in this repository (frozen corpus plus live captures) there are 417 declared pages, 312 rendered at least once (74.8%), and 303 `page.fault` events. **99.3% of faults land on pages that had been rendered.** That is close to definitional — the fault taxonomy fires when the model re-requests content it has seen — so the number cannot separate "the model needed it" from "the harness had shown it". The ablation in row 1 exists precisely to make that separation.
+One measurement already exists and it argues for caution in row 1. On the frozen corpus at this snapshot (`corpus/m1`–`m8`: `ls corpus/m*/ *.jsonl | wc -l` = 17 traces), a byte-count pass gives 118 `page.declare` rows and 62 `page.fault` events (reproduce with the JSONL census in `reports/`). The earlier 24-trace / 417-page / 99.3%-rendered census (2026-11-05, including working captures outside the frozen drops) is not reproducible from the frozen drops alone and is retained only as a dated observation, not a citable result. In either case, the fault taxonomy fires when the model re-requests content it has seen, so faults on rendered pages is close to definitional and cannot separate "the model needed it" from "the harness had shown it". The ablation in row 1 exists precisely to make that separation.
 
 ---
 
@@ -612,15 +613,9 @@ or at export (a slice is produced for a third party). Each leaves a different ar
 that has been redacted at capture cannot be distinguished from one that never contained the text —
 so the record must say which stage ran and with which rule set.
 
-**What the format should carry.** A redaction block on the session, not on each page: the policy id,
-the rule-set version, the stage, and the number of fields replaced. The pages keep their identity and
-hashes of the redacted content, so replay stays consistent within the redacted artifact and does not
-pretend to reproduce the original.
+**What the format should carry.** A redaction record on the session, not on each page, as defined in proposal card `design/redaction-block.md` (`RR-P3REDACT-20261109`, proposal-only, sidecar-first so sealed v0 and RFC-0.1 wire schemas stay untouched): an ordered list of stages (`capture | flush | export`), each carrying the policy id, the rule-set version, the stage, the number of fields replaced, and a reference-policy declaration (`raw | keyed-hashed | dropped`). An absent record means unknown, never unredacted, and the block is an assertion without tamper evidence. The pages keep their identity and hashes of the redacted content, so replay stays consistent within the redacted artifact and does not pretend to reproduce the original.
 
-**Consent.** Capture is on by default in the plugin we ship, and that is a product decision with a
-cost: a user who does not know a trace exists cannot consent to it. The mitigations already in place
-are the state directory at `0700`, local-only storage, and documented opt-out. A paper cannot
-substitute for a consent process, and this one does not claim to.
+**Consent.** Capture is on by default in the plugin we ship, and that is a product decision with a cost: a user who does not know a trace exists cannot consent to it. A trace holds page identities, content hashes, token counts, and references; the references, stub text, and reason fields can contain file paths and tool arguments. Page content is not stored. The state directory is mode `0700`, which protects against other local users but not against the agent process or a backup tool running as the same user. Storage is local-only. The opt-out is `CTXVM_TRACE=0`, which a user finds only by reading the documentation; a first-run notice is a proposed change, not a shipped one. A paper cannot substitute for a consent process, and this one does not claim to.
 
 **What §17 row 5 needs.** Deployment traces to compare against evaluation traces, redacted to a
 standard someone else can check. Without that stage there is no way to run the evaluation-awareness
@@ -632,11 +627,11 @@ comparison on real sessions, which is why the row is marked blocked rather than 
 
 LLM agent context is still assembled by hand: every system manually assembles context on every API call, with no eviction policy, no demand loading, no working set, and no shared trace format. The mechanism works; the shared layer does not exist.
 
-ctxvm is that shared layer. xCABI defines a deterministic, append-only, cross-harness trace format. `ctxvm-core` is a Rust engine that replays any trace byte-identically. The measurement stack — simulator, corpus, leaderboard — is packaged as ODPS 4.1 open data products.
+ctxvm is that shared layer. xCABI defines a deterministic, append-only trace format whose traces validate against one schema and replay in one engine across harnesses (with cross-harness diffing behind the consumer-side normalisation profile in `design/diff-normalisation.md`). `ctxvm-core` is a Rust engine that re-derives any trace's page-table projection byte-identically. The measurement stack — simulator, corpus, leaderboard — is packaged as ODPS 4.1 open data products.
 
 Version 0 is a read-only flight recorder. Add it to any agent loop; nothing changes. You get traces, touch statistics, and waste numbers. Paging control ships in v1 behind an opt-in `policy` flag, validated by the same replay engine that guarantees byte-identical determinism.
 
-**Context tracing is not logging — it is the ability to reconstruct and replay the exact request the harness sent.** Token savings, quality work, safety evaluation and compliance all start from knowing what the harness actually sent. That knowledge is necessary for each of them and sufficient for none: §9–§17 state where the record stops, and where the model side has to take over. ctxvm's tracer already records the input side; the remaining work is turning the trace into evidence that someone else can check.
+**Context tracing is not logging — it is the ability to re-derive and replay the structure of the request the harness sent (which pages, with what identities, hashes and token counts), not its bytes.** Token savings, quality work, safety evaluation and compliance all start from knowing what the harness actually sent. That knowledge is necessary for each of them and sufficient for none: §9–§17 state where the record stops, and where the model side has to take over. ctxvm's tracer already records the input side; the remaining work is turning the trace into evidence that someone else can check.
 
 The field does not need another private pager. It needs a way to measure the context layer, test policies against recorded runs, and query what happened. That is what ctxvm is built to be.
 
@@ -664,8 +659,8 @@ The field does not need another private pager. It needs a way to measure the con
 18. FACE-Eval: "Chain-of-Thought Faithfulness of Reasoning Models Varies with Where and How Preference Cues Are Delivered." arXiv:2608.29464, 2026. — tool-return cues less verbalized on all 15 models (abstract).
 19. "Why Models Know But Don't Say: Chain-of-Thought Faithfulness in Reasoning Models" (title truncated from the arXiv listing; full title to be confirmed against the v1 PDF). arXiv:2603.26410, 2026. — thinking-answer divergence 55.4%; 11.8% unacknowledged (abstract).
 20. Greenblatt, R. et al. "AI Control: Improving Safety Despite Intentional Subversion." arXiv:2312.06942v5, July 2024. — protocols robust to subversion (abstract).
-21. Bhatt, A. et al. "Ctrl-Z: Controlling AI Agents via Resampling." arXiv:2504.10374, April 2025. — BashBench, resample protocols (abstract); the 58%-to-7% and 5% figures are body-level, unverified here.
-22. Debenedetti, E. et al. "Defeating Prompt Injections by Design." arXiv:2503.18813v2, June 2025. — CaMeL; 77% with provable security vs 84% undefended in AgentDojo (abstract).
+21. Bhatt, A. et al. "Ctrl-Z: Controlling AI Agents via Resampling." arXiv:2504.10374, April 2025. — BashBench, resample protocols (abstract); body-level effect sizes were not verified from the abstract and are not cited in this paper.
+22. Debenedetti, E. et al. "Defeating Prompt Injections by Design." arXiv:2503.18813v2, June 2025. — CaMeL (abstract); body-level effectiveness figures were not verified from the abstract and are not cited in this paper.
 23. Goldowsky-Dill, N. et al. "Detecting Strategic Deception Using Linear Probes." arXiv:2502.03407, February 2025. — AUROC 0.96-0.999; insufficient as a robust defence (abstract).
 24. Laban, P. et al. "LLMs Get Lost In Multi-Turn Conversation." arXiv:2505.06120, May 2025. — 39% average drop; no recovery after a wrong turn (abstract).
 25. AISI. "Auditing Games for Sandbagging Detection." aisi.gov.uk/blog/auditing-games-for-sandbagging-detection, 21 May 2026; arXiv:2512.07810, December 2025. — blue teams could not reliably discriminate sandbaggers (abstract). The arXiv listing and the AISI blog are treated as one result.
@@ -681,10 +676,10 @@ The field does not need another private pager. It needs a way to measure the con
 | Working title | Virtual memory for LLM agent context: the xCABI standard and the ctxvm engine |
 | Format | Markdown single source (MyST for website, Markdown → LaTeX/WeasyPrint for PDF) |
 | Style | ASD-STE100-inspired (active voice, defined terms, no idioms, no marketing language) |
-| Version references | A plugin version appears only where a result depends on the build, and then dated to that build. Descriptive prose names the source file (`live/__init__.py`), never a release number — the plugin carried 48 distinct version values between 2026-10-24 and 2026-11-13 and no CI step reads this document, so a bare "current version" is false within a day of being written. State a build the way §3.8 states the gate: with its witness date. |
 | Audience | Coders, scientists, generally computer-literate readers |
-| Phases complete | P1 (§1–2), P2 (§3), P3 (§4), P4 (§5–9 + references), P5 (final draft + PDF + website), P6 (safety related work §8.7–§8.11), P7 (threat model to research agenda, §9–§17, 5 Nov 2026), P8 (review pass: headline scope, compliance condition, sampling controls, redaction section) |
+| Phases complete | P1 (§1–2), P2 (§3), P3 (§4), P4 (§5–9 + references), P5 (final draft + PDF + website), P6 (safety related work §8.7–§8.11), P7 (threat model to research agenda, §9–§17, 5 Nov 2026), P8 (review pass: headline scope, compliance condition, sampling controls, redaction section), P9 (2026-11-06: sync to repo reality — 682-check gate, shipped adapters, W3 metric names, real trace slice, unverified body figures removed from prose) |
 | External claims | Verified against primary sources at the level stated per item: abstracts for the 19 arXiv sources, the AISI blog text for the auditing claims, the regulation text for Articles 12 and 55. Body-level figures are marked. |
 | Cited with caveat | Ctrl-Z's 58%-to-7% and 5% figures (body-level, not read); ContextCite's 32x multiplier (body-level, not read); the AISI cheating rates (reported as lower bounds by AISI itself); the 11.3h-versus-270h capability swing (secondary only, not cited in the argument) |
 | Not in this paper | The Pichay conference venue (no venue confirmed) |
 | Safety sections | §8.7–§8.11 and §9–§18 added 2026-11-05; §8.11 and §11 reconciled against the primary AISI post, and the FACE-Eval scope corrected to open-weight models in a single-call setting |
+| Version references | A plugin version appears only where a result depends on the build, and then dated to that build. Descriptive prose names the source file (`live/__init__.py`), never a release number — the plugin carried 48 distinct version values between 2026-10-24 and 2026-11-13 and no CI step reads this document, so a bare "current version" is false within a day of being written. State a build the way §3.8 states the gate: with its witness date. |
