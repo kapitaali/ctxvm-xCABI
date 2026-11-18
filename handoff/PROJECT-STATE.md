@@ -33,7 +33,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - D14 RATIFIED & ROUTED 11-12: capture default-on in owner-run builds; release rule bound at D6/D17; redaction card proposal-only, sidecar-first (`design/redaction-block.md`; RR-WPROUTE 5–6). Owner next: §4-LIST go/defer (G4).
 - D15 paper structure: keep Part I + II; merge only after the D13/D14 edits land. Recommend keep.
 - D16 W8 amendment: W8/W8B closed negative; W8C measured, paid spend stopped after cell-03 (0.57x final request, 2.11x cost from 4.49x cache writes); W8D refused on arithmetic — hold-once cannot change the dropped set (already monotone) and the gate cannot discriminate ⇒ next policy work is zero-spend only (`RR-POLICYCHOICE`, `RR-W8DERRATUM`).
-- D17 RULED 2026-11-18 (option c): packages and registries stay unreleased until the owner judges there is enough data; no threshold/date set. Public repo/PDF/hub unaffected; D6/D14 consent rule binds at any future release (`RR-D17RULING`).
+- D17 HELD 2026-11-18 (c): packages/registries unreleased until owner judges enough data (no threshold/date). Repo/PDF/hub stay public; D6/D14 consent binds at release (`RR-D17RULING`).
 - D19 omission representation: REVIEWER-RULED 2026-11-13 = the wire (optional, omitted-when-unknown, per-call list of removed-page identities; sidecar = documented fallback; per-call fail-closed check; scoped view = an addition under a new name) (`RR-OMISSIONANSWER`); owner: ratify + pick placement, names, D-number.
 
 ## Do not touch (sealed specs, frozen fixtures, plugin defaults)
