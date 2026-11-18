@@ -106,6 +106,20 @@ sys.modules.setdefault("agent.context_engine", _stub_ctx_engine)
 
 import context_engine as ce  # noqa: E402
 
+# The engine loads its sibling BY PATH, so inside the suite the resolver now SUCCEEDS and returns the
+# operator's real home, where the policy is the control arm — every law test would silently go inert.
+# Pin the arm to the treatment here, as the developer prompt requires; individual tests override it.
+import tempfile as _tempfile  # noqa: E402
+
+_TEST_HOME = _tempfile.mkdtemp(prefix="ctxvm-lawhome-")
+ce._POLICY_MOD = types.SimpleNamespace(
+    policy=lambda *a, **k: {
+        "home": _TEST_HOME, "profile": "w8cn-paged", "engine": "ctxvm", "budget": 24000,
+        "budgetSource": "settings", "selectionMode": "fresh", "selectionModeSource": "settings",
+        "arm": "paged",
+    }
+)
+
 
 # --- transcript builders -------------------------------------------------------
 
@@ -817,30 +831,34 @@ class ArmPolicyTests(unittest.TestCase):
         self.assertEqual(pol["budget"], 70000)
 
     def test_engine_declines_when_the_session_profile_is_control(self):
-        import context_engine
-        import profile_policy
+        import context_engine, types as _types
         engine = context_engine.CtxvmFaultPinEngine(v_budget=70000)
         msgs = [{"role": "user", "content": "hi"}]
-        with mock.patch.object(profile_policy, "policy",
-                               return_value={"engine": "compressor", "budget": 70000,
-                                             "budgetSource": "settings", "profile": "w8bn-naive",
-                                             "arm": "control", "home": "/x"}):
+        # The engine loads its sibling BY PATH now, so the stub goes on that loader, not on the
+        # sys.modules module a bare import would have bound.
+        stub = _types.SimpleNamespace(policy=lambda *a, **k: {
+            "engine": "compressor", "budget": 70000, "budgetSource": "settings",
+            "profile": "w8bn-naive", "arm": "control", "home": "/x",
+            "selectionMode": "fresh", "selectionModeSource": "settings"})
+        with mock.patch.object(context_engine, "_POLICY_MOD", stub):
             self.assertIsNone(engine.select_context(msgs, budget_tokens=70000))
-        self.assertEqual(engine._meter["skipped_control"], 1)
+
+            self.assertEqual(engine._meter["skipped_control"], 1)
         self.assertEqual(engine._meter["select"], 0, "a control session must not select")
 
     def test_engine_acts_when_the_session_profile_is_paged(self):
-        import context_engine
-        import profile_policy
+        import context_engine, types as _types
         engine = context_engine.CtxvmFaultPinEngine(v_budget=1)
         msgs = [{"role": "user", "content": "hi"}]
-        with mock.patch.object(profile_policy, "policy",
-                               return_value={"engine": "ctxvm", "budget": 1,
-                                             "budgetSource": "settings", "profile": "w8bn-paged",
-                                             "arm": "paged", "home": "/y"}):
+        stub = _types.SimpleNamespace(policy=lambda *a, **k: {
+            "engine": "ctxvm", "budget": 1, "budgetSource": "settings", "profile": "w8bn-paged",
+            "arm": "paged", "home": "/x", "selectionMode": "fresh", "selectionModeSource": "settings"})
+        with mock.patch.object(context_engine, "_POLICY_MOD", stub):
             engine.select_context(msgs, budget_tokens=1)
-        self.assertEqual(engine._meter["select"], 1)
-        self.assertEqual(engine._meter["skipped_control"], 0)
+        # The law is about the ARM, not about whether this request changed: with v_budget=1 the floor
+        # busts and the request is returned untouched, but the engine must have been ASKED.
+        self.assertEqual(engine._meter["skipped_control"], 0, "a paged session must not be gated")
+        self.assertEqual(engine._meter["select"], 1, "the paged arm is entered")
 
 
 class W8CSignalTests(unittest.TestCase):
@@ -1106,8 +1124,10 @@ class SelectionModePolicyTests(unittest.TestCase):
         engine = ce.build_engine(v_budget=24000)          # no explicit mode
         self.assertFalse(engine._selection_mode_explicit)
         self.assertEqual(engine._selection_mode, "fresh")
-        import profile_policy as pp_mod
-        with _mock.patch.object(pp_mod, "policy", lambda *a, **k: policy):
+        # The engine loads its sibling BY PATH (never by bare name), so the test patches that loader.
+        stub = _mock.MagicMock()
+        stub.policy.side_effect = lambda *a, **k: policy
+        with _mock.patch.object(ce, "_POLICY_MOD", stub):
             engine.select_context([_msg("system", "s"), _msg("user", "u")])
         self.assertEqual(engine._selection_mode, "stable",
                          "a profile that says stable must decide its own turns' mode")

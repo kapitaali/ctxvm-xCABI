@@ -254,6 +254,27 @@ def _rollup(body: str) -> str:
 # ACTIVATED this engine — i.e. whether select_context() was called at all. That is a
 # behavioural fact of the process, so it is only meaningful when one gateway serves one
 # arm (design/w8-run-plan.md 4c); a multiplexer serving both arms cannot attest either one.
+# ROOT CAUSE, measured 2026-11-18: the engine imported its sibling as `from profile_policy import
+# policy`. A bare name resolves through sys.modules/sys.path, and the gateway serves every profile, so a
+# STALE profile-local plugin copy (`~/.hermes/profiles/w8cp-*/plugins/ctxvm-tracer`, 0.13.23, no
+# `selectionMode` in its scanner) won the import. The engine then read a policy dict without the mode and
+# H11 never engaged, while the file next to it said `stable`. Load the sibling BY PATH instead: identity
+# is then a property of this file's directory, not of whatever a profile put on sys.path.
+_POLICY_MOD: Any = None
+
+
+def _policy_module() -> Any:
+    global _POLICY_MOD
+    if _POLICY_MOD is None:
+        import importlib.util as _iu
+        _path = Path(__file__).resolve().parent / "profile_policy.py"
+        _spec = _iu.spec_from_file_location("ctxvm_profile_policy", _path)
+        _mod = _iu.module_from_spec(_spec)
+        _spec.loader.exec_module(_mod)          # type: ignore[union-attr]
+        _POLICY_MOD = _mod
+    return _POLICY_MOD
+
+
 ACTIVATIONS = {"select": 0, "firstTs": None, "lastTs": None}
 # Module-global entry counter: a measurement read through another object has misled this card three
 # times; this one cannot be out of step with the code path that ran.
@@ -439,8 +460,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         # _profile_runtime_scope -> set_hermes_home_override -> get_hermes_home()).
         pol = None
         try:
-            from profile_policy import policy as _policy_for_turn  # live sibling, flat import
-            pol = _policy_for_turn()
+            pol = _policy_module().policy()
         except Exception:  # noqa: BLE001 - outside the host: treat as control, never as treatment
             pol = None
         self._last_policy = pol
