@@ -1,4 +1,4 @@
-# State (updated 2026-11-15, ctxvm repo agent (opencode); D13+D14 routed, W8C+W8D reviewed, H9 landing + white paper reviewed)
+# State (updated 2026-11-18, ctxvm repo agent (opencode); D17 held, G3/G4 ruled, T-B wired run complete)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
@@ -10,17 +10,17 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 ## Done (last 3 items: one line each, with locators)
 
 1. (Items 1–2 rotated verbatim 2026-11-15 to `handoff/PROJECT-STATE-ARCHIVE.md`.)
-2. W8D erratum reviewed: five inputs verified, three arithmetic errors (denominator 42 not 41; "0.918" inverted + tokenizers mixed; "16 rewrite events" unsupported ⇒ 9), model check self-contradicting (9 writes fit, 16 miss by 1.76×) ⇒ hold-once is a no-op (`RR-W8DERRATUM-20261113`).
+2. W8D erratum reviewed: 5 inputs verified, 3 arithmetic errors ⇒ hold-once is a no-op (`RR-W8DERRATUM-20261113`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 applied (`e10d249`); Part III landed (`5ab5d38`), review CLOSED by owner 2026-11-18 (`RR-PART3REVIEW-CLOSE`); PDF 26pp; E1 data gate open.
-- Hermes lane: per-call dropped **identities** DONE in `f3078b4` ✓; H9 landed in `e480186` — review found 7 defects, 5 one-line asks (`RR-H9LANDING`).
+- Hermes lane: per-call identities DONE (`f3078b4`); H9 landed (`e480186`) — 7 defects, 4 one-line fixes (`RR-H9LANDING`).
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: holds the current build (pid 23669, started after the 09:31 sync) ⇒ captures are labelled 0.13.24; the first **paged** one is still owed (`RR-H9LANDING`).
 ## Next three (ordered, one line each)
-1. G4 GO 18 Nov (`RR-G4GO`): sidecar assertion + unknown rule, declaration-only; no emitter/wire/verifier/release.
-2. Research lane: Part III review CLOSED by owner 2026-11-18 (`RR-PART3REVIEW-CLOSE`); E1 data-choice gate still open; D17 after.
-3. G3 design APPROVED 18 Nov (`RR-G3APPROVE`); prereg owed before run.
+1. Owner: decide T-B paging test — shell on 196/193 prompts and 390/390 identifier_scan faults make paging untestable (`RR-TBWIREDFULL-ADD`).
+2. Owner: route G4 tools/** to hermes (`RR-REDACT` draft); E1 data gate open (15 paths/13 names; live 247/4 vs 243/5) before research prereg.
+3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11 owner-gated.
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30 → 2026-11-10: D3-c OTel layered; D4 adopts RFC-0.1; D8 splits → schemaVersion first; D12 est* keep page-table semantics; W8 ruled FAILED, capture default-on; D-U1 caveat, D-U3 same-build, D-U2 two baselines (`RR-DECISIONS-20261030` … `RR-P7BASE-20261110`).
@@ -32,7 +32,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - D13 RATIFIED & ROUTED 11-12: Pillar-1 splits + echo sweep (`design/diff-normalisation.md`; RR-WPROUTE 1–2).
 - D14 RATIFIED: capture default-on in owner builds; release rule bound D6/D17; redaction sidecar-first (`design/redaction-block.md`). G4 GO 18 Nov (`RR-G4GO`): sidecar assertion only.
 - D15 paper structure: keep Part I + II; merge only after the D13/D14 edits land. Recommend keep.
-- D16 W8 amendment: W8/W8B closed negative; W8C measured, paid spend stopped after cell-03 (0.57x final request, 2.11x cost from 4.49x cache writes); W8D refused on arithmetic — hold-once cannot change the dropped set (already monotone) and the gate cannot discriminate ⇒ next policy work is zero-spend only (`RR-POLICYCHOICE`, `RR-W8DERRATUM`).
+- D16 W8: W8/W8B negative; W8C measured (0.57x request, 2.11x cost); paid spend stopped; W8D refused — zero-spend policy work only (`RR-POLICYCHOICE`).
 - D17 HELD 2026-11-18 (c): packages/registries unreleased until owner judges enough data (no threshold/date). Repo/PDF/hub stay public; D6/D14 consent binds at release (`RR-D17RULING`).
 - D19 omission representation: REVIEWER-RULED 2026-11-13 = the wire (optional, omitted-when-unknown, per-call list of removed-page identities; sidecar = documented fallback; per-call fail-closed check; scoped view = an addition under a new name) (`RR-OMISSIONANSWER`); owner: ratify + pick placement, names, D-number.
 
