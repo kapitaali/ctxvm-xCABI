@@ -307,6 +307,10 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         # call). The point is the provider's prefix cache: a selection that rewrites the prefix on every
         # call forfeits it, which is what the W8C pair measured (2.11x dollars).
         self._selection_mode = (selection_mode or os.environ.get("CTXVM_SELECTION_MODE") or "fresh").strip().lower()
+        # An EXPLICIT mode (constructor or env) is the caller's decision and is never overridden; a
+        # session's own profile setting is adopted at call time, exactly like the budget, because one
+        # gateway serves every arm from one engine object.
+        self._selection_mode_explicit = bool(selection_mode) or bool(os.environ.get("CTXVM_SELECTION_MODE"))
         try:
             self._stable_every = max(1, int(os.environ.get("CTXVM_SELECTION_EVERY") or 4))
         except (TypeError, ValueError):
@@ -471,6 +475,14 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                     and pol["budget"] != self._v_budget):
                 self._v_budget = pol["budget"]
                 self._v_budget_source = pol.get("budgetSource", self._v_budget_source)
+            # H11: the mode is per SESSION too. A profile that says `stable` decides it for its own
+            # turns; a profile that says nothing stays on the shipped `fresh`.
+            if not self._selection_mode_explicit and _real_home:
+                wanted = pol.get("selectionMode")
+                if wanted in ("fresh", "stable") and wanted != self._selection_mode:
+                    self._selection_mode = wanted
+                    self._held = None            # a mode change starts from a clean hold
+                    self._calls_since_plan = 0
 
         import datetime as _dt
         self._selections += 1

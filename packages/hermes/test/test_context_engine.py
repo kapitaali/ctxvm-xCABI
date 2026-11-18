@@ -1047,5 +1047,75 @@ class StableSelectionTests(unittest.TestCase):
         self.assertFalse(engine.should_compress(), "the engine selects; it never compacts")
 
 
+class SelectionModePolicyTests(unittest.TestCase):
+    """H11 — the mode is a PROFILE setting, resolved per turn like the budget.
+
+    One gateway serves every arm from one engine object, so a mode snapshot taken at registration would
+    apply one profile's choice to every session. These laws pin the resolution order: profile setting,
+    then env, then the shipped default.
+    """
+
+    def _home(self, *, mode=None, budget=None):
+        import tempfile, pathlib as _p
+        d = _p.Path(tempfile.mkdtemp(prefix="ctxvm-policy-"))
+        body = ["model:", "  default: x", "context:", "  engine: ctxvm", "plugins:",
+                "  entries:", "    ctxvm-tracer:", "      settings:"]
+        if budget is not None:
+            body.append(f"        budgetTokens: {budget}")
+        if mode is not None:
+            body.append(f"        selectionMode: {mode}")
+        (d / "config.yaml").write_text("\n".join(body) + "\n", encoding="utf-8")
+        return d
+
+    @staticmethod
+    def _policy():
+        """Load the REPO's profile_policy by path.
+
+        A bare `import profile_policy` can resolve to the installed copy under
+        ~/.hermes/plugins/ctxvm-tracer/ if it is already in sys.modules, which is a different file: the
+        first version of this test read the old module and failed with a KeyError that looked like a
+        code defect.
+        """
+        import importlib.util, pathlib as _p
+        path = _p.Path(__file__).resolve().parents[3] / "packages/hermes/live/profile_policy.py"
+        spec = importlib.util.spec_from_file_location("repo_profile_policy", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod.policy
+
+    def test_the_mode_is_read_from_the_profile(self):
+        policy = self._policy()
+        pol = policy(self._home(mode="stable", budget=24000))
+        self.assertEqual(pol["selectionMode"], "stable")
+        self.assertEqual(pol["selectionModeSource"], "settings")
+        self.assertEqual(pol["budget"], 24000)
+
+    def test_a_profile_without_the_key_falls_back_to_fresh(self):
+        policy = self._policy()
+        pol = policy(self._home(budget=24000))
+        self.assertEqual(pol["selectionMode"], "fresh")
+        self.assertEqual(pol["selectionModeSource"], "default")
+
+    def test_a_profile_mode_is_adopted_at_call_time(self):
+        """The law H12 depends on: the profile's setting decides the mode, at call time."""
+        import tempfile, unittest.mock as _mock
+        home = tempfile.mkdtemp(prefix="ctxvm-home-")
+        policy = {"home": home, "profile": "w8cn-paged", "engine": "ctxvm", "budget": 24000,
+                  "budgetSource": "settings", "selectionMode": "stable",
+                  "selectionModeSource": "settings", "arm": "paged"}
+        engine = ce.build_engine(v_budget=24000)          # no explicit mode
+        self.assertFalse(engine._selection_mode_explicit)
+        self.assertEqual(engine._selection_mode, "fresh")
+        import profile_policy as pp_mod
+        with _mock.patch.object(pp_mod, "policy", lambda *a, **k: policy):
+            engine.select_context([_msg("system", "s"), _msg("user", "u")])
+        self.assertEqual(engine._selection_mode, "stable",
+                         "a profile that says stable must decide its own turns' mode")
+
+    def test_an_explicit_constructor_mode_is_never_overridden(self):
+        engine = ce.build_engine(selection_mode="fresh")
+        self.assertTrue(engine._selection_mode_explicit)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

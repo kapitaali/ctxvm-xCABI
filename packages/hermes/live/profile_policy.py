@@ -65,10 +65,10 @@ def _strip(value: str) -> str:
 def read_yaml_subset(path: Path) -> Dict[str, Any]:
     """Read the two keys this plugin needs from a Hermes config.yaml.
 
-    Returns `{"engine": str | None, "budgetTokens": int | None}`. Narrow on purpose: a full YAML
+    Returns `{"engine", "budgetTokens", "selectionMode"}`. Narrow on purpose: a full YAML
     implementation here would be a second source of truth about a file the host owns.
     """
-    out: Dict[str, Any] = {"engine": None, "budgetTokens": None}
+    out: Dict[str, Any] = {"engine": None, "budgetTokens": None, "selectionMode": None}
     try:
         lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
@@ -97,6 +97,12 @@ def read_yaml_subset(path: Path) -> Dict[str, Any]:
                 out["budgetTokens"] = int(_strip(rest))
             except (TypeError, ValueError):
                 pass
+        elif block == "plugins" and key == "selectionMode" and in_plugin_entry:
+            # H11: `fresh` (default) or `stable`. A profile setting, not an env ritual — the same rule
+            # the budget follows, for the same reason: one gateway serves every arm.
+            val = _strip(rest)
+            if val in ("fresh", "stable"):
+                out["selectionMode"] = val
     return out
 
 
@@ -134,12 +140,24 @@ def policy(home: Optional[Path] = None) -> Dict[str, Any]:
     if not isinstance(budget, int) or budget <= 0:
         budget, source = 200000, "default"
 
+    # H11 selection mode: the profile's plugin setting, then the env, then the shipped default.
+    mode = cfg.get("selectionMode")
+    mode_source = "settings" if mode else None
+    if not mode:
+        env_mode = os.environ.get("CTXVM_SELECTION_MODE", "").strip().lower()
+        if env_mode in ("fresh", "stable"):
+            mode, mode_source = env_mode, "env CTXVM_SELECTION_MODE"
+    if not mode:
+        mode, mode_source = "fresh", "default"
+
     return {
         "home": str(h),
         "profile": profile_name(h),
         "engine": engine,
         "budget": int(budget),
         "budgetSource": source,
+        "selectionMode": mode,
+        "selectionModeSource": mode_source,
         # The arm is decided by the profile's own setting, never by what the process happens to hold.
         "arm": "paged" if engine == "ctxvm" else "control",
     }
