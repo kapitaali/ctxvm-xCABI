@@ -44,3 +44,40 @@ INCOMPLETE P95).
   or restore any of it.
 
 Kit/gate: `bash tools/run-ci.sh` rc=0 **ALL GATES GREEN** (2026-11-18, `/tmp/opencode/20261118-full-ci.log`, ambient `CTXVM_*` cleared); `check-handoff.sh` ALL PASS; `git-hygiene.sh` OK.
+
+## 5. Addendum — independent comment from the hermes lane, with my interpretation and one correction
+
+The hermes lane re-derived the run independently and confirmed every headline number. I verified their two
+additional points against the trace bytes; both are real and load-bearing. They are recorded here rather than in a
+new card. The earlier verdict is unchanged: COMPLETE / CAPTURE-FIDELITY PASS, no paging/cost/determinism claim.
+
+**Point 1 — the 99.5% was achieved with a shell, so it is not a hand-answerability result.** Verified from the
+trace's `page.declare` `logicalRef` families: **`tool:read` 193, `tool:shell` 196, `tool:glob` 1**. The model ran a
+command for essentially every prompt. My interpretation: the 191/192 exact-reply score means *"answerable when the
+model can execute code"*, not *"the shape is hand-answerable"* — which was the question the OpenCode run was
+created to answer (it followed the unwired run where both execution paths were refused and the same shape scored
+0/48). The route changed, not the fixture. For the paging programme this matters twice, as the lane argues: a model
+that computes totals in a shell does the arithmetic outside the context window, so page removal cannot hurt it and
+paging is untestable in that regime. A reader who sees 191/192 beside the earlier 0/48 must not conclude the shape
+got easier without this caveat attached. Capture fidelity still passes; the meaning of the score is narrower.
+
+**Point 2 — `page.fault` is saturated and unusable as a signal in this capture.** Verified: **390/390** faults carry
+source **`identifier_scan`**, and **390/390** `page.render` rows have `mode: "full"` (nothing stubbed). The fault is
+the scanner seeing each page's identity in the model's own reply, once per page — definitional for that surface. My
+"waste-class rows" wording was too gentle: for **this** capture the whole fault class should be declared
+**unusable**, because `refetch_rate`, `thrash_index` and any other fault-derived metric would measure the scanner,
+not the agent. This is the same failure mode as W8B's prose pinning (signal class saturated by an instrument rule),
+and it is a limit on the evidence, not a defect in the adapter.
+
+**Point 3 — ceiling arithmetic, with one correction.** I agree with the lane's "margin 0" reading: 584 of 584, no
+overrun, no headroom. Their stated cause is wrong, and I checked it. P192's cumulative was 578 and P193 took **6**
+requests (578 → 584). The 192 per-file prompts used **578** requests total: 191 prompts at 3 and one prompt at 5
+(average **3.0104**, i.e. just *over* 3.0, not under). The preregistered `ceil(193×3.0)+5 = 584` implicitly allowed
+P193 up to 8 requests (the 3-request baseline plus the A=5 allowance); it used 6, leaving 2 of headroom, and the
+one 5-request per-file prompt consumed exactly those 2. So the total landed on 584 by offsetting a +2 and a −2,
+not because the per-file average dipped below 3.0. Implication for any rerun, as the lane says: set the ceiling with
+a stated margin, expect 584–590, and do not tighten the arithmetic by repeating this run's exact fit.
+
+Where I agree without qualification: this witnesses capture fidelity only — no paging, H3/H4, eviction, cost
+(`cost: 0` is a harness field), determinism, model quality, or paged-cell GO. Earlier records stay separate and
+unrevised. The lane's offer to record points 1 and 2 is now discharged by this addendum; no further card is owed.
