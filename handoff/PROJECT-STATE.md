@@ -5,7 +5,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 
 ## Artifacts and versions
 - Wire: RFC-0 sealed (`spec/rfc-0/`); RFC-0.1 additive landed (`spec/rfc-0.1/`). Corpus: ODPS 0.8.0, m1–m8 checksummed; hub byte-identical. Plugins: hermes (authoritative: `live/__init__.py:94` + `live/plugin.yaml:2`; **0.13.24** on 2026-11-14, H9 landed); node 0.1.0, opencode/ai-sdk 0.0.1.
-- Papers: Part I committed + WIP; Part II untracked (`RR-WP2REV-20261107`); 6-item bundle **applied** ✓; PDF stale (`RR-PAPER-REVIEW`). Capture: deepseek-v4.1-flash-1017 on nous; `~/.local/state/ctxvm/traces`; budget 200000.
+- Papers: P13/P14 applied (`e10d249`); Part III landed (`5ab5d38`); PDF 26pp, recalculated. Live traces private under `~/.local/state/ctxvm/traces`; budget 200000.
 
 ## Done (last 3 items: one line each, with locators)
 
