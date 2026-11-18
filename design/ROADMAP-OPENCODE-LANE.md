@@ -876,7 +876,7 @@ pin true every card close.
   runs before it is.
   *Done when:* a preregistration card exists (umpire-side, referee-checkable, with frozen
   thresholds + parse code) dated AFTER the owner approves the design.
-  *Owner:* approve the design + fund the run.
+  *Owner:* design APPROVED 2026-11-18 (`reports/RR-G3APPROVE-20261118.md`); prereg card still owed, dated after approval.
 
 - [ ] **G4. Redaction carrier.** `design/redaction-block.md` (owner-cleared placement,
   sidecar-first, P3's D14 answered) — build starts only at the owner's word; the silent
