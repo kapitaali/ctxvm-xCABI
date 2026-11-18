@@ -12,14 +12,14 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 1. (Items 1–2 rotated verbatim 2026-11-15 to `handoff/PROJECT-STATE-ARCHIVE.md`.)
 2. W8D erratum reviewed: five inputs verified, three arithmetic errors (denominator 42 not 41; "0.918" inverted + tokenizers mixed; "16 rewrite events" unsupported ⇒ 9), model check self-contradicting (9 writes fit, 16 miss by 1.76×) ⇒ hold-once is a no-op (`RR-W8DERRATUM-20261113`).
 ## In progress (one item: what, blocker, next command)
-- Research lane: P13/P14 applied in `e10d249`; Part III draft landed in `5ab5d38` (record in `RR-PART3-RECORD`); D17 after. PDF 26pp.
+- Research lane: P13/P14 applied (`e10d249`); Part III landed (`5ab5d38`), review CLOSED by owner 2026-11-18 (`RR-PART3REVIEW-CLOSE`); PDF 26pp; E1 data gate open.
 - Hermes lane: per-call dropped **identities** DONE in `f3078b4` ✓; H9 landed in `e480186` — review found 7 defects, 5 one-line asks (`RR-H9LANDING`).
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: holds the current build (pid 23669, started after the 09:31 sync) ⇒ captures are labelled 0.13.24; the first **paged** one is still owed (`RR-H9LANDING`).
 ## Next three (ordered, one line each)
 1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + the release rule at D6/D17.
-2. Research lane: review Part III (corpus counts + Extract-UNVERIFIED citations) before any E1–E5 prereg; D17 after.
+2. Research lane: Part III review CLOSED by owner 2026-11-18 (`RR-PART3REVIEW-CLOSE`); E1 data-choice gate still open; D17 after.
 3. Owner: G3 (W9 equivalence-test preregistration).
 
 ## Decisions made (date, decision, reason)
