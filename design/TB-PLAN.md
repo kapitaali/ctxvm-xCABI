@@ -1,6 +1,10 @@
 # T-B — the second task shape (revision 2): plan of record, preregistered before any cell
 
 **Status:** plan, not run. No cell booked. Nothing here authorises a paid call.
+**CLOSED 2026-11-18 — owner decision "close it" (`design/TB-CLOSURE-20261118.md`).** This plan is
+**withdrawn as a runnable design** and kept as the record of what was designed and why the shape failed.
+Its fixture generator, checker and task-aware runner survive in `tools/`; its prompt shape does not. No
+further T-B run is authorized on any harness or model. Reopen needs all three conditions in the closure's §5.
 **Revision 2 (2026-11-16), reviewer round.** §0b records what the reviewer found, what was confirmed against
 the repo, and what was refused. The reviewer read this plan and the runtime code, not `T-B.md`, the generator
 or the captures; three of its findings were verified here before being accepted.
