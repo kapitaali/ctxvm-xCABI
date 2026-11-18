@@ -18,7 +18,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: holds the current build (pid 23669, started after the 09:31 sync) ⇒ captures are labelled 0.13.24; the first **paged** one is still owed (`RR-H9LANDING`).
 ## Next three (ordered, one line each)
-1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + the release rule at D6/D17.
+1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + the release rule at D6/D17 (D17 = hold until enough data).
 2. Research lane: Part III review CLOSED by owner 2026-11-18 (`RR-PART3REVIEW-CLOSE`); E1 data-choice gate still open; D17 after.
 3. Owner: G3 (W9 equivalence-test preregistration).
 
@@ -33,7 +33,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - D14 RATIFIED & ROUTED 11-12: capture default-on in owner-run builds; release rule bound at D6/D17; redaction card proposal-only, sidecar-first (`design/redaction-block.md`; RR-WPROUTE 5–6). Owner next: §4-LIST go/defer (G4).
 - D15 paper structure: keep Part I + II; merge only after the D13/D14 edits land. Recommend keep.
 - D16 W8 amendment: W8/W8B closed negative; W8C measured, paid spend stopped after cell-03 (0.57x final request, 2.11x cost from 4.49x cache writes); W8D refused on arithmetic — hold-once cannot change the dropped set (already monotone) and the gate cannot discriminate ⇒ next policy work is zero-spend only (`RR-POLICYCHOICE`, `RR-W8DERRATUM`).
-- D17 publication: (a) now; (b) after D13–D15; (c) hold. Recommend (b).
+- D17 RULED 2026-11-18 (option c): packages and registries stay unreleased until the owner judges there is enough data; no threshold/date set. Public repo/PDF/hub unaffected; D6/D14 consent rule binds at any future release (`RR-D17RULING`).
 - D19 omission representation: REVIEWER-RULED 2026-11-13 = the wire (optional, omitted-when-unknown, per-call list of removed-page identities; sidecar = documented fallback; per-call fail-closed check; scoped view = an addition under a new name) (`RR-OMISSIONANSWER`); owner: ratify + pick placement, names, D-number.
 
 ## Do not touch (sealed specs, frozen fixtures, plugin defaults)
@@ -50,4 +50,4 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 
 ## Blocked (item, what it waits for)
 - W8 spend: >= $7.14 billed 11-10 + $0.2534 cell-03 (11-12); stopped until a zero-spend simulation predicts a win; W8D refused (`RR-W8DERRATUM`).
-- Publication: owner (D17). W12 beyond Steps 0–1: D7 ruled hold. `/tmp/w8` tree DESTROYED (`RR-W8INDEX`); go-forward runs → `~/.local/state/ctxvm/w8-runs`.
+- Publication: D17 RULED hold until enough data (2026-11-18, `RR-D17RULING`); no registry/catalog action without a new owner ruling.
