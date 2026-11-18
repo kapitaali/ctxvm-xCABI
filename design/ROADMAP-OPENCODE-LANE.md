@@ -883,7 +883,7 @@ pin true every card close.
   default-on release rule stays bound at D6/D17.
   *Done when:* implementation card exists (`RR-REDACT*` with a passing kit+CI gate) OR the owner
   rules it further-deferred in writing.
-  *Owner:* go/defer.
+  *Owner:* GO 2026-11-18, narrowly scoped (`reports/RR-G4GO-20261118.md`): sidecar assertion record, "unknown" consumer rule, declaration-only enum; no keyed emitter, wire field, verifier claim or release authorization.
 
 - [x] **G5. D13/D14 ratification + white-paper bundle routing — DONE (2026-11-12, `reports/RR-WPROUTE-20261112.md`).**
   The six paper items (Pillar-1 split; `:635` echo sweep; the P2 demo sentence; the R1 3-to-0 contrast;

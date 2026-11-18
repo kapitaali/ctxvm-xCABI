@@ -18,7 +18,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: holds the current build (pid 23669, started after the 09:31 sync) ⇒ captures are labelled 0.13.24; the first **paged** one is still owed (`RR-H9LANDING`).
 ## Next three (ordered, one line each)
-1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + the release rule at D6/D17 (D17 = hold until enough data).
+1. G4 GO 18 Nov (`RR-G4GO`): sidecar assertion + unknown rule, declaration-only; no emitter/wire/verifier/release.
 2. Research lane: Part III review CLOSED by owner 2026-11-18 (`RR-PART3REVIEW-CLOSE`); E1 data-choice gate still open; D17 after.
 3. G3 design APPROVED 18 Nov (`RR-G3APPROVE`); prereg owed before run.
 
@@ -30,7 +30,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 RATIFIED & ROUTED 11-12: Pillar-1 splits + echo sweep (`design/diff-normalisation.md`; RR-WPROUTE 1–2).
-- D14 RATIFIED & ROUTED 11-12: capture default-on in owner-run builds; release rule bound at D6/D17; redaction card proposal-only, sidecar-first (`design/redaction-block.md`; RR-WPROUTE 5–6). Owner next: §4-LIST go/defer (G4).
+- D14 RATIFIED & ROUTED 11-12: capture default-on in owner-run builds; release rule bound at D6/D17; redaction card proposal-only, sidecar-first (`design/redaction-block.md`; RR-WPROUTE 5–6). G4 GO 18 Nov (`RR-G4GO`): sidecar assertion, declaration-only; no emitter/wire/verifier/release.
 - D15 paper structure: keep Part I + II; merge only after the D13/D14 edits land. Recommend keep.
 - D16 W8 amendment: W8/W8B closed negative; W8C measured, paid spend stopped after cell-03 (0.57x final request, 2.11x cost from 4.49x cache writes); W8D refused on arithmetic — hold-once cannot change the dropped set (already monotone) and the gate cannot discriminate ⇒ next policy work is zero-spend only (`RR-POLICYCHOICE`, `RR-W8DERRATUM`).
 - D17 HELD 2026-11-18 (c): packages/registries unreleased until owner judges enough data (no threshold/date). Repo/PDF/hub stay public; D6/D14 consent binds at release (`RR-D17RULING`).
