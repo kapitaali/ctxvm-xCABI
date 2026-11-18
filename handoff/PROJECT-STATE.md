@@ -20,7 +20,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 ## Next three (ordered, one line each)
 1. Owner: rule G4 (`design/redaction-block.md` §4-LIST go/defer) + the release rule at D6/D17 (D17 = hold until enough data).
 2. Research lane: Part III review CLOSED by owner 2026-11-18 (`RR-PART3REVIEW-CLOSE`); E1 data-choice gate still open; D17 after.
-3. G3 design APPROVED 18 Nov (`RR-G3APPROVE`); prereg card still owed before any run.
+3. G3 design APPROVED 18 Nov (`RR-G3APPROVE`); prereg owed before run.
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30 → 2026-11-10: D3-c OTel layered; D4 adopts RFC-0.1; D8 splits → schemaVersion first; D12 est* keep page-table semantics; W8 ruled FAILED, capture default-on; D-U1 caveat, D-U3 same-build, D-U2 two baselines (`RR-DECISIONS-20261030` … `RR-P7BASE-20261110`).
