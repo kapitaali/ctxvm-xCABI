@@ -180,8 +180,14 @@ def build_cmd(i: int, prompt: str, args) -> list[str]:
     # ("Resume retains gateway session policy; creation overrides are unsupported on resume"). Since
     # build_cmd is shared, that would have broken the T-A v2 shape too. Finding the right key is its own
     # card; until then a run that reaches a shell is DATA-INVALID and says so.
-    cmd = ["hermes", "chat", "-q", prompt_text(i, prompt), "--oneshot", "-c", args.session_name,
-           "--in", args.workspace]
+    # NAME THE PROFILE ON EVERY REQUEST. Measured 2026-11-18: a profile whose `toolsets` says `[file]`
+    # still produced a session calling `terminal` and `code_execution`, because a CLI turn binds the
+    # PLATFORM list (`hermes tools list` -> "Built-in toolsets (cli)"), not the `toolsets` key. Exporting
+    # HERMES_HOME alone did not route the turn; `-p <profile>` before the subcommand does, and the
+    # profile's platform list is what the turn then resolves.
+    profile = f"{getattr(args, 'profile_prefix', 'w8')}-{args.arm}"
+    cmd = ["hermes", "-p", profile, "chat", "-q", prompt_text(i, prompt), "--oneshot",
+           "-c", args.session_name, "--in", args.workspace]
     if i == 1:
         cmd += ["--create-if-missing"]
     # --max-turns is REFUSED on this flow: a named session with --create-if-missing

@@ -342,9 +342,20 @@ def preflight(arms: list[str], spec: dict, budget: int = 70000, task: dict | Non
         if not prof.is_dir():
             errs.append(f"profile missing: {prof}")
             continue
-        ts = cfg("toolsets", arm, spec["prefix"])
-        if "file" not in ts:
-            errs.append(f"w8b-{arm} toolsets is {ts!r}; expected [file]")
+        # The `toolsets` key does NOT bind a CLI turn: measured 2026-11-18, a profile saying
+        # `toolsets: [file]` still produced sessions calling `terminal` and `code_execution`, because the
+        # turn resolves the PLATFORM list. Check what the turn actually gets.
+        prof = f"{spec['prefix']}-{arm}"
+        tl = sh(["hermes", "tools", "list", "-p", prof])
+        listing = (tl.stdout or "") + (tl.stderr or "")
+        enabled = {line.split()[2] for line in listing.splitlines()
+                   if line.strip().startswith("✓ enabled") and len(line.split()) > 2}
+        if "file" not in enabled:
+            errs.append(f"{prof}: the cli platform does not enable `file` (enabled: {sorted(enabled)})")
+        for banned in ("terminal", "code_execution", "delegation"):
+            if banned in enabled:
+                errs.append(f"{prof}: the cli platform enables `{banned}` — a run with it is DATA-INVALID "
+                            f"(hermes -p {prof} tools disable --platform cli {banned})")
         model = cfg("model.default", arm, spec["prefix"])
         prov = cfg("model.provider", arm, spec["prefix"])
         if spec["model"] not in model:
