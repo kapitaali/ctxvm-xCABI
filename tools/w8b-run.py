@@ -461,7 +461,10 @@ def run_arm(arm: str, run_id: str, timeout: int, spec: dict, budget: int = 70000
     ctl: list[str] = []
     if limit:
         ctl += ["--limit", str(limit)]      # phase 1b: three files, then stop
-    if task is not TASKS["ta2"]:
+    # `task` is a COPY of the table entry, so identity against TASKS["ta2"] is always True:
+    # that sent a ta2 run down the tb branch and it wrote a one-prompt file (the
+    # reconciliation), which the driver then refused with "need >= 10 prompts, have 1".
+    if task.get("name", "ta2") != "ta2":
         prompts_path = run_dir / "prompts.json"
         prompts_path.write_text(json.dumps(build_tb_prompts(ws / "fixture", run_dir)), encoding="utf-8")
         ctl += ["--prompts-file", str(prompts_path), "--sealed-parts", "none"]

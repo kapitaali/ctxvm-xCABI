@@ -547,6 +547,14 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                                       budgetTokens=self._v_budget,
                                       prefixHash="sha256:" + _digest,
                                       selectionMode=self._selection_mode,
+                                      # Diagnostics for the H11/H12 card: what the policy actually
+                                      # said and whether the mode was pinned by the caller. Measured
+                                      # 2026-11-18: a live session reported `selectionMode: fresh` with
+                                      # `budgetSource: settings`, which is only possible if the policy
+                                      # dict lacked the key — these two fields say which it was.
+                                      policyMode=((pol or {}).get("selectionMode")),
+                                      policyModeSource=((pol or {}).get("selectionModeSource")),
+                                      modeExplicit=self._selection_mode_explicit,
                                       selectionHash=self._selection_hash(dropped, repositioned, units),
                                       trigger=(trigger or ("held" if self._selection_mode == "stable"
                                                            else None)),
