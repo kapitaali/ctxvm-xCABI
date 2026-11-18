@@ -407,6 +407,20 @@ def main(argv: list) -> int:
                 if ph is not None and not (isinstance(ph, str) and ph.startswith("sha256:")):
                     _fail(violations, "plugin",
                           "plugin.enginePlan.prefixHash must be a sha256: string or null")
+                # H11: the selection mode and what made it re-plan. Optional, so a capture from a build
+                # without the stable mode still passes; when present, the names must be ones a reader
+                # can branch on.
+                if "selectionMode" in plan and plan["selectionMode"] not in ("fresh", "stable"):
+                    _fail(violations, "plugin",
+                          "plugin.enginePlan.selectionMode must be fresh or stable")
+                if "trigger" in plan and plan["trigger"] not in (
+                        None, "new-page", "overflow", "every-B", "held"):
+                    _fail(violations, "plugin",
+                          "plugin.enginePlan.trigger must be new-page, overflow, every-B, held or null")
+                sh = plan.get("selectionHash")
+                if sh is not None and not (isinstance(sh, str) and sh.startswith("sha256:")):
+                    _fail(violations, "plugin",
+                          "plugin.enginePlan.selectionHash must be a sha256: string or null")
         tally = plugin.get("enginePlanTally")
         if tally is not None:
             if not isinstance(tally, dict):

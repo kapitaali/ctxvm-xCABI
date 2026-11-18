@@ -298,8 +298,21 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
     emit_automatic_compaction_status = False
 
     def __init__(self, v_budget: Optional[int] = None,
-                 protect_first_n: int = 3, protect_last_n: int = 6):
+                 protect_first_n: int = 3, protect_last_n: int = 6,
+                 selection_mode: Optional[str] = None):
         super().__init__()
+        # H11 / design/w8-cache-stable-selection.md. `fresh` is the shipped behaviour: every request
+        # is planned from scratch. `stable` HOLDS the selection it last applied, byte-for-byte, until a
+        # trigger fires (a page it did not hold appears, the request overflows the budget, or every B-th
+        # call). The point is the provider's prefix cache: a selection that rewrites the prefix on every
+        # call forfeits it, which is what the W8C pair measured (2.11x dollars).
+        self._selection_mode = (selection_mode or os.environ.get("CTXVM_SELECTION_MODE") or "fresh").strip().lower()
+        try:
+            self._stable_every = max(1, int(os.environ.get("CTXVM_SELECTION_EVERY") or 4))
+        except (TypeError, ValueError):
+            self._stable_every = 4
+        self._held: Optional[Dict[str, Any]] = None     # {dropped, repositioned, keys, hash}
+        self._calls_since_plan = 0
         self._v_budget, self._v_budget_source, self._v_budget_refused_lower = \
             _resolve_v_budget(v_budget)
         self._v_budget_explicit = v_budget is not None
@@ -474,7 +487,32 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         self._credit_demand(request_messages)
 
         keep_hard = self._hard_keep(request_messages, units)
-        dropped, repositioned, plan_facts = self._plan(request_messages, units, keep_hard)
+        # ---- H11: hold the selection, or plan a new one ------------------------------------
+        trigger: Optional[str] = None
+        if self._selection_mode == "stable":
+            trigger = self._stable_trigger(request_messages, units)
+            if trigger is None and self._held is not None:
+                dropped = set(self._held["dropped"])
+                repositioned = set(self._held["repositioned"])
+                resident_tokens = sum(_tokens_for(m) for m in request_messages)
+                plan_facts = {
+                    "reason": "evicted" if dropped else "fits",
+                    "floorTokens": sum(_tokens_for(request_messages[i]) for i in keep_hard),
+                    "residentTokens": resident_tokens,
+                    "droppedCount": len(dropped),
+                    "droppedTokens": sum(units[i].tokens for i in dropped if i in units),
+                    "repositionedCount": len(repositioned),
+                }
+            else:
+                dropped, repositioned, plan_facts = self._plan(request_messages, units, keep_hard)
+                self._calls_since_plan = 0
+                self._held = {
+                    "dropped": set(dropped), "repositioned": set(repositioned),
+                    "keys": {u.key for u in units.values()},
+                    "hash": self._selection_hash(dropped, repositioned, units),
+                }
+        else:
+            dropped, repositioned, plan_facts = self._plan(request_messages, units, keep_hard)
         # H9: report the DECISION on every selection, including both no-change reasons. The eviction
         # channel below is silent on a no-op by design (L7), so before this block a reader could not
         # separate "the plan found nothing" from "the engine was never asked" — three closed cells
@@ -496,6 +534,10 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                 OBSERVER["plan"](dict(plan_facts,
                                       budgetTokens=self._v_budget,
                                       prefixHash="sha256:" + _digest,
+                                      selectionMode=self._selection_mode,
+                                      selectionHash=self._selection_hash(dropped, repositioned, units),
+                                      trigger=(trigger or ("held" if self._selection_mode == "stable"
+                                                           else None)),
                                       callIndex=len(CALL_LOG)))
         except Exception:  # noqa: BLE001 - reporting must never break a selection
             pass
@@ -766,6 +808,53 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
             keep.add(last_user)
         return keep
 
+    def _selection_hash(self, dropped: Set[int], repositioned: Set[str],
+                        units: Dict[int, _PageUnit]) -> str:
+        """Hash the SELECTION, by page identity — not the message bytes.
+
+        design/w8-cache-stable-selection.md asks for volatile markers (timestamps, session ids, cwd,
+        counters) to be canonicalised before hashing. Hashing identities instead is stronger and
+        cheaper: a page key is `tool#content-rollup`, so no volatile marker can enter the hash at all,
+        and the value answers the question the cache actually asks — "would this call send the same
+        pages in the same order".
+        """
+        basis = {
+            "dropped": sorted(units[i].key for i in dropped if i in units),
+            "repositioned": sorted(repositioned),
+        }
+        return "sha256:" + hashlib.sha256(
+            json.dumps(basis, sort_keys=True).encode("utf-8")).hexdigest()[:16]
+
+    def _stable_trigger(self, messages: List[Dict[str, Any]], units: Dict[int, _PageUnit]) -> Optional[str]:
+        """Decide whether a held selection may be reused. Returns the trigger name, or None to hold.
+
+        Three triggers, per the design: a page the held selection did not know about (`new-page`), a
+        request that now overflows the budget (`overflow`), and every B-th call (`every-B`).
+        """
+        self._calls_since_plan += 1
+        resident = sum(_tokens_for(m) for m in messages)
+        if self._held is not None:
+            # A page the held selection never saw is the more informative cause, and it fires first:
+            # a 9th page both breaks the held set AND pushes the outgoing size over budget, and
+            # reporting "overflow" there names the symptom instead of the reason.
+            held_keys = set(self._held["keys"])
+            if any(u.key not in held_keys for u in units.values()):
+                return "new-page"
+            # a held drop whose message is gone can no longer be applied
+            if any(i not in units for i in self._held["dropped"]):
+                return "new-page"
+        # `overflow` must mean the OUTGOING request is over budget, not the incoming one: on the paged
+        # arm the incoming request is always above the floor, so a naive `resident > budget` test fired
+        # every call and stable mode never held anything.
+        outgoing = resident
+        if self._held is not None:
+            outgoing -= sum(units[i].tokens for i in self._held["dropped"] if i in units)
+        if outgoing > self._v_budget:
+            return "overflow"
+        if self._calls_since_plan >= self._stable_every:
+            return "every-B"
+        return None
+
     def _plan(self, messages: List[Dict[str, Any]], units: Dict[int, _PageUnit],
               keep_hard: Set[int]) -> Tuple[Set[int], Set[str], Dict[str, Any]]:
         """The budget decision. Returns (dropped result indices, repositioned
@@ -999,12 +1088,13 @@ def _resolve_v_budget(ctor_value: Optional[int]) -> Tuple[int, str, bool]:
 
 
 def build_engine(v_budget: Optional[int] = None,
-                 protect_first_n: int = 3, protect_last_n: int = 6) -> Optional[Any]:
+                 protect_first_n: int = 3, protect_last_n: int = 6,
+                 selection_mode: Optional[str] = None) -> Optional[Any]:
     """Registration-time factory. Returns None outside the hermes runtime (the
     plugin's observer duties never depend on the engine — the registration in
     live/__init__.py is fail-open)."""
     if not _HOST_ABC:
         return None
-    return CtxvmFaultPinEngine(v_budget=v_budget,
+    return CtxvmFaultPinEngine(v_budget=v_budget, selection_mode=selection_mode,
                                protect_first_n=protect_first_n,
                                protect_last_n=protect_last_n)

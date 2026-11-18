@@ -984,5 +984,68 @@ class EnginePlanRecordTests(unittest.TestCase):
         self.assertNotEqual(plans[2]["prefixHash"], stable)
 
 
+class StableSelectionTests(unittest.TestCase):
+    """H11 — `selectionMode: stable` holds a selection until a trigger fires.
+
+    design/w8-cache-stable-selection.md: a selection that rewrites the prefix on every call forfeits
+    the provider's prefix cache, which is what the W8C pair measured (2.11x dollars). The mode is off by
+    default; these laws pin what it does when it is on.
+    """
+
+    def _pressured(self, budget: int = 30_000):
+        engine = ce.build_engine(v_budget=budget, selection_mode="stable")
+        tx = [_msg("system", "sys"), _msg("user", "go")]
+        for i in range(1, 9):
+            tx.append(_msg("assistant", "", tool_calls=[_call(f"c{i}", f"notes/f{i}.md")]))
+            tx.append(_msg("tool", _result(22_000, f"f{i}"), tool_call_id=f"c{i}"))
+        return engine, tx
+
+    def _plans(self, engine):
+        plans = []
+        engine.set_observer(lambda payload: None, plans.append)
+        return plans
+
+    def test_the_mode_is_fresh_unless_asked(self):
+        engine = ce.build_engine()
+        self.assertEqual(engine._selection_mode, "fresh")
+
+    def test_an_unchanged_request_holds_the_same_selection(self):
+        engine, tx = self._pressured()
+        plans = self._plans(engine)
+        engine.select_context(list(tx))
+        engine.select_context(list(tx))
+        self.assertEqual(len(plans), 2)
+        self.assertEqual(plans[0]["selectionMode"], "stable")
+        self.assertEqual(plans[1]["trigger"], "held", "the second call must hold, not re-plan")
+        self.assertEqual(plans[0]["selectionHash"], plans[1]["selectionHash"],
+                         "a held selection must hash identically, or the cache is not preserved")
+
+    def test_a_new_page_replans(self):
+        engine, tx = self._pressured()
+        plans = self._plans(engine)
+        engine.select_context(list(tx))
+        grown = list(tx) + [_msg("assistant", "", tool_calls=[_call("c9", "notes/f9.md")]),
+                            _msg("tool", _result(22_000, "f9"), tool_call_id="c9")]
+        engine.select_context(grown)
+        self.assertEqual(plans[1]["trigger"], "new-page")
+        self.assertNotEqual(plans[0]["selectionHash"], plans[1]["selectionHash"])
+
+    def test_every_b_calls_replans_even_when_nothing_changed(self):
+        import os
+        os.environ["CTXVM_SELECTION_EVERY"] = "1"
+        try:
+            engine, tx = self._pressured()
+            plans = self._plans(engine)
+            engine.select_context(list(tx))
+            engine.select_context(list(tx))
+        finally:
+            os.environ.pop("CTXVM_SELECTION_EVERY", None)
+        self.assertEqual(plans[1]["trigger"], "every-B")
+
+    def test_should_compress_stays_false(self):
+        engine, _tx = self._pressured()
+        self.assertFalse(engine.should_compress(), "the engine selects; it never compacts")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
