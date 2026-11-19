@@ -13,12 +13,12 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 (`e10d249`), Part III landed (`5ab5d38`), review CLOSED 11-18; E1 APPROVED 11-19 (`RR-E1APPROVE`): freeze data + write PREREG.md, research resolves 15-path/13-name + 247/4-vs-243/5; zero-spend.
-- Hermes lane: H11–H13, H15, G4 DONE (`RR-REDACTIMPL-REVIEW`, `RR-DEFAULTS`); H18→H17→H16 test bundle routed (`design/H16-H18-LANE-DEVELOPER-PROMPT.md`).
+- Hermes lane: H11–H13, H15, G4 DONE; H18→H17→H16 landed (`RR-H16H18-20261119`), suite 226, gate green.
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: pid 4486 (11:13 restart 11-19) holds 0.13.27; paged captures landed (`h12p2`); `enginePlan` live by capture (`RR-H12DIAG-REVIEW`).
 ## Next three (ordered, one line each)
-1. Hermes: implement H18→H17→H16 free test-gap bundle (`design/H16-H18-LANE-DEVELOPER-PROMPT.md`, `RR-DEFAULTS`); W8 paging parked while E1 runs (tail-only eviction candidate if reopened).
+1. Review: verify + record `RR-H16H18-20261119`; W8 paging parked while E1 runs (tail-only eviction candidate if reopened).
 2. Research: freeze E1 data + write PREREG.md (`RR-E1APPROVE`, resolves 15-path/13-name + 247/4-vs-243/5).
 3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11 owner-gated.
 
