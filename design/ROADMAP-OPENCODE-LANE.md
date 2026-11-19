@@ -878,12 +878,12 @@ pin true every card close.
   thresholds + parse code) dated AFTER the owner approves the design.
   *Owner:* design APPROVED 2026-11-18 (`reports/RR-G3APPROVE-20261118.md`); prereg card still owed, dated after approval.
 
-- [ ] **G4. Redaction carrier.** `design/redaction-block.md` (owner-cleared placement,
+- [x] **G4. (done 2026-11-19, `9e755d4`, `RR-REDACTIMPL-20261119`; verified `056fd94`, `RR-REDACTIMPL-REVIEW`) Redaction carrier.** `design/redaction-block.md` (owner-cleared placement,
   sidecar-first, P3's D14 answered) — build starts only at the owner's word; the silent
   default-on release rule stays bound at D6/D17.
   *Done when:* implementation card exists (`RR-REDACT*` with a passing kit+CI gate) OR the owner
   rules it further-deferred in writing.
-  *Owner:* GO 2026-11-18, narrowly scoped (`reports/RR-G4GO-20261118.md`): sidecar assertion record, "unknown" consumer rule, declaration-only enum; no keyed emitter, wire field, verifier claim or release authorization.
+  *Owner:* GO 2026-11-18, narrowly scoped (`reports/RR-G4GO-20261118.md`): sidecar assertion record, "unknown" consumer rule, declaration-only enum; no keyed emitter, wire field, verifier claim or release authorization. Implemented 2026-11-19 (`9e755d4`, verified `056fd94`); `stubText`/`reason` ratified DEFERRED (`RR-DEFAULTS-20261119`).
 
 - [x] **G5. D13/D14 ratification + white-paper bundle routing — DONE (2026-11-12, `reports/RR-WPROUTE-20261112.md`).**
   The six paper items (Pillar-1 split; `:635` echo sweep; the P2 demo sentence; the R1 3-to-0 contrast;
@@ -1050,8 +1050,8 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
    **The spend ruling** (`reports/RR-SPEND-20261112.md`): one paid pair completed (`$0.2534` in cell-03,
    `reports/RR-PAIDRESULT-20261112.md`), paid spend stopped, and the owner's **refined prediction-block
    rule is RATIFIED** in `reports/W8-SPEND.md` §Prediction ✓.
-4. **G5 (D13/D14 ratification + six-item white-paper bundle routing) is DONE** (`reports/RR-WPROUTE-20261112.md`).
-   Remaining owner gates: **G4** (`design/redaction-block.md` §4-LIST go/defer), **G3** (W9 equivalence-test
+4. **G4 (redaction carrier, `9e755d4` / `056fd94`) and G5 (D13/D14 ratification + six-item white-paper bundle routing, `reports/RR-WPROUTE-20261112.md`) are DONE.**
+   Remaining owner gates: **G3** (W9 equivalence-test
    preregistration before any new transfer capture), and **G6 / D17** (publication timing). W8's fate is
    settled (G7 closed: negative, 2026-11-10).
 

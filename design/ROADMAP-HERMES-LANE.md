@@ -116,11 +116,11 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
   The mode-off comparison is the fresh-mode 24k reference (`RR-H12RUN-20261118`), not a paired fresh arm
   (confound disclosed in `RR-H12PREP`). Follow-on options are owner-gated (`RR-H12RESULT` §3).
 
-- [ ] **H13. Answer the reviewer's P8 with the numbers from H11–H12.** Packet
+- [x] **H13. (done 2026-11-19, `21a12a5`, `RR-P8H12-20261119`; ticked on owner ruling `RR-DEFAULTS-20261119`) Answer the reviewer's P8 with the numbers from H11–H12.** Packet
   `handoff/packets/P8-cache-stable-selection.md` asks the exact question; its answer should cite a
   measured run, not an argument.
   *Unblocked 2026-11-19:* the H12 numbers exist (`RR-H12RESULT-20261119`); P8's 2026-11-11 answer
-  (`RR-P8CACHE`) predates them. The packet file is review-lane property; this lane supplies the card + numbers.
+  (`RR-P8CACHE`) predates them. Answered with the measured H11–H12 pair in `reports/RR-P8H12-20261119.md`.
 
 ---
 
@@ -137,12 +137,12 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
   *Done when:* the script exists, is run after a version bump, and its exit code is 0; it is referenced
   from `design/HERMES-PLUGIN-DEVELOPER-PROMPT.md` §5.
 
-- [ ] **H15. Clean the installed directory.** REWRITE BEFORE TICKING: the leftovers (`live/`, `src/`,
-  `test_plugin.py`, `BUG_REPORT.md`) are already gone, and `ctxvm.py` — the one file the item keeps —
-  is also absent. An import-derived sync excludes it by construction (`plugins.py` does not import it),
-  so the item is now a decision, not a cleanup: install the re-export or drop the obligation.
-  *Done when:* `ls ~/.hermes/plugins/ctxvm-tracer/` shows exactly
-  `__init__.py context_engine.py ctxvm.py plugin.py plugin.yaml __pycache__` and a probe still captures.
+- [x] **H15. (done 2026-11-19, owner ruling `RR-DEFAULTS-20261119`) Clean the installed directory.**
+  The leftovers (`live/`, `src/`, `test_plugin.py`, `BUG_REPORT.md`) are gone; the unimported `ctxvm.py`
+  obligation is dropped by owner ruling so the installed directory is defined by H14's import-derived sync set.
+  *Done when:* `ls ~/.hermes/plugins/ctxvm-tracer/` shows the import-derived set
+  `__init__.py context_engine.py plugin.py plugin.yaml profile_policy.py uc1_handoff.py uc2_forensics.py uc3_planner.py uc_registry.py __pycache__`
+  and a probe still captures (verified 2026-11-19 at 0.13.27, `h12p2-paged`, `RR-H12RESULT-20261119`).
 
 - [ ] **H16. Add a capture smoke test to the gate.** One synthetic session, assert the triple exists,
   `coverage_check` exits 0, and the sidecar carries `budgetTokens` + `budgetSource`.

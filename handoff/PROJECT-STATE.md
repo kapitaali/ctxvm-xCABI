@@ -13,13 +13,13 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 (`e10d249`), Part III landed (`5ab5d38`), review CLOSED 11-18; E1 APPROVED 11-19 (`RR-E1APPROVE`): freeze data + write PREREG.md, research resolves 15-path/13-name + 247/4-vs-243/5; zero-spend.
-- Hermes lane: H11/H12 closed (NEGATIVE); G4 implemented (`RR-REDACTIMPL-20261119`), kit+CI green, VERIFIED (`RR-REDACTIMPL-REVIEW`).
+- Hermes lane: H11–H13, H15, G4 DONE (`RR-REDACTIMPL-REVIEW`, `RR-DEFAULTS`); H18→H17→H16 test bundle routed (`design/H16-H18-LANE-DEVELOPER-PROMPT.md`).
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: pid 4486 (11:13 restart 11-19) holds 0.13.27; paged captures landed (`h12p2`); `enginePlan` live by capture (`RR-H12DIAG-REVIEW`).
 ## Next three (ordered, one line each)
-1. Owner: choose H12 follow-on — tail-only eviction (recommended), prefix compaction, or stop paging (`RR-H12RESULT`); closed hypothesis not re-run.
-2. Research: freeze E1 data + write PREREG.md (`RR-E1APPROVE`). Owner: stubText/reason ruling owed (`RR-REDACT` §6); G4 box tick owed to plan owner.
+1. Hermes: implement H18→H17→H16 free test-gap bundle (`design/H16-H18-LANE-DEVELOPER-PROMPT.md`, `RR-DEFAULTS`); W8 paging parked while E1 runs (tail-only eviction candidate if reopened).
+2. Research: freeze E1 data + write PREREG.md (`RR-E1APPROVE`, resolves 15-path/13-name + 247/4-vs-243/5).
 3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11 owner-gated.
 
 ## Decisions made (date, decision, reason)
@@ -27,7 +27,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - 2026-11-11: F1–F7 closed; P10+P11 answered; W8B closed negative; D18 RFC-0.1 note (`82f6a03`).
 - 2026-11-12: D-U10 (G1) + D-U1 (G2) applied; Prediction-block rule ratified (`685c999`); paid spend stopped after cell-03 ($0.2534, `RR-PAIDRESULT`); D13+D14 ratified (G5 closed).
 - 2026-11-13: W8C review chain closed — "0 stubs" withdrawn (entailed by the vocabulary), `evictedTokens` is a lagging cumulative (210,856 = 5.44× the unique 38,764), the W8D erratum corrected three ways, hold-once refused as a no-op; P12 ruled: the wire (`RR-SHAPEGAP`, `RR-W8DERRATUM`, `RR-OMISSIONANSWER`).
-- 2026-11-19: E1 APPROVED — gate open, research freezes data + writes prereg, resolves both data blockers, zero-spend (`RR-E1APPROVE`); G4 routed to hermes (`RR-G4ROUTE`); H12 NEGATIVE, mode engaged, mid-prefix hole defeats the cache (`RR-H12RESULT`).
+- 2026-11-19: E1 APPROVED (`RR-E1APPROVE`); G4 DONE (`9e755d4`/`056fd94`), `stubText`/`reason` deferred; H12 NEGATIVE (`RR-H12RESULT`), W8 parked during E1; H13/H15 closed, H18→H17→H16 routed (`RR-DEFAULTS`).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 RATIFIED & ROUTED 11-12: Pillar-1 splits + echo sweep (`design/diff-normalisation.md`; RR-WPROUTE 1–2).
