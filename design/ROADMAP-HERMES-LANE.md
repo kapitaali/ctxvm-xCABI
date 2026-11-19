@@ -144,22 +144,26 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
   `__init__.py context_engine.py plugin.py plugin.yaml profile_policy.py uc1_handoff.py uc2_forensics.py uc3_planner.py uc_registry.py __pycache__`
   and a probe still captures (verified 2026-11-19 at 0.13.27, `h12p2-paged`, `RR-H12RESULT-20261119`).
 
-- [ ] **H16. Add a capture smoke test to the gate.** One synthetic session, assert the triple exists,
-  `coverage_check` exits 0, and the sidecar carries `budgetTokens` + `budgetSource`.
-  *Why:* the sidecar fields are new and currently unpinned by any gate step.
+- [x] **H16. (done 2026-11-19, `RR-H16H18-20261119`) Capture smoke test in the gate.** Placed in
+  `packages/hermes/test/test_capture_smoke.py` (owner-approved default): one synthetic session through the
+  real hook surface flushes `.jsonl` + `.meta.json` + `.coverage.json`, `tools/coverage_check.py` exits 0, and
+  the coverage sidecar carries 24,000/`settings`. Red-before: skipping the coverage write fails the smoke;
+  hardcoding the budget fails the field assertions. Runs in every `run-ci.sh` gate 2 / ci.yml python suite.
 
 ---
 
 ## 5. Test gaps (each is a hole someone will fall into)
 
-- [ ] **H17. Retention with suffixed trace names.** Retention prunes oldest-first and must never prune
-  the file it just wrote; suffixing (`-2`, `-3`) was added for collisions and has no test.
-  *Done when:* a test creates N suffixed files, forces a prune, and asserts the newest survives and the
-  count matches the byte budget rule.
+- [x] **H17. (done 2026-11-19, `RR-H16H18-20261119`) Retention with suffixed trace names.** Five tests force
+  prunes over digest-suffixed captures: newest/keep survives, oldest-first order, byte-budget count, triples
+  pruned together, partials untouched; plus the W21 digest-suffix law end-to-end. Mechanism correction: the
+  W21 suffix is `-<sha256(session_id)[:8]>`, **not** `-2`/`-3` as this item's prose said — the code is authority.
+  Red-before: bypassing deletion fails 4 retention tests; restore passes.
 
-- [ ] **H18. Budget precedence is pinned (done) — extend to the sidecar.** Five tests cover
-  `_budget_from_settings`; none asserts the sidecar actually carries `budgetSource`.
-  *Done when:* one test flushes a synthetic trace with a profile setting and asserts both fields.
+- [x] **H18. (done 2026-11-19, `RR-H16H18-20261119`) Budget precedence is pinned — sidecar extended.** Three
+  flush-level tests now assert the `.coverage.json` plugin block: settings 24,000/`settings`, env 12,000/`env`,
+  and no setting 200,000/`default` (`test_capture_smoke.py`). Red-before: hardcoding `budgetTokens` in the
+  coverage manifest fails 3 tests; restore passes.
 
 ---
 

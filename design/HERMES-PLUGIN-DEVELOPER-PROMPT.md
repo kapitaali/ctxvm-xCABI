@@ -262,14 +262,16 @@ engine emits no selection record   CLOSED 2026-11-14 (enginePlan + enginePlanTal
 retention with suffixed names      implemented, untested (roadmap H17)
 installed dir                       clean of the old layout; ctxvm.py is NOT installed (T17 re-export,
                                    not imported by the tracer; import-derived sync excludes it).
-                                   Decide install-or-drop (H15); owed
+                                   OWNER RULED 19 Nov 2026: DROP the obligation (RR-DEFAULTS-20261119) —
+                                   the relative import cannot work flat, nothing imports it, and the engine
+                                   engaged live at 0.13.27 without it (corroborated in RR-H16H18-20261119).
 harnessVersion null                metadata gap on 0.13.27 captures (RR-H12DIAG-REVIEW); unfixed
-post-H12 direction                 tail-only eviction / prefix-contiguous compaction / stop paging:
-                                   owner decision owed (RR-H12RESULT-20261119 §3); no cell authorized,
-                                   $1 cap stands
-G4 redaction sidecar               IMPLEMENTED 2026-11-19 (RR-REDACTIMPL-20261119): writer+consumer
-                                   tools/redaction-block.py, contract gate step, scanner hook;
-                                   review-lane verification owed; stubText/reason still deferred
+post-H12 direction                 PARKED by owner (RR-DEFAULTS-20261119) while E1 offline replay runs;
+                                   tail-only eviction candidate if reopened (RR-P8H12-20261119 §2);
+                                   no cell authorized, $1 cap stands
+G4 redaction sidecar               DONE 2026-11-19 (RR-REDACTIMPL-20261119, verified RR-REDACTIMPL-REVIEW):
+                                   writer+consumer tools/redaction-block.py, contract gate step, scanner hook;
+                                   stubText/reason RATIFIED DEFERRED by owner (RR-DEFAULTS-20261119)
 docs/quickstart.md                 top-level dir not listed in AGENTS §3 (owner layout call)
 ```
 
