@@ -18,8 +18,8 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: pid 4486 (11:13 restart 11-19) holds 0.13.27; paged captures landed (`h12p2`); `enginePlan` live by capture (`RR-H12DIAG-REVIEW`).
 ## Next three (ordered, one line each)
-1. All routed hermes, research, and review queues DONE & VERIFIED (`RR-H16H18-REVIEW`, `RR-E2HOLD-VERIFY`, `RR-FIXBANK-REVIEW`).
-2. E0/E2 HELD at $0 (`research/fixture-bank/` Phase 0 landed `12a9809`; E0 route & E2 ceiling owner-gated, `RR-E2HOLD`); W8 parked (`RR-DEFAULTS`).
+1. Research: enrich `research/fixture-bank/` with 2-hop causal chain ($T(p)\in\{2,1,0\}$) & land parked `PREREG-E0-DRAFT-20261119.md` ($0, `RR-E0ENRICH`).
+2. E0/E2 HELD at $0 (E0 compute route & E2 ceiling owner-gated, `RR-E2HOLD`, `RR-E0ENRICH`); W8 parked (`RR-DEFAULTS`).
 3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11/H19 owner-gated.
 
 ## Decisions made (date, decision, reason)
@@ -27,7 +27,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - 2026-11-11: F1–F7 closed; P10+P11 answered; W8B closed negative; D18 RFC-0.1 note (`82f6a03`).
 - 2026-11-12: D-U10 (G1) + D-U1 (G2) applied; Prediction-block rule ratified (`685c999`); paid spend stopped after cell-03 ($0.2534, `RR-PAIDRESULT`); D13+D14 ratified (G5 closed).
 - 2026-11-13: W8C review chain closed — "0 stubs" withdrawn (entailed by the vocabulary), `evictedTokens` is a lagging cumulative (210,856 = 5.44× the unique 38,764), the W8D erratum corrected three ways, hold-once refused as a no-op; P12 ruled: the wire (`RR-SHAPEGAP`, `RR-W8DERRATUM`, `RR-OMISSIONANSWER`).
-- 2026-11-19: E1 LANDED (`a1bd004`); `fixture-bank/` Phase 0 (`12a9809`/`RR-FIXBANK-REVIEW`, precondition only; E0/E2 $0, `RR-E2HOLD`); G4 DONE (`9e755d4`/`056fd94`); H12 NEGATIVE (`RR-H12RESULT`); H13/H15/H16–H18 DONE (`43e46d1`/`93d338d`).
+- 2026-11-19: E1 LANDED (`a1bd004`); `fixture-bank/` (`12a9809`) + 2-hop E0 enrichment routed ($0, `RR-E0ENRICH`); E2 HELD ($0, `RR-E2HOLD`); G4 DONE (`9e755d4`/`056fd94`); H12 NEGATIVE (`RR-H12RESULT`); H13/H15/H16–H18 DONE (`43e46d1`/`93d338d`).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 RATIFIED & ROUTED 11-12: Pillar-1 splits + echo sweep (`design/diff-normalisation.md`; RR-WPROUTE 1–2).
