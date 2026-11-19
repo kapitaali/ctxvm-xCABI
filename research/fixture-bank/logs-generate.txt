@@ -1,21 +1,21 @@
-wrote bank.json: 20 items, 220 pages, stratum=tool_recall
-fb01: pages=11 faults=1 turns=2 tau=3827c taup=3582c
-fb02: pages=11 faults=1 turns=2 tau=3935c taup=3684c
-fb03: pages=11 faults=1 turns=2 tau=3773c taup=3531c
-fb04: pages=11 faults=1 turns=2 tau=3665c taup=3429c
-fb05: pages=11 faults=1 turns=2 tau=3827c taup=3582c
-fb06: pages=11 faults=1 turns=2 tau=3827c taup=3582c
-fb07: pages=11 faults=1 turns=2 tau=3881c taup=3633c
-fb08: pages=11 faults=1 turns=2 tau=3827c taup=3582c
-fb09: pages=11 faults=1 turns=2 tau=3827c taup=3582c
-fb10: pages=11 faults=1 turns=2 tau=3719c taup=3480c
-fb11: pages=11 faults=1 turns=2 tau=3827c taup=3582c
-fb12: pages=11 faults=1 turns=2 tau=3881c taup=3633c
-fb13: pages=11 faults=1 turns=2 tau=3719c taup=3480c
-fb14: pages=11 faults=1 turns=2 tau=3989c taup=3735c
-fb15: pages=11 faults=1 turns=2 tau=3827c taup=3582c
-fb16: pages=11 faults=1 turns=2 tau=3989c taup=3735c
-fb17: pages=11 faults=1 turns=2 tau=3719c taup=3480c
-fb18: pages=11 faults=1 turns=2 tau=3989c taup=3735c
-fb19: pages=11 faults=1 turns=2 tau=3881c taup=3633c
-fb20: pages=11 faults=1 turns=2 tau=3827c taup=3582c
+wrote bank.json v2: 20 items, 220 pages, stratum=tool_recall, 2-hop chain
+fb01: j1=1 j2=4 pages=11 faults=1 tau=4065c taup=3799c
+fb02: j1=2 j2=5 pages=11 faults=1 tau=4173c taup=3901c
+fb03: j1=3 j2=6 pages=11 faults=1 tau=4011c taup=3748c
+fb04: j1=4 j2=7 pages=11 faults=1 tau=3903c taup=3646c
+fb05: j1=5 j2=8 pages=11 faults=1 tau=4065c taup=3799c
+fb06: j1=6 j2=9 pages=11 faults=1 tau=4065c taup=3799c
+fb07: j1=7 j2=10 pages=11 faults=1 tau=4120c taup=3850c
+fb08: j1=8 j2=1 pages=11 faults=1 tau=4065c taup=3799c
+fb09: j1=9 j2=2 pages=11 faults=1 tau=4065c taup=3799c
+fb10: j1=10 j2=3 pages=11 faults=1 tau=3958c taup=3697c
+fb11: j1=1 j2=4 pages=11 faults=1 tau=4065c taup=3799c
+fb12: j1=2 j2=5 pages=11 faults=1 tau=4119c taup=3850c
+fb13: j1=3 j2=6 pages=11 faults=1 tau=3957c taup=3697c
+fb14: j1=4 j2=7 pages=11 faults=1 tau=4227c taup=3952c
+fb15: j1=5 j2=8 pages=11 faults=1 tau=4065c taup=3799c
+fb16: j1=6 j2=9 pages=11 faults=1 tau=4227c taup=3952c
+fb17: j1=7 j2=10 pages=11 faults=1 tau=3958c taup=3697c
+fb18: j1=8 j2=1 pages=11 faults=1 tau=4227c taup=3952c
+fb19: j1=9 j2=2 pages=11 faults=1 tau=4119c taup=3850c
+fb20: j1=10 j2=3 pages=11 faults=1 tau=4066c taup=3799c

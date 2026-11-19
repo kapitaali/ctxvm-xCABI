@@ -9,7 +9,7 @@
 {"type":"page.declare","page":{"id":{"logicalRef":"file:fixtures/queue-broker/doc-8.md","contentHash":"sha256:905695d4"},"kind":"file","tokens":76},"turn":0}
 {"type":"page.declare","page":{"id":{"logicalRef":"file:fixtures/queue-broker/doc-9.md","contentHash":"sha256:2c476d13"},"kind":"file","tokens":76},"turn":0}
 {"type":"page.declare","page":{"id":{"logicalRef":"file:fixtures/queue-broker/doc-10.md","contentHash":"sha256:24829e7f"},"kind":"file","tokens":77},"turn":0}
-{"type":"page.declare","page":{"id":{"logicalRef":"tool:read_file({\"path\":\"fixtures/queue-broker/target.md\"})","contentHash":"sha256:c9d1460b"},"kind":"tool_result","tokens":46},"turn":0}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:read_file({\"path\":\"fixtures/queue-broker/target.md\"})","contentHash":"sha256:e319721d"},"kind":"tool_result","tokens":51},"turn":0}
 {"type":"page.render","turn":0,"page":{"logicalRef":"file:fixtures/queue-broker/doc-1.md","contentHash":"sha256:cbe61aa2"},"mode":"full"}
 {"type":"page.render","turn":0,"page":{"logicalRef":"file:fixtures/queue-broker/doc-2.md","contentHash":"sha256:b7c3edb6"},"mode":"full"}
 {"type":"page.render","turn":0,"page":{"logicalRef":"file:fixtures/queue-broker/doc-3.md","contentHash":"sha256:71d98459"},"mode":"full"}
@@ -20,9 +20,9 @@
 {"type":"page.render","turn":0,"page":{"logicalRef":"file:fixtures/queue-broker/doc-8.md","contentHash":"sha256:905695d4"},"mode":"full"}
 {"type":"page.render","turn":0,"page":{"logicalRef":"file:fixtures/queue-broker/doc-9.md","contentHash":"sha256:2c476d13"},"mode":"full"}
 {"type":"page.render","turn":0,"page":{"logicalRef":"file:fixtures/queue-broker/doc-10.md","contentHash":"sha256:24829e7f"},"mode":"full"}
-{"type":"page.render","turn":0,"page":{"logicalRef":"tool:read_file({\"path\":\"fixtures/queue-broker/target.md\"})","contentHash":"sha256:c9d1460b"},"mode":"full"}
-{"type":"page.fault","turn":0,"page":{"logicalRef":"tool:read_file({\"path\":\"fixtures/queue-broker/target.md\"})","contentHash":"sha256:c9d1460b"},"source":"tool_recall"}
-{"type":"turn.render","turn":0,"residentTokens":807,"evictedTokens":0,"headroom":119193,"prefix":{"source":"unknown"}}
-{"type":"turn.render","turn":1,"residentTokens":807,"evictedTokens":0,"headroom":119193,"prefix":{"source":"unknown"}}
-{"type":"call.meta","turn":0,"provider":"synthetic","cacheEstimate":{"estHitTokens":0,"estMissTokens":807,"providerReported":false}}
-{"type":"call.meta","turn":1,"provider":"synthetic","cacheEstimate":{"estHitTokens":807,"estMissTokens":0,"providerReported":false},"latencyMs":120}
+{"type":"page.render","turn":0,"page":{"logicalRef":"tool:read_file({\"path\":\"fixtures/queue-broker/target.md\"})","contentHash":"sha256:e319721d"},"mode":"full"}
+{"type":"page.fault","turn":0,"page":{"logicalRef":"tool:read_file({\"path\":\"fixtures/queue-broker/target.md\"})","contentHash":"sha256:e319721d"},"source":"tool_recall"}
+{"type":"turn.render","turn":0,"residentTokens":812,"evictedTokens":0,"headroom":119188,"prefix":{"source":"unknown"}}
+{"type":"turn.render","turn":1,"residentTokens":812,"evictedTokens":0,"headroom":119188,"prefix":{"source":"unknown"}}
+{"type":"call.meta","turn":0,"provider":"synthetic","cacheEstimate":{"estHitTokens":0,"estMissTokens":812,"providerReported":false}}
+{"type":"call.meta","turn":1,"provider":"synthetic","cacheEstimate":{"estHitTokens":812,"estMissTokens":0,"providerReported":false},"latencyMs":120}

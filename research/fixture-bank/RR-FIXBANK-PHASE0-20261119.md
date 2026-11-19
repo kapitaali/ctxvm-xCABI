@@ -122,3 +122,45 @@ result. No model call, no spend, no E0/E2 GO, no plugin/paper parity, no cost-sa
 model-quality claim. The bank provides τ/τ\p as text; the answer-key, grader and noise
 floor belong to a future E0/E2 prereg. Nothing here is pooled with E1, M1, M2 or M3.
 
+## 10. v2 enrichment — 2-hop causal chain (RR-E0ENRICH-20261119)
+
+**v2 supersedes v1 (12a9809).** Owner ruling "approve bank enrichment and parked E0 note"
+(RR-E0ENRICH-20261119, 3db1d87), routed to the research lane; zero spend, zero model calls.
+
+**The v1 degeneracy (review lane, RR-E0ENRICH §1):** v1 put both answers
+(`target_threshold = 42`, `fallback = document 3`) directly in `target.md`, and the prompt
+never asked for any `doc<j>_value` or `<topic>-doc-<j>` token. A faithful answer therefore
+had T(p) = [0,…,0] across all 10 file pages → Var(T) = 0 → Spearman ρ(T,Δ) = 0/0 = **NaN**
+on every item. The primary metric was mathematically undefined, not merely weak.
+
+**The v2 fix (2-hop chain):** `target.md` now holds `target_threshold = 42` plus numeric
+pointers `primary_document = j1`, `fallback_document = j2` (distinct, varied per item); the
+setting values and reference tags live **only** in `doc-<j>.md`. The prompt asks for the
+primary page's value **and** tag and the fallback page's value only, so answering requires
+visiting `doc-<j1>` and `doc-<j2>`. A deterministic `referenceAnswer` per item (never in τ or
+the trace) yields a **3-tier touch count** T(p_j1)=2, T(p_j2)=1, T(distractor)=0, Var(T)>0,
+and structural causal necessity on p_j1, p_j2 and target.md.
+
+**Verifier (v2):** all v1 checks kept, plus per-item T(j1)=2 / T(j2)=1 / distractor-sum=0 /
+Var(T)>0 on the referenceAnswer, referenceAnswer absent from τ and trace, and structural
+causal uniqueness (required facts live only in the intended page). Result: **442/442 checks,
+BANK_PHASE0_OK**; RFC-0.1 schema PASS; replay `divergences: []` ×20; manifest deterministic.
+
+**Companion landing:** `research/e0-proposal/PREREG-E0-DRAFT-20261119.md` landed as a
+**PARKED** design note ($0 spend) with a constant-T degeneracy guard (≥15/20 items must have
+Var(T)>0 else `INVALID — constant T`; tie-safe mean-Δ contrasts reported alongside).
+
+### Note to the review lane (v2 landing)
+
+The commit carrying this v2 note + the parked E0 note is the v2 landing. Please record:
+- **LOG.md** — one four-pipe row, no CJK, e.g.
+  `| RR-FIXBANK-V2-20261119 | fixture-bank | Bank v2 2-hop causal enrichment (RR-E0ENRICH) fixes v1 constant-T NaN degeneracy; 3-tier T(p) in {2,1,0}, Var(T)>0; 442/442 Phase 0 checks, schema PASS, replay 0 divergences; parked E0 design note landed with constant-T guard; synthetic precondition, $0 spend, E0/E2 still owner-gated |`
+- **RR-DAY-20261119.md** — a day section.
+- **PROJECT-STATE.md** — research line: bank v2 enriched + parked E0 note; E0 compute route
+  and E2 cost ceiling remain owner-gated. No "E0 ready to run" implication.
+
+Re-derive (zero spend): `cd research/fixture-bank && sha256sum -c manifest.sha256 &&
+node verify-bank.mjs` (442/442). Scope guard unchanged: synthetic content precondition, not
+a result; no model call, no spend, no E0/E2 GO, no parity/cost/quality claim; nothing pooled
+with E1/M1/M2/M3.
+
