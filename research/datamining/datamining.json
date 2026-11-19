@@ -1,0 +1,881 @@
+{
+ "n_papers": 1061,
+ "years": {
+  "2021": 148,
+  "2022": 179,
+  "2023": 232,
+  "2024": 218,
+  "2025": 137,
+  "2026": 147
+ },
+ "buckets": {
+  "2021-22": 327,
+  "2023-24": 450,
+  "2025-26": 284
+ },
+ "n_scientists": 164,
+ "top_scientists": [
+  [
+   "Shayne Longpre",
+   48
+  ],
+  [
+   "Stephen McAleer",
+   46
+  ],
+  [
+   "Yunhao Tang",
+   41
+  ],
+  [
+   "Andrew Kyle Lampinen",
+   41
+  ],
+  [
+   "Neil Houlsby",
+   39
+  ],
+  [
+   "Hritik Bansal",
+   34
+  ],
+  [
+   "Samuel R. Bowman",
+   34
+  ],
+  [
+   "Maissam Barkeshli",
+   32
+  ],
+  [
+   "Roger Grosse",
+   32
+  ],
+  [
+   "Nicholas Carlini",
+   30
+  ],
+  [
+   "Simon Kornblith",
+   26
+  ],
+  [
+   "Arthur Conmy",
+   26
+  ],
+  [
+   "Kirill Neklyudov",
+   23
+  ],
+  [
+   "David Brandfonbrener",
+   21
+  ],
+  [
+   "Scott Emmons",
+   19
+  ],
+  [
+   "Jiaxin Wen",
+   19
+  ],
+  [
+   "Javier Rando",
+   18
+  ],
+  [
+   "Hailey Schoelkopf",
+   18
+  ],
+  [
+   "Matthew Jagielski",
+   17
+  ],
+  [
+   "Esin Durmus",
+   17
+  ]
+ ],
+ "shared_urls": 0,
+ "shared_examples": [],
+ "themes": {
+  "alignment_rlhf": {
+   "total": 106,
+   "by_year": {
+    "2021": 5,
+    "2022": 17,
+    "2023": 23,
+    "2024": 25,
+    "2025": 16,
+    "2026": 20
+   },
+   "by_bucket": {
+    "2021-22": 22,
+    "2023-24": 48,
+    "2025-26": 36
+   }
+  },
+  "interpretability": {
+   "total": 172,
+   "by_year": {
+    "2021": 18,
+    "2022": 29,
+    "2023": 28,
+    "2024": 38,
+    "2025": 24,
+    "2026": 35
+   },
+   "by_bucket": {
+    "2021-22": 47,
+    "2023-24": 66,
+    "2025-26": 59
+   }
+  },
+  "agents_tools": {
+   "total": 69,
+   "by_year": {
+    "2021": 8,
+    "2022": 11,
+    "2023": 12,
+    "2024": 11,
+    "2025": 8,
+    "2026": 19
+   },
+   "by_bucket": {
+    "2021-22": 19,
+    "2023-24": 23,
+    "2025-26": 27
+   }
+  },
+  "evaluation": {
+   "total": 150,
+   "by_year": {
+    "2021": 16,
+    "2022": 14,
+    "2023": 43,
+    "2024": 27,
+    "2025": 23,
+    "2026": 27
+   },
+   "by_bucket": {
+    "2021-22": 30,
+    "2023-24": 70,
+    "2025-26": 50
+   }
+  },
+  "monitoring_oversight": {
+   "total": 48,
+   "by_year": {
+    "2021": 1,
+    "2022": 4,
+    "2023": 9,
+    "2024": 8,
+    "2025": 8,
+    "2026": 18
+   },
+   "by_bucket": {
+    "2021-22": 5,
+    "2023-24": 17,
+    "2025-26": 26
+   }
+  },
+  "deception_sabotage": {
+   "total": 35,
+   "by_year": {
+    "2021": 2,
+    "2022": 2,
+    "2023": 5,
+    "2024": 10,
+    "2025": 5,
+    "2026": 11
+   },
+   "by_bucket": {
+    "2021-22": 4,
+    "2023-24": 15,
+    "2025-26": 16
+   }
+  },
+  "security_redteam": {
+   "total": 171,
+   "by_year": {
+    "2021": 17,
+    "2022": 30,
+    "2023": 35,
+    "2024": 38,
+    "2025": 20,
+    "2026": 31
+   },
+   "by_bucket": {
+    "2021-22": 47,
+    "2023-24": 73,
+    "2025-26": 51
+   }
+  },
+  "context_memory": {
+   "total": 72,
+   "by_year": {
+    "2021": 14,
+    "2022": 10,
+    "2023": 14,
+    "2024": 12,
+    "2025": 12,
+    "2026": 10
+   },
+   "by_bucket": {
+    "2021-22": 24,
+    "2023-24": 26,
+    "2025-26": 22
+   }
+  },
+  "reasoning_cot": {
+   "total": 110,
+   "by_year": {
+    "2021": 4,
+    "2022": 13,
+    "2023": 20,
+    "2024": 22,
+    "2025": 24,
+    "2026": 27
+   },
+   "by_bucket": {
+    "2021-22": 17,
+    "2023-24": 42,
+    "2025-26": 51
+   }
+  },
+  "rl_training": {
+   "total": 216,
+   "by_year": {
+    "2021": 29,
+    "2022": 43,
+    "2023": 52,
+    "2024": 33,
+    "2025": 33,
+    "2026": 26
+   },
+   "by_bucket": {
+    "2021-22": 72,
+    "2023-24": 85,
+    "2025-26": 59
+   }
+  },
+  "multimodal": {
+   "total": 184,
+   "by_year": {
+    "2021": 22,
+    "2022": 37,
+    "2023": 50,
+    "2024": 39,
+    "2025": 20,
+    "2026": 16
+   },
+   "by_bucket": {
+    "2021-22": 59,
+    "2023-24": 89,
+    "2025-26": 36
+   }
+  },
+  "science_bio": {
+   "total": 62,
+   "by_year": {
+    "2021": 15,
+    "2022": 10,
+    "2023": 6,
+    "2024": 10,
+    "2025": 11,
+    "2026": 10
+   },
+   "by_bucket": {
+    "2021-22": 25,
+    "2023-24": 16,
+    "2025-26": 21
+   }
+  },
+  "scaling_efficiency": {
+   "total": 121,
+   "by_year": {
+    "2021": 13,
+    "2022": 10,
+    "2023": 24,
+    "2024": 31,
+    "2025": 22,
+    "2026": 21
+   },
+   "by_bucket": {
+    "2021-22": 23,
+    "2023-24": 55,
+    "2025-26": 43
+   }
+  },
+  "self_improvement": {
+   "total": 4,
+   "by_year": {
+    "2021": 2,
+    "2025": 2
+   },
+   "by_bucket": {
+    "2021-22": 2,
+    "2025-26": 2
+   }
+  },
+  "data_selection": {
+   "total": 26,
+   "by_year": {
+    "2021": 5,
+    "2022": 4,
+    "2023": 7,
+    "2024": 5,
+    "2025": 1,
+    "2026": 4
+   },
+   "by_bucket": {
+    "2021-22": 9,
+    "2023-24": 12,
+    "2025-26": 5
+   }
+  }
+ },
+ "concepts": {
+  "trace_log": {
+   "total": 146,
+   "by_year": {
+    "2021": 22,
+    "2022": 24,
+    "2023": 34,
+    "2024": 31,
+    "2025": 18,
+    "2026": 17
+   }
+  },
+  "page_context": {
+   "total": 14,
+   "by_year": {
+    "2023": 6,
+    "2024": 3,
+    "2025": 3,
+    "2026": 2
+   }
+  },
+  "counterfactual": {
+   "total": 80,
+   "by_year": {
+    "2021": 7,
+    "2022": 9,
+    "2023": 19,
+    "2024": 17,
+    "2025": 13,
+    "2026": 15
+   }
+  },
+  "monitor_view": {
+   "total": 53,
+   "by_year": {
+    "2021": 3,
+    "2022": 3,
+    "2023": 11,
+    "2024": 11,
+    "2025": 6,
+    "2026": 19
+   }
+  },
+  "privacy": {
+   "total": 46,
+   "by_year": {
+    "2021": 3,
+    "2022": 9,
+    "2023": 11,
+    "2024": 13,
+    "2025": 5,
+    "2026": 5
+   }
+  },
+  "evaluation": {
+   "total": 161,
+   "by_year": {
+    "2021": 16,
+    "2022": 16,
+    "2023": 47,
+    "2024": 33,
+    "2025": 23,
+    "2026": 26
+   }
+  },
+  "failure_modes": {
+   "total": 53,
+   "by_year": {
+    "2021": 2,
+    "2022": 4,
+    "2023": 7,
+    "2024": 16,
+    "2025": 10,
+    "2026": 14
+   }
+  }
+ },
+ "top_experts": {
+  "alignment_rlhf": [
+   [
+    "Ethan Perez",
+    5
+   ],
+   [
+    "Jan Leike",
+    5
+   ],
+   [
+    "Yunhao Tang",
+    5
+   ],
+   [
+    "Hailey Schoelkopf",
+    4
+   ],
+   [
+    "Javier Rando",
+    4
+   ]
+  ],
+  "interpretability": [
+   [
+    "Arthur Conmy",
+    17
+   ],
+   [
+    "Andrew Kyle Lampinen",
+    15
+   ],
+   [
+    "Wes Gurnee",
+    11
+   ],
+   [
+    "Simon Kornblith",
+    10
+   ],
+   [
+    "Constantin Venhoff",
+    8
+   ]
+  ],
+  "agents_tools": [
+   [
+    "Stephen McAleer",
+    16
+   ],
+   [
+    "Andrew Kyle Lampinen",
+    9
+   ],
+   [
+    "Ted Sumers",
+    4
+   ],
+   [
+    "Yunhao Tang",
+    3
+   ],
+   [
+    "Scott Emmons",
+    3
+   ]
+  ],
+  "evaluation": [
+   [
+    "Hritik Bansal",
+    10
+   ],
+   [
+    "Neil Houlsby",
+    9
+   ],
+   [
+    "Shayne Longpre",
+    8
+   ],
+   [
+    "Yunhao Tang",
+    7
+   ],
+   [
+    "Samuel R. Bowman",
+    6
+   ]
+  ],
+  "monitoring_oversight": [
+   [
+    "Nicholas Carlini",
+    4
+   ],
+   [
+    "Fabien Roger",
+    4
+   ],
+   [
+    "Shayne Longpre",
+    4
+   ],
+   [
+    "Scott Emmons",
+    4
+   ],
+   [
+    "Matthew Jagielski",
+    2
+   ]
+  ],
+  "deception_sabotage": [
+   [
+    "Scott Emmons",
+    3
+   ],
+   [
+    "Nicholas Carlini",
+    3
+   ],
+   [
+    "Alex Cloud",
+    3
+   ],
+   [
+    "Matthew Jagielski",
+    2
+   ],
+   [
+    "Joe Benton",
+    2
+   ]
+  ],
+  "security_redteam": [
+   [
+    "Nicholas Carlini",
+    20
+   ],
+   [
+    "Chawin Sitawarin",
+    12
+   ],
+   [
+    "Matthew Jagielski",
+    11
+   ],
+   [
+    "Javier Rando",
+    10
+   ],
+   [
+    "Milad Nasr",
+    8
+   ]
+  ],
+  "context_memory": [
+   [
+    "Shayne Longpre",
+    7
+   ],
+   [
+    "Roger Grosse",
+    6
+   ],
+   [
+    "Andrew Kyle Lampinen",
+    5
+   ],
+   [
+    "Simon Kornblith",
+    4
+   ],
+   [
+    "David Brandfonbrener",
+    4
+   ]
+  ],
+  "reasoning_cot": [
+   [
+    "Hritik Bansal",
+    13
+   ],
+   [
+    "Andrew Kyle Lampinen",
+    7
+   ],
+   [
+    "Constantin Venhoff",
+    6
+   ],
+   [
+    "Ethan Perez",
+    5
+   ],
+   [
+    "Samuel R. Bowman",
+    5
+   ]
+  ],
+  "rl_training": [
+   [
+    "Yunhao Tang",
+    26
+   ],
+   [
+    "Stephen McAleer",
+    16
+   ],
+   [
+    "Andrew Kyle Lampinen",
+    12
+   ],
+   [
+    "Roger Grosse",
+    11
+   ],
+   [
+    "David Brandfonbrener",
+    9
+   ]
+  ],
+  "multimodal": [
+   [
+    "Neil Houlsby",
+    28
+   ],
+   [
+    "Simon Kornblith",
+    16
+   ],
+   [
+    "Hritik Bansal",
+    16
+   ],
+   [
+    "Andrew Kyle Lampinen",
+    10
+   ],
+   [
+    "Vaishaal Shankar",
+    8
+   ]
+  ],
+  "science_bio": [
+   [
+    "Stephen McAleer",
+    8
+   ],
+   [
+    "Kirill Neklyudov",
+    7
+   ],
+   [
+    "Simon Kornblith",
+    4
+   ],
+   [
+    "Jiaxin Wen",
+    4
+   ],
+   [
+    "Xavier Garcia",
+    4
+   ]
+  ],
+  "scaling_efficiency": [
+   [
+    "Neil Houlsby",
+    12
+   ],
+   [
+    "Yunhao Tang",
+    6
+   ],
+   [
+    "David Brandfonbrener",
+    6
+   ],
+   [
+    "Hritik Bansal",
+    6
+   ],
+   [
+    "Simon Kornblith",
+    5
+   ]
+  ],
+  "self_improvement": [
+   [
+    "Hritik Bansal",
+    2
+   ],
+   [
+    "Jan Leike",
+    1
+   ],
+   [
+    "Simon Kornblith",
+    1
+   ]
+  ],
+  "data_selection": [
+   [
+    "Mrinank Sharma",
+    4
+   ],
+   [
+    "Shayne Longpre",
+    3
+   ],
+   [
+    "Hritik Bansal",
+    2
+   ],
+   [
+    "David Brandfonbrener",
+    2
+   ],
+   [
+    "Neil Houlsby",
+    1
+   ]
+  ]
+ },
+ "top_cooccurrence": [
+  [
+   [
+    "rl_training",
+    "security_redteam"
+   ],
+   44
+  ],
+  [
+   [
+    "rl_training",
+    "scaling_efficiency"
+   ],
+   39
+  ],
+  [
+   [
+    "evaluation",
+    "rl_training"
+   ],
+   39
+  ],
+  [
+   [
+    "alignment_rlhf",
+    "rl_training"
+   ],
+   38
+  ],
+  [
+   [
+    "interpretability",
+    "multimodal"
+   ],
+   35
+  ],
+  [
+   [
+    "multimodal",
+    "rl_training"
+   ],
+   34
+  ],
+  [
+   [
+    "evaluation",
+    "multimodal"
+   ],
+   32
+  ],
+  [
+   [
+    "interpretability",
+    "rl_training"
+   ],
+   32
+  ],
+  [
+   [
+    "multimodal",
+    "scaling_efficiency"
+   ],
+   32
+  ],
+  [
+   [
+    "evaluation",
+    "security_redteam"
+   ],
+   29
+  ],
+  [
+   [
+    "agents_tools",
+    "rl_training"
+   ],
+   29
+  ],
+  [
+   [
+    "evaluation",
+    "scaling_efficiency"
+   ],
+   27
+  ],
+  [
+   [
+    "reasoning_cot",
+    "rl_training"
+   ],
+   27
+  ],
+  [
+   [
+    "multimodal",
+    "security_redteam"
+   ],
+   26
+  ],
+  [
+   [
+    "evaluation",
+    "reasoning_cot"
+   ],
+   26
+  ],
+  [
+   [
+    "alignment_rlhf",
+    "reasoning_cot"
+   ],
+   25
+  ],
+  [
+   [
+    "reasoning_cot",
+    "scaling_efficiency"
+   ],
+   25
+  ],
+  [
+   [
+    "alignment_rlhf",
+    "interpretability"
+   ],
+   24
+  ],
+  [
+   [
+    "alignment_rlhf",
+    "evaluation"
+   ],
+   22
+  ],
+  [
+   [
+    "monitoring_oversight",
+    "security_redteam"
+   ],
+   20
+  ]
+ ]
+}
