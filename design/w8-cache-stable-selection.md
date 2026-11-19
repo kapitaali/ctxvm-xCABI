@@ -1,5 +1,7 @@
 # W8 — cache-stable selection: the design, and the arithmetic that gates it
 
+**H12 measured 2026-11-19 — NEGATIVE on this workload.** The mode engages, the hold never does (a read-once sweep has no repeated working set), and a mid-prefix hole defeats a prefix cache regardless of the hold. See `reports/RR-H12RESULT-20261119.md` before proposing a rerun.
+
 Status: proposed 2026-11-09. Source design: research note `ctxvm-cache-stable-prefix-design.md`
 (out of tree), derived from Xu et al., arXiv:2606.17016v2, "TokenPilot: Cache-Efficient Context
 Management for LLM Agents" (submitted 2026-06-15, revised 2026-08-28). Locator verified at abstract
