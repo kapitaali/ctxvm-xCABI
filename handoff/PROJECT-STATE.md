@@ -12,14 +12,14 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 1. (Items 1–2 rotated verbatim 2026-11-15 to `handoff/PROJECT-STATE-ARCHIVE.md`.)
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
-- Research lane: P13/P14 (`e10d249`), Part III + §9.2 fix (`d10c325`, `99f62f9`), `datamining/` tracked (`97cf743`), E1 LANDED (`a1bd004`), `fixture-bank/` Phase 0 LANDED & VERIFIED (`12a9809`, `RR-FIXBANK-REVIEW`: 242/242; precondition only, E0/E2 $0).
+- Research lane: P13/P14 (`e10d249`), Part III + §9.2 fix (`d10c325`, `99f62f9`), `datamining/` tracked (`97cf743`), E1 LANDED (`a1bd004`), `fixture-bank/` v2 (2-hop, 442/442) + parked E0/E2 notes LANDED & VERIFIED (`e8149b5`, `RR-E0ENRICH-VERIFY`; E0/E2 $0).
 - Hermes lane: free queue DONE & VERIFIED; `harnessVersion: "0.23.2"` live on 0.13.29 (`RR-HVERR-REVIEW`), suite 229, zero atexit leak.
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: pid 139920 (22:51 restart 11-19) holds 0.13.29; real session `local-f913ef14` flushed `harnessVersion: "0.23.2"` (`RR-HVERR-REVIEW`).
 ## Next three (ordered, one line each)
-1. Research: enrich `research/fixture-bank/` with 2-hop causal chain ($T(p)\in\{2,1,0\}$) & land parked `PREREG-E0-DRAFT-20261119.md` ($0, `RR-E0ENRICH`).
-2. E0/E2 HELD at $0 (E0 compute route & E2 ceiling owner-gated, `RR-E2HOLD`, `RR-E0ENRICH`); W8 parked (`RR-DEFAULTS`).
+1. All routed hermes, research, and review queues DONE & VERIFIED (`RR-H16H18-REVIEW`, `RR-HVERR-REVIEW`, `RR-E0ENRICH-VERIFY`).
+2. E0/E2 HELD at $0 (`fixture-bank/` v2 & parked `PREREG-E0`/`PREREG-E2` notes landed; E0 compute route & E2 ceiling owner-gated); W8 parked (`RR-DEFAULTS`).
 3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11/H19 owner-gated.
 
 ## Decisions made (date, decision, reason)
@@ -27,7 +27,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - 2026-11-11: F1–F7 closed; P10+P11 answered; W8B closed negative; D18 RFC-0.1 note (`82f6a03`).
 - 2026-11-12: D-U10 (G1) + D-U1 (G2) applied; Prediction-block rule ratified (`685c999`); paid spend stopped after cell-03 ($0.2534, `RR-PAIDRESULT`); D13+D14 ratified (G5 closed).
 - 2026-11-13: W8C review chain closed — "0 stubs" withdrawn (entailed by the vocabulary), `evictedTokens` is a lagging cumulative (210,856 = 5.44× the unique 38,764), the W8D erratum corrected three ways, hold-once refused as a no-op; P12 ruled: the wire (`RR-SHAPEGAP`, `RR-W8DERRATUM`, `RR-OMISSIONANSWER`).
-- 2026-11-19: E1 LANDED (`a1bd004`); `fixture-bank/` (`12a9809`) + 2-hop E0 enrichment routed ($0, `RR-E0ENRICH`); E2 HELD ($0, `RR-E2HOLD`); G4 DONE (`9e755d4`/`056fd94`); H12 NEGATIVE (`RR-H12RESULT`); H13/H15/H16–H18 DONE (`43e46d1`/`93d338d`).
+- 2026-11-19: E1 LANDED (`a1bd004`); `fixture-bank/` v2 + parked E0/E2 notes LANDED (`e8149b5`/`RR-E0ENRICH-VERIFY`, E0/E2 held $0); G4 DONE (`9e755d4`/`056fd94`); H12 NEGATIVE (`RR-H12RESULT`); H13/H15/H16–H18 DONE (`43e46d1`/`93d338d`).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 RATIFIED & ROUTED 11-12: Pillar-1 splits + echo sweep (`design/diff-normalisation.md`; RR-WPROUTE 1–2).
