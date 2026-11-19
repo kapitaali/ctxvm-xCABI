@@ -47,7 +47,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
 - Conformance gate: GREEN 2026-11-13 (`run-ci.sh` → ALL GATES GREEN); hosted witness №123 `f16df322` green.
 - XERJ Hub listing UNVERIFIED (re-check `hub.xerj.org/llms.txt`). openai price row + cache-read nulls UNVERIFIED (`prices.json`). Part II METR figures UNVERIFIED. Hard-fault-recall ≥95% UNMEASURED (n=4).
-- W8D rewrite-event count: 9 (billed volume) vs 16 (selections) — UNVERIFIED pending a paged capture on the current build.
+- W8D rewrite-events: 9 vs 16 — mechanism confirmed on 0.13.27 paged capture (RR-UNVERIFIED); counts historical.
 
 ## Blocked (item, what it waits for)
 - W8 spend: >= $7.14 billed 11-10 + $0.2534 cell-03 (11-12); stopped until a zero-spend simulation predicts a win; W8D refused (`RR-W8DERRATUM`).
