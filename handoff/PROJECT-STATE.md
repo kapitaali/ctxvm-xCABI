@@ -4,7 +4,7 @@
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
 
 ## Artifacts and versions
-- Wire: RFC-0 sealed (`spec/rfc-0/`); RFC-0.1 additive landed (`spec/rfc-0.1/`). Corpus: ODPS 0.8.0, m1–m8 checksummed; hub byte-identical. Plugins: hermes (authoritative: `live/__init__.py:94` + `live/plugin.yaml:2`; **0.13.27** on 2026-11-19, H12 pair live); node 0.1.0, opencode/ai-sdk 0.0.1.
+- Wire: RFC-0 sealed (`spec/rfc-0/`); RFC-0.1 additive landed (`spec/rfc-0.1/`). Corpus: ODPS 0.8.0, m1–m8 checksummed; hub byte-identical. Plugins: hermes (authoritative: `live/__init__.py:94` + `live/plugin.yaml:2`; **0.13.29** on 2026-11-19, `harnessVersion: "0.23.2"` live); node 0.1.0, opencode/ai-sdk 0.0.1.
 - Papers: P13/P14 applied (`e10d249`); Part III landed (`5ab5d38`); PDF 26pp, recalculated. Live traces private under `~/.local/state/ctxvm/traces`; budget 200000.
 
 ## Done (last 3 items: one line each, with locators)
@@ -13,10 +13,10 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 (`e10d249`), Part III + §9.2 fix (`d10c325`, `99f62f9`), `datamining/` tracked (`97cf743`), E1 LANDED (`a1bd004`), `fixture-bank/` Phase 0 LANDED & VERIFIED (`12a9809`, `RR-FIXBANK-REVIEW`: 242/242; precondition only, E0/E2 $0).
-- Hermes lane: free queue DONE & VERIFIED; harnessVersion fixed via canonical resolver (`RR-HVREV-20261119`, verified `RR-FIXBANK-REVIEW`), 0.13.29 synced, suite 229; restart owed.
+- Hermes lane: free queue DONE & VERIFIED; `harnessVersion: "0.23.2"` live on 0.13.29 (`RR-HVERR-REVIEW`), suite 229, zero atexit leak.
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
-- Gateway: pid 4486 (11:13 restart 11-19) holds 0.13.27; paged captures landed (`h12p2`); `enginePlan` live by capture (`RR-H12DIAG-REVIEW`).
+- Gateway: pid 139920 (22:51 restart 11-19) holds 0.13.29; real session `local-f913ef14` flushed `harnessVersion: "0.23.2"` (`RR-HVERR-REVIEW`).
 ## Next three (ordered, one line each)
 1. Research: enrich `research/fixture-bank/` with 2-hop causal chain ($T(p)\in\{2,1,0\}$) & land parked `PREREG-E0-DRAFT-20261119.md` ($0, `RR-E0ENRICH`).
 2. E0/E2 HELD at $0 (E0 compute route & E2 ceiling owner-gated, `RR-E2HOLD`, `RR-E0ENRICH`); W8 parked (`RR-DEFAULTS`).

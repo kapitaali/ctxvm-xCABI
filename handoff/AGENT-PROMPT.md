@@ -30,9 +30,9 @@ which paths, which files cannot be owned, and how a shared file is claimed. Read
   `design/w8-run-plan.md` §4e. Do not start a paid cell.
 - REDLINE measures **1.0968x** at 16k against a claimed 1.5x (`reports/RR-REDLINE-20261108.md`):
   a negative result, recorded. Do not restate the 1.5x claim anywhere.
-- Plugin `ctxvm-tracer` **0.13.27** on disk (authoritative: `live/__init__.py` + `live/plugin.yaml`,
-  gate-enforced). The **running gateway holds it** (PID 4486, started 11:13:34 local, after the files), so
-  captures are labelled 0.13.27 — the paged capture has landed (`RR-H12RESULT-20261119`). Only the hermes
+- Plugin `ctxvm-tracer` **0.13.29** on disk (authoritative: `live/__init__.py` + `live/plugin.yaml`,
+  gate-enforced). The **running gateway holds it** (PID 139920, started 22:51:09 local, after the files), so
+  captures are labelled 0.13.29 with `harnessVersion: "0.23.2"` (`RR-HVERR-REVIEW`). Only the hermes
   lane syncs the copy.
 - The white paper's WIP is good (the routed bundle and the version claims are applied), but its **PDF
   deliverable is stale against its own source** and two of its claims outrun the shipped emitters
