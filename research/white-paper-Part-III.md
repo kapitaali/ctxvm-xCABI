@@ -1,6 +1,6 @@
-# Part III — Using ctxvm in the creation of self-improving AI models
+# Part III — What a context trace offers a self-improvement loop
 
-**Author:** Kapitaali · **Date:** 2026-11-17 · **Status:** draft for review
+**Author:** Kapitaali · **Version:** 1.1, 18 November 2026 · **Status:** draft for review
 **Part I:** *Virtual memory for LLM agent context: the xCABI standard and the ctxvm engine.*
 **Part II:** *What a context trace can and cannot show about AI safety.*
 
@@ -8,16 +8,15 @@
 
 ## Abstract
 
-This paper answers one question. How can a team use ctxvm to create a self-improving AI model, or to
-help create one? The answer is narrow. ctxvm does not train weights. It has no reward model and no
-access to model internals. It supplies the input side of a learning loop: a portable record of the
-harness request, deterministic replay of the page-table projection, and page-level counterfactual
-interventions with the provenance that a causal claim needs. A self-improvement loop still needs a
-generator, an evaluator, a selector, and an update step. ctxvm strengthens two of those four parts.
-It supplies process labels from faults and supply causal labels from ablation. We describe six routes
-that use this capability. Three need no new model calls. Three need paid calls and a preregistration.
-We state the guardrails, the failure modes, and the limits. No route in this paper has been run.
-The paper marks claims that rest on extractive references as UNVERIFIED.
+This paper asks what a context trace contributes to a self-improvement loop. The answer is narrow.
+ctxvm does not train weights. It has no reward model and no access to model internals. It supplies the
+input side: a portable record of the harness request, deterministic replay of the page-table
+projection, and page-level counterfactual intervention with the provenance a causal claim needs.
+The loop still needs a generator, an evaluator, a selector and an update step. ctxvm strengthens two
+of them — the **evaluator** (a versioned view) and the **training-data selector** (causal labels from
+page ablation). It does not strengthen the generator or the weight update. We describe six routes,
+each with a mechanism, a changed object, a falsifier and an experiment. No route has been run.
+Claims that rest on snippets are marked UNVERIFIED and carry no argument.
 
 ---
 
@@ -27,71 +26,78 @@ The paper marks claims that rest on extractive references as UNVERIFIED.
 
 | Term | Meaning in this paper |
 |---|---|
-| Self-improvement | A loop that changes a system so that a later version scores better on a held-out task. The change may be in weights, in a policy outside the model, or in the data used for training. |
+| Self-improvement | A loop that changes a system so a later version scores better on a held-out task. The change may be in weights, in a policy outside the model, or in data. |
 | Loop | Generate, evaluate, select, update, repeat. |
-| Process label | A label on an intermediate step, not on the final answer. |
-| Page | The unit of context that ctxvm records: a `(logical_ref, content_hash)` identity with a kind and a token count. |
-| Intervention replay | A run that changes one thing in a recorded trace and calls the model again. The engine is deterministic. The model is not. |
-| Monitor view | A versioned function from a trace to the data a monitor sees. |
+| Changed object | The thing a route updates: policy, ranker, training data, evaluator or weights. |
+| Page | A context unit with identity `(logical_ref, content_hash)`, kind and token count. |
+| Intervention replay | A run that changes one thing in a recorded trace and calls the model again. The engine is deterministic; the model is not. |
+| Monitor view | A versioned function of a trace **joined with its sources and the omission record**, giving the data a monitor sees (Part II §1.1). |
+| Omission gap | A removal policy's dropped pages are not on the sealed v0 wire; the trace declares them full and they are absent from the request (Part II §2.4). |
+| Flush-tail capture | A trace whose `page.declare` and `page.render` rows all precede its `turn.render` block, so a positional turn cut includes declarations from later turns. The derived table is then not turn-scoped (Part II §2.4). |
+| Budget term | The cost part of a context objective. Without it, "keep everything resident" trivially minimises faults. |
 | Noise floor | The answer-change rate between two unchanged runs. |
-| Trace-only claim | A claim that uses the recorded projection without a new model call. |
 
-### 1.2 Evidence levels
+### 1.2 Evidence levels — Part II vocabulary
 
 | Level | Meaning |
 |---|---|
-| **Repo** | Stated in Part I or Part II of this paper, or in a cited repository report. |
-| **Paper body** | The abstract of the cited paper was read in this work. |
-| **Extract** | The statement comes from an automated reference built from the PDF text layer. Mark UNVERIFIED where used. |
-| **Inference** | This paper's own reasoning. Not a measured result. |
+| **Read in full** | The whole paper was read. |
+| **Abstract** | The abstract was read; body figures are not used. |
+| **Snippet** | A search excerpt or summary was read. The claim is marked UNVERIFIED. |
+| **Secondary** | A third party reports the claim. UNVERIFIED. |
 
-Every external claim carries its locator at first mention. UNVERIFIED claims do not carry an argument.
+Statuses are Part II's: Answered, Partly answered, Designed, Prototype-able, Blocked, Not found.
+Every external claim carries its locator at first mention. An UNVERIFIED claim does not carry an argument.
 
 ---
 
 ## 2. The question and the short answer
 
-**Question.** How can a team use ctxvm to create a self-improving AI model, or use ctxvm in the
-creation of one?
+**Question.** What can a ctxvm trace contribute to building a self-improving model?
 
-**Short answer.** Use ctxvm as the measurement and data-generation layer around an existing training
-loop. Use it for three jobs:
+**Short answer.** Use ctxvm as the measurement and data-generation layer around an existing loop:
 
-1. Label process errors from the trace itself. A `page.fault` says the model asked again for a page.
-2. Generate causal labels with page-level ablation. Remove one page. Call the model again. Measure
-   the change above the noise floor.
-3. Version the evaluator. A monitor view is a pure function of a trace. Two model versions can be
-   scored against the same view.
+1. Generate **causal labels** by page ablation. Start open-weight: leave-one-out on output
+   probabilities is compute-only (Part II §12.1). Use a hosted model for behaviour, with a noise floor.
+2. Use **fault events as a selection feature**, not as a standalone policy objective. Faults tell the
+   ablation step which pages to test; they do not evaluate a new policy offline.
+3. Version the evaluator. A view is a trace joined with its sources and the omission record. Two
+   model versions can be scored against one view version.
 
-ctxvm does not do the update step. The team must still train a model, train a policy, or change data.
-Part I §16 limits what a trace can support. Part II §10 repeats those limits for safety claims.
+ctxvm does not do the update. A team still trains a ranker, a policy, or a data selector. Part I §16
+and Part II §10 bound what a trace can support.
 
 ---
 
 ## 3. Evidence base and method
 
-### 3.1 Corpus used for this paper
+### 3.1 Corpus and selection
 
-We built a scientist list from public sources (Anthropic's own pages and a third-party index). We
-queried OpenAlex for papers by those names from 2021-01-01 to 2026-11-12. The result held 2,007
-(scientist, paper) rows for 88 scientists. We removed duplicate papers by OpenAlex work id.
-That gave 1,495 unique works. We tried to download a PDF for each work. We saved 1,064 PDFs and
-wrote 431 unavailable papers to `lookup.txt`. We extracted text from each PDF with `pdftotext
--layout` and built a short reference for each. The SQLite table holds 1,061 rows with the columns
-`name | date | title | url | reference`. Three PDFs failed extraction.
+The scientist list came from Anthropic's own pages and a third-party index. OpenAlex supplied
+2,007 (scientist, paper) rows for 88 scientists. The source JSON declares a configured window of
+2021-01-01 to 2026-12-31; observed paper dates run 2021-01-01 to 2026-11-12, the range reported
+here. Deduplication by OpenAlex work id gave 1,495 works. PDF download succeeded for 1,064; 431
+went to `lookup.txt` (433 lines including two header comments).
+Text extraction with `pdftotext -layout` and a one-page reference per work produced a SQLite table
+of 1,061 rows (`name | date | title | url | reference`). Three PDFs failed extraction.
 
-We then ran a SQL search for common AI lab names over `reference` and `title`. A word-boundary
-filter removed false matches such as "Mila" inside "similar". The search returned 159 papers.
-The file `ai-lab-paper-summaries.txt` holds those summaries. This paper uses that file as its
-literature base.
+A SQL lab-name search with a word-boundary filter returned 159 papers
+(`ai-lab-paper-summaries.txt`). **Selection protocol for this paper:** from those 159, the author
+picked 12 sources by relevance to learning loops — self-critique, ablation, process supervision,
+search, monitoring and failure modes. This is a **purposive sample, not a systematic review**; the
+pool was already skewed toward Anthropic-affiliated authors, and a reader cannot infer that the
+choice was unbiased. Every cited source was then re-checked on arXiv for authors and date; the
+four Abstract-level checks whose local extracts lacked a detected abstract are recorded in
+`PART3-CITATION-CHECK-20261118.md`.
 
-### 3.2 Counts from the SQL search
+### 3.2 Lab counts
 
 | Lab | Papers |
 |---|---|
 | Anthropic | 59 |
 | OpenAI | 48 |
-| DeepMind (incl. Google DeepMind) | 32 (22) |
+| DeepMind | 32 |
+| — of which "Google DeepMind" | 22 (subset, not additional) |
 | Google Brain | 6 |
 | Apple | 9 |
 | Hugging Face | 7 |
@@ -100,343 +106,328 @@ literature base.
 | Redwood Research | 4 |
 | Amazon | 4 |
 | Allen Institute | 3 |
-| Cohere | 2 |
-| Stability AI | 2 |
-| IBM Research | 2 |
+| Cohere, Stability AI, IBM Research | 2 each |
 | Meta AI, Microsoft Research, NVIDIA | 1 each |
 
-Counts overlap. One paper may mention several labs.
+Counts overlap; one paper may mention several labs. `59` is both the single-term SQL `LIKE` and
+the word-boundary count over `title + reference` (§12 prints both; both measured 59 on 2026-11-18).
+`research/datamining/datamining.json` holds concept-term OR-aggregates (for example `counterfactual`
+= 80), not lab aggregates; the lab figures are single-term mention counts and lower bounds.
 
-### 3.3 Limits of this evidence base
+### 3.3 Limits
 
-OpenAlex author matching is not exact. Of 88 author profiles, 38 had no Anthropic affiliation in
-OpenAlex. Spot checks found wrong-person matches. We marked those rows `unverified` in the data.
-Several paper references have no detected abstract. We mark such claims UNVERIFIED. The lab search
-finds papers that mention a lab, not papers written only by that lab. None of these limits changes
-the mechanisms in this paper. They change how much weight a reader should give the examples.
+Author matching is noisy: 38 of 88 profiles lacked an Anthropic affiliation and spot checks found
+wrong-person matches. That error produced two wrong author attributions in version 1.0 of this
+paper, now corrected against arXiv. Several extractive references had no detected abstract; those
+claims are now marked Snippet and carry no argument. The lab search finds mentions, not authorship.
 
 ---
 
 ## 4. What ctxvm provides
 
-Part I §2–3 defines the wire format. Part I §3.8 defines the engine. Part I §10 defines intervention
-replay. Part I §12 defines monitor views. The capabilities are these.
+Part I §2–3 defines the wire; §3.8 the engine; §10 intervention replay; §12 monitor views.
 
-| Capability | Mechanism | Value for a learning loop |
+| Capability | Mechanism | Value for a loop |
 |---|---|---|
-| Page identities and hashes | `page.declare` carries `(logical_ref, content_hash)`, kind, token count | Stable keys for pages across runs and model versions |
-| Deterministic derivation | The renderer derives the page table from the event stream. Same trace bytes give the same projection bytes on one machine and build | A reproducible baseline |
-| Fault events | `page.fault` records a re-request, with a source | A process label that needs no human annotator |
-| Token accounting per turn | `turn.render` carries resident tokens, evicted tokens, and headroom | A measure of context pressure |
-| Intervention replay | Remove, stub, or replace one page; call the model again | A counterfactual label at page granularity |
-| Noise-floor protocol | Baseline vs baseline; several samples per arm | Separates an effect from sampling noise |
-| Six-part provenance | Parent digest, intervention, sampling, model snapshot and date, harness versions, tokenizer version | Makes a run reproducible and citable |
-| Versioned views | A view is a pure function of a trace | A stable evaluator across model versions |
-| Export and diff | ODPS artifacts; `ctxvm diff` compares traces | Versioned data for repeated experiments |
+| Page identities and hashes | `page.declare` carries `(logical_ref, content_hash)`, kind, token count | Stable keys across runs and model versions |
+| Deterministic derivation | The renderer derives the page table from events; same bytes give same projection on one machine and build | Reproducible baseline (scoped) |
+| Fault events | `page.fault` with a source; meaning depends on surface | A selection feature, not a process ground truth (§4.1) |
+| Token accounting | `turn.render` carries resident, evicted and headroom | Context pressure |
+| Intervention replay | Remove, stub or replace a page; call the model again | Counterfactual label at page granularity |
+| Noise-floor protocol | Baseline vs baseline; several samples per arm | Separates effect from sampling noise |
+| Six-part provenance | Digest, intervention, sampling, model snapshot and date, harness versions, tokenizer | Reproducible, citable runs |
+| Versioned views | Trace joined with sources and omission record | Comparable evaluator across versions |
+| Export and diff | ODPS artifacts; `ctxvm diff` | Versioned data |
 
 ### 4.1 What the format does not record
 
-Part I §16 and Part II §10 state the limits. We repeat the ones that matter here.
-
-- A trace holds identities and hashes. It does not hold page content.
-- Rendering a page does not cause an answer. Only an intervention supports a causal claim.
+- A trace holds identities and hashes, not page content.
+- Rendering does not cause an answer. Only an intervention supports a causal claim.
 - A hosted model is not deterministic at fixed settings. One draw is not an effect.
-- Sealed v0 has no verb for a page removed without a stub. Part II §2.4 describes the gap.
-- `turn.render.evictedTokens` is recorded but unchecked in v0 for removal policies. Part I §7.
-- No cost saving was measured on the paid cell. The paged arm cost 2.11 times the control.
-  We make no cost-saving claim in this paper.
+- Sealed v0 has no verb for a page removed without a stub (Part II §2.4).
+- `turn.render.evictedTokens` is recorded but unchecked in v0 for removal policies (Part I §7).
+- The paid paging cell cost 2.11× the control. No cost-saving claim (law 7).
 
 ---
 
-## 5. What a self-improvement loop needs
+## 5. What a loop needs
 
-A loop has four parts. We write the update as an author's formulation, not as a quote from a source.
-
-Let $M_t$ be the system at iteration $t$. Let $D_t$ be the data, $E_t$ the evaluator, and $U$ the
-update operator. Then
+A loop has four parts. The update is the author's formulation, not a quoted source:
 
 $$
 M_{t+1} = U\bigl(M_t,\; E_t(G(M_t, D_t)),\; D_t\bigr)
 $$
 
-where $G$ generates traces or answers. The loop improves only when the evaluator's ranking predicts
-the held-out metric. Three failure modes follow from this equation.
+This equation gives a **taxonomy of three failure points**: the generator may produce no useful
+variation; the evaluator may rank noise as signal; the update may change the wrong object.
 
-1. The generator produces no useful variation.
-2. The evaluator ranks noise as signal.
-3. The update changes the wrong object.
+### 5.1 Route-to-object map
 
-The cited literature addresses these failures.
+| Route | Changed object | Type of contribution |
+|---|---|---|
+| A — fault-driven ablation selection | Training-data selector | Selects which pages to ablate |
+| B — counterfactual page ablation | Page ranker / training-data filter | Ground-truth causal labels |
+| C — trace-grounded critique | Context-use behaviour (in-session) | Critique on structure, not content |
+| D — active selection | Training-data selector | Selects hard traces for labelling |
+| E — versioned views | Evaluator | Comparable score across versions |
+| F — harness summarisation | Context policy (harness-side) | Compresses the request |
 
-| Source | Date and locator | What it contributes | Evidence |
+### 5.2 Cited sources
+
+| Source | Date, locator | Contribution | Level |
 |---|---|---|---|
-| Constitutional AI: Harmlessness from AI Feedback | 2022-12-15, https://arxiv.org/pdf/2212.08073 | Self-critique and revision, SFT, then AI preference model and RLAIF. Self-improvement without human labels of harmful outputs. | Paper body |
-| Recursively Summarizing Books with Human Feedback | 2021-09-22, https://arxiv.org/pdf/2109.10862 | Recursive task decomposition. Small-part models help supervise the larger task. | Paper body |
-| Let's Verify Step by Step | 2023-05-31, https://arxiv.org/pdf/2305.20050 | Process supervision beats outcome supervision on MATH (78% on a representative subset). Active learning improves it. | Paper body |
-| Tree Search for Language Model Agents | 2024-07-01, https://arxiv.org/pdf/2407.01476 | Inference-time best-first search in a real environment. +39.7% relative success on VisualWebArena. | Paper body |
-| ImpossibleBench | 2025-10-23, https://arxiv.org/pdf/2510.20270 | A test with a deliberate conflict between spec and tests. A pass implies a shortcut. | Paper body |
-| A StrongREJECT for Empty Jailbreaks | 2024-01-01, https://arxiv.org/pdf/2402.10260 | A standard judge for jailbreak success. Shows the need for a fixed evaluator. | Paper body |
-| SLEIGHT-Bench | 2026-05-15, https://arxiv.org/pdf/2605.16626 | 40 attacks against agent monitors; 20 never detected. Shows the limits of the evaluator. | Paper body |
-| OpenVLThinker: Iterative SFT-RL Cycles | 2025, https://arxiv.org/pdf/2503.17352 | Alternating SFT and RL beats either alone. | Extract — UNVERIFIED |
-| Training Language Models with Language Feedback | 2022-04-29, https://arxiv.org/pdf/2204.14146 | Language feedback as a training signal. | Extract — UNVERIFIED |
-| Prioritized training on learnable, worth learning, and not yet learned points | 2021-07-06, http://export.arxiv.org/pdf/2107.02565 | Data selection is part of the loop. | Extract — UNVERIFIED |
-| Spontaneous Reward Hacking in Iterative Self-Refinement | 2024-07-05, https://arxiv.org/pdf/2407.04549 | Self-refinement can produce reward hacking without an external reward model. | Extract — UNVERIFIED |
-| Feedback Loops With Language Models Drive In-Context Reward Hacking | 2024-02-09, https://arxiv.org/pdf/2402.06627 | Feedback loops can create in-context reward hacking. | Extract — UNVERIFIED |
+| Bai et al., *Constitutional AI* | 2022-12-15, https://arxiv.org/pdf/2212.08073 | Self-critique, revision, SFT, RLAIF | Abstract |
+| Wu et al., *Recursively Summarizing Books* | 2021-09-22, https://arxiv.org/pdf/2109.10862 | Recursive decomposition with human feedback | Abstract |
+| Lightman et al., *Let's Verify Step by Step* | 2023-05-31, https://arxiv.org/pdf/2305.20050 | Process supervision beats outcome supervision on MATH (78%); active learning helps | Abstract |
+| Koh et al., *Tree Search for Language Model Agents* | 2024-07-01, https://arxiv.org/pdf/2407.01476 | Inference-time best-first search; +39.7% relative on VisualWebArena | Abstract |
+| Zhong, Raghunathan, Carlini, *ImpossibleBench* | 2025-10-23, https://arxiv.org/pdf/2510.20270 | Spec/test conflict; a pass implies a shortcut | Abstract |
+| Souly et al., *A StrongREJECT for Empty Jailbreaks* | 2024-02-15, https://arxiv.org/pdf/2402.10260 | A fixed judge; existing evaluations overstate success | Abstract |
+| Najt, Toft, Tracy, Roger, Benton, *SLEIGHT-Bench* | 2026-05-15, https://arxiv.org/pdf/2605.16626 | 40 monitor attacks; 20 never caught at 1% FPR | Abstract |
+| Deng et al., *OpenVLThinker* | 2025-03-21, https://arxiv.org/pdf/2503.17352 | Alternating SFT and RL beats either alone | Abstract |
+| Scheurer et al., *Training LMs with Language Feedback* | 2022-04-29, https://arxiv.org/pdf/2204.14146 | Natural-language feedback; 100 human samples reach roughly human level | Abstract |
+| Mindermann et al., *Prioritized training* | 2021-07-06, https://arxiv.org/pdf/2107.02565 | Goldilocks Selection; "just right" points beat hard/easy/uncertain | Abstract |
+| Pan, He, Bowman, Feng, *Spontaneous Reward Hacking* | 2024-07-05, https://arxiv.org/pdf/2407.04549 | Self-refinement can hack a shared evaluator | Abstract |
+| Pan, Jones, Jagadeesan, Steinhardt, *Feedback Loops* | 2024-02-09, https://arxiv.org/pdf/2402.06627 | Feedback loops cause in-context reward hacking | Abstract |
 
-### 5.1 A note on equations in the sources
-
-Some reference records contain equations converted from the PDF text layer. They are noisy. One
-cleaner example is the weak-to-strong loss from *Weak-to-Strong Generalization*
-(2023-12-14, https://arxiv.org/pdf/2312.09390):
-
-$$
-L_{\mathrm{conf}}(f) = \mathrm{CE}\bigl(f(x),\, (1-\alpha)\cdot f_w(x) + \alpha \cdot \hat{f}_t(x)\bigr)
-$$
-
-The conversion is heuristic. Verify the symbols against the PDF before use. The other equations in
-this paper are the author's formulations. We do not attribute them to a source.
+Self-improvement through context and memory, absent from version 1.0, is added at Snippet level
+and carries no argument: *Reflexion* (Shinn et al., arXiv:2303.11366), *Self-Refine* (Madaan et al.,
+arXiv:2303.17651), *STaR* (Zelikman et al., arXiv:2203.14465), *Self-Rewarding Language Models*
+(Yuan et al., arXiv:2401.10020), *Voyager* (Wang et al., arXiv:2305.16291). All five improve without
+weight updates in at least one variant. This is the region where a page substrate may fit; it is a
+reading list, not evidence for a route. Level `Abstract` for Scheurer, Mindermann and both Pan
+papers was re-checked against the arXiv abstract pages on 2026-11-18; see
+`PART3-CITATION-CHECK-20261118.md`.
 
 ---
 
-## 6. Six routes
+## 6. Routes
 
-Each route has the same shape. We state the mechanism, the inputs, the output, the cost, and the
-falsifier. A falsifier is an observation that would show the route does not work.
+Each route states a mechanism, a changed object, inputs, output, cost and falsifier.
 
-### Route A — Fault-driven process supervision
+### Route A — Fault events as an ablation-selection feature
 
-**Statement.** Use `page.fault` events as process labels for a context policy.
+**Statement.** Use fault events and touch counts to choose which pages to ablate in Route B.
 
-**Mechanism.** Collect traces from many tasks. For each step, record whether a fault occurred on a
-page already rendered. Train a small policy to choose pages so that this label becomes rare. The
-model weights do not change. The policy that builds the request changes.
+**Mechanism.** Faults are observed only under the logged policy. A new policy's faults need
+counterfactual runs. So fault labels cannot evaluate a policy offline. Use them instead to stratify
+the ablation sample: pages named by a `tool_recall` fault, or by an `identifier_scan` mention on a
+non-resident page, are candidates. The objective must include the budget term
+$\max_{\pi}\; I(\text{answer}; \text{pages}\mid\pi) - \lambda\,\text{tokens}(\pi)$; without
+$\lambda$, "keep everything resident" trivially minimises faults. A control is required because
+identifier-scan faults on rendered pages are close to definitional (Part I §17).
 
-**Inputs.** A corpus of traces. No new model calls.
-
-**Output.** A policy and a labeled dataset of steps.
-
-**Cost.** Compute only.
-
-**Falsifier.** A policy trained on fault labels does not reduce faults on a held-out corpus more than
-a policy that removes random pages.
-
-**Evidence.** Part I §4 defines `page.fault`. Part I §17 warns that faults on rendered pages are
-close to definitional for the identifier-scan surface. A control is required. *Inference*.
+**Changed object.** Training-data selector for Route B. **Inputs.** Traces, touch counts, faults.
+**Output.** A stratified ablation list. **Cost.** Compute; Route B's calls are separate.
+**Falsifier.** Fault-stratified ablation does not beat matched random ablation at predicting answer
+change on held-out pages.
+**Evidence.** Part II §12.1 (touch ratio); Part I §4 and §17 (faults, definition). *Inference*.
 
 ### Route B — Counterfactual page ablation
 
-**Statement.** Turn each page into a causal-importance label.
+**Statement.** Turn each page into a causal-importance label. This is the first step the repo can
+run, because the open-weight arm costs compute only.
 
-**Mechanism.** For a page $p$ in a trace $\tau$, run intervention replay with $p$ removed. Use
-three samples per arm and a baseline-vs-baseline control. Define the causal label
+**Mechanism.** Open-weight primary: leave-one-out on output probabilities, as Part II §12.1 defines.
+Hosted secondary: remove page $p$, call the model again, use several samples and a baseline-vs-baseline
+noise floor. With three samples, a binary answer-change label takes four values and the noise floor
+is equally coarse; use a binomial interval on the change rate, not a hard threshold. **One learned
+object**: a page ranker / training-data filter. Ablation importance is not step correctness, so it
+does not yield a process reward model.
 
 $$
-c(p) = \mathbb{1}\bigl[\, \Delta(p) > \epsilon_{\mathrm{noise}} \,\bigr],
-\qquad
-\Delta(p) = \frac{1}{n}\sum_{i=1}^{n} \mathbb{1}[a_i(\tau) \neq a_i(\tau \setminus p)]
+\Delta(p) = \frac{1}{n}\sum_{i=1}^{n} \mathbb{1}[a_i(\tau) \neq a_i(\tau\setminus p)],
+\qquad \hat c(p) = \mathrm{BinInt}(\Delta(p), n, \alpha)
 $$
 
-where $a_i$ is the answer on draw $i$ and $\epsilon_{\mathrm{noise}}$ is the baseline-vs-baseline
-change rate. Train a page ranker or a process reward model on these labels.
+**Changed object.** Page ranker / data filter. **Inputs.** Frozen traces; an open-weight model; a
+hosted model for the secondary arm. **Output.** Causal labels at page granularity.
+**Cost.** Open-weight: compute only. Hosted: about **1,300 calls**, ≈ **$11.37** at the repo's
+blended $0.00861/request (`reports/W8-SPEND.md:82`):
+$(20 \times 10 \times 3 \times 2) + (20 \times 3 \times 2) = 1{,}320$ calls.
+**UNVERIFIED estimate**; check the receipt before quoting.
+**Falsifier.** A ranker trained on ablation labels does not beat random ablation on held-out task
+success. **Evidence.** Part II §12.1 defines this design; cross-reference it rather than duplicating
+it. ContextCite (Cohen-Wang et al., arXiv:2409.00729, Abstract) is related work at sentence level.
 
-**Inputs.** A frozen trace corpus. Paid model calls for the intervention arms.
+### Route C — Trace-grounded critique for context use
 
-**Output.** Causal labels at page granularity. A trained ranker or reward model.
+**Statement.** Use the projection as critique input to change **context-use behaviour**, not answer
+correctness.
 
-**Cost.** One model call per page per sample. High.
+**Mechanism.** Give the model its page table, faults, token totals and the request's estimated size.
+Ask for a revision of the tool plan. The trace holds no content, so the critique can plausibly change
+re-reads, faults and steps to finish; it cannot supply missing content. Measure those behaviours.
+A wrong-answer corpus with traces, a constitution and an SFT cost are **not in the repo**; the weight
+update is therefore Blocked (Part II status), and the route stays in-session.
 
-**Falsifier.** A ranker trained on $c(p)$ does not beat a ranker trained on random ablation on a
-held-out success metric.
-
-**Evidence.** Part I §10 defines intervention replay and the controls. Part I §8.8 compares
-page-level ablation with ContextCite (arXiv:2409.00729, abstract read in Part I). *Inference*.
-
-### Route C — Trace-grounded self-critique and revision
-
-**Statement.** Use the projection as the critique input in a Constitutional-AI-style loop.
-
-**Mechanism.** Give the model its own page table, faults, token totals, and the request's estimated
-size. Ask it to revise the answer or the tool plan. Fine-tune on the revisions. Then collect AI
-preferences between revised and original answers and train a preference model.
-
-**Inputs.** Traces plus a model that can read a structured projection.
-
-**Output.** A revised-answer dataset and a preference model.
-
-**Cost.** Compute for generation; paid calls only if a hosted model is used.
-
-**Falsifier.** Revision guided by the projection does not beat revision guided by the same words
-without the projection.
-
-**Evidence.** Constitutional AI (2022-12-15) supplies the pattern. Part I §16 says the trace is
-content-blind. The critique must concern structure and shape. *Inference*.
+**Changed object.** Context-use behaviour. **Inputs.** Traces, in-session critique. **Output.** A
+critique dataset and behaviour measurements. **Cost.** Game calls for generation; SFT unpriced.
+**Falsifier.** Projection-grounded critique does not beat plain critique on faults per turn or steps
+to finish. **Status.** Blocked for the weight step; prototype-able for the in-session step.
 
 ### Route D — Active selection from context metrics
 
-**Statement.** Train where the agent struggles, using ctxvm metrics as the selector.
+**Statement.** Select hard traces for labelling with ctxvm metrics and Route B labels.
 
-**Mechanism.** Compute the thrash index, refetch rate, net token reduction, and touch ratio for each
-trace. Select the steps with high pressure or high fault density. Send those steps to a human or
-model judge. Add the labels. Retrain.
+**Mechanism.** Compute thrash index, refetch rate, net token reduction and touch ratio. Select high
+pressure or high fault density. Route B labels supply ground truth where a claim needs it. Send the
+selected steps to a judge; retrain the selector. This does not rest on an UNVERIFIED source:
+Goldilocks Selection (Mindermann et al., 2021-07-06, Abstract) reports that "just right" points beat
+hard, easy and uncertain ones.
 
-**Inputs.** A corpus of traces. Judging capacity.
-
-**Output.** A selected training set.
-
-**Cost.** Judge time, not model calls, if the judge is human.
-
-**Falsifier.** A model trained on selected traces does not beat a model trained on the same number
-of random traces on a held-out task.
-
-**Evidence.** The 2021 prioritized-training paper supplies the selection idea (Extract —
-UNVERIFIED). Part I §6 defines the metrics. *Inference*.
+**Changed object.** Training-data selector. **Inputs.** Traces, metrics, judge. **Output.** Selected
+set. **Cost.** Judge time. **Falsifier.** A selector trained on ctxvm metrics does not beat random
+selection at equal label budget. **Evidence.** Mindermann et al. (Abstract); Part I §6 metrics.
+*Inference*.
 
 ### Route E — Versioned monitor views as evaluator
 
 **Statement.** Make the evaluator a versioned object.
 
-**Mechanism.** Define a view $V_k$ as a pure function of a trace. Examples: rendered pages only;
-resident pages plus stubs. Score each model version on the same corpus with the same view. Feed the
-score into the selection step. Keep the view and the scoring rule out of the agent's context.
+**Mechanism.** Define $V_k$ as a trace joined with its sources and the omission record (Part II §1.1).
+Score model versions on one corpus with one view version. Keep the view and scoring rule out of the
+agent context. Three versions cannot support a significance claim; use at least ten versions, or
+report the three-version result as a descriptive paired comparison, not an inference.
 
-**Inputs.** A trace corpus. A scoring function.
+**Changed object.** Evaluator. **Inputs.** Corpus, sources, view function. **Output.** Comparable
+scores. **Cost.** Compute. **Falsifier.** View scores do not predict the held-out task metric across
+the version set. **Evidence.** Part I §12; ImpossibleBench and SLEIGHT-Bench (Abstract) for scorer
+exploitation.
 
-**Output.** Comparable scores across model versions.
+### Route F — Harness-side recursive summarisation
 
-**Cost.** Compute.
+**Statement.** Compress a long request at page boundaries — in the harness, not from the trace.
 
-**Falsifier.** Scores from $V_k$ do not correlate with a held-out task metric across model versions.
+**Mechanism.** Summarising a prefix needs page content, which the trace does not hold. This is a
+harness policy. The stock compressor in the W8 control arm may already summarise; that is
+**UNKNOWN** and must be checked before any arm is defined. E5 uses the existing W8 profiles rather
+than a new feature.
 
-**Evidence.** Part I §12 defines monitor views. ImpossibleBench and SLEIGHT-Bench show that a scorer
-visible to the agent will be exploited. *Inference*.
-
-### Route F — Recursive page-boundary decomposition
-
-**Statement.** Use page boundaries as checkpoints for long tasks.
-
-**Mechanism.** Split a trace with `export --turn N`. Summarize each prefix. Feed the summary forward
-as a new page. Repeat. This is the context-layer analogue of recursive book summarization.
-
-**Inputs.** Long traces. A summarizer.
-
-**Output.** A recursive dataset and a shorter context policy.
-
-**Cost.** Compute plus summarizer calls.
-
-**Falsifier.** Recursive summary traces do not beat plain truncation on a long-task metric.
-
-**Evidence.** Recursively Summarizing Books (2021-09-22) supplies the analogy, not the method.
-Part I §3 defines `export`. **UNVERIFIED as a training recipe**.
+**Changed object.** Context policy (harness-side). **Inputs.** Long traces; W8 profiles.
+**Output.** A comparison of compression policies. **Cost.** Compute plus existing model calls.
+**Falsifier.** The summary policy does not beat plain truncation at equal context budget.
+**Evidence.** Wu et al. (2021-09-22, Abstract) gives the analogy, not the method.
 
 ### 6.1 Route summary
 
-| Route | New model spend | Main artifact | Cheap to test |
+| Route | Changed object | New model spend | Falsifiable |
 |---|---|---|---|
-| A — fault labels | none | labeled steps | yes |
-| B — page ablation | high | causal labels | no |
-| C — self-critique | low to medium | revision dataset | yes |
-| D — active selection | judge time | selected set | yes |
-| E — versioned views | none | comparable scores | yes |
-| F — recursive decomposition | medium | recursive set | no |
+| A — fault selection | Training-data selector | none (feeds B) | yes |
+| B — page ablation | Ranker / data filter | open-weight: none; hosted: ~1,300 calls | yes |
+| C — trace critique | Context-use behaviour | game calls; SFT unpriced | yes, in-session only |
+| D — active selection | Training-data selector | judge time | yes |
+| E — versioned views | Evaluator | none | yes, with ≥10 versions |
+| F — harness summary | Context policy | existing W8 profiles | yes |
 
 ---
 
 ## 7. Guardrails
 
-1. **Noise floor before effect.** Run baseline against baseline. Measure the answer-change rate.
-   An effect below that rate is not an effect (Part I §10).
-2. **Several samples per arm.** One draw is noise (Part I §10).
-3. **Six-part provenance.** Parent trace and digest; intervention; sampling parameters; model
-   snapshot and date; harness and adapter versions; tokenizer version (Part I §10).
-4. **Keep run kinds separate.** Deterministic replay and model-driven intervention must not share a
-   directory, a checksum file, or a claim (Part I §10).
-5. **Content-blindness.** Do not train a model to recover page content from a trace. The trace does
-   not hold it (Part I §16, seventh bullet).
-6. **No causal claim from rendering.** Only an intervention supports a causal claim (Part I §16).
-7. **Hold out the scorer.** A visible scorer will be exploited (ImpossibleBench; SLEIGHT-Bench).
-8. **No cost-saving claim.** The measured paid cell cost 2.11 times the control. Spend must be
-   justified by capability, not savings.
-9. **Mark unverified sources.** Extract-level claims do not carry an argument.
-10. **Record the negative.** A route that fails must be written down with its falsifier.
-
-The first four guardrails apply to every route. The rest apply where stated.
+1. **Noise floor before effect** (Part I §10).
+2. **Several samples per arm**; use intervals, not hard thresholds (Part I §10).
+3. **Six-part provenance** (Part I §10).
+4. **Keep deterministic replay and model-driven runs separate** — no shared directory, checksum or claim.
+5. **Content-blindness**: do not train a model to recover page content from a trace.
+6. **No causal claim from rendering**; only an intervention supports one.
+7. **Hold out the scorer** (ImpossibleBench; SLEIGHT-Bench).
+8. **Include the budget term**; "keep everything" is not a result.
+9. **Mark unverified sources** with Part II's vocabulary; they carry no argument.
+10. **Record the negative** with its falsifier.
+11. **No cost-saving claim** (law 7); the paid cell was 2.11× the control.
 
 ---
 
-## 8. Failure modes
+## 8. Failure modes and risks
 
 | Failure | Signal | Response |
 |---|---|---|
-| Reward hacking in self-refinement | Revisions improve the judge, not the held-out task | Hold out the judge; add an impossible control |
-| In-context reward hacking | Feedback loop changes the model's behavior inside one session | Separate feedback from evaluation turns |
-| Fault labels are definitional | Fault rate tracks mention rate, not need | Add page-ablation control (Route B) |
-| Author mismatch in the corpus | Wrong-person papers in training data | Filter on `author_match = confirmed` |
-| Evaluator evasion | Monitor misses covert behavior | Use SLEIGHT-Bench-style adversarial tests |
-| Trace projection is not turn-scoped on a flush-tail capture | The table shows pages the request did not carry | Read Part II §2.4; use the provider receipts |
-| Loop optimizes the view, not the task | View score rises; held-out metric flat | Falsifier triggers; stop the route |
+| Reward hacking in self-refinement | Judge score rises, held-out task flat | Hold out the judge; impossible control (Pan et al., 2024-07-05, Abstract) |
+| In-context reward hacking | Feedback loop changes behaviour in one session | Separate feedback from evaluation turns (Pan et al., 2024-02-09, Abstract) |
+| Definitional fault labels | Fault rate tracks mention rate, not need | Use `tool_recall`; add matched ablation (Route B) |
+| Omission gap | Table shows full pages the request omitted | Part II §2.4; provider receipts; do not infer content |
+| Evaluator evasion | Monitor misses covert behaviour | SLEIGHT-Bench-style tests (Abstract) |
+| Optimising the view | View score rises, held-out metric flat | Falsifier fires; stop the route |
+| Author mismatch | Wrong-person papers in a training set | Filter on `author_match = confirmed` |
+
+**Capability uplift (Part II).** Context management is a capability. A loop that improves page
+selection can also improve sabotage: an agent that learns which pages to keep learns what a monitor
+sees. Before any route is run, add the Part II capability-uplift check — does the change improve a
+harmful task as well as the benign one? — and keep a **human gate** on every weight or policy update.
+A negative uplift check stops the route.
 
 ---
 
 ## 9. Experiment designs
 
-### 9.1 E1 — Fault labels without paid calls (Route A)
+Each design names its unit, sample size, margin and command. All are preregistered before the first
+call; post-result changes are deviations and are recorded.
 
-- **Question.** Do fault labels predict steps that a context policy should change?
-- **Data.** One frozen corpus. All traces with at least one `page.fault`.
-- **Arms.** Fault-label policy vs random-page policy. No model calls.
-- **Metric.** Fault count per turn on a held-out corpus.
-- **Stop rule.** No difference above 10% → negative result.
+### 9.0 E0 — Open-weight page ablation (Route B primary)
 
-### 9.2 E2 — Page ablation with controls (Route B)
+- **Question.** Does page-level causal importance beat matched random ablation?
+- **Data.** 20 prompts; one frozen model snapshot; 10 pages per trace.
+- **Arms.** Baseline; baseline repeat; leave-one-out per page; matched random page.
+- **Primary metric.** Rank correlation between touch count and log-probability change, with a
+  confidence interval over prompts. **Unit:** correlation coefficient.
+- **Sample size / margin.** 20 prompts gives a wide interval; report it rather than claiming
+  significance. 40 prompts if a narrower interval is needed.
+- **Command.** The Part II §12.1 protocol; cross-reference it, do not fork it.
+- **Stop rule.** Interval includes zero → negative result.
 
-- **Question.** Does page-level causal importance beat random ablation for data selection?
-- **Data.** 20 prompts. One model snapshot. Ten pages per trace.
-- **Arms.** Baseline twice; remove target page; remove random page. Three samples per arm.
-- **Labels.** Answer-change rate above the noise floor.
-- **Train half. Validate half.** Held-out metric is task success, not the ranker's own score.
-- **Provenance.** Six parts for every arm.
-- **Stop rule.** No gain over random ablation → negative result.
+### 9.1 E1 — Fault availability and label quality (Route A, zero spend)
 
-### 9.3 E3 — Trace-grounded revision (Route C)
+- **Question.** How many faults of each source exist, and do they name pages?
+- **Data.** Frozen corpus only (15 fault-bearing paths; 41 `identifier_scan`, 21 `tool_recall`);
+  full path as unit, never basename flattening.
+- **Metric.** Counts by source; fraction of faulted pages that were resident. **Unit:** events.
+- **Command.** JSON parse over `corpus/m*/**/*.jsonl`; manifest with `sha256sum`.
+- **Stop rule.** If `tool_recall` n < 10, label quality is insufficient; Route A is Blocked.
 
-- **Question.** Does a projection-grounded critique beat a plain critique?
-- **Arms.** Same words; same words plus projection; projection only.
-- **Data.** 100 wrong answers from a fixed corpus.
-- **Metric.** Held-out correctness after SFT on revisions.
-- **Stop rule.** Projection-only does not beat plain critique → no evidence for trace grounding.
+### 9.2 E2 — Hosted ablation with intervals (Route B secondary)
 
-### 9.4 E4 — Versioned view across model versions (Route E)
+- **Question.** Does the open-weight effect transfer to answer change?
+- **Data / arms.** 20 prompts, 10 pages, 6 samples per arm, baseline twice.
+- **Primary metric.** Binomial interval on answer-change rate. **Unit:** proportion.
+- **Cost.** ~1,320 calls; ≈ $11.37 at the blended $0.00861/request (`reports/W8-SPEND.md:82`); UNVERIFIED estimate; check receipts.
+- **Command.** Part II §12.1 hosted protocol with the parameters above; preregister model snapshot and seed.
+- **Stop rule.** Intervals overlap random ablation → negative result.
 
-- **Question.** Does a view score predict a held-out task metric across versions?
-- **Data.** Three model versions. One corpus. One view, versioned.
-- **Metric.** Rank correlation between view score and task metric.
-- **Guard.** The view and the scoring rule stay out of the agent context.
+### 9.3 E3 — In-session critique (Route C)
 
-### 9.5 E5 — Recursive decomposition (Route F)
+- **Question.** Does projection-grounded critique reduce faults per turn?
+- **Design.** 30 tasks, three arms, 3 trials each. **Unit:** faults per turn.
+- **Command.** Parse held-out traces before and after critique; count `page.fault` per `turn.render` with the §9.1 JSON parser; preregister task ids and seed.
+- **Margin.** Report a paired difference with an interval; 30 tasks is a pilot, not a power claim.
+- **Blocker.** The weight step needs a wrong-answer corpus and an SFT price; both UNKNOWN/Blocked.
 
-- **Question.** Do page-boundary checkpoints beat truncation on long tasks?
-- **Data.** The longest traces in the corpus.
-- **Arms.** Truncate at a token budget; summarize at page boundaries; no compression.
-- **Metric.** Held-out task success at equal context budget.
+### 9.4 E4 — Versioned views (Route E)
 
-Each design must be preregistered before the first call. A change after the result is a deviation and
-must be recorded as such.
+- **Question.** Does a view score predict task success across versions?
+- **Design.** ≥10 model versions; one corpus; one view version; paired comparisons plus a
+  descriptive trend. **Unit:** score difference. With n=3, no significance claim is possible.
+- **Command.** Score all versions on one corpus with view `V_k`; paired comparison over version ids; preregister the view hash.
+- **Guard.** View and scoring rule stay out of agent context.
+
+### 9.5 E5 — Harness summarisation (Route F)
+
+- **Question.** Do page-boundary checkpoints beat truncation at equal budget?
+- **Design.** Use existing W8 profiles; first verify what the control compressor already does
+  (UNKNOWN). Longest traces in the corpus. **Unit:** held-out task success at equal token budget.
+- **Command.** `benchmarks/metrics` policy simulator over the longest corpus traces; compare summary against truncation at equal token budget.
 
 ---
 
 ## 10. What ctxvm cannot do
 
-1. It cannot train weights.
-2. It cannot choose a training objective.
-3. It cannot see activations, probes, or hidden reasoning.
-4. It cannot reconstruct request bytes from a trace.
-5. It cannot judge correctness. A human or a model judge must do that.
-6. It cannot prove causation from a render. Only an intervention can.
-7. It cannot record a page removed without a stub in sealed v0.
-8. It cannot make a loop safe from reward hacking.
-9. It cannot claim cost savings on the measured cell.
-
-This list is not a defect list. It is the boundary of the instrument.
+1. Train weights or choose a training objective.
+2. See activations, probes or hidden reasoning.
+3. Reconstruct request bytes from a trace.
+4. Judge correctness; a human or model judge must do that.
+5. Prove causation from a render; only an intervention can.
+6. Record a page removed without a stub in sealed v0.
+7. Supply page content for a summary or a content-grounded critique.
+8. Make a loop safe from reward hacking or capability uplift.
+9. Claim cost savings on the measured cell.
 
 ---
 
@@ -444,76 +435,79 @@ This list is not a defect list. It is the boundary of the instrument.
 
 | # | Question | Route | Status | Next step |
 |---|---|---|---|---|
-| 1 | Do fault labels reduce context-policy errors? | A | Designed; no run | Run E1 |
-| 2 | Does page-level causal importance beat random ablation? | B | Designed; needs spend | Preregister E2 |
-| 3 | Does a projection-grounded critique beat a plain critique? | C | Designed | Run E3 |
-| 4 | Do context metrics select useful training data? | D | Designed; judge needed | Select a corpus |
-| 5 | Does a versioned view predict task success? | E | Designed | Run E4 |
-| 6 | Do page-boundary checkpoints beat truncation? | F | Designed; UNVERIFIED analogy | Run E5 |
-| 7 | Can a self-refinement loop avoid reward hacking with ctxvm feedback? | A+C | Not designed | Add impossible control |
-| 8 | Does a stable-prefix selection policy keep the provider cache? | Engine | Separate question | See the cache-stable design note |
-
-Agenda items are designs, not results. UNVERIFIED marks an analogy without a source in the record.
+| 1 | Do causal labels beat random ablation? | B | Designed; compute-only arm available | Run E0 |
+| 2 | Are fault labels usable selection features? | A | Designed; label quality unknown | Run E1 |
+| 3 | Does the open-weight effect transfer? | B | Designed; needs spend | Preregister E2 |
+| 4 | Does critique change context use? | C | Prototype-able in-session; weight step Blocked | Run E3 |
+| 5 | Do metrics select useful training data? | D | Designed | Use E0 labels |
+| 6 | Does a view predict task success? | E | Designed; needs ≥10 versions | Run E4 |
+| 7 | Do checkpoints beat truncation? | F | Designed; control compressor UNKNOWN | Check W8 profile |
+| 8 | Does a policy lift harmful capability? | All | Risk check | Add to each prereg |
 
 ---
 
-## 12. Reproducing the evidence in this paper
+## 12. Reproducing the evidence
 
 ```bash
-# Corpus and references
-~/research/anthropic-scientist-papers-2021-2026.json
-~/research/anthropic-scientist-papers-2021-2026.csv
-~/research/lookup.txt
-~/research/anthropic-papers-reference.sqlite
-~/research/ai-lab-paper-summaries.txt
-
-# Lab counts
-sqlite3 ~/research/anthropic-papers-reference.sqlite \
-  "SELECT COUNT(*) FROM papers WHERE reference LIKE '%Anthropic%';"
-
-# A filtered export
-sqlite3 -header ~/research/anthropic-papers-reference.sqlite \
-  "SELECT name,date,title,url FROM papers WHERE reference LIKE '%Constitutional AI%';"
+# from the ctxvm repo root
+python3 research/datamining/datamining.py
+# single-term count (word boundary, title+reference) — see script for the regex
+python3 - <<'PY'
+import os, sqlite3, re
+c = sqlite3.connect(os.path.expanduser("~/research/anthropic-papers-reference.sqlite"))
+c.row_factory = sqlite3.Row
+rows = [dict(r) for r in c.execute("SELECT title, reference FROM papers")]
+n = sum(1 for r in rows if re.search(r"\bAnthropic\b", (r["title"] or "") + " " + (r["reference"] or ""), re.I))
+print("word-boundary Anthropic:", n)   # print both this and the SQL LIKE 59
+PY
+sqlite3 "$HOME/research/anthropic-papers-reference.sqlite" \
+  "SELECT COUNT(*) FROM papers WHERE reference LIKE '%Anthropic%';"   # 59; word-boundary count is also 59
 ```
 
-The database table has five columns. The reference column holds the short reference for each paper.
-Equations in those references are heuristic conversions from the PDF text layer.
+The SQLite table has five columns; the reference column holds a one-page extractive reference.
+Equations in those references are heuristic PDF conversions. `$HOME` is expanded here because the
+database lives outside the repo; `lookup.txt` has 433 lines (two header comments + 431 data rows).
+Both Anthropic counts above measured 59 on 2026-11-18. The keyword lists and JSON dump are in-repo
+at `research/datamining/`.
 
 ---
 
 ## 13. Conclusion
 
-A self-improving model needs a loop. ctxvm does not close the loop. It makes the input side of the
-loop observable, versioned, and open to controlled intervention. That is enough to improve the
-evaluator and the training data. It is not enough to improve the weights by itself.
+A self-improvement loop needs four parts. ctxvm does not close it. It makes the input side
+observable, versioned and open to controlled intervention. That is enough to improve an evaluator
+and a training-data selector; it is not enough to improve weights.
 
-Three routes need no new model calls. A team can start with fault labels, active selection, and
-versioned views. Page ablation and recursive decomposition need paid calls and a preregistration.
-Every route has a falsifier. If the falsifier fires, the route is a negative result and must be
-recorded. That rule protects the claim more than any positive result would.
+The first step is open-weight page ablation (E0): it gives causal labels at compute cost and can be
+run now. Those labels test the fault-selection and active-selection routes, then the view route.
+Every route has a falsifier, a unit, a sample size and a human gate. If a falsifier fires, the route
+is a negative result and must be recorded.
 
 ---
 
 ## References
 
-All arXiv PDF links below are the URLs recorded in the SQLite database. "Extract" marks a source
-read only through the automated reference.
+Links are the arXiv PDF URLs verified on 18 November 2026. Level follows Part II §1.2.
 
-1. Bai et al. *Constitutional AI: Harmlessness from AI Feedback.* 2022-12-15. https://arxiv.org/pdf/2212.08073
-2. Wu et al. *Recursively Summarizing Books with Human Feedback.* 2021-09-22. https://arxiv.org/pdf/2109.10862
-3. Lightman et al. *Let's Verify Step by Step.* 2023-05-31. https://arxiv.org/pdf/2305.20050
-4. Koh et al. *Tree Search for Language Model Agents.* 2024-07-01. https://arxiv.org/pdf/2407.01476
-5. Harding et al. *ImpossibleBench.* 2025-10-23. https://arxiv.org/pdf/2510.20270
-6. Chao et al. *A StrongREJECT for Empty Jailbreaks.* 2024-01-01. https://arxiv.org/pdf/2402.10260
-7. *SLEIGHT-Bench: A Benchmark of Evasion Attacks Against Agent Monitors.* 2026-05-15. https://arxiv.org/pdf/2605.16626
-8. *OpenVLThinker: Iterative SFT-RL Cycles.* 2025. https://arxiv.org/pdf/2503.17352 — Extract
-9. *Training Language Models with Language Feedback.* 2022-04-29. https://arxiv.org/pdf/2204.14146 — Extract
-10. *Prioritized training on learnable, worth learning, and not yet learned points.* 2021-07-06. http://export.arxiv.org/pdf/2107.02565 — Extract
-11. *Spontaneous Reward Hacking in Iterative Self-Refinement.* 2024-07-05. https://arxiv.org/pdf/2407.04549 — Extract
-12. *Feedback Loops With Language Models Drive In-Context Reward Hacking.* 2024-02-09. https://arxiv.org/pdf/2402.06627 — Extract
-13. *Weak-to-Strong Generalization.* 2023-12-14. https://arxiv.org/pdf/2312.09390
-14. Cohen-Wang et al. *ContextCite: Attributing Model Generation to Context.* arXiv:2409.00729 — abstract read in Part I
-15. Part I and Part II of this paper; repository reports cited there.
+1. Bai et al. *Constitutional AI: Harmlessness from AI Feedback.* 2022-12-15. https://arxiv.org/pdf/2212.08073 — Abstract
+2. Wu et al. *Recursively Summarizing Books with Human Feedback.* 2021-09-22. https://arxiv.org/pdf/2109.10862 — Abstract
+3. Lightman et al. *Let's Verify Step by Step.* 2023-05-31. https://arxiv.org/pdf/2305.20050 — Abstract
+4. Koh et al. *Tree Search for Language Model Agents.* 2024-07-01. https://arxiv.org/pdf/2407.01476 — Abstract
+5. Zhong, Raghunathan, Carlini. *ImpossibleBench.* 2025-10-23. https://arxiv.org/pdf/2510.20270 — Abstract
+6. Souly et al. *A StrongREJECT for Empty Jailbreaks.* 2024-02-15. https://arxiv.org/pdf/2402.10260 — Abstract
+7. Najt, Toft, Tracy, Roger, Benton. *SLEIGHT-Bench.* 2026-05-15. https://arxiv.org/pdf/2605.16626 — Abstract
+8. Deng et al. *OpenVLThinker.* 2025-03-21. https://arxiv.org/pdf/2503.17352 — Abstract
+9. Scheurer et al. *Training Language Models with Language Feedback.* 2022-04-29. https://arxiv.org/pdf/2204.14146 — Abstract
+10. Mindermann et al. *Prioritized training.* 2021-07-06. https://arxiv.org/pdf/2107.02565 — Abstract
+11. Pan, He, Bowman, Feng. *Spontaneous Reward Hacking in Iterative Self-Refinement.* 2024-07-05. https://arxiv.org/pdf/2407.04549 — Abstract
+12. Pan, Jones, Jagadeesan, Steinhardt. *Feedback Loops With Language Models.* 2024-02-09. https://arxiv.org/pdf/2402.06627 — Abstract
+13. Cohen-Wang, Shah, Georgiev, Madry. *ContextCite.* 2024-09-01. https://arxiv.org/pdf/2409.00729 — Abstract
+14. Shinn et al. *Reflexion.* arXiv:2303.11366 — Snippet, UNVERIFIED
+15. Madaan et al. *Self-Refine.* arXiv:2303.17651 — Snippet, UNVERIFIED
+16. Zelikman et al. *STaR.* arXiv:2203.14465 — Snippet, UNVERIFIED
+17. Yuan et al. *Self-Rewarding Language Models.* arXiv:2401.10020 — Snippet, UNVERIFIED
+18. Wang et al. *Voyager.* arXiv:2305.16291 — Snippet, UNVERIFIED
+19. Part I and Part II of this paper; repository reports cited there.
 
 ---
 
@@ -521,10 +515,10 @@ read only through the automated reference.
 
 | Item | Value |
 |---|---|
-| Title | Using ctxvm in the creation of self-improving AI models (Part III) |
-| Version | 1.0 draft, 17 November 2026 |
-| Method | Synthesis of the ctxvm white papers, a 1,061-paper reference database, and a 159-paper lab filter |
+| Title | What a context trace offers a self-improvement loop (Part III) |
+| Version | 1.1, 18 November 2026; 1.0 had two wrong author attributions and one wrong date |
+| Method | Purposive sample of 12 sources from a 159-paper lab filter; all authors/dates re-checked on arXiv |
 | Experiments run | None; all designs are preregistration candidates |
-| Style | ASD-STE100-inspired: short sentences, active voice, defined terms, no marketing language |
-| Open items | §11, items 1–8 |
-| Integrity rule | Every external claim carries its locator at first mention. UNVERIFIED claims do not carry an argument. No cost-saving claim. |
+| Style | ASD-STE100-inspired: short sentences, active voice, defined terms |
+| Open items | §11, items 1–8; capability uplift and human gate on every prereg |
+| Integrity rule | Locator at first mention; UNVERIFIED carries no argument; no cost-saving claim |
