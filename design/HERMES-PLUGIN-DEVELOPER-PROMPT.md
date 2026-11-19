@@ -267,8 +267,9 @@ harnessVersion null                metadata gap on 0.13.27 captures (RR-H12DIAG-
 post-H12 direction                 tail-only eviction / prefix-contiguous compaction / stop paging:
                                    owner decision owed (RR-H12RESULT-20261119 §3); no cell authorized,
                                    $1 cap stands
-G4 redaction sidecar               ROUTED to this lane 2026-11-19 (RR-G4ROUTE); implement per
-                                   design/G4-LANE-DEVELOPER-PROMPT.md; not started
+G4 redaction sidecar               IMPLEMENTED 2026-11-19 (RR-REDACTIMPL-20261119): writer+consumer
+                                   tools/redaction-block.py, contract gate step, scanner hook;
+                                   review-lane verification owed; stubText/reason still deferred
 docs/quickstart.md                 top-level dir not listed in AGENTS §3 (owner layout call)
 ```
 

@@ -1,0 +1,14 @@
+{
+  "channelsModelled": [
+    "logicalRef"
+  ],
+  "logicalRef": "keyed-hashed",
+  "stages": [
+    {
+      "policyId": "example-keyed-rules",
+      "replacedFieldCount": 3,
+      "ruleSetVersion": "w8-dq-v1",
+      "stage": "capture"
+    }
+  ]
+}

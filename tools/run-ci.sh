@@ -165,6 +165,9 @@ venvs/odps/bin/python spec/rfc-0.1/validate_schema_v0_1.py rust/crates/ctxvm-con
 for drop in m1 m2 m3 m4 m5 m6 m7 m8; do
   run_step "corpus/$drop checksums" bash -c "cd corpus/$drop && sha256sum -c checksums.sha256"
 done
+# G4 (RR-REDACTIMPL-20261119): the redaction sidecar contract — every consumer
+# string/exit, the writer's frozen-drop refusal, and the scanner integration.
+run_step "redaction sidecar contract (G4)" python3 tools/redaction-contract-test.py
 bash tools/export-roundtrip.sh
 log "schema + export round-trip gate green"
 

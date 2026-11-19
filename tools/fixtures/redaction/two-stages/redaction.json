@@ -1,0 +1,20 @@
+{
+  "channelsModelled": [
+    "logicalRef"
+  ],
+  "logicalRef": "raw",
+  "stages": [
+    {
+      "policyId": "raw-passthrough",
+      "replacedFieldCount": 0,
+      "ruleSetVersion": "w8-dq-v1",
+      "stage": "capture"
+    },
+    {
+      "policyId": "example-flush-rules",
+      "replacedFieldCount": 2,
+      "ruleSetVersion": "w8-dq-v1",
+      "stage": "flush"
+    }
+  ]
+}

@@ -23,6 +23,18 @@ so `provenance.json` can carry it verbatim (the m8 extension).
 Usage:
   python3 tools/dq-secret-scan.py PATH [PATH ...]            # files or dirs
   python3 tools/dq-secret-scan.py --json PATH [PATH ...]     # machine verdict
+
+G4 (RR-REDACTIMPL-20261119, owner GO RR-G4GO-20261118): with --write-redaction
+the scan, on SHIP-UNBLOCKED only, writes/appends the drop's redaction.json
+sidecar via its sibling tools/redaction-block.py — one entry per declared
+--stage, declaration-only --logical-ref (raw ships). The record is an
+assertion by its writer, not a verifier; the zero-match verdict and the
+w8-dq-v1 stamp mechanism are unchanged. CANNOT-SHIP writes nothing (the drop
+burns); a frozen drop (corpus/) is refused with exit 2.
+
+  python3 tools/dq-secret-scan.py DROP_DIR --write-redaction --stage capture \
+      [--stage flush] [--policy-id ID] [--rules VERSION] [--replaced N] \
+      [--logical-ref raw|keyed-hashed|dropped]
 """
 
 import argparse
@@ -91,7 +103,10 @@ def _drop_files(arg: Path) -> Iterator[Path]:
             if f.is_file():
                 yield from _drop_files(f)
     elif arg.is_file():
-        if arg.name.endswith(_DROP_SUFFIXES):
+        # G4: redaction.json is drop metadata beside provenance — in scope,
+        # so a re-scan of a drop that already carries the sidecar classifies
+        # every byte (and a secret inside the sidecar burns the drop).
+        if arg.name.endswith(_DROP_SUFFIXES) or arg.name == "redaction.json":
             yield arg
         else:
             raise ScanScopeError(
@@ -155,7 +170,33 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument("paths", nargs="+", help="drop-set files or directories")
     parser.add_argument("--json", action="store_true",
                         help="machine verdict (stdout JSON) only")
+    parser.add_argument("--write-redaction", action="store_true",
+                        help="G4: on SHIP-UNBLOCKED, write/append the drop's "
+                             "redaction.json sidecar (one drop directory only)")
+    parser.add_argument("--stage", action="append", choices=("capture","flush","export"),
+                        help="G4: a declared redaction stage (repeatable)")
+    parser.add_argument("--policy-id", default="raw-passthrough",
+                        help="G4: policyId for the declared stages")
+    parser.add_argument("--rules", default=SCAN_LIST_VERSION,
+                        help="G4: ruleSetVersion for the declared stages")
+    parser.add_argument("--replaced", type=int, default=0,
+                        help="G4: replacedFieldCount per declared stage")
+    parser.add_argument("--logical-ref", default="raw",
+                        choices=("raw","keyed-hashed","dropped"),
+                        help="G4: declaration-only enum; raw ships")
     ns = parser.parse_args(argv)
+    if ns.write_redaction:
+        if len(ns.paths) != 1 or not Path(ns.paths[0]).is_dir():
+            print("SCAN-SCOPE-ERROR: --write-redaction needs exactly one drop directory",
+                  file=sys.stderr)
+            return 2
+        if not ns.stage:
+            print("SCAN-SCOPE-ERROR: --write-redaction needs at least one --stage",
+                  file=sys.stderr)
+            return 2
+        if ns.replaced < 0:
+            print("SCAN-SCOPE-ERROR: --replaced must be >= 0", file=sys.stderr)
+            return 2
     try:
         report = scan_all(ns.paths)
     except ScanScopeError as exc:
@@ -176,7 +217,30 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     "scanDate": report["scanDate"],
                     "filesScanned": report["filesScanned"]}
         print("dq_scan=" + json.dumps(identity, sort_keys=True))
-    return 0 if report["verdict"] == "SHIP-UNBLOCKED" else 1
+    rc = 0 if report["verdict"] == "SHIP-UNBLOCKED" else 1
+    if ns.write_redaction and rc == 0:
+        # G4: the sidecar is written only on a zero-match verdict, and the
+        # writer refuses frozen drops before any byte changes.
+        import importlib.util
+        sibling = Path(__file__).resolve().parent / "redaction-block.py"
+        spec = importlib.util.spec_from_file_location("redaction_block", sibling)
+        if spec is None or spec.loader is None:
+            print(f"SCAN-SCOPE-ERROR: cannot load sidecar writer: {sibling}",
+                  file=sys.stderr)
+            return 2
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        entries = [{"stage": s, "policyId": ns.policy_id,
+                    "ruleSetVersion": ns.rules, "replacedFieldCount": ns.replaced}
+                   for s in ns.stage]
+        try:
+            sidecar = mod.write_sidecar(Path(ns.paths[0]), entries, ns.logical_ref)
+        except mod.RedactionRefused as exc:
+            print(f"REDACTION-WRITE-REFUSED: {exc}", file=sys.stderr)
+            return 2
+        if not ns.json:
+            print(f"redaction sidecar: {sidecar}")
+    return rc
 
 
 if __name__ == "__main__":

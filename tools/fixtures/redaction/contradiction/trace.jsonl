@@ -1,0 +1,4 @@
+{"type":"page.declare","turn":0,"logicalRef":"tool:read({\"path\":\"data/f1.txt\"})","residentTokens":120,"ts":"2026-11-19T09:00:00Z"}
+{"type":"page.declare","turn":1,"logicalRef":"tool:read({\"path\":\"data/f2.txt\"})","residentTokens":240,"ts":"2026-11-19T09:00:01Z"}
+{"type":"page.declare","turn":2,"logicalRef":"tool:read({\"path\":\"data/f3.txt\"})","residentTokens":360,"ts":"2026-11-19T09:00:02Z"}
+{"type":"turn.render","turn":2,"residentTokens":360,"ts":"2026-11-19T09:00:03Z"}

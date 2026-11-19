@@ -78,4 +78,10 @@ else
   echo "(no sidecar next to $T — synthesized fixtures ship without one)"
 fi
 
+echo "== redaction record (G4 sidecar consumer; assertion, not verifier) =="
+# The consumer reads the trace's drop directory: block absent -> "redaction:
+# unknown" (exit 0); a declaration contradicting the bytes exits 1 and fails
+# this kit loudly (set -e). Contract: RR-REDACT-20261118 §4.
+python3 "$R/tools/redaction-block.py" consume "$T"
+
 echo "VERIFY-CAPTURE DONE: $T"
