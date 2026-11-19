@@ -1,4 +1,4 @@
-# State (updated 2026-11-19; E1 approved, G4 routed, H12 negative, D17 held)
+# State (updated 2026-11-19; E1 approved, G4 done, H12 negative, D17 held)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
@@ -13,13 +13,13 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 (`e10d249`), Part III landed (`5ab5d38`), review CLOSED 11-18; E1 APPROVED 11-19 (`RR-E1APPROVE`): freeze data + write PREREG.md, research resolves 15-path/13-name + 247/4-vs-243/5; zero-spend.
-- Hermes lane: H11/H12 closed (NEGATIVE); G4 implemented (`RR-REDACTIMPL-20261119`), kit+CI green, review verification owed.
+- Hermes lane: H11/H12 closed (NEGATIVE); G4 implemented (`RR-REDACTIMPL-20261119`), kit+CI green, VERIFIED (`RR-REDACTIMPL-REVIEW`).
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: pid 4486 (11:13 restart 11-19) holds 0.13.27; paged captures landed (`h12p2`); `enginePlan` live by capture (`RR-H12DIAG-REVIEW`).
 ## Next three (ordered, one line each)
 1. Owner: choose H12 follow-on — tail-only eviction (recommended), prefix compaction, or stop paging (`RR-H12RESULT`); closed hypothesis not re-run.
-2. Review: verify + record G4 implementation (`RR-REDACTIMPL-20261119`); research: freeze E1 data + write PREREG.md (`RR-E1APPROVE`). Owner: stubText/reason ruling still owed (`RR-REDACT` §6).
+2. Research: freeze E1 data + write PREREG.md (`RR-E1APPROVE`). Owner: stubText/reason ruling owed (`RR-REDACT` §6); G4 box tick owed to plan owner.
 3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11 owner-gated.
 
 ## Decisions made (date, decision, reason)
