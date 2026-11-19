@@ -12,14 +12,14 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 1. (Items 1–2 rotated verbatim 2026-11-15 to `handoff/PROJECT-STATE-ARCHIVE.md`.)
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
-- Research lane: P13/P14 (`e10d249`), Part III fixes (`d10c325`, `RR-PART3FIX`), E1 offline LANDED & VERIFIED (`a1bd004`, `RR-E1LAND`, `RR-RESVERIFY`: 17 frozen traces, 96 turns, `tool_recall` 42.9% signal only, `identifier_scan` 2.4% negative; E2 owner-gated).
+- Research lane: P13/P14 (`e10d249`), Part III fixes + §9.2 sample-count fix (`d10c325`, `99f62f9`), `research/datamining/` tracked (`97cf743`), E1 offline LANDED (`a1bd004`, `RR-RESVERIFY`), E2 note PARKED ($0, `99f62f9`, `RR-E2HOLD-VERIFY`).
 - Hermes lane: H11–H13, H15, G4, H16–H18 DONE (`RR-REDACTIMPL-REVIEW`, `RR-DEFAULTS`, `RR-H16H18-REVIEW`); suite 226, gate green; free queue complete.
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: pid 4486 (11:13 restart 11-19) holds 0.13.27; paged captures landed (`h12p2`); `enginePlan` live by capture (`RR-H12DIAG-REVIEW`).
 ## Next three (ordered, one line each)
-1. Research: fix Part III §9.2 sample-count typo (`Part-III.md:389`, `.zh.md:359`; `RR-E2HOLD`) & decide whether to track `datamining.{py,json}` (`RR-RESVERIFY` §1).
-2. E2 HELD ($0 spend; `corpus/m1`–`m8` content-blind & only 3 traces >=10 pages, `RR-E2HOLD`); W8 paging parked (`RR-DEFAULTS`).
+1. All routed hermes, research, and review queues are DONE & VERIFIED (`RR-H16H18-REVIEW`, `RR-E2HOLD-VERIFY`).
+2. E2 HELD ($0 spend; needs content-bearing fixture bank stratified on `tool_recall`, `RR-E2HOLD`); W8 paging parked (`RR-DEFAULTS`).
 3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11/H19 owner-gated.
 
 ## Decisions made (date, decision, reason)
