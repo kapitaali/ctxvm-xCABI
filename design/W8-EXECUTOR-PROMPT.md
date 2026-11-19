@@ -1,5 +1,11 @@
 # MASTER PROMPT — W8 experiment executor
 
+> **Status 2026-11-19: W8 CLOSED 2026-11-10 (owner, option A; `design/W8-CLOSURE-20261110.md`).**
+> The paid-cell line is withdrawn; this prompt is kept as the record of the counting rules. The live
+> experiment line ran H11–H12 (closed NEGATIVE 2026-11-19, `reports/RR-H12RESULT-20261119.md`); follow-on
+> options are owner-gated (`design/w8-cache-stable-selection.md`). The law-10 bullet below was re-landed
+> from the 2026-11-18 abandoned snapshot (`RR-W8ABANDON-20261118`).
+
 Give this to the agent that runs paid cells. It is not a runbook of commands; it is the set of rules
 that decide whether a cell counts at all. Five cells have been bought and none counts, each void for a
 different reason. This document exists so the sixth is the first real one.
@@ -114,6 +120,8 @@ hermes -p w8-paged -z "<prompt 1>" -m openai/gpt-6-luna --provider nous -t file 
   fixture digest. Re-buy it when the fixture, the toolset or the model row changed.
 - **One cell per sitting**, then report and ask. Six cells in a row without a report is how five voids
   accumulated.
+- A recursive delete aimed at `~`, `$HOME`, `/` or a path computed from a variable that may be empty —
+  `AGENTS.md` law 10. Cleanup names the exact subdirectory; the home directory is never a target root.
 - Results go to `~/.local/state/ctxvm/w8-runs/` and `experiments/` (gitignored). `/tmp` is scratch and
   may vanish; evidence does not live there.
 

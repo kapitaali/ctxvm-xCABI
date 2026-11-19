@@ -1,6 +1,6 @@
 # ROADMAP — hermes / plugin lane
 
-State of record: 2026-11-09, HEAD `9be5150`. This is the lane's own task list, not the project board.
+State of record: 2026-11-19, HEAD `c932864`. This is the lane's own task list, not the project board.
 Tick a box only when the command under **done when** printed what the box says. An unticked box with
 a cost is a decision not to spend, not an oversight.
 
@@ -89,27 +89,38 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
 - [ ] **H10. State the engine's floor in the report.** Once H9 lands, add the measured floor for the
   T-A session to `reports/RR-NOOP-20261109.md`.
   *Done when:* the report contains `floorTokens` and the turn spread that produced it.
+  *Note 2026-11-19:* floor now measured on the real T-A v2 capture: 22,420 (`RR-H12RUN-20261118`);
+  flat-reconstruction 16,714 (`RR-H11FLOOR`). The report edit is still owed.
 
 ---
 
 ## 3. Cache-stable selection — the hypothesis the data actually supports
 
-- [ ] **H11. Implement `selectionMode: stable`.** Design: `design/w8-cache-stable-selection.md`.
+- [x] **H11. (done 2026-11-18, `9e05548`, `RR-H11-20261118`; verified `RR-H11-REVIEW`) Implement `selectionMode: stable`.** Design: `design/w8-cache-stable-selection.md`.
   Hold the resident set verbatim between triggers; re-select only on residency change, budget
   overflow, or every B-th turn; canonicalise volatile markers before hashing; emit `prefixHash` per
   call.
   *Done when:* a unit test shows the same `prefixHash` across calls with an unchanged working set and
   a different one after a trigger; `should_compress` still returns False; gate green.
+  *Deviation:* the hold hash is `selectionHash` over page identities (stronger than canonicalising volatile
+  markers); the mode is a profile setting adopted at call time (`RR-H12PREP`). Five StableSelectionTests,
+  red-before recorded; suite 212 at landing, gate green.
 
-- [ ] **H12. One cell, stable mode, same task.** Compare against the naive reference **and** against
-  the mode-off cell.
+- [x] **H12. (measured 2026-11-19, `f0c5e81`, verified `9a817f9`) One cell, stable mode, same task.** Compare against the naive reference **and** against the mode-off cell.
   *Done when:* `prefixHash` is unchanged between triggers, `cache_read` rises above the naive arm's
   share, and parsed artefacts match. Otherwise the finding is "stability alone is not sufficient" and
   that is written up as such.
+  *Result:* the otherwise branch fired — 2 of 4 conditions pass; zero holds on a read-once sweep (stable
+  degenerates to fresh); a mid-prefix hole defeats the prefix cache regardless of the hold. Written up in
+  `RR-H12RESULT-20261119` + `RR-H12RESULT-REVIEW`; the design of record carries the closed-negative line.
+  The mode-off comparison is the fresh-mode 24k reference (`RR-H12RUN-20261118`), not a paired fresh arm
+  (confound disclosed in `RR-H12PREP`). Follow-on options are owner-gated (`RR-H12RESULT` §3).
 
 - [ ] **H13. Answer the reviewer's P8 with the numbers from H11–H12.** Packet
   `handoff/packets/P8-cache-stable-selection.md` asks the exact question; its answer should cite a
   measured run, not an argument.
+  *Unblocked 2026-11-19:* the H12 numbers exist (`RR-H12RESULT-20261119`); P8's 2026-11-11 answer
+  (`RR-P8CACHE`) predates them. The packet file is review-lane property; this lane supplies the card + numbers.
 
 ---
 
@@ -159,11 +170,17 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
   the one-line diff either way.
   *Done when:* `AGENTS.md` §3 lists `docs/` **or** the file moved and the reference updated.
 
-- [ ] **H20. Keep the two master prompts current.** `design/HERMES-PLUGIN-DEVELOPER-PROMPT.md` and
+- [x] **H20. (done 2026-11-19, `RR-HBOOKS-20261119`) Keep the two master prompts current.** `design/HERMES-PLUGIN-DEVELOPER-PROMPT.md` and
   `design/W8-EXECUTOR-PROMPT.md` name versions, paths and open items. Re-read them at every card close;
   a prompt that describes a version two releases old is the drift this lane keeps fixing.
-  *Done when:* `grep -n "0.10.11" design/HERMES-PLUGIN-DEVELOPER-PROMPT.md` still matches the installed
-  version.
+  *Done when (rewritten 2026-11-19 — the old grep pinned 0.10.11, a version long gone):* the developer
+  prompt's open items and profile names match the measured state, and the executor prompt carries its
+  closure status. Verify: `grep -n 'w8cn' design/HERMES-PLUGIN-DEVELOPER-PROMPT.md` and
+  `grep -n 'W8 CLOSED' design/W8-EXECUTOR-PROMPT.md` both match.
+  *Done 2026-11-19:* developer prompt §0/§7/§8/§12 refreshed (w8cn pair, enginePlan live by capture,
+  G4 routed, post-H12 options + harnessVersion gap added); executor prompt given a closure banner and the
+  law-10 bullet re-landed from the abandoned snapshot. NOT lane property, flagged for review/owner:
+  `handoff/AGENT-PROMPT.md` §1 (still says 0.13.24/pid 23669) and `AGENTS.md` §9 (policy file).
 
 ---
 

@@ -15,7 +15,8 @@ You own:
 - `packages/hermes/test/` — the suite, including `conftest.py`
 - `packages/hermes/fixtures/` — emitter-produced fixtures only
 - the installed copy at `~/.hermes/plugins/ctxvm-tracer/`
-- the W8 experiment profiles at `~/.hermes/profiles/w8-{naive,paged}/`
+- the experiment profiles under `~/.hermes/profiles/w8*/` — the live H12 pair is `w8cn-{naive,paged}`;
+  all four w8cn/w8cp plugin dirs are symlinks to the shared install (H12 shadowing fix, `RR-H12SHADOW-20261118`)
 
 You do not own, and must not edit without the lane that does:
 
@@ -177,28 +178,35 @@ Rules that follow:
   spent 3.14× input tokens and 7.2× dollars with identical correct artefacts — cache reads fell to a
   third, writes rose ninefold. Any engine change must be evaluated on `cache_read`/`cache_write` and
   dollars, not tokens alone.
-- **The engine emits no record of what it selected.** That is a gap. If you close it, it is an
-  observation in the coverage sidecar, not a wire field.
+- **The engine's decision record is `enginePlan` + `enginePlanTally` in the coverage sidecar** (H9, closed
+  2026-11-14; live by capture 2026-11-19, `RR-H12DIAG-REVIEW`) — an observation, not a wire field. Since
+  0.13.26 it carries `policyMode`/`policyModeSource`/`modeExplicit`, which is how the shadowing defect was caught.
 
 ---
 
 ## 8. Configuration you own
 
 ```
-~/.hermes/profiles/w8-naive/config.yaml   context.engine: compressor   (control)
-~/.hermes/profiles/w8-paged/config.yaml   context.engine: ctxvm
-                                          plugins.entries.ctxvm-tracer.settings.budgetTokens: 24000
+~/.hermes/profiles/w8cn-naive/config.yaml   context.engine: compressor   (control)
+~/.hermes/profiles/w8cn-paged/config.yaml   context.engine: ctxvm
+                                            plugins.entries.ctxvm-tracer.settings.budgetTokens: 24000
+                                            plugins.entries.ctxvm-tracer.settings.selectionMode: stable
 ```
+
+(Read back 2026-11-19 from the profile configs; the W8-era `w8-{naive,paged}` pair is superseded.)
 
 Verify, never assume:
 
 ```
-hermes config get plugins.entries.ctxvm-tracer.settings.budgetTokens -p w8-paged   # 24000
-hermes config get plugins.entries.ctxvm-tracer.settings.budgetTokens -p w8-naive   # not set
+hermes config get plugins.entries.ctxvm-tracer.settings.budgetTokens -p w8cn-paged    # 24000
+hermes config get plugins.entries.ctxvm-tracer.settings.selectionMode -p w8cn-paged  # stable
+hermes config get plugins.entries.ctxvm-tracer.settings.budgetTokens -p w8cn-naive    # not set
 ```
 
-The two profiles must differ in exactly one key. If they differ in two, the experiment measures two
-factors and the cells are void.
+The ideal is one differing key. The H12 pair differs in `context.engine` plus the paged arm's two engine
+settings — a confound disclosed, not hidden: the mode effect is read against the W8C fresh-paged 2.11x
+reference and the fresh-mode 24k run, not a paired fresh arm (`RR-H12PREP-20261118`). A third profile for
+a paired fresh arm needs owner creation.
 
 ---
 
@@ -248,15 +256,19 @@ factors and the cells are void.
 ```
 session_start never fires          capture relies on lazy pre_llm_call
 turn counter = 0 in one-shot       a property of -z sessions, not a plugin defect
-engine emits no selection record   CLOSED 2026-11-14: `plugin.enginePlan` + `enginePlanTally`
-                                   (reason, floor, dropped tokens, prefix probe) on every call;
-                                   the restart that puts it live is owed
-retention with suffixed names      implemented, untested
-installed dir                       clean of the old layout (live/, src/, test_plugin.py,
-                                   BUG_REPORT.md are gone). ctxvm.py is NOT installed: it is the
-                                   T17 re-export, not imported by the tracer, so an import-derived
-                                   sync excludes it. Decide install-or-drop; the two files currently
-                                   disagree (H15 says keep it)
+engine emits no selection record   CLOSED 2026-11-14 (enginePlan + enginePlanTally); LIVE BY CAPTURE
+                                   2026-11-19: owner restart 11:13, diag reads policyMode stable/settings
+                                   (RR-H12DIAG-REVIEW); the H12 pair carries full plan blocks
+retention with suffixed names      implemented, untested (roadmap H17)
+installed dir                       clean of the old layout; ctxvm.py is NOT installed (T17 re-export,
+                                   not imported by the tracer; import-derived sync excludes it).
+                                   Decide install-or-drop (H15); owed
+harnessVersion null                metadata gap on 0.13.27 captures (RR-H12DIAG-REVIEW); unfixed
+post-H12 direction                 tail-only eviction / prefix-contiguous compaction / stop paging:
+                                   owner decision owed (RR-H12RESULT-20261119 §3); no cell authorized,
+                                   $1 cap stands
+G4 redaction sidecar               ROUTED to this lane 2026-11-19 (RR-G4ROUTE); implement per
+                                   design/G4-LANE-DEVELOPER-PROMPT.md; not started
 docs/quickstart.md                 top-level dir not listed in AGENTS §3 (owner layout call)
 ```
 
