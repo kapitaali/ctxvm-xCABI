@@ -386,7 +386,7 @@ call; post-result changes are deviations and are recorded.
 ### 9.2 E2 — Hosted ablation with intervals (Route B secondary)
 
 - **Question.** Does the open-weight effect transfer to answer change?
-- **Data / arms.** 20 prompts, 10 pages, 6 samples per arm, baseline twice.
+- **Data / arms.** 20 prompts, 10 pages, 3 samples per arm across 2 arms (leave-one-out and matched random; 6 calls per page), baseline twice.
 - **Primary metric.** Binomial interval on answer-change rate. **Unit:** proportion.
 - **Cost.** ~1,320 calls; ≈ $11.37 at the blended $0.00861/request (`reports/W8-SPEND.md:82`); UNVERIFIED estimate; check receipts.
 - **Command.** Part II §12.1 hosted protocol with the parameters above; preregister model snapshot and seed.
