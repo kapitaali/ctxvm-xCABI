@@ -202,7 +202,21 @@ class _SmokeBase(unittest.TestCase):
         self._old_home = os.environ.get("HERMES_HOME")
         self.addCleanup(self._restore_home)
         self.addCleanup(_clear_env_for_tests)
+        # register() captures the state dict in a closure and registers an
+        # atexit(_flush_traces). _clear_env_for_tests deletes the LIVE state, but
+        # the exit-flush still holds the closure's dict (with this test's tracers)
+        # and re-resolves the trace dir to the DEFAULT real dir — leaking synthetic
+        # captures into ~/.local/state/ctxvm/traces. Drop the tracers first so the
+        # exit-flush has nothing to write. (Runs before _clear_env_for_tests: LIFO.)
+        self.addCleanup(self._drop_tracers)
         self.trace_dir = Path(tempfile.mkdtemp(prefix="ctxvm-smoke-traces-"))
+
+    def _drop_tracers(self):
+        st = getattr(sys, live_mod._STATE_ATTR, None)
+        plugin = st.get("plugin") if st else None
+        tracers = getattr(plugin, "_tracers", None)
+        if tracers is not None:
+            tracers.clear()
 
     def _restore_home(self):
         if self._old_home is None:
