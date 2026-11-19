@@ -13,7 +13,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 (`e10d249`), Part III fixes + §9.2 sample-count fix (`d10c325`, `99f62f9`), `research/datamining/` tracked (`97cf743`), E1 offline LANDED (`a1bd004`, `RR-RESVERIFY`), E2 note PARKED ($0, `99f62f9`, `RR-E2HOLD-VERIFY`).
-- Hermes lane: free queue DONE & VERIFIED; harnessVersion fixed (`RR-HARNESSVER-20261119`), 0.13.28 synced, suite 228; review + restart owed.
+- Hermes lane: free queue DONE & VERIFIED; harnessVersion fixed via canonical resolver (`RR-HVREV-20261119`), 0.13.29 synced, suite 229; restart owed.
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: pid 4486 (11:13 restart 11-19) holds 0.13.27; paged captures landed (`h12p2`); `enginePlan` live by capture (`RR-H12DIAG-REVIEW`).
