@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.27"
+PLUGIN_VERSION = "0.13.28"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -322,6 +322,23 @@ def _tracer_identity(tracer: Any) -> Optional[Dict[str, str]]:
     return {"model": getattr(init, "model", None), "provider": getattr(init, "provider", None)}
 
 
+def _harness_version() -> Optional[str]:
+    """The host's version for the sidecar: explicit CTXVM_HERMES_VERSION override,
+    else the installed hermes-agent distribution, else None. The gateway does not
+    export CTXVM_HERMES_VERSION, so reading only the env left harnessVersion null
+    on every live capture (RR-H12DIAG-REVIEW). importlib.metadata reports the
+    host's own installed version. Fail-open: any error resolves to None, never
+    raises into a turn (law 5). Sidecar-only — no wire field is touched."""
+    env = os.environ.get("CTXVM_HERMES_VERSION")
+    if env:
+        return env
+    try:
+        from importlib.metadata import version
+        return version("hermes-agent")
+    except Exception:  # noqa: BLE001 - metadata is best-effort provenance
+        return None
+
+
 def _canon_meta(
     session_id: str, hook_stats: Dict[str, int], trace_stats: Any,
     resume_from: Optional[Dict[str, Any]] = None,
@@ -336,7 +353,7 @@ def _canon_meta(
     meta = {
         "sessionID": session_id,
         "harness": "hermes-python-plugin",
-        "harnessVersion": os.environ.get("CTXVM_HERMES_VERSION"),
+        "harnessVersion": _harness_version(),
         "pluginVersion": PLUGIN_VERSION,
         "model": (identity or {}).get("model") or os.environ.get("CTXVM_MODEL"),
         "provider": (identity or {}).get("provider") or os.environ.get("CTXVM_PROVIDER"),
@@ -789,7 +806,7 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
         "plugin": {
             "version": PLUGIN_VERSION,
             "harness": "hermes-python-plugin",
-            "harnessVersion": os.environ.get("CTXVM_HERMES_VERSION"),
+            "harnessVersion": _harness_version(),
             # Arm identity (2026-11-07). The experiment's two arms differ only by the
             # profile's context.engine, and a capture that does not say which engine was
             # registered cannot be attributed afterwards — the pilot's sidecars carried no

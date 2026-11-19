@@ -358,5 +358,34 @@ class CollisionSuffixLawTests(_SmokeBase):
             f"shared-name-{suffix}.meta.json").read_text())["sessionID"], "collide-b")
 
 
+class HarnessVersionResolutionTests(_SmokeBase):
+    """The harnessVersion metadata gap (RR-H12DIAG-REVIEW): the sidecar read only
+    CTXVM_HERMES_VERSION, which the gateway does not export, so every live capture
+    carried null. The host's installed distribution is the truthful fallback."""
+
+    def test_unset_env_resolves_the_installed_host_version(self):
+        home = _fake_home(_NO_BUDGET_CONFIG)
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("CTXVM_HERMES_VERSION", None)
+            # Hermetic: mock the metadata source to a sentinel so the test proves
+            # the resolver path, not whatever host version happens to be installed.
+            with mock.patch("importlib.metadata.version", return_value="7.7.7-host"):
+                _drive_session(self.trace_dir, home, "hv-s1")
+        cov = json.loads((self.trace_dir / "hv-s1.coverage.json").read_text())
+        meta = json.loads((self.trace_dir / "hv-s1.meta.json").read_text())
+        self.assertEqual(cov["plugin"]["harnessVersion"], "7.7.7-host")
+        self.assertEqual(meta["harnessVersion"], "7.7.7-host")
+
+    def test_env_override_still_wins_over_the_host_distribution(self):
+        home = _fake_home(_NO_BUDGET_CONFIG)
+        with mock.patch("importlib.metadata.version", return_value="7.7.7-host"):
+            _drive_session(self.trace_dir, home, "hv-s2",
+                           env_extra={"CTXVM_HERMES_VERSION": "9.9.9"})
+        cov = json.loads((self.trace_dir / "hv-s2.coverage.json").read_text())
+        meta = json.loads((self.trace_dir / "hv-s2.meta.json").read_text())
+        self.assertEqual(cov["plugin"]["harnessVersion"], "9.9.9")
+        self.assertEqual(meta["harnessVersion"], "9.9.9")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

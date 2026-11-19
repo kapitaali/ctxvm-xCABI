@@ -2114,7 +2114,10 @@ class CoverageManifestTests(unittest.TestCase):
             )
             self.assertEqual(manifest["plugin"]["version"], PLUGIN_VERSION)
             self.assertEqual(manifest["plugin"]["harness"], "hermes-python-plugin")
-            self.assertIsNone(manifest["plugin"].get("harnessVersion"))
+            from live import _harness_version
+            self.assertEqual(manifest["plugin"].get("harnessVersion"), _harness_version(),
+                             "harnessVersion is host-resolved, not lane-fixed: env override else the "
+                             "installed hermes-agent distribution (RR-H12DIAG gap; was pinned null here)")
             self.assertEqual(manifest["session"]["sessionID"], "s")
         finally:
             for key in ("CTXVM_TRACE_DIR", "CTXVM_TRACE_NAME"):

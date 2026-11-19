@@ -259,13 +259,13 @@ turn counter = 0 in one-shot       a property of -z sessions, not a plugin defec
 engine emits no selection record   CLOSED 2026-11-14 (enginePlan + enginePlanTally); LIVE BY CAPTURE
                                    2026-11-19: owner restart 11:13, diag reads policyMode stable/settings
                                    (RR-H12DIAG-REVIEW); the H12 pair carries full plan blocks
-retention with suffixed names      implemented, untested (roadmap H17)
+retention with suffixed names      CLOSED 2026-11-19 (H17, RR-H16H18-20261119): 5 retention tests + W21 digest-suffix end-to-end
 installed dir                       clean of the old layout; ctxvm.py is NOT installed (T17 re-export,
                                    not imported by the tracer; import-derived sync excludes it).
                                    OWNER RULED 19 Nov 2026: DROP the obligation (RR-DEFAULTS-20261119) —
                                    the relative import cannot work flat, nothing imports it, and the engine
                                    engaged live at 0.13.27 without it (corroborated in RR-H16H18-20261119).
-harnessVersion null                metadata gap on 0.13.27 captures (RR-H12DIAG-REVIEW); unfixed
+harnessVersion null                FIXED 2026-11-19 (RR-HARNESSVER-20261119): _harness_version() = env override else installed hermes-agent dist; 0.13.28 synced, gateway restart owed
 post-H12 direction                 PARKED by owner (RR-DEFAULTS-20261119) while E1 offline replay runs;
                                    tail-only eviction candidate if reopened (RR-P8H12-20261119 §2);
                                    no cell authorized, $1 cap stands
