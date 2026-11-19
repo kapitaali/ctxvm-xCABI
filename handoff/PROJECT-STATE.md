@@ -12,14 +12,14 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 1. (Items 1–2 rotated verbatim 2026-11-15 to `handoff/PROJECT-STATE-ARCHIVE.md`.)
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
-- Research lane: P13/P14 (`e10d249`), Part III landed (`5ab5d38`), review CLOSED 11-18; E1 APPROVED 11-19 (`RR-E1APPROVE`): freeze data + write PREREG.md, research resolves 15-path/13-name + 247/4-vs-243/5; zero-spend.
+- Research lane: P13/P14 (`e10d249`), Part III fixes (`d10c325`, `RR-PART3FIX`), E1 offline LANDED & VERIFIED (`a1bd004`, `RR-E1LAND`, `RR-RESVERIFY`: 17 frozen traces, 96 turns, `tool_recall` 42.9% signal only, `identifier_scan` 2.4% negative; E2 owner-gated).
 - Hermes lane: H11–H13, H15, G4, H16–H18 DONE (`RR-REDACTIMPL-REVIEW`, `RR-DEFAULTS`, `RR-H16H18-REVIEW`); suite 226, gate green; free queue complete.
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: pid 4486 (11:13 restart 11-19) holds 0.13.27; paged captures landed (`h12p2`); `enginePlan` live by capture (`RR-H12DIAG-REVIEW`).
 ## Next three (ordered, one line each)
-1. Review: verify research landings (`a1bd004` `RR-E1LAND-20261119`, `d10c325` `RR-PART3FIX-20261119`, `e50d7b4` `RR-DATAMININGFIX-20261117`).
-2. W8 paging parked while E1 is reviewed (tail-only eviction candidate if reopened, `RR-DEFAULTS`).
+1. Owner: decide whether to track `datamining.{py,json}` (located in `research/uncommitted/materials/datamining/`, `RR-RESVERIFY` §1) and whether to open E2 or keep W8/E2 parked.
+2. W8 paging parked after E1 (`RR-DEFAULTS`; tail-only eviction candidate if reopened).
 3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11/H19 owner-gated.
 
 ## Decisions made (date, decision, reason)
@@ -27,7 +27,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - 2026-11-11: F1–F7 closed; P10+P11 answered; W8B closed negative; D18 RFC-0.1 note (`82f6a03`).
 - 2026-11-12: D-U10 (G1) + D-U1 (G2) applied; Prediction-block rule ratified (`685c999`); paid spend stopped after cell-03 ($0.2534, `RR-PAIDRESULT`); D13+D14 ratified (G5 closed).
 - 2026-11-13: W8C review chain closed — "0 stubs" withdrawn (entailed by the vocabulary), `evictedTokens` is a lagging cumulative (210,856 = 5.44× the unique 38,764), the W8D erratum corrected three ways, hold-once refused as a no-op; P12 ruled: the wire (`RR-SHAPEGAP`, `RR-W8DERRATUM`, `RR-OMISSIONANSWER`).
-- 2026-11-19: E1 APPROVED (`RR-E1APPROVE`); G4 DONE (`9e755d4`/`056fd94`), `stubText`/`reason` deferred; H12 NEGATIVE (`RR-H12RESULT`), W8 parked during E1; H13/H15 closed, H18→H17→H16 routed (`RR-DEFAULTS`).
+- 2026-11-19: E1 APPROVED & LANDED (`a1bd004`/`RR-RESVERIFY`: mixed, `tool_recall` 42.9% signal, `identifier_scan` 2.4% negative); G4 DONE (`9e755d4`/`056fd94`), `stubText`/`reason` deferred; H12 NEGATIVE (`RR-H12RESULT`); H13/H15/H16–H18 DONE (`43e46d1`/`93d338d`).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 RATIFIED & ROUTED 11-12: Pillar-1 splits + echo sweep (`design/diff-normalisation.md`; RR-WPROUTE 1–2).
