@@ -1,4 +1,4 @@
-# State (updated 2026-11-18, ctxvm repo agent (opencode); D17 held, G3/G4 ruled, T-B wired run complete)
+# State (updated 2026-11-19; E1 approved, G4 routed, H12 negative, D17 held)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
@@ -12,14 +12,14 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 1. (Items 1–2 rotated verbatim 2026-11-15 to `handoff/PROJECT-STATE-ARCHIVE.md`.)
 2. W8D erratum reviewed: 5 inputs verified, 3 arithmetic errors ⇒ hold-once is a no-op (`RR-W8DERRATUM-20261113`).
 ## In progress (one item: what, blocker, next command)
-- Research lane: P13/P14 applied (`e10d249`); Part III landed (`5ab5d38`), review CLOSED by owner 2026-11-18 (`RR-PART3REVIEW-CLOSE`); PDF 26pp; E1 data gate open.
+- Research lane: P13/P14 (`e10d249`), Part III landed (`5ab5d38`), review CLOSED 11-18; E1 APPROVED 11-19 (`RR-E1APPROVE`): freeze data + write PREREG.md, research resolves 15-path/13-name + 247/4-vs-243/5; zero-spend.
 - Hermes lane: per-call identities DONE (`f3078b4`); H9 landed (`e480186`) — 7 defects, 4 one-line fixes (`RR-H9LANDING`).
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: holds the current build (pid 23669, started after the 09:31 sync) ⇒ captures are labelled 0.13.24; the first **paged** one is still owed (`RR-H9LANDING`).
 ## Next three (ordered, one line each)
-1. Owner: decide T-B paging test — shell on 196/193 prompts and 390/390 identifier_scan faults make paging untestable (`RR-TBWIREDFULL-ADD`).
-2. Owner: route G4 tools/** to hermes (`RR-REDACT` draft); E1 data gate open (15 paths/13 names; live 247/4 vs 243/5) before research prereg.
+1. Owner: choose H12 follow-on — tail-only eviction (recommended), prefix compaction, or stop paging (`RR-H12RESULT`); closed hypothesis not re-run.
+2. Hermes: implement G4 from design/G4-LANE-DEVELOPER-PROMPT.md (`RR-G4ROUTE`); research: freeze E1 data + write PREREG.md (`RR-E1APPROVE`). Review wrote the card only — no agent, no tools/** byte.
 3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11 owner-gated.
 
 ## Decisions made (date, decision, reason)
@@ -27,10 +27,11 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - 2026-11-11: F1–F7 closed; P10+P11 answered; W8B closed negative; D18 RFC-0.1 note (`82f6a03`).
 - 2026-11-12: D-U10 (G1) + D-U1 (G2) applied; Prediction-block rule ratified (`685c999`); paid spend stopped after cell-03 ($0.2534, `RR-PAIDRESULT`); D13+D14 ratified (G5 closed).
 - 2026-11-13: W8C review chain closed — "0 stubs" withdrawn (entailed by the vocabulary), `evictedTokens` is a lagging cumulative (210,856 = 5.44× the unique 38,764), the W8D erratum corrected three ways, hold-once refused as a no-op; P12 ruled: the wire (`RR-SHAPEGAP`, `RR-W8DERRATUM`, `RR-OMISSIONANSWER`).
+- 2026-11-19: E1 APPROVED — gate open, research freezes data + writes prereg, resolves both data blockers, zero-spend (`RR-E1APPROVE`); G4 routed to hermes (`RR-G4ROUTE`); H12 NEGATIVE, mode engaged, mid-prefix hole defeats the cache (`RR-H12RESULT`).
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 RATIFIED & ROUTED 11-12: Pillar-1 splits + echo sweep (`design/diff-normalisation.md`; RR-WPROUTE 1–2).
-- D14 RATIFIED: capture default-on in owner builds; release rule bound D6/D17; redaction sidecar-first (`design/redaction-block.md`). G4 GO 18 Nov (`RR-G4GO`): sidecar assertion only.
+- D14 RATIFIED: capture default-on in owner builds; release rule bound D6/D17; redaction sidecar-first (`design/redaction-block.md`). G4 GO 18 Nov (`RR-G4GO`): sidecar assertion only; ROUTED to hermes 19 Nov (`RR-G4ROUTE`).
 - D15 paper structure: keep Part I + II; merge only after the D13/D14 edits land. Recommend keep.
 - D16 W8: W8/W8B negative; W8C measured (0.57x request, 2.11x cost); paid spend stopped; W8D refused — zero-spend policy work only (`RR-POLICYCHOICE`).
 - D17 HELD 2026-11-18 (c): packages/registries unreleased until owner judges enough data (no threshold/date). Repo/PDF/hub stay public; D6/D14 consent binds at release (`RR-D17RULING`).
