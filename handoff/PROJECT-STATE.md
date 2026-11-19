@@ -13,13 +13,13 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 (`e10d249`), Part III landed (`5ab5d38`), review CLOSED 11-18; E1 APPROVED 11-19 (`RR-E1APPROVE`): freeze data + write PREREG.md, research resolves 15-path/13-name + 247/4-vs-243/5; zero-spend.
-- Hermes lane: H11/H12 closed (`9e05548`, `f0c5e81`; NEGATIVE); next = G4 (`RR-G4ROUTE`); books: `RR-HBOOKS-20261119`).
+- Hermes lane: H11/H12 closed (NEGATIVE); G4 implemented (`RR-REDACTIMPL-20261119`), kit+CI green, review verification owed.
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: pid 4486 (11:13 restart 11-19) holds 0.13.27; paged captures landed (`h12p2`); `enginePlan` live by capture (`RR-H12DIAG-REVIEW`).
 ## Next three (ordered, one line each)
 1. Owner: choose H12 follow-on — tail-only eviction (recommended), prefix compaction, or stop paging (`RR-H12RESULT`); closed hypothesis not re-run.
-2. Hermes: implement G4 from design/G4-LANE-DEVELOPER-PROMPT.md (`RR-G4ROUTE`); research: freeze E1 data + write PREREG.md (`RR-E1APPROVE`). Review wrote the card only — no agent, no tools/** byte.
+2. Review: verify + record G4 implementation (`RR-REDACTIMPL-20261119`); research: freeze E1 data + write PREREG.md (`RR-E1APPROVE`). Owner: stubText/reason ruling still owed (`RR-REDACT` §6).
 3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11 owner-gated.
 
 ## Decisions made (date, decision, reason)
@@ -31,7 +31,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 
 ## Open decisions for the owner (D-numbered, options, your recommendation)
 - D13 RATIFIED & ROUTED 11-12: Pillar-1 splits + echo sweep (`design/diff-normalisation.md`; RR-WPROUTE 1–2).
-- D14 RATIFIED: capture default-on in owner builds; release rule bound D6/D17; redaction sidecar-first (`design/redaction-block.md`). G4 GO 18 Nov (`RR-G4GO`): sidecar assertion only; ROUTED to hermes 19 Nov (`RR-G4ROUTE`).
+- D14 RATIFIED: capture default-on in owner builds; release rule bound D6/D17; redaction sidecar-first (`design/redaction-block.md`). G4 GO 18 Nov (`RR-G4GO`): sidecar assertion only; ROUTED 19 Nov (`RR-G4ROUTE`); IMPL landed 19 Nov (`RR-REDACTIMPL`).
 - D15 paper structure: keep Part I + II; merge only after the D13/D14 edits land. Recommend keep.
 - D16 W8: W8/W8B negative; W8C measured (0.57x request, 2.11x cost); paid spend stopped; W8D refused — zero-spend policy work only (`RR-POLICYCHOICE`).
 - D17 HELD 2026-11-18 (c): packages/registries unreleased until owner judges enough data (no threshold/date). Repo/PDF/hub stay public; D6/D14 consent binds at release (`RR-D17RULING`).
