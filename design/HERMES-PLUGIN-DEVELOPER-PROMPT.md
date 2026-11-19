@@ -265,7 +265,7 @@ installed dir                       clean of the old layout; ctxvm.py is NOT ins
                                    OWNER RULED 19 Nov 2026: DROP the obligation (RR-DEFAULTS-20261119) —
                                    the relative import cannot work flat, nothing imports it, and the engine
                                    engaged live at 0.13.27 without it (corroborated in RR-H16H18-20261119).
-harnessVersion null                FIXED 2026-11-19 (RR-HARNESSVER-20261119): _harness_version() = env override else installed hermes-agent dist; 0.13.28 synced, gateway restart owed
+harnessVersion null                FIXED 2026-11-19 (RR-HARNESSVER + RR-HVREV): _harness_version() = env override else hermes_cli canonical resolver else dist metadata; 0.13.29 synced (live probe 0.23.2), gateway restart owed
 post-H12 direction                 PARKED by owner (RR-DEFAULTS-20261119) while E1 offline replay runs;
                                    tail-only eviction candidate if reopened (RR-P8H12-20261119 §2);
                                    no cell authorized, $1 cap stands

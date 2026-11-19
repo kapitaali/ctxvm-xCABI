@@ -26,6 +26,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import types
 import unittest
 from unittest import mock
 from pathlib import Path
@@ -359,32 +360,54 @@ class CollisionSuffixLawTests(_SmokeBase):
 
 
 class HarnessVersionResolutionTests(_SmokeBase):
-    """The harnessVersion metadata gap (RR-H12DIAG-REVIEW): the sidecar read only
-    CTXVM_HERMES_VERSION, which the gateway does not export, so every live capture
-    carried null. The host's installed distribution is the truthful fallback."""
+    """The harnessVersion metadata gap (RR-H12DIAG-REVIEW), resolved through the
+    host's CANONICAL resolver first (RR-HVREV: a git source install has no importlib
+    dist metadata, so metadata alone is null in the gateway). Each test pins one
+    link of the fail-open chain: env override -> hermes_cli resolver -> dist metadata."""
 
-    def test_unset_env_resolves_the_installed_host_version(self):
+    def _read(self, sid):
+        cov = json.loads((self.trace_dir / f"{sid}.coverage.json").read_text())
+        meta = json.loads((self.trace_dir / f"{sid}.meta.json").read_text())
+        return cov["plugin"]["harnessVersion"], meta["harnessVersion"]
+
+    def test_canonical_host_resolver_wins_over_metadata(self):
+        home = _fake_home(_NO_BUDGET_CONFIG)
+        fake_mod = types.ModuleType("hermes_cli.version_info")
+        fake_mod.get_version_info = lambda: types.SimpleNamespace(display_version="0.23.2-test")
+        fake_pkg = types.ModuleType("hermes_cli")
+        fake_pkg.version_info = fake_mod
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("CTXVM_HERMES_VERSION", None)
+            with mock.patch.dict(sys.modules, {"hermes_cli": fake_pkg,
+                                               "hermes_cli.version_info": fake_mod}):
+                with mock.patch("importlib.metadata.version", return_value="9.9.9-dist"):
+                    _drive_session(self.trace_dir, home, "hv-can")
+        cov, meta = self._read("hv-can")
+        self.assertEqual(cov, "0.23.2-test")
+        self.assertEqual(meta, "0.23.2-test")
+
+    def test_falls_back_to_dist_metadata_when_resolver_absent(self):
         home = _fake_home(_NO_BUDGET_CONFIG)
         with mock.patch.dict(os.environ, {}, clear=False):
             os.environ.pop("CTXVM_HERMES_VERSION", None)
-            # Hermetic: mock the metadata source to a sentinel so the test proves
-            # the resolver path, not whatever host version happens to be installed.
-            with mock.patch("importlib.metadata.version", return_value="7.7.7-host"):
-                _drive_session(self.trace_dir, home, "hv-s1")
-        cov = json.loads((self.trace_dir / "hv-s1.coverage.json").read_text())
-        meta = json.loads((self.trace_dir / "hv-s1.meta.json").read_text())
-        self.assertEqual(cov["plugin"]["harnessVersion"], "7.7.7-host")
-        self.assertEqual(meta["harnessVersion"], "7.7.7-host")
+            # A None sys.modules entry forces the hermes_cli import to fail, so the
+            # metadata fallback is exercised deterministically in any environment.
+            with mock.patch.dict(sys.modules, {"hermes_cli": None,
+                                               "hermes_cli.version_info": None}):
+                with mock.patch("importlib.metadata.version", return_value="7.7.7-host"):
+                    _drive_session(self.trace_dir, home, "hv-meta")
+        cov, meta = self._read("hv-meta")
+        self.assertEqual(cov, "7.7.7-host")
+        self.assertEqual(meta, "7.7.7-host")
 
-    def test_env_override_still_wins_over_the_host_distribution(self):
+    def test_env_override_still_wins_over_both_sources(self):
         home = _fake_home(_NO_BUDGET_CONFIG)
         with mock.patch("importlib.metadata.version", return_value="7.7.7-host"):
-            _drive_session(self.trace_dir, home, "hv-s2",
+            _drive_session(self.trace_dir, home, "hv-env",
                            env_extra={"CTXVM_HERMES_VERSION": "9.9.9"})
-        cov = json.loads((self.trace_dir / "hv-s2.coverage.json").read_text())
-        meta = json.loads((self.trace_dir / "hv-s2.meta.json").read_text())
-        self.assertEqual(cov["plugin"]["harnessVersion"], "9.9.9")
-        self.assertEqual(meta["harnessVersion"], "9.9.9")
+        cov, meta = self._read("hv-env")
+        self.assertEqual(cov, "9.9.9")
+        self.assertEqual(meta, "9.9.9")
 
 
 if __name__ == "__main__":

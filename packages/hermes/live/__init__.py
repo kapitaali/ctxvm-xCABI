@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.28"
+PLUGIN_VERSION = "0.13.29"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -323,15 +323,28 @@ def _tracer_identity(tracer: Any) -> Optional[Dict[str, str]]:
 
 
 def _harness_version() -> Optional[str]:
-    """The host's version for the sidecar: explicit CTXVM_HERMES_VERSION override,
-    else the installed hermes-agent distribution, else None. The gateway does not
-    export CTXVM_HERMES_VERSION, so reading only the env left harnessVersion null
-    on every live capture (RR-H12DIAG-REVIEW). importlib.metadata reports the
-    host's own installed version. Fail-open: any error resolves to None, never
-    raises into a turn (law 5). Sidecar-only — no wire field is touched."""
+    """The host's version for the sidecar. The gateway does not export
+    CTXVM_HERMES_VERSION, so reading only the env left harnessVersion null on
+    every live capture (RR-H12DIAG-REVIEW). Resolution, fail-open at each step
+    (law 5 — never raise into a turn); sidecar-only, no wire field:
+      1. CTXVM_HERMES_VERSION env override (the parity channel);
+      2. the host's canonical resolver hermes_cli.version_info.get_version_info()
+         (cached process-wide: install stamp -> live git -> unknown). This is the
+         source the gateway itself uses. A git SOURCE install carries no importlib
+         dist metadata, so metadata alone is null in the gateway (RR-HVREV finding);
+      3. importlib.metadata.version("hermes-agent") where hermes_cli is not
+         importable but the distribution is installed (e.g. the offline test env);
+      4. None."""
     env = os.environ.get("CTXVM_HERMES_VERSION")
     if env:
         return env
+    try:
+        from hermes_cli.version_info import get_version_info
+        v = get_version_info().display_version
+        if v and v != "unknown":
+            return v
+    except Exception:  # noqa: BLE001 - outside the host runtime
+        pass
     try:
         from importlib.metadata import version
         return version("hermes-agent")

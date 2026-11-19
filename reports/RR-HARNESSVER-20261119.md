@@ -83,3 +83,10 @@ bash tools/run-ci.sh && bash tools/sync-plugin.sh --check
 
 - Review-lane verification + recording of this card.
 - **Operator gateway restart** to put 0.13.28 live; until then captures stay 0.13.27/null.
+
+
+---
+
+**Superseded (2026-11-19, live verification):** the `importlib.metadata` source in §2 is absent in
+the gateway's git source install, so 0.13.28 did not populate harnessVersion live. The corrected
+canonical resolver and version 0.13.29 are recorded in `reports/RR-HVREV-20261119.md`.
