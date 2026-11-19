@@ -1,0 +1,21 @@
+wrote bank.json: 20 items, 220 pages, stratum=tool_recall
+fb01: pages=11 faults=1 turns=2 tau=3827c taup=3582c
+fb02: pages=11 faults=1 turns=2 tau=3935c taup=3684c
+fb03: pages=11 faults=1 turns=2 tau=3773c taup=3531c
+fb04: pages=11 faults=1 turns=2 tau=3665c taup=3429c
+fb05: pages=11 faults=1 turns=2 tau=3827c taup=3582c
+fb06: pages=11 faults=1 turns=2 tau=3827c taup=3582c
+fb07: pages=11 faults=1 turns=2 tau=3881c taup=3633c
+fb08: pages=11 faults=1 turns=2 tau=3827c taup=3582c
+fb09: pages=11 faults=1 turns=2 tau=3827c taup=3582c
+fb10: pages=11 faults=1 turns=2 tau=3719c taup=3480c
+fb11: pages=11 faults=1 turns=2 tau=3827c taup=3582c
+fb12: pages=11 faults=1 turns=2 tau=3881c taup=3633c
+fb13: pages=11 faults=1 turns=2 tau=3719c taup=3480c
+fb14: pages=11 faults=1 turns=2 tau=3989c taup=3735c
+fb15: pages=11 faults=1 turns=2 tau=3827c taup=3582c
+fb16: pages=11 faults=1 turns=2 tau=3989c taup=3735c
+fb17: pages=11 faults=1 turns=2 tau=3719c taup=3480c
+fb18: pages=11 faults=1 turns=2 tau=3989c taup=3735c
+fb19: pages=11 faults=1 turns=2 tau=3881c taup=3633c
+fb20: pages=11 faults=1 turns=2 tau=3827c taup=3582c

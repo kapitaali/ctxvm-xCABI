@@ -1,0 +1,245 @@
+PASS fb01 body-hash
+PASS fb01 body-tokens
+PASS fb01 >=10 unique pages
+PASS fb01 declare<->bank
+PASS fb01 tool_recall>=1 :: tool_recall=1
+PASS fb01 pure tool_recall stratum
+PASS fb01 recallTarget faulted
+PASS fb01 tau nonempty
+PASS fb01 tau\p shorter
+PASS fb01 target removed from tau\p
+PASS fb01 trace no leakage
+PASS fb01 tau no leakage
+PASS fb02 body-hash
+PASS fb02 body-tokens
+PASS fb02 >=10 unique pages
+PASS fb02 declare<->bank
+PASS fb02 tool_recall>=1 :: tool_recall=1
+PASS fb02 pure tool_recall stratum
+PASS fb02 recallTarget faulted
+PASS fb02 tau nonempty
+PASS fb02 tau\p shorter
+PASS fb02 target removed from tau\p
+PASS fb02 trace no leakage
+PASS fb02 tau no leakage
+PASS fb03 body-hash
+PASS fb03 body-tokens
+PASS fb03 >=10 unique pages
+PASS fb03 declare<->bank
+PASS fb03 tool_recall>=1 :: tool_recall=1
+PASS fb03 pure tool_recall stratum
+PASS fb03 recallTarget faulted
+PASS fb03 tau nonempty
+PASS fb03 tau\p shorter
+PASS fb03 target removed from tau\p
+PASS fb03 trace no leakage
+PASS fb03 tau no leakage
+PASS fb04 body-hash
+PASS fb04 body-tokens
+PASS fb04 >=10 unique pages
+PASS fb04 declare<->bank
+PASS fb04 tool_recall>=1 :: tool_recall=1
+PASS fb04 pure tool_recall stratum
+PASS fb04 recallTarget faulted
+PASS fb04 tau nonempty
+PASS fb04 tau\p shorter
+PASS fb04 target removed from tau\p
+PASS fb04 trace no leakage
+PASS fb04 tau no leakage
+PASS fb05 body-hash
+PASS fb05 body-tokens
+PASS fb05 >=10 unique pages
+PASS fb05 declare<->bank
+PASS fb05 tool_recall>=1 :: tool_recall=1
+PASS fb05 pure tool_recall stratum
+PASS fb05 recallTarget faulted
+PASS fb05 tau nonempty
+PASS fb05 tau\p shorter
+PASS fb05 target removed from tau\p
+PASS fb05 trace no leakage
+PASS fb05 tau no leakage
+PASS fb06 body-hash
+PASS fb06 body-tokens
+PASS fb06 >=10 unique pages
+PASS fb06 declare<->bank
+PASS fb06 tool_recall>=1 :: tool_recall=1
+PASS fb06 pure tool_recall stratum
+PASS fb06 recallTarget faulted
+PASS fb06 tau nonempty
+PASS fb06 tau\p shorter
+PASS fb06 target removed from tau\p
+PASS fb06 trace no leakage
+PASS fb06 tau no leakage
+PASS fb07 body-hash
+PASS fb07 body-tokens
+PASS fb07 >=10 unique pages
+PASS fb07 declare<->bank
+PASS fb07 tool_recall>=1 :: tool_recall=1
+PASS fb07 pure tool_recall stratum
+PASS fb07 recallTarget faulted
+PASS fb07 tau nonempty
+PASS fb07 tau\p shorter
+PASS fb07 target removed from tau\p
+PASS fb07 trace no leakage
+PASS fb07 tau no leakage
+PASS fb08 body-hash
+PASS fb08 body-tokens
+PASS fb08 >=10 unique pages
+PASS fb08 declare<->bank
+PASS fb08 tool_recall>=1 :: tool_recall=1
+PASS fb08 pure tool_recall stratum
+PASS fb08 recallTarget faulted
+PASS fb08 tau nonempty
+PASS fb08 tau\p shorter
+PASS fb08 target removed from tau\p
+PASS fb08 trace no leakage
+PASS fb08 tau no leakage
+PASS fb09 body-hash
+PASS fb09 body-tokens
+PASS fb09 >=10 unique pages
+PASS fb09 declare<->bank
+PASS fb09 tool_recall>=1 :: tool_recall=1
+PASS fb09 pure tool_recall stratum
+PASS fb09 recallTarget faulted
+PASS fb09 tau nonempty
+PASS fb09 tau\p shorter
+PASS fb09 target removed from tau\p
+PASS fb09 trace no leakage
+PASS fb09 tau no leakage
+PASS fb10 body-hash
+PASS fb10 body-tokens
+PASS fb10 >=10 unique pages
+PASS fb10 declare<->bank
+PASS fb10 tool_recall>=1 :: tool_recall=1
+PASS fb10 pure tool_recall stratum
+PASS fb10 recallTarget faulted
+PASS fb10 tau nonempty
+PASS fb10 tau\p shorter
+PASS fb10 target removed from tau\p
+PASS fb10 trace no leakage
+PASS fb10 tau no leakage
+PASS fb11 body-hash
+PASS fb11 body-tokens
+PASS fb11 >=10 unique pages
+PASS fb11 declare<->bank
+PASS fb11 tool_recall>=1 :: tool_recall=1
+PASS fb11 pure tool_recall stratum
+PASS fb11 recallTarget faulted
+PASS fb11 tau nonempty
+PASS fb11 tau\p shorter
+PASS fb11 target removed from tau\p
+PASS fb11 trace no leakage
+PASS fb11 tau no leakage
+PASS fb12 body-hash
+PASS fb12 body-tokens
+PASS fb12 >=10 unique pages
+PASS fb12 declare<->bank
+PASS fb12 tool_recall>=1 :: tool_recall=1
+PASS fb12 pure tool_recall stratum
+PASS fb12 recallTarget faulted
+PASS fb12 tau nonempty
+PASS fb12 tau\p shorter
+PASS fb12 target removed from tau\p
+PASS fb12 trace no leakage
+PASS fb12 tau no leakage
+PASS fb13 body-hash
+PASS fb13 body-tokens
+PASS fb13 >=10 unique pages
+PASS fb13 declare<->bank
+PASS fb13 tool_recall>=1 :: tool_recall=1
+PASS fb13 pure tool_recall stratum
+PASS fb13 recallTarget faulted
+PASS fb13 tau nonempty
+PASS fb13 tau\p shorter
+PASS fb13 target removed from tau\p
+PASS fb13 trace no leakage
+PASS fb13 tau no leakage
+PASS fb14 body-hash
+PASS fb14 body-tokens
+PASS fb14 >=10 unique pages
+PASS fb14 declare<->bank
+PASS fb14 tool_recall>=1 :: tool_recall=1
+PASS fb14 pure tool_recall stratum
+PASS fb14 recallTarget faulted
+PASS fb14 tau nonempty
+PASS fb14 tau\p shorter
+PASS fb14 target removed from tau\p
+PASS fb14 trace no leakage
+PASS fb14 tau no leakage
+PASS fb15 body-hash
+PASS fb15 body-tokens
+PASS fb15 >=10 unique pages
+PASS fb15 declare<->bank
+PASS fb15 tool_recall>=1 :: tool_recall=1
+PASS fb15 pure tool_recall stratum
+PASS fb15 recallTarget faulted
+PASS fb15 tau nonempty
+PASS fb15 tau\p shorter
+PASS fb15 target removed from tau\p
+PASS fb15 trace no leakage
+PASS fb15 tau no leakage
+PASS fb16 body-hash
+PASS fb16 body-tokens
+PASS fb16 >=10 unique pages
+PASS fb16 declare<->bank
+PASS fb16 tool_recall>=1 :: tool_recall=1
+PASS fb16 pure tool_recall stratum
+PASS fb16 recallTarget faulted
+PASS fb16 tau nonempty
+PASS fb16 tau\p shorter
+PASS fb16 target removed from tau\p
+PASS fb16 trace no leakage
+PASS fb16 tau no leakage
+PASS fb17 body-hash
+PASS fb17 body-tokens
+PASS fb17 >=10 unique pages
+PASS fb17 declare<->bank
+PASS fb17 tool_recall>=1 :: tool_recall=1
+PASS fb17 pure tool_recall stratum
+PASS fb17 recallTarget faulted
+PASS fb17 tau nonempty
+PASS fb17 tau\p shorter
+PASS fb17 target removed from tau\p
+PASS fb17 trace no leakage
+PASS fb17 tau no leakage
+PASS fb18 body-hash
+PASS fb18 body-tokens
+PASS fb18 >=10 unique pages
+PASS fb18 declare<->bank
+PASS fb18 tool_recall>=1 :: tool_recall=1
+PASS fb18 pure tool_recall stratum
+PASS fb18 recallTarget faulted
+PASS fb18 tau nonempty
+PASS fb18 tau\p shorter
+PASS fb18 target removed from tau\p
+PASS fb18 trace no leakage
+PASS fb18 tau no leakage
+PASS fb19 body-hash
+PASS fb19 body-tokens
+PASS fb19 >=10 unique pages
+PASS fb19 declare<->bank
+PASS fb19 tool_recall>=1 :: tool_recall=1
+PASS fb19 pure tool_recall stratum
+PASS fb19 recallTarget faulted
+PASS fb19 tau nonempty
+PASS fb19 tau\p shorter
+PASS fb19 target removed from tau\p
+PASS fb19 trace no leakage
+PASS fb19 tau no leakage
+PASS fb20 body-hash
+PASS fb20 body-tokens
+PASS fb20 >=10 unique pages
+PASS fb20 declare<->bank
+PASS fb20 tool_recall>=1 :: tool_recall=1
+PASS fb20 pure tool_recall stratum
+PASS fb20 recallTarget faulted
+PASS fb20 tau nonempty
+PASS fb20 tau\p shorter
+PASS fb20 target removed from tau\p
+PASS fb20 trace no leakage
+PASS fb20 tau no leakage
+PASS schema v0.1 conformance :: OK: all checks passed
+PASS replay 0 divergences (all 20)
+
+242/242 checks passed
+BANK_PHASE0_OK
