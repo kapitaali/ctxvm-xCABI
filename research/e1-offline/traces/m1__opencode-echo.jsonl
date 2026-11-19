@@ -1,0 +1,17 @@
+{"type":"session.open","agentId":"opencode","model":"anthropic/claude-sonnet-4-5","provider":"anthropic","budgetTokens":200000,"tokenizerId":"apx4-char"}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:echo_read({\"path\":\"src/echo/README.md\"})","contentHash":"sha256:956d5d92"},"kind":"tool_result","tokens":15}}
+{"type":"page.fault","turn":0,"page":{"logicalRef":"tool:echo_read({\"path\":\"src/echo/README.md\"})","contentHash":"sha256:956d5d92"},"source":"identifier_scan"}
+{"type":"page.render","turn":1,"page":{"logicalRef":"tool:echo_read({\"path\":\"src/echo/README.md\"})","contentHash":"sha256:956d5d92"},"mode":"full"}
+{"type":"page.fault","turn":1,"page":{"logicalRef":"tool:echo_read({\"path\":\"src/echo/README.md\"})","contentHash":"sha256:956d5d92"},"source":"tool_recall"}
+{"type":"page.declare","page":{"id":{"logicalRef":"tool:echo_read({\"path\":\"src/echo/README.md\"})","contentHash":"sha256:afdfd90c"},"kind":"tool_result","tokens":26}}
+{"type":"page.render","turn":3,"page":{"logicalRef":"tool:echo_read({\"path\":\"src/echo/README.md\"})","contentHash":"sha256:afdfd90c"},"mode":"full"}
+{"type":"turn.render","turn":0,"residentTokens":41,"evictedTokens":0,"headroom":199959}
+{"type":"turn.render","turn":1,"residentTokens":41,"evictedTokens":0,"headroom":199959}
+{"type":"turn.render","turn":2,"residentTokens":41,"evictedTokens":0,"headroom":199959}
+{"type":"turn.render","turn":3,"residentTokens":41,"evictedTokens":0,"headroom":199959}
+{"type":"turn.render","turn":4,"residentTokens":41,"evictedTokens":0,"headroom":199959}
+{"type":"call.meta","turn":0,"provider":"anthropic","cacheEstimate":{"estHitTokens":0,"estMissTokens":0,"providerReported":false}}
+{"type":"call.meta","turn":1,"provider":"anthropic","cacheEstimate":{"estHitTokens":0,"estMissTokens":15,"providerReported":false}}
+{"type":"call.meta","turn":2,"provider":"anthropic","cacheEstimate":{"estHitTokens":15,"estMissTokens":0,"providerReported":false}}
+{"type":"call.meta","turn":3,"provider":"anthropic","cacheEstimate":{"estHitTokens":0,"estMissTokens":26,"providerReported":false}}
+{"type":"call.meta","turn":4,"provider":"anthropic","cacheEstimate":{"estHitTokens":26,"estMissTokens":0,"providerReported":false}}

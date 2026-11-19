@@ -1,0 +1,42 @@
+START m1__opencode-echo.jsonl
+OK m1__opencode-echo.jsonl events=17 turns=5 id=1/1/1 tool=1/0/1
+START m1__session-healthy.jsonl
+OK m1__session-healthy.jsonl events=12 turns=3 id=1/1/1 tool=0/0/0
+START m1__session-thrashing.jsonl
+OK m1__session-thrashing.jsonl events=41 turns=10 id=1/1/1 tool=2/1/2
+START m1__tracer-healthy.jsonl
+OK m1__tracer-healthy.jsonl events=16 turns=4 id=1/1/1 tool=0/0/0
+START m1__tracer-recall.jsonl
+OK m1__tracer-recall.jsonl events=19 turns=4 id=1/0/1 tool=1/1/1
+START m2__live-echo.jsonl
+OK m2__live-echo.jsonl events=22 turns=6 id=2/2/2 tool=1/0/1
+START m2__live-thrash.jsonl
+OK m2__live-thrash.jsonl events=33 turns=6 id=5/5/5 tool=5/0/5
+START m3__hermes-echo-synthetic.jsonl
+OK m3__hermes-echo-synthetic.jsonl events=20 turns=5 id=2/2/2 tool=1/1/1
+START m3__hermes-thrash-synthetic.jsonl
+OK m3__hermes-thrash-synthetic.jsonl events=26 turns=5 id=0/0/0 tool=5/5/5
+START m4__hermes-live-session-01.jsonl
+OK m4__hermes-live-session-01.jsonl events=23 turns=2 id=0/0/0 tool=1/1/1
+START m5__opencode-live-session-01.jsonl
+OK m5__opencode-live-session-01.jsonl events=80 turns=14 id=17/17/17 tool=0/0/0
+START m6__opencode-pause-session-a.jsonl
+OK m6__opencode-pause-session-a.jsonl events=32 turns=7 id=5/5/5 tool=0/0/0
+START m6__opencode-resume-session-b.jsonl
+OK m6__opencode-resume-session-b.jsonl events=13 turns=3 id=2/2/2 tool=0/0/0
+START m7__hermes-pause-session-a.jsonl
+OK m7__hermes-pause-session-a.jsonl events=32 turns=5 id=0/0/0 tool=0/0/0
+START m7__hermes-resume-session-b.jsonl
+OK m7__hermes-resume-session-b.jsonl events=37 turns=1 id=0/0/0 tool=0/0/0
+START m8__live-echo.jsonl
+OK m8__live-echo.jsonl events=31 turns=10 id=3/3/3 tool=1/0/1
+START m8__live-thrash.jsonl
+OK m8__live-thrash.jsonl events=22 turns=6 id=0/0/0 tool=3/3/3
+SOURCE_REPRODUCE true
+COUNTS {"A": {"identifier_scan": 40, "tool_recall": 12}, "B": {"identifier_scan": 41, "tool_recall": 21}, "control": {"identifier_scan": 41, "tool_recall": 21}, "turns": 96}
+RATES {"A": {"identifier_scan": 0.4166666666666667, "tool_recall": 0.125}, "B": {"identifier_scan": 0.4270833333333333, "tool_recall": 0.21875}, "control": {"identifier_scan": 0.4270833333333333, "tool_recall": 0.21875}}
+SOURCE_N {"identifier_scan": 41, "tool_recall": 21}
+ADVANTAGE {"identifier_scan": 0.02439024390243894, "tool_recall": 0.42857142857142855}
+PER_SOURCE {"identifier_scan": true, "tool_recall": false}
+VERDICT LABEL-QUALITY SIGNAL ONLY: no answer/model claim; E2 still owner-gated
+WROTE result.json

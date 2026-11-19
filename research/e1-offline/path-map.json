@@ -1,0 +1,19 @@
+{
+  "m1__opencode-echo.jsonl": "corpus/m1/opencode-echo.jsonl",
+  "m1__session-healthy.jsonl": "corpus/m1/session-healthy.jsonl",
+  "m1__session-thrashing.jsonl": "corpus/m1/session-thrashing.jsonl",
+  "m1__tracer-healthy.jsonl": "corpus/m1/tracer-healthy.jsonl",
+  "m1__tracer-recall.jsonl": "corpus/m1/tracer-recall.jsonl",
+  "m2__live-echo.jsonl": "corpus/m2/live-echo.jsonl",
+  "m2__live-thrash.jsonl": "corpus/m2/live-thrash.jsonl",
+  "m3__hermes-echo-synthetic.jsonl": "corpus/m3/hermes-echo-synthetic.jsonl",
+  "m3__hermes-thrash-synthetic.jsonl": "corpus/m3/hermes-thrash-synthetic.jsonl",
+  "m4__hermes-live-session-01.jsonl": "corpus/m4/hermes-live-session-01.jsonl",
+  "m5__opencode-live-session-01.jsonl": "corpus/m5/opencode-live-session-01.jsonl",
+  "m6__opencode-pause-session-a.jsonl": "corpus/m6/opencode-pause-session-a.jsonl",
+  "m6__opencode-resume-session-b.jsonl": "corpus/m6/opencode-resume-session-b.jsonl",
+  "m7__hermes-pause-session-a.jsonl": "corpus/m7/hermes-pause-session-a.jsonl",
+  "m7__hermes-resume-session-b.jsonl": "corpus/m7/hermes-resume-session-b.jsonl",
+  "m8__live-echo.jsonl": "corpus/m8/live-echo.jsonl",
+  "m8__live-thrash.jsonl": "corpus/m8/live-thrash.jsonl"
+}

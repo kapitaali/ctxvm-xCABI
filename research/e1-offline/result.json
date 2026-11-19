@@ -1,0 +1,365 @@
+{
+  "date": "2026-11-18",
+  "view": "v1:150d24ca",
+  "files": [
+    {
+      "name": "m1__opencode-echo.jsonl",
+      "turns": 5,
+      "control": {
+        "identifier_scan": 1,
+        "tool_recall": 1
+      },
+      "A": {
+        "identifier_scan": 1,
+        "tool_recall": 0
+      },
+      "B": {
+        "identifier_scan": 1,
+        "tool_recall": 1
+      },
+      "events": 17,
+      "declared": 0,
+      "faulted": 1
+    },
+    {
+      "name": "m1__session-healthy.jsonl",
+      "turns": 3,
+      "control": {
+        "identifier_scan": 1,
+        "tool_recall": 0
+      },
+      "A": {
+        "identifier_scan": 1,
+        "tool_recall": 0
+      },
+      "B": {
+        "identifier_scan": 1,
+        "tool_recall": 0
+      },
+      "events": 12,
+      "declared": 0,
+      "faulted": 1
+    },
+    {
+      "name": "m1__session-thrashing.jsonl",
+      "turns": 10,
+      "control": {
+        "identifier_scan": 1,
+        "tool_recall": 2
+      },
+      "A": {
+        "identifier_scan": 1,
+        "tool_recall": 1
+      },
+      "B": {
+        "identifier_scan": 1,
+        "tool_recall": 2
+      },
+      "events": 41,
+      "declared": 0,
+      "faulted": 2
+    },
+    {
+      "name": "m1__tracer-healthy.jsonl",
+      "turns": 4,
+      "control": {
+        "identifier_scan": 1,
+        "tool_recall": 0
+      },
+      "A": {
+        "identifier_scan": 1,
+        "tool_recall": 0
+      },
+      "B": {
+        "identifier_scan": 1,
+        "tool_recall": 0
+      },
+      "events": 16,
+      "declared": 0,
+      "faulted": 1
+    },
+    {
+      "name": "m1__tracer-recall.jsonl",
+      "turns": 4,
+      "control": {
+        "identifier_scan": 1,
+        "tool_recall": 1
+      },
+      "A": {
+        "identifier_scan": 0,
+        "tool_recall": 1
+      },
+      "B": {
+        "identifier_scan": 1,
+        "tool_recall": 1
+      },
+      "events": 19,
+      "declared": 0,
+      "faulted": 1
+    },
+    {
+      "name": "m2__live-echo.jsonl",
+      "turns": 6,
+      "control": {
+        "identifier_scan": 2,
+        "tool_recall": 1
+      },
+      "A": {
+        "identifier_scan": 2,
+        "tool_recall": 0
+      },
+      "B": {
+        "identifier_scan": 2,
+        "tool_recall": 1
+      },
+      "events": 22,
+      "declared": 0,
+      "faulted": 2
+    },
+    {
+      "name": "m2__live-thrash.jsonl",
+      "turns": 6,
+      "control": {
+        "identifier_scan": 5,
+        "tool_recall": 5
+      },
+      "A": {
+        "identifier_scan": 5,
+        "tool_recall": 0
+      },
+      "B": {
+        "identifier_scan": 5,
+        "tool_recall": 5
+      },
+      "events": 33,
+      "declared": 0,
+      "faulted": 5
+    },
+    {
+      "name": "m3__hermes-echo-synthetic.jsonl",
+      "turns": 5,
+      "control": {
+        "identifier_scan": 2,
+        "tool_recall": 1
+      },
+      "A": {
+        "identifier_scan": 2,
+        "tool_recall": 1
+      },
+      "B": {
+        "identifier_scan": 2,
+        "tool_recall": 1
+      },
+      "events": 20,
+      "declared": 0,
+      "faulted": 2
+    },
+    {
+      "name": "m3__hermes-thrash-synthetic.jsonl",
+      "turns": 5,
+      "control": {
+        "identifier_scan": 0,
+        "tool_recall": 5
+      },
+      "A": {
+        "identifier_scan": 0,
+        "tool_recall": 5
+      },
+      "B": {
+        "identifier_scan": 0,
+        "tool_recall": 5
+      },
+      "events": 26,
+      "declared": 0,
+      "faulted": 5
+    },
+    {
+      "name": "m4__hermes-live-session-01.jsonl",
+      "turns": 2,
+      "control": {
+        "identifier_scan": 0,
+        "tool_recall": 1
+      },
+      "A": {
+        "identifier_scan": 0,
+        "tool_recall": 1
+      },
+      "B": {
+        "identifier_scan": 0,
+        "tool_recall": 1
+      },
+      "events": 23,
+      "declared": 0,
+      "faulted": 1
+    },
+    {
+      "name": "m5__opencode-live-session-01.jsonl",
+      "turns": 14,
+      "control": {
+        "identifier_scan": 17,
+        "tool_recall": 0
+      },
+      "A": {
+        "identifier_scan": 17,
+        "tool_recall": 0
+      },
+      "B": {
+        "identifier_scan": 17,
+        "tool_recall": 0
+      },
+      "events": 80,
+      "declared": 0,
+      "faulted": 17
+    },
+    {
+      "name": "m6__opencode-pause-session-a.jsonl",
+      "turns": 7,
+      "control": {
+        "identifier_scan": 5,
+        "tool_recall": 0
+      },
+      "A": {
+        "identifier_scan": 5,
+        "tool_recall": 0
+      },
+      "B": {
+        "identifier_scan": 5,
+        "tool_recall": 0
+      },
+      "events": 32,
+      "declared": 0,
+      "faulted": 5
+    },
+    {
+      "name": "m6__opencode-resume-session-b.jsonl",
+      "turns": 3,
+      "control": {
+        "identifier_scan": 2,
+        "tool_recall": 0
+      },
+      "A": {
+        "identifier_scan": 2,
+        "tool_recall": 0
+      },
+      "B": {
+        "identifier_scan": 2,
+        "tool_recall": 0
+      },
+      "events": 13,
+      "declared": 0,
+      "faulted": 2
+    },
+    {
+      "name": "m7__hermes-pause-session-a.jsonl",
+      "turns": 5,
+      "control": {
+        "identifier_scan": 0,
+        "tool_recall": 0
+      },
+      "A": {
+        "identifier_scan": 0,
+        "tool_recall": 0
+      },
+      "B": {
+        "identifier_scan": 0,
+        "tool_recall": 0
+      },
+      "events": 32,
+      "declared": 0,
+      "faulted": 0
+    },
+    {
+      "name": "m7__hermes-resume-session-b.jsonl",
+      "turns": 1,
+      "control": {
+        "identifier_scan": 0,
+        "tool_recall": 0
+      },
+      "A": {
+        "identifier_scan": 0,
+        "tool_recall": 0
+      },
+      "B": {
+        "identifier_scan": 0,
+        "tool_recall": 0
+      },
+      "events": 37,
+      "declared": 0,
+      "faulted": 0
+    },
+    {
+      "name": "m8__live-echo.jsonl",
+      "turns": 10,
+      "control": {
+        "identifier_scan": 3,
+        "tool_recall": 1
+      },
+      "A": {
+        "identifier_scan": 3,
+        "tool_recall": 0
+      },
+      "B": {
+        "identifier_scan": 3,
+        "tool_recall": 1
+      },
+      "events": 31,
+      "declared": 0,
+      "faulted": 3
+    },
+    {
+      "name": "m8__live-thrash.jsonl",
+      "turns": 6,
+      "control": {
+        "identifier_scan": 0,
+        "tool_recall": 3
+      },
+      "A": {
+        "identifier_scan": 0,
+        "tool_recall": 3
+      },
+      "B": {
+        "identifier_scan": 0,
+        "tool_recall": 3
+      },
+      "events": 22,
+      "declared": 0,
+      "faulted": 3
+    }
+  ],
+  "aggregate": {
+    "turns": 96,
+    "control": {
+      "identifier_scan": 41,
+      "tool_recall": 21
+    },
+    "A": {
+      "identifier_scan": 40,
+      "tool_recall": 12
+    },
+    "B": {
+      "identifier_scan": 41,
+      "tool_recall": 21
+    }
+  },
+  "rates": {
+    "control": {
+      "identifier_scan": 0.4270833333333333,
+      "tool_recall": 0.21875
+    },
+    "A": {
+      "identifier_scan": 0.4166666666666667,
+      "tool_recall": 0.125
+    },
+    "B": {
+      "identifier_scan": 0.4270833333333333,
+      "tool_recall": 0.21875
+    }
+  },
+  "source_reproduce": true,
+  "advantage": {
+    "identifier_scan": 0.02439024390243894,
+    "tool_recall": 0.42857142857142855
+  },
+  "verdict": "LABEL-QUALITY SIGNAL ONLY: no answer/model claim; E2 still owner-gated",
+  "model_calls": 0
+}

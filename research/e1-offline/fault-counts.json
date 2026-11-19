@@ -1,0 +1,62 @@
+{
+  "per_file": {
+    "m1__opencode-echo.jsonl": {
+      "identifier_scan": 1,
+      "tool_recall": 1
+    },
+    "m1__session-healthy.jsonl": {
+      "identifier_scan": 1
+    },
+    "m1__session-thrashing.jsonl": {
+      "identifier_scan": 1,
+      "tool_recall": 2
+    },
+    "m1__tracer-healthy.jsonl": {
+      "identifier_scan": 1
+    },
+    "m1__tracer-recall.jsonl": {
+      "identifier_scan": 1,
+      "tool_recall": 1
+    },
+    "m2__live-echo.jsonl": {
+      "identifier_scan": 2,
+      "tool_recall": 1
+    },
+    "m2__live-thrash.jsonl": {
+      "identifier_scan": 5,
+      "tool_recall": 5
+    },
+    "m3__hermes-echo-synthetic.jsonl": {
+      "identifier_scan": 2,
+      "tool_recall": 1
+    },
+    "m3__hermes-thrash-synthetic.jsonl": {
+      "tool_recall": 5
+    },
+    "m4__hermes-live-session-01.jsonl": {
+      "tool_recall": 1
+    },
+    "m5__opencode-live-session-01.jsonl": {
+      "identifier_scan": 17
+    },
+    "m6__opencode-pause-session-a.jsonl": {
+      "identifier_scan": 5
+    },
+    "m6__opencode-resume-session-b.jsonl": {
+      "identifier_scan": 2
+    },
+    "m7__hermes-pause-session-a.jsonl": {},
+    "m7__hermes-resume-session-b.jsonl": {},
+    "m8__live-echo.jsonl": {
+      "identifier_scan": 3,
+      "tool_recall": 1
+    },
+    "m8__live-thrash.jsonl": {
+      "tool_recall": 3
+    }
+  },
+  "total": {
+    "identifier_scan": 41,
+    "tool_recall": 21
+  }
+}
