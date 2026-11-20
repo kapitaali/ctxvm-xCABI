@@ -1,8 +1,9 @@
 # PREREG-E0-DRAFT-20261119 — open-weight page ablation (Route B primary)
 
-**Status: PARKED on open-weight model snapshot & compute-route ruling — owner ruling
-RR-E0ENRICH-20261119, $0 spend. NOT a runnable preregistration.** No model call, no spend,
-no commit beyond this note's landing authorized. Compute-only by design (no API spend), but
+**Status: PARKED on the two Phase-0 gates (§8) — owner route ruling RR-E0ROUTE-20261120
+(af38768): CPU llama.cpp pinned snapshot, $0 local ceiling. NOT a runnable preregistration
+until Gate 1 (logprob access) and Gate 2 (gradability pilot, Var(T)>0) pass.** No model call,
+no spend, no commit beyond this note's landing authorized. Compute-only by design (no API spend), but
 it cannot run without an open-weight model snapshot + a GPU compute route (owner decisions).
 Authority: Part III §9.0 (E0) and Route B; **Part II §12.1 is the protocol of record — this
 note cross-references it and only instantiates parameters, it does not fork it.** Data:
@@ -36,12 +37,23 @@ targeted leave-one-out beats matched-random ablation. H0: no correlation / no di
   kind and token count" control is well-defined but degenerate (any file page matches any
   other). Recorded as a limitation.
 
-## 2. Model and compute (OWNER DECISION — not chosen here)
+## 2. Model and compute (owner ruled — RR-E0ROUTE-20261120, af38768)
 
-- **One frozen open-weight snapshot** with per-token log-probability access. Name,
-  revision/hash, tokenizer, inference settings frozen in Phase 0 once the owner names the route.
-- Compute route: local GPU marginal (GTX 1050 Ti, 4 GB); cloud GPU is a real cost needing an
-  owner ceiling. **No model is called until this is ruled.**
+- **Route/model (RULED):** CPU-only llama.cpp, one frozen small instruct snapshot —
+  **Qwen3-1.7B-Q8_0** (GGUF sha256 `66a17017…`) or **qwen2.5-1.5b-instruct-q8_0**
+  (`d7efb072…`), revision/hash/tokenizer pinned in Phase 0. **$0 local ceiling.**
+  ~440 evals at hour-order via teacher-forced scoring.
+- **Pins verified on this machine 2026-11-20:** llama.cpp **v0.7.0-dev @ 620d222**,
+  binary sha256 `0f60e048…` at `umpire/runners/src/build/bin/llama-server`;
+  models under `umpire/models/`; launcher `umpire/scripts/start-llama-server.sh`;
+  umpire repo HEAD `519058f`.
+- **Hardware (measured, corrects the earlier draft):** i5-4300M, 4 threads, 15 GiB RAM,
+  **Intel integrated graphics only — no NVIDIA GPU, no `nvidia-smi`**. The previous
+  "GTX 1050 Ti 4 GB" line was wrong (stale from another machine's transcript); the local
+  route is **CPU inference** (~10–13 s/decision per umpire RR-M1-20261022). No cloud GPU
+  unless the pilot escalates (§8).
+- **Escalation (the only spend authorized):** only if the gradability pilot is ungradable —
+  rented GPU + 7–8B instruct, **$5–10 ceiling**.
 - Reference decoding: **greedy** (deterministic on one machine/build); baseline-repeat
   confirms the noise floor.
 
@@ -115,23 +127,36 @@ arm; hard evaluation ceiling in the driver; no retry.
 - Capability-uplift probe (Part III §8, agenda 8); human gate on any policy/weight update
   (E0 ships no policy; it is measurement).
 
-## 8. Procedure
+## 8. Procedure (two Phase-0 gates before any full run — RR-E0ROUTE-20261120)
 
-1. **Phase 0 (offline, zero spend, zero model call):** freeze model snapshot name/hash,
+0. **Phase 0 (offline, zero spend, zero model call):** freeze model snapshot name/hash,
    tokenizer, identifier rule, grader, seed, prompt→page mapping; verify τ\p, the bank
    manifest, and the 3-tier touch profile; emit a Phase 0 card. Not a result.
-2. **Phase 1 (compute; only after owner compute-route ruling + GPU ceiling):** bounded
-   interleaved open-weight runner with the constant-T guard; `result.json`; negative and
-   inconclusive outcomes recorded with equal prominence.
+1. **Gate 1 — logprob access (make-or-break):** confirm the pinned llama.cpp build returns
+   per-token logprobs for a teacher-forced continuation. Evidence already on record: umpire
+   RR-M1-20261022 records v0.7.0's shape `token`/`logprob`/`top_logprobs`; Phase 0
+   re-verifies it against binary sha `0f60e048…` with one bounded call. **No logprobs ⇒
+   E0 cannot run as designed; stop and record BLOCKED.**
+2. **Gate 2 — gradability pilot (3–5 items):** run baseline on 3–5 bank items and check
+   Var(T(p)) > 0 on the model's actual a(τ) per item. If the pilot is ungradable, escalation
+   per §2 applies (rented GPU + 7–8B, $5–10); otherwise proceed at $0 CPU.
+3. **Phase 1 (compute, only after both gates pass):** bounded interleaved open-weight
+   runner with the constant-T guard; `result.json`; negative and inconclusive outcomes
+   recorded with equal prominence.
 
-## 9. Owner sign-off (required before Phase 1)
+## 9. Owner sign-off
 
-- Open-weight model snapshot + revision/hash + tokenizer: ______________________
-- Compute route + GPU cost ceiling: ______________________
-- Capability-uplift ruling: ______________________
+Route, ceiling and uplift ruled by **RR-E0ROUTE-20261120** (af38768): CPU llama.cpp pinned
+snapshot (Qwen3-1.7B-Q8_0 `66a17017…` or qwen2.5-1.5b-q8_0 `d7efb072…`), $0 local ceiling,
+escalation only on an ungradable pilot (rented GPU + 7–8B, $5–10); uplift = measurement-only,
+human gate trivially satisfied. Remaining lines to fill **before Phase 1** (both Phase-0 gates
+of §8 must pass first):
+
+- Open-weight model snapshot + revision/hash + tokenizer (exact choice of the two): ______________________
+- Phase-0 gate evidence (logprobs shape + gradability pilot Var(T)>0 on 3–5 items): ______________________
 - Deviation authority: ______________________
 - Decision / date / owner: ______________________
 
-Until every line is filled this is a parked design note, not a result; no model call or spend
-is authorized. No push, no plugin install, no wire/corpus change. LOG row + day section owed
-to the review lane.
+The note stays **PARKED** until the gates run; no model call or spend is authorized by the
+route ruling alone. No push, no plugin install, no wire/corpus change. LOG row + day section
+owed to the review lane.
