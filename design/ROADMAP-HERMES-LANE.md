@@ -169,10 +169,8 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
 
 ## 6. Docs and layout
 
-- [ ] **H19. `docs/quickstart.md` placement.** It is a top-level directory that `AGENTS.md` §3 does not
-  list. Either add it to the layout section or move it under `design/`. Owner call; the lane supplies
-  the one-line diff either way.
-  *Done when:* `AGENTS.md` §3 lists `docs/` **or** the file moved and the reference updated.
+- [x] **H19. (done 2026-11-20, owner "yes"; `AGENTS.md:53` already lists `docs/`) `docs/quickstart.md` placement.** The Done condition was met on disk since A3 added it 2026-11-09 — only the checkbox was stale; no file move or layout edit was needed.
+  *Done when:* `AGENTS.md` §3 lists `docs/` **or** the file moved and the reference updated — **met at `AGENTS.md:53`** (verified 2026-11-20).
 
 - [x] **H20. (done 2026-11-19, `RR-HBOOKS-20261119`) Keep the two master prompts current.** `design/HERMES-PLUGIN-DEVELOPER-PROMPT.md` and
   `design/W8-EXECUTOR-PROMPT.md` name versions, paths and open items. Re-read them at every card close;
