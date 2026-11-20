@@ -45,9 +45,9 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. Unverified claims stay marked UNVERIFIED. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% is an external controller's (law 7).
 
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
-- Conformance gate: GREEN 2026-11-13 (`run-ci.sh` → ALL GATES GREEN); hosted witness №123 `f16df322` green.
-- XERJ Hub listing UNVERIFIED (re-check `hub.xerj.org/llms.txt`). openai price row + cache-read nulls UNVERIFIED (`prices.json`). Part II METR figures UNVERIFIED. Hard-fault-recall ≥95% UNMEASURED (n=4).
-- W8D rewrite-events: 9 vs 16 — mechanism confirmed on 0.13.27 paged capture (RR-UNVERIFIED); counts historical.
+- Conformance gate: GREEN 2026-11-20 (re-run; `run-ci.sh` → ALL GATES GREEN; ts 24+62+46+14, py 229+8+66, schema 682); witness №123 `f16df322`.
+- XERJ Hub: NOT LISTED 2026-11-19 (`RR-UNVERIFIED`). openai row + cache nulls intentionally null (`prices.json`). Part II METR STILL UNVERIFIED. Hard-fault recall ≥95% UNMEASURED (n=4).
+- W8D rewrite-events: 9 vs 16 — mechanism confirmed 0.13.27 (`RR-UNVERIFIED`); counts historical.
 
 ## Blocked (item, what it waits for)
 - W8 spend: >= $7.14 billed 11-10 + $0.2534 cell-03 (11-12); stopped until a zero-spend simulation predicts a win; W8D refused (`RR-W8DERRATUM`).
