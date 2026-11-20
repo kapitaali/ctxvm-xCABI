@@ -3,8 +3,9 @@
 **Status: PARKED on the two Phase-0 gates (§8) — owner route ruling RR-E0ROUTE-20261120
 (af38768): CPU llama.cpp pinned snapshot, $0 local ceiling. NOT a runnable preregistration
 until Gate 1 (logprob access) and Gate 2 (gradability pilot, Var(T)>0) pass.** No model call,
-no spend, no commit beyond this note's landing authorized. Compute-only by design (no API spend), but
-it cannot run without an open-weight model snapshot + a GPU compute route (owner decisions).
+no spend, no commit beyond this note's landing authorized. Compute-only by design (no API
+spend); it runs on the pinned CPU llama.cpp route (§2) once the gates pass — the earlier
+"GPU compute route" wording was stale after the CPU-only ruling.
 Authority: Part III §9.0 (E0) and Route B; **Part II §12.1 is the protocol of record — this
 note cross-references it and only instantiates parameters, it does not fork it.** Data:
 `research/fixture-bank/` **v2** (2-hop enrichment, RR-E0ENRICH-20261119). Nothing here is
