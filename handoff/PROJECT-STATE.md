@@ -19,7 +19,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Gateway: pid 139920 (22:51 restart 11-19) holds 0.13.29; real session `local-f913ef14` flushed `harnessVersion: "0.23.2"` (`RR-HVERR-REVIEW`).
 ## Next three (ordered, one line each)
 1. All routed hermes, research, and review queues DONE & VERIFIED (`RR-H16H18-REVIEW`, `RR-HVERR-REVIEW`, `RR-E0ENRICH-VERIFY`).
-2. E0/E2 HELD at $0 (`fixture-bank/` v2 & parked `PREREG-E0`/`PREREG-E2` notes landed; E0 compute route & E2 ceiling owner-gated); W8 parked (`RR-DEFAULTS`).
+2. E0 route RULED CPU llama.cpp $0 behind 2 Phase-0 gates (`RR-E0ROUTE`); gates/E2 ceiling gated; stale banner fix owed research (`RR-E0ROUTE-VERIFY`); W8 parked.
 3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11/H19 owner-gated.
 
 ## Decisions made (date, decision, reason)
