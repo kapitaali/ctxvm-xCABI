@@ -19,7 +19,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - Gateway: pid 139920 (22:51 restart 11-19) holds 0.13.29; real session `local-f913ef14` flushed `harnessVersion: "0.23.2"` (`RR-HVERR-REVIEW`).
 ## Next three (ordered, one line each)
 1. All routed hermes, research, and review queues DONE & VERIFIED (`RR-H16H18-REVIEW`, `RR-HVERR-REVIEW`, `RR-E0ENRICH-VERIFY`).
-2. E0 gates 1+2 RUN & PASS (`RR-E0GATE1`/`RR-E0GATE2`, $0 CPU); prereg §9 fold-in owed research (staged); full run waits Phase 1 go-ahead. E2 $0; W8 parked.
+2. E0 full run DONE ($0 CPU): INVALID — constant T (12/20 gradable < 15); rho +0.52 subordinated (`RR-E0RESULT`); prereg fold-in owed research. E2 $0; W8 parked.
 3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11/H19 owner-gated.
 
 ## Decisions made (date, decision, reason)
