@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.29"
+PLUGIN_VERSION = "0.13.30"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -876,6 +876,10 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # One session can plan differently on different calls (fits, then evicted). The last
             # plan alone would read as if the session had one reason, so the tally rides beside it.
             "enginePlanTally": ((_state().get("plan_tally_by_session") or {}).get(session_id or "")),
+            # Part C: attest the opt-in STUB setting from the engine's own plan.
+            # Absent/null means off — never guessed on from a capture that never planned.
+            "stubDropped": (((_state().get("plan_by_session") or {}).get(session_id or "") or {})
+                            .get("stubDropped") or "off"),
         },
         "captures": {
             "turns": len(turns),

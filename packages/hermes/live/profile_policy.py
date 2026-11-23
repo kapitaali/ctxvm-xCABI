@@ -68,7 +68,8 @@ def read_yaml_subset(path: Path) -> Dict[str, Any]:
     Returns `{"engine", "budgetTokens", "selectionMode"}`. Narrow on purpose: a full YAML
     implementation here would be a second source of truth about a file the host owns.
     """
-    out: Dict[str, Any] = {"engine": None, "budgetTokens": None, "selectionMode": None}
+    out: Dict[str, Any] = {"engine": None, "budgetTokens": None, "selectionMode": None,
+                           "stubDropped": None}
     try:
         lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
@@ -97,6 +98,11 @@ def read_yaml_subset(path: Path) -> Dict[str, Any]:
                 out["budgetTokens"] = int(_strip(rest))
             except (TypeError, ValueError):
                 pass
+        elif block == "plugins" and key == "stubDropped" and in_plugin_entry:
+            # Part C: opt-in recoverable stub. No env fallback — never default-on.
+            val = _strip(rest)
+            if val in ("off", "recoverable"):
+                out["stubDropped"] = val
         elif block == "plugins" and key == "selectionMode" and in_plugin_entry:
             # H11: `fresh` (default) or `stable`. A profile setting, not an env ritual — the same rule
             # the budget follows, for the same reason: one gateway serves every arm.
@@ -150,6 +156,11 @@ def policy(home: Optional[Path] = None) -> Dict[str, Any]:
     if not mode:
         mode, mode_source = "fresh", "default"
 
+    stub = cfg.get("stubDropped")
+    stub_source = "settings" if stub else "default"
+    if not stub:
+        stub, stub_source = "off", "default"
+
     return {
         "home": str(h),
         "profile": profile_name(h),
@@ -158,6 +169,8 @@ def policy(home: Optional[Path] = None) -> Dict[str, Any]:
         "budgetSource": source,
         "selectionMode": mode,
         "selectionModeSource": mode_source,
+        "stubDropped": stub,
+        "stubDroppedSource": stub_source,
         # The arm is decided by the profile's own setting, never by what the process happens to hold.
         "arm": "paged" if engine == "ctxvm" else "control",
     }

@@ -269,7 +269,9 @@ harnessVersion null                FIXED 2026-11-19 (RR-HARNESSVER + RR-HVREV): 
 post-H12 direction                 PARKED by owner (RR-DEFAULTS-20261119) while E1 offline replay runs;
                                    tail-only eviction candidate if reopened (RR-P8H12-20261119 §2);
                                    no cell authorized, $1 cap stands
-G4 redaction sidecar               DONE 2026-11-19 (RR-REDACTIMPL-20261119, verified RR-REDACTIMPL-REVIEW):
+Part C stub seam (opt-in)         LANDED 2026-11-23 (RR-PARTC-IMPL-20261123), 0.13.30 synced;
+                                   profile setting stubDropped off/recoverable, no env channel,
+                                   coverage attests; gateway restart owed; stub arm is experiment lane
                                    writer+consumer tools/redaction-block.py, contract gate step, scanner hook;
                                    stubText/reason RATIFIED DEFERRED by owner (RR-DEFAULTS-20261119)
 docs/quickstart.md                 top-level dir not listed in AGENTS §3 (owner layout call)

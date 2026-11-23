@@ -1137,5 +1137,95 @@ class SelectionModePolicyTests(unittest.TestCase):
         self.assertTrue(engine._selection_mode_explicit)
 
 
+class StubSeamTests(unittest.TestCase):
+    """Part C: recoverable stub for a dropped tool result. Opt-in only, no gold
+    in the stub, pair-valid carrier, plan/sidecar attestation."""
+
+    @staticmethod
+    def _tx(plant=None):
+        tx = [_msg("system", "sys"), _msg("user", "go")]
+        for i in range(1, 9):
+            body = _result(22_000, f"f{i}")
+            if plant and i == 3:
+                body = "VAULT-03 CODE 48213\n" + body
+            tx.append(_msg("assistant", "", tool_calls=[_call(f"c{i}", f"notes/f{i}.md")]))
+            tx.append(_msg("tool", body, tool_call_id=f"c{i}"))
+        return tx
+
+    def test_stub_is_off_by_default(self):
+        engine = ce.build_engine(v_budget=30_000)
+        out = engine.select_context(list(self._tx()))
+        self.assertIsNotNone(out)
+        self.assertFalse(any("re-run to restore" in str(m.get("content", "")) for m in out))
+
+    def test_recoverable_stub_replaces_the_dropped_result(self):
+        engine = ce.build_engine(v_budget=30_000, stub_dropped="recoverable")
+        out = engine.select_context(list(self._tx()))
+        stubs = [m for m in out if m.get("role") == "tool"
+                 and "re-run to restore" in str(m.get("content", ""))]
+        self.assertGreater(len(stubs), 0)
+        self.assertIn("read_file", stubs[0]["content"])
+        self.assertIn("notes/", stubs[0]["content"])
+
+    def test_stub_never_carries_the_page_body_or_planted_code(self):
+        engine = ce.build_engine(v_budget=30_000, stub_dropped="recoverable")
+        out = engine.select_context(list(self._tx(plant="VAULT-03 CODE 48213")))
+        joined = "\n".join(str(m.get("content", "")) for m in out)
+        self.assertNotIn("VAULT-03", joined)
+        self.assertNotIn("48213", joined)
+
+    def test_stubbed_call_stays_in_its_carrier_for_rerun(self):
+        engine = ce.build_engine(v_budget=30_000, stub_dropped="recoverable")
+        out = engine.select_context(list(self._tx()))
+        stub_ids = {m.get("tool_call_id") for m in out
+                    if m.get("role") == "tool" and "re-run to restore" in str(m.get("content", ""))}
+        call_ids = {c.get("id") for m in out if m.get("role") == "assistant"
+                    for c in (m.get("tool_calls") or []) if isinstance(c, dict)}
+        self.assertTrue(stub_ids <= call_ids,
+                        "each stub's call must survive so the model can re-run it")
+
+    def test_plan_payload_attests_stub_mode_and_count(self):
+        engine = ce.build_engine(v_budget=30_000, stub_dropped="recoverable")
+        plans = []
+        engine.set_observer(lambda payload: None, plans.append)
+        engine.select_context(list(self._tx()))
+        self.assertEqual(plans[0]["stubDropped"], "recoverable")
+        self.assertEqual(plans[0]["stubCount"], plans[0]["droppedCount"])
+
+    def test_off_mode_plan_attests_zero_stubs(self):
+        engine = ce.build_engine(v_budget=30_000)
+        plans = []
+        engine.set_observer(lambda payload: None, plans.append)
+        engine.select_context(list(self._tx()))
+        self.assertEqual(plans[0]["stubDropped"], "off")
+        self.assertEqual(plans[0]["stubCount"], 0)
+
+    def test_ambient_env_cannot_enable_the_stub(self):
+        with mock.patch.dict(os.environ, {"CTXVM_STUB_DROPPED": "recoverable"}):
+            engine = ce.build_engine(v_budget=30_000)
+        self.assertEqual(engine._stub_dropped, "off", "no env channel — opt-in profile only")
+
+
+class StubProfilePolicyTests(unittest.TestCase):
+    """The profile setting is the only opt-in channel; default is off."""
+
+    def test_setting_is_read_from_the_narrow_scanner(self):
+        import tempfile, pathlib
+        d = pathlib.Path(tempfile.mkdtemp(prefix="ctxvm-stub-policy-"))
+        (d / "config.yaml").write_text(
+            "context:\n  engine: ctxvm\nplugins:\n  entries:\n"
+            "    ctxvm-tracer:\n      settings:\n        stubDropped: recoverable\n")
+        cfg = profile_policy.read_yaml_subset(d / "config.yaml")
+        self.assertEqual(cfg["stubDropped"], "recoverable")
+
+    def test_absent_setting_defaults_off(self):
+        import tempfile, pathlib
+        d = pathlib.Path(tempfile.mkdtemp(prefix="ctxvm-stub-policy-"))
+        (d / "config.yaml").write_text("context:\n  engine: ctxvm\n")
+        pol = _REAL_POLICY(d)
+        self.assertEqual(pol["stubDropped"], "off")
+        self.assertEqual(pol["stubDroppedSource"], "default")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

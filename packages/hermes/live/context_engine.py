@@ -320,7 +320,8 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
 
     def __init__(self, v_budget: Optional[int] = None,
                  protect_first_n: int = 3, protect_last_n: int = 6,
-                 selection_mode: Optional[str] = None):
+                 selection_mode: Optional[str] = None,
+                 stub_dropped: Optional[str] = None):
         super().__init__()
         # H11 / design/w8-cache-stable-selection.md. `fresh` is the shipped behaviour: every request
         # is planned from scratch. `stable` HOLDS the selection it last applied, byte-for-byte, until a
@@ -332,6 +333,12 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         # session's own profile setting is adopted at call time, exactly like the budget, because one
         # gateway serves every arm from one engine object.
         self._selection_mode_explicit = bool(selection_mode) or bool(os.environ.get("CTXVM_SELECTION_MODE"))
+        # Part C: recoverable stub for DROPPED tool results. Opt-in only — no env
+        # fallback, so no ambient shell can turn it on. "off" is the shipped value.
+        self._stub_dropped = "off" if stub_dropped is None else str(stub_dropped).strip().lower()
+        if self._stub_dropped not in ("off", "recoverable"):
+            self._stub_dropped = "off"
+        self._stub_explicit = stub_dropped is not None
         try:
             self._stable_every = max(1, int(os.environ.get("CTXVM_SELECTION_EVERY") or 4))
         except (TypeError, ValueError):
@@ -503,6 +510,13 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                     self._selection_mode = wanted
                     self._held = None            # a mode change starts from a clean hold
                     self._calls_since_plan = 0
+            # Part C: adopted at CALL time like the budget/mode (one gateway serves
+            # every profile). A profile setting is the only opt-in channel; an
+            # explicit constructor value is never overridden.
+            if not self._stub_explicit and _real_home:
+                wanted_stub = pol.get("stubDropped")
+                if wanted_stub in ("off", "recoverable"):
+                    self._stub_dropped = wanted_stub
 
         import datetime as _dt
         self._selections += 1
@@ -564,6 +578,8 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                     json.dumps(_probe, sort_keys=True, default=str).encode("utf-8")
                 ).hexdigest()[:16]
                 OBSERVER["plan"](dict(plan_facts,
+                                      stubDropped=self._stub_dropped,
+                                      stubCount=(len(dropped) if self._stub_dropped == "recoverable" else 0),
                                       budgetTokens=self._v_budget,
                                       prefixHash="sha256:" + _digest,
                                       selectionMode=self._selection_mode,
@@ -970,7 +986,12 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         repositioned_results = {by_key[k].result_index for k in repositioned if k in by_key}
         repositioned_calls = {by_key[k].call_id for k in repositioned if k in by_key}
         removed_results = dropped | repositioned_results
-        removed_ids = {units[i].call_id for i in dropped} | repositioned_calls
+        # Part C: when a dropped result is stubbed, its producing call must STAY in
+        # the carrier (pair validity) so the model can re-run it. Repositioned pages
+        # still ride the block verbatim and are never stubbed.
+        stubbed_results = set(dropped) if self._stub_dropped == "recoverable" else set()
+        stubbed_calls = {units[i].call_id for i in stubbed_results if i in units}
+        removed_ids = ({units[i].call_id for i in dropped} | repositioned_calls) - stubbed_calls
 
         out: List[Dict[str, Any]] = []
         # (a) system prompt verbatim, first
@@ -981,7 +1002,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         non_system = [i for i, m in enumerate(messages)
                       if isinstance(m, dict) and m.get("role") != "system"]
         for i in non_system[: self._protect_first_n]:
-            self._emit_transcript_slot(out, messages, units, i, removed_ids, removed_results)
+            self._emit_transcript_slot(out, messages, units, i, removed_ids, removed_results, stubbed_results)
         # (c) the pinned block, frozen first-pin order
         for key in self._pin_order:
             if key not in repositioned:
@@ -994,12 +1015,35 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         for i, m in enumerate(messages):
             if i in head or (isinstance(m, dict) and m.get("role") == "system"):
                 continue  # already emitted
-            self._emit_transcript_slot(out, messages, units, i, removed_ids, removed_results)
+            self._emit_transcript_slot(out, messages, units, i, removed_ids, removed_results, stubbed_results)
         return out
+
+    def _stub_message(self, u: _PageUnit, messages: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Part C: a RECOVERABLE stub for a dropped tool result — tool name,
+        arguments and a re-run hint ONLY. Never the result body, value or code.
+        Pure dict/string work (L7): no write, socket or spawn."""
+        src = messages[u.call_index] if 0 <= u.call_index < len(messages) else None
+        call = None
+        if isinstance(src, dict):
+            for c in (src.get("tool_calls") or []):
+                if isinstance(c, dict) and c.get("id") == u.call_id:
+                    call = c
+                    break
+        if isinstance(call, dict):
+            fn = call.get("function")
+            if not isinstance(fn, dict):
+                fn = {}
+            name = fn.get("name") or call.get("name") or "tool"
+            args = fn.get("arguments") or call.get("arguments") or ""
+        else:
+            name, args = "tool", ""
+        return {"role": "tool", "tool_call_id": u.call_id,
+                "content": f"[ctxvm: dropped result for {name}({args}); re-run to restore.]"}
 
     def _emit_transcript_slot(self, out: List[Dict[str, Any]], messages: List[Dict[str, Any]],
                               units: Dict[int, _PageUnit], i: int,
-                              removed_ids: Set[str], removed_results: Set[int]) -> None:
+                              removed_ids: Set[str], removed_results: Set[int],
+                              stubbed: Set[int]) -> None:
         """Emit one transcript position under the drop/rewrite rules, or skip
         it: dropped results go; repositioned results go (they ride the block);
         assistant carriers lose their removed call entries in a COPY and are
@@ -1011,7 +1055,9 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         u = units.get(i)
         if u is not None and m.get("role") == "tool":
             if i in removed_results:
-                return  # the page body rides the block (repositioned) or is dropped
+                if i in stubbed:
+                    out.append(self._stub_message(u, messages))
+                return  # verbatim page rides the block; a stub is recoverable, not the body
             out.append(m)
             return
         calls = m.get("tool_calls")
@@ -1129,7 +1175,8 @@ def _resolve_v_budget(ctor_value: Optional[int]) -> Tuple[int, str, bool]:
 
 def build_engine(v_budget: Optional[int] = None,
                  protect_first_n: int = 3, protect_last_n: int = 6,
-                 selection_mode: Optional[str] = None) -> Optional[Any]:
+                 selection_mode: Optional[str] = None,
+                 stub_dropped: Optional[str] = None) -> Optional[Any]:
     """Registration-time factory. Returns None outside the hermes runtime (the
     plugin's observer duties never depend on the engine — the registration in
     live/__init__.py is fail-open)."""
@@ -1137,4 +1184,5 @@ def build_engine(v_budget: Optional[int] = None,
         return None
     return CtxvmFaultPinEngine(v_budget=v_budget, selection_mode=selection_mode,
                                protect_first_n=protect_first_n,
-                               protect_last_n=protect_last_n)
+                               protect_last_n=protect_last_n,
+                               stub_dropped=stub_dropped)
