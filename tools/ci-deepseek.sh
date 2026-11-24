@@ -12,7 +12,7 @@ cd "$ROOT" || exit 2
 PKG="packages/deepseek"
 NODE_PKG="packages/node"
 SUITE="$PKG/test/"
-MIN_TESTS=22
+MIN_TESTS=35
 ALLOWED_SKIP="captured trace validates and replays without divergence"
 
 [ -d "$SUITE" ] || { echo "ci-deepseek: $SUITE is missing — the package moved?" >&2; exit 2; }

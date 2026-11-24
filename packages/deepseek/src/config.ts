@@ -20,8 +20,19 @@ export interface CtxvmDshConfig {
   tokenizerId: string
   /** Declared page budget (drives turn.render headroom bookkeeping). */
   budgetTokens: number
-  /** Reserved for Phase 3 stub sizing; inert in mirror mode. */
+  /** Reserved for stub sizing; inert in mirror mode. */
   pageSizeTokens?: number
+  /** Mirror is passive; stub enables the opt-in active context engine. */
+  mode: 'mirror' | 'stub'
+  /** Protected non-system head/tail message counts for active selection. */
+  protectFirstN: number
+  protectLastN: number
+  /** Drop mode emits no replacement; recoverable emits exact stub text. */
+  stubDropped: 'off' | 'recoverable'
+  /** Fresh replans every step; stable holds a selection until a trigger. */
+  selectionMode: 'fresh' | 'stable'
+  /** Stable selection replans at least every Nth eligible step. */
+  stableEvery: number
   /** agentId prefix: agentId = `${agentIdPrefix}:${sessionId prefix}`. */
   agentIdPrefix: string
 }
@@ -35,6 +46,12 @@ export function makeConfig(z: Z) {
     budgetTokens: z.number().step(1).min(1).default(200_000),
     // No .required() → optional, matching schemastery's absence-is-undefined rule.
     pageSizeTokens: z.number().step(1).min(1),
+    mode: z.union(['mirror', 'stub']).default('mirror'),
+    protectFirstN: z.number().step(1).min(0).default(3),
+    protectLastN: z.number().step(1).min(0).default(6),
+    stubDropped: z.union(['off', 'recoverable']).default('off'),
+    selectionMode: z.union(['fresh', 'stable']).default('fresh'),
+    stableEvery: z.number().step(1).min(1).default(4),
     agentIdPrefix: z.string().default('dsh'),
   })
 }

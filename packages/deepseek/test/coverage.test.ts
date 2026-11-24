@@ -13,6 +13,12 @@ const config = {
   traceDir: '',
   tokenizerId: 'apx4-char',
   budgetTokens: 200_000,
+  mode: 'mirror',
+  protectFirstN: 3,
+  protectLastN: 6,
+  stubDropped: 'off',
+  selectionMode: 'fresh',
+  stableEvery: 4,
   agentIdPrefix: 'dsh',
 } as const
 

@@ -34,7 +34,10 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-agent": "*",
     "@deepseek-ai/dsh-session": "*",
+    "@deepseek-ai/dsh-session-query": "*",
+    "@deepseek-ai/dsh-token-meter": "*",
     "@deepseek-ai/schemastery": "*"
   }
 }

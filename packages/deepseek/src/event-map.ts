@@ -27,7 +27,7 @@ export function mapEvent(st: SessionTracer, event: SessionEvent): void {
         const raw = asString(data.arguments)
         let args: unknown
         try { args = JSON.parse(raw) } catch { args = raw }
-        st.calls.set(asString(data.callId), { name: asString(data.name), args })
+        st.calls.set(asString(data.callId), { name: asString(data.name), args, rawArgs: raw })
         tracer.recall({ tool: asString(data.name), args: args as never })
         break
       }

@@ -41,7 +41,21 @@ Set on the `ctxvm-tracer` row in the profile's `cordis.patch.yml`
     traceDir: ~/.local/state/ctxvm/traces   # default; dir mode 0700, files 0600
     tokenizerId: apx4-char
     budgetTokens: 200000
+    mode: mirror                 # default; stub enables active selection
+    protectFirstN: 3
+    protectLastN: 6
+    stubDropped: off             # off = no mutation; recoverable = exact stubs
+    selectionMode: fresh         # fresh | stable
+    stableEvery: 4
 ```
+
+Active `mode: stub` runs at `agent/pre-step`, measures the current surface through
+`ctx.tokenMeter`, applies Hermes-derived system/head/tail/last-user/open-call
+protection, second-demand pinning, content-change release, and newest-first
+recency selection. Selected append-origin tool results are replaced through the
+durable DSH surface with the exact Hermes stub template. Mirror mode never
+registers the active listener. `stubDropped: off` still plans but emits no
+replacement.
 
 ## Validate / replay a captured trace
 
@@ -65,6 +79,8 @@ packages/deepseek/
   src/tracer.ts        # per-session @ctxvm/node tracer lifecycle
   src/event-map.ts     # dsh SessionEvent → xCABI tracer calls
   src/page-table.ts    # page table fold + ProjectionDefinition
+  src/context-engine.ts # pure active selection/protection/stub helpers
+  src/active-runtime.ts # sessionQuery + pre-step surface replacement
   src/types.ts         # shared types
   test/                # node --test unit tests
 ```

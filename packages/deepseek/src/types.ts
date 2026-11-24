@@ -24,7 +24,7 @@ export interface SessionTracer {
   /** @ctxvm/node Tracer instance (created lazily on the first event). */
   tracer?: import('@ctxvm/node').Tracer
   /** callId → (name, parsed arguments) built from tool/call events. */
-  calls: Map<string, { name: string; args: unknown }>
+  calls: Map<string, { name: string; args: unknown; rawArgs?: string }>
   /** Original result seq → exact PageId, used by replacement provenance. */
   pagesBySeq: Map<number, ResultPageIdentity>
   /** Zero-based xCABI turn; only turn/start advances it. */
