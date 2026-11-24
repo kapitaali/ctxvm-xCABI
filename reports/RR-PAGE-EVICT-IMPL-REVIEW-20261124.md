@@ -1,35 +1,69 @@
-# RR-PAGE-EVICT-IMPL-REVIEW-20261124 — my split implemented: Rust replay gate + two conformance vectors; paper wording owed; hermes emitter assigned
+# RR-PAGE-EVICT-IMPL-REVIEW-20261124 — verified: page.evict lands at the stub seam; build live at 0.13.32
 
-Review lane, verify-then-record. Owner split: hermes lane writes the emitter + checker (prompt `design/PAGE-EVICT-HERMES-PROMPT.md`); I implement the rest under an owner-recorded one-time write override. Date 2026-11-24. $0, no model call, no push.
+Review lane, verify-then-record. Subject: hermes lane commits `4ba1cf2` (impl) + `6e3c348` (PROJECT-STATE delta),
+card `reports/RR-PAGE-EVICT-IMPL-20261124.md`. Work order `design/PAGE-EVICT-HERMES-PROMPT.md`, design of record
+`design/page-evict-stub-mode.md`. Date 2026-11-24. $0, no model call, no push.
 
-## 1. What I implemented and verified
+## 1. Verified from disk
 
-**Rust replay cross-check** (`rust/crates/ctxvm-core/src/replay.rs`):
-- New `Divergence::StubRenderTurnMismatch { evict_turn, first_stub_render_turn, page }`.
-- `check_stub_render_turns()` — full-replay-only pass: for each `page.evict@t`, the first recorded `page.render(mode=stub)` for that PageId must be at turn t (RFC-0 `page.evict@t → stub visible at t`). **Presence-gated**: traces whose adapter records no stub renders are unaffected; `replay_turn` (point-in-time) does not run it.
-- New unit test `stub_render_turn_must_match_evict_turn_when_recorded` — green (render@evict), red (render one turn later), and no-render-presence case. `cargo test -p ctxvm-core` → **37 passed**.
+| claim | check | result |
+|---|---|---|
+| version 0.13.31 → 0.13.32 both places + installed | grep `__init__.py` | repo/installed **0.13.32** |
+| sync | `sync-plugin.sh --check` | repo/installed/manifest 0.13.32, load check OK |
+| gateway holds new build | `ps -p 48868` | pid 48868 started **14:54:12** after the files (14:53); holds 0.13.32 |
+| suite | `pytest packages/hermes -q`, `CTXVM_*` cleared | **246 passed, 15 subtests** |
+| gate | `run-ci.sh` unpiped, `CTXVM_*` cleared | **rc=0 ALL GATES GREEN** |
+| real capture under new build | sidecar `local-f913ef…` | mtime **14:55:46**, `version 0.13.32`, arm control, stub `off`, `stubbedRefs []` — default-off attested on a live capture, upgraded from the 0.13.31 probe |
+| Rust cross-check | `cargo test -p ctxvm-core` | **37 passed** (my prior split, still green) |
+| kit/hygiene | `check-handoff.sh`, `git-hygiene.sh` | ALL PASS / OK |
 
-**Conformance vectors** (`rust/crates/ctxvm-conformance/vectors/`):
-- `stub-evict-green.jsonl` — evict@1 + stub render@1 → replay `divergences: []`.
-- `stub-evict-turn-mismatch.jsonl` — evict@1 + stub render@2 → replay `divergences: [StubRenderTurnMismatch{evict_turn:1, first_stub_render_turn:2, …}]`.
-- Both validate under the **sealed v0** schema (`validate_schema.py`: 65 checks PASS) — no `schemaVersion`/`ts` (those are v0.1-only), no `page.declare.turn` (v0.1-only). Law 1 intact.
+## 2. Emitter verified against the design (`design/page-evict-stub-mode.md` §3)
 
-**Design corrections recorded before implementing** (`RR-PAGE-EVICT-DESIGN-ERRATUM-20261124`): the design §4 wrongly required `page.render` to carry `stubText` — impossible under sealed v0/v0.1 (`additionalProperties: false`); corrected to a **turn + PageId** cross-check, with text identity checked checker-side against request stub slots. The design card was fixed in place with an inline note.
+- **One assembly, one object:** `select_context` computes `assembled` once and reuses it at all four sites; the observer
+  fires with stub rows from that exact assembly — confirmed in `context_engine.py:580` (`_stub_rows` ready at emit time).
+- **Byte-identical seam:** `_stub_message()` builds the stub; `_emit_transcript_slot()` records `{ids, stubText}` in
+  `self._stub_rows` from **the same stub dict inserted into the request** (no re-derivation from `_plan`). Matches the
+  design's honesty requirement and the reviewer's injection concern.
+- **Tracer emitter** `Tracer.emit_evict(ref, stub_text, turn)` (`plugin.py:407`): sealed-v0 `page.evict` shape
+  (`type/turn/page/stubText`), `page = (logicalRef, contentHash)` from the declared page, `stubText` byte-identical,
+  `ts` last via `_push` (law 3). Returns False on unknown ref / non-string text (fail-open, never raises into a turn).
+- **Visibility turn:** bridge observer sets `_visible = _tr._turn + 1` (`__init__.py:1563`) — the stub is sent in the
+  request *after* `render()` increments, so RFC-0 `page.evict@t → visible@t` holds. This also matches the design's
+  two-calls-per-turn caveat (tag the visibility turn, not the plan turn).
+- **Per-session:** `stubbed_refs_by_session` keyed by session id (`__init__.py:1577`); the real 0.13.32 sidecar shows
+  `stubbedRefs: []` on the operator's control profile — drop mode, as designed.
+- **Checker rule** (`tools/coverage_check.py:461–490`): version-gated (`>= 0.13.32`) + presence-gated — a recoverable
+  sidecar with `evictedTokens > 0` must have a `page.evict` row for each stubbed ref with byte-identical `stubText`;
+  old/off fixtures exempt; the earlier `stubCount > 0` rule stays. Matches the design §4 and the hermes prompt §3.5.
 
-## 2. Paper wording — owed, not applied (honest blocker)
+## 3. Red-before / honesty checks
 
-The design §5 requires Part I/II A3/A4 wording to change **in the same landing** as the wire change ("stub-mode emits a `page.render(mode=stub)` + `page.evict` per dropped result, while drop mode still emits neither"). I did **not** apply it:
-- the canonical Part I/II paper source is **not a tracked file in this repo** (only `research/white-paper-Part-III*` are tracked; the reviewed Part II copy is gitignored under `research/uncommitted/`);
-- the hermes emitter has **not landed**, so asserting stub-mode emission in the paper now would claim behavior that does not yet exist (and paper/wire would disagree until it does).
+- Suite 246 includes 5 new laws (stub rows byte-identical to request body; drop mode emits zero rows; `emit_evict`
+  byte-identity + `ts` last; unknown ref / non-string refusal; visibility turn = next after completed turn) — all pass.
+- Checker rule proven independently per the card (mismatched `stubText` → violation line; matching → clean; old version →
+  exempt). No vacuous negatives.
+- Hostile-arg protection carried: `_stub_arg_excerpt` (cap 200, control-strip, bracket-escape) feeds the same stub dict
+  that feeds `emit_evict`, so injection cannot reach `page.evict.stubText` either.
+- Sealed v0 untouched: `git diff --stat -- spec/ rust/` empty (only my earlier replay/vector changes, already merged);
+  v0 conformance vectors pass unchanged. A standalone `page.evict` with `ts` is v0.1-valid and v0-invalid — expected,
+  since live traces carry `ts` while sealed v0 vectors do not. Law 1 intact.
 
-Recorded as an owed item for the research lane, to land **with** the hermes emitter. Proposed wording is in the design §5. No fabricated edit to a gitignored file.
+## 4. Scope / claim ceiling
 
-## 3. Division of work
+No cost-saving, paging-quality, model-quality, or determinism claim. No arm, model call, spend, re-score of Part B,
+pooling, default-on, D17, registry/catalog action. `stubText` is a raw-text channel (G4 models only `logicalRef`) — no
+redaction claim. Emitting `page.evict` makes *future* captures self-describing; it does **not** retroactively fill the
+accepted Part C re-read/attestation gap (`RR-PARTC-ARM-RESULT`, `RR-RETRY-BLOCKED`). No push.
 
-- **Hermes lane (assigned, prompt written):** emit `page.evict` at the stub seam, byte-identical `stubText`, visibility turn, drop-mode zero, per-session; `tools/coverage_check.py` presence+version-gated rule; 0.13.31 → 0.13.32 bump/sync; red-before tests. Not landed yet.
-- **Me (done):** Rust cross-check + vectors. **Owed (blocked on hermes + research source):** paper wording.
-- No cost/paging/model/determinism claim; no re-score/pooling; no default-on/D17/release; no `stubText` redaction claim; emitting does not retroactively fill the re-read gap.
+## 5. Owed (other lanes)
 
-## 4. Applied
+- Research lane: A3/A4 paper wording on the gitignored working source (`research/uncommitted/white-paper-Part-II_reviewed.md`,
+  `white-paper_reviewed.md`) to land **with** this build so paper and wire agree (routed in
+  `RR-PAGE-EVICT-PAPER-ROUTE-20261124`). The reviewed copy is intentionally gitignored by owner design.
+- Review lane (me): replay cross-check + conformance vectors already landed (`6273724`). No further code needed from me.
+- Operator: gateway restart done (pid 48868). No action owed from review.
+- Future stub-arm preflight must cite **0.13.32**, not 0.13.30/31.
+
+## 6. Applied
 
 This card, an append-only LOG row (four pipes), and a day-file section in `reports/RR-DAY-20261124.md`.
