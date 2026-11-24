@@ -54,9 +54,15 @@ same page and fails if unequal.**
 ## 4. Replay / checker cross-check (authority: Rust core)
 
 - `rust/crates/ctxvm-core/src/page_table.rs` already implements the event-effect timing and verbatim stub text
-  (`render.rs:25,385`). Add a **replay assertion**: for each `page.evict` at turn t with `stubText` S, the first
-  `page.render(mode=stub)` for that `(logicalRef, contentHash)` at turn ≥ t exists and carries the same S; fail
-  otherwise. This turns the reviewer's timing caveat into a mechanical gate, not an assumption.
+  (`render.rs:25,385`). Add a **replay assertion**: for each `page.evict` at turn t for PageId P, the first
+  `page.render(mode=stub)` for the same P at turn ≥ t exists, and its turn equals t; fail otherwise. This turns
+  the reviewer's timing caveat into a mechanical gate, not an assumption.
+- **Correction 2026-11-24 (design author, before implementation):** the original text here said the `page.render(mode=stub)`
+  row must "carry the same S" (`stubText`). That is impossible — sealed v0 `spec/rfc-0/x-cabi.schema-v0.json:62–71`
+  and v0.1 `:262–280` define `page.render` as `type`/`turn`/`page`/`mode` with `additionalProperties: false`; only
+  `page.evict` carries `stubText`. The cross-check therefore compares **turn + PageId**; stub-text identity is
+  guaranteed upstream by the emitter using one stub object (hermes prompt §3.1) and is checked at the checker against
+  the request's stub slots, not on `page.render`. Recorded in `reports/RR-PAGE-EVICT-DESIGN-ERRATUM-20261124.md`.
 - `rust/crates/ctxvm-codec/src/jsonl.rs:64` already allowlists the verb and its keys — **no codec change**.
 - Checker (`tools/coverage_check.py`): add a presence-gated rule — if a request carries stubbed slots, a matching
   `page.evict` row must exist. Mirror the existing version-gated `stubDropped`/`stubCount` rule style (`:451–459`) so
@@ -74,7 +80,10 @@ change — no result is re-scored or pooled.
 
 - Conformance: the sealed v0 validator still rejects v0.1-only lines (law 1); existing `spec/rfc-0` and v0.1 vectors
   plus the conformance vectors (`rust/crates/ctxvm-conformance/vectors/events-v0.jsonl`, `session-clean.jsonl`) pass
-  unchanged; add one vector with `page.evict` + `page.render(mode=stub)` and one negative with mismatched `stubText`.
+  unchanged; add one vector with `page.evict` + `page.render(mode=stub)` at the same turn (green) and one negative
+  with a `page.render(mode=stub)` at a different turn than its `page.evict` (the replay turn-mismatch gate). A
+  `stubText`-identity negative is a checker-side case (event text vs request stub), not a render-field case —
+  `page.render` has no `stubText` field.
 - New test: drop-mode capture emits zero `page.evict` (honesty guard); stub-mode event text == request stub text;
   per-session isolation (two sessions, one stub one drop, in one gateway).
 - `bash tools/run-ci.sh` unpiped with `CTXVM_*` cleared → rc=0 ALL GATES GREEN; `check-handoff.sh` ALL PASS;
