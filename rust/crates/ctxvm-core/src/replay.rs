@@ -34,6 +34,16 @@ pub enum Divergence {
     },
     /// `page.render` references a page never declared in the trace.
     RenderOfUnknownPage { turn: u64, page: PageId },
+    /// The first `page.render(mode=stub)` for a page must land on the turn of
+    /// that page's `page.evict` (RFC-0: `page.evict@t → stub visible at t`).
+    /// Checked only when the trace records stub renders for that page.
+    StubRenderTurnMismatch {
+        /// Turn of the `page.evict` decision.
+        evict_turn: u64,
+        /// Turn of the first recorded stub render (None = none recorded).
+        first_stub_render_turn: Option<u64>,
+        page: PageId,
+    },
     /// `turn.render.residentTokens` ≠ derived resident tokens at that turn.
     ResidentTokensMismatch {
         turn: u64,
@@ -58,11 +68,45 @@ pub struct ReplayReport {
 pub fn replay(trace: &[Event]) -> ReplayReport {
     let mut pb = Playback::new();
     pb.feed_all(trace);
+    let mut divergences = check_facts(trace, &pb, |_| true);
+    divergences.extend(check_stub_render_turns(trace));
     ReplayReport {
         events: trace.len(),
-        divergences: check_facts(trace, &pb, |_| true),
+        divergences,
         violations: pb.violations().to_vec(),
     }
+}
+
+/// page.evict design (stub mode): when a trace records `page.render(mode=stub)`
+/// rows, the first such row for a page must land on that page's `page.evict`
+/// turn (RFC-0 `page.evict@t → stub visible at t`). Presence-gated: traces
+/// whose adapter does not record stub renders are unaffected. Point-in-time
+/// replay (`--turn`) intentionally does not run this whole-trace assertion.
+fn check_stub_render_turns(trace: &[Event]) -> Vec<Divergence> {
+    use std::collections::HashMap;
+    let mut first_stub: HashMap<PageId, u64> = HashMap::new();
+    for event in trace {
+        if let Event::PageRender { turn, page, mode, .. } = event {
+            if *mode == RenderMode::Stub {
+                first_stub.entry(page.clone()).and_modify(|t| *t = (*t).min(*turn)).or_insert(*turn);
+            }
+        }
+    }
+    let mut out = Vec::new();
+    for event in trace {
+        if let Event::PageEvict { turn, page, .. } = event {
+            if let Some(first) = first_stub.get(page).copied() {
+                if first >= *turn && first != *turn {
+                    out.push(Divergence::StubRenderTurnMismatch {
+                        evict_turn: *turn,
+                        first_stub_render_turn: Some(first),
+                        page: page.clone(),
+                    });
+                }
+            }
+        }
+    }
+    out
 }
 
 /// Point-in-time replay: check only the facts recorded **at `turn`**.
@@ -134,6 +178,33 @@ mod tests {
             ts: None,
             turn: None,
         }
+    }
+
+    #[test]
+    fn stub_render_turn_must_match_evict_turn_when_recorded() {
+        let page = PageId { logical_ref: "needle".into(), content_hash: "h".into() };
+        let base = vec![
+            declare(page.clone(), 100),
+            Event::PageEvict {
+                turn: 3,
+                page: page.clone(),
+                stub_text: "STUB".into(),
+                ts: None,
+            },
+        ];
+        // Green: stub render at the evict turn.
+        let mut green = base.clone();
+        green.push(Event::PageRender { turn: 3, page: page.clone(), mode: RenderMode::Stub, ts: None });
+        assert!(replay(&green).divergences.is_empty());
+        // Red: first stub render one turn later than the evict.
+        let mut red = base.clone();
+        red.push(Event::PageRender { turn: 4, page: page.clone(), mode: RenderMode::Stub, ts: None });
+        let report = replay(&red);
+        assert!(report.divergences.iter().any(|d| matches!(
+            d, Divergence::StubRenderTurnMismatch { evict_turn: 3, first_stub_render_turn: Some(4), .. }
+        )), "expected StubRenderTurnMismatch, got {:?}", report.divergences);
+        // No stub render recorded -> presence gate skips the assertion.
+        assert!(replay(&base).divergences.is_empty());
     }
 
     #[test]

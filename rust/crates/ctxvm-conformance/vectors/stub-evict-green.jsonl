@@ -1,0 +1,5 @@
+{"type":"session.open","agentId":"stub-evict-green","model":"synthetic","provider":"synthetic","budgetTokens":200000,"tokenizerId":"a"}
+{"type":"page.declare","page":{"id":{"logicalRef":"file:needle.txt","contentHash":"sha256:nn"},"kind":"file","tokens":100}}
+{"type":"page.render","turn":0,"page":{"logicalRef":"file:needle.txt","contentHash":"sha256:nn"},"mode":"full"}
+{"type":"page.evict","turn":1,"page":{"logicalRef":"file:needle.txt","contentHash":"sha256:nn"},"stubText":"[stub: needle]"}
+{"type":"page.render","turn":1,"page":{"logicalRef":"file:needle.txt","contentHash":"sha256:nn"},"mode":"stub"}
