@@ -13,14 +13,14 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 (`e10d249`), Part III + §9.2 fix (`d10c325`, `99f62f9`), `datamining/` tracked (`97cf743`), E1 LANDED (`a1bd004`), `fixture-bank/` v2 (2-hop, 442/442) + parked E0/E2 notes LANDED & VERIFIED (`e8149b5`, `RR-E0ENRICH-VERIFY`; E0/E2 $0).
-- Hermes lane: stub-seam arg defect fixed (`RR-PARTC-FIX`), 0.13.31 synced, suite 241; restart owed, future arm cites 0.13.31.
+- Hermes lane: stub-seam arg defect fixed (`RR-PARTC-FIX`), 0.13.31 LIVE (`RR-RESTART-LIVE`), suite 241; arm cites 0.13.31.
 
 - **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
 - Gateway: pid 139920 (22:51 restart 11-19) holds 0.13.29; real session `local-f913ef14` flushed `harnessVersion: "0.23.2"` (`RR-HVERR-REVIEW`).
 ## Next three (ordered, one line each)
-1. All routed hermes, research, and review queues DONE & VERIFIED (`RR-H16H18-REVIEW`, `RR-HVERR-REVIEW`, `RR-E0ENRICH-VERIFY`).
+1. All routed hermes, research, review queues DONE & VERIFIED (see RR-* review cards).
 2. E0 double negative PUBLISHED (`RR-E0-NEGATIVE`); E2 FAIL 2/5 (instrument specificity, not paging) CLOSED (`RR-E2CLOSE`), HELD $0 — retry = new ruling. W8 parked.
-3. G3 design APPROVED; umpire-side prereg owed in separate repo (owner clearance). D17 held; D19/P11/H19 owner-gated.
+3. page.evict design RULED (`RR-PAGE-EVICT-RULING`), card cleared to author (owner placement); not implemented. G3 prereg, D17, D19/P11/H19 owner-gated.
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30 → 2026-11-10: D3-c OTel layered; D4 adopts RFC-0.1; D8 splits → schemaVersion first; D12 est* keep page-table semantics; W8 ruled FAILED, capture default-on; D-U1 caveat, D-U3 same-build, D-U2 two baselines (`RR-DECISIONS-20261030` … `RR-P7BASE-20261110`).
