@@ -422,6 +422,24 @@ class Tracer:
         self._push(event)  # _push appends ts LAST (law 3)
         return True
 
+    def emit_stub_render(self, ref: str, turn: Optional[int] = None) -> bool:
+        """Part C/page.evict companion: emit page.render(mode=stub) for the same
+        PageId and visibility turn as the eviction. Pure event emission; the page
+        was already revealed at the pre-LLM boundary, this records the mode change
+        the selected request actually sent."""
+        page = self._declared.get(ref)
+        if page is None:
+            return False
+        t = self._turn if self._turn >= 0 else 0
+        event: Dict[str, Any] = {
+            "type": "page.render",
+            "turn": t if turn is None else turn,
+            "page": {"logicalRef": ref, "contentHash": page["contentHash"]},
+            "mode": "stub",
+        }
+        self._push(event)  # _push appends ts LAST (law 3)
+        return True
+
     def render(self, input: Optional[Dict[str, Any]] = None) -> None:
         """Turn boundary: reveals newly declared pages; turn-level facts flush at finish()."""
         input = input or {}

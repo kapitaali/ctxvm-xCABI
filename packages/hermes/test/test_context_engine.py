@@ -1341,15 +1341,34 @@ class PageEvictStubTests(unittest.TestCase):
         tr.page({"ref": "file:x", "kind": "file", "content": "x"})
         self.assertFalse(tr.emit_evict("file:x", 123, 0))
 
-    def test_visibility_turn_is_next_after_completed_turn(self):
-        # The stub is sent in the request AFTER render() increments; RFC-0 says
-        # page.evict@t means the stub is visible at t, so tag _turn + 1.
+    def test_stub_mode_emits_evict_then_stub_render_at_same_turn(self):
+        from plugin import Tracer, TraceInit
+        tr = Tracer(TraceInit(agent_id="hermes", model="m", provider="p", budget_tokens=100000))
+        for i in (2, 3, 4):
+            tr.page({"tool": "read_file", "args": {"path": f"notes/f{i}.md"},
+                     "content": f"body {i}", "toolEffect": "READ_ONLY"})
+        tr.render()  # pre_llm boundary: turn 0 already visible before selection
+        ref = tr.refs_for_identity_tokens([["notes/f2"]])[0]
+        text = '[ctxvm: dropped result for read_file({"path": "notes/f2.md"}); re-run to restore.]'
+        self.assertTrue(tr.emit_evict(ref, text, 0))
+        self.assertTrue(tr.emit_stub_render(ref, 0))
+        ev = [json.loads(l) for l in tr.finish().jsonl.splitlines()]
+        pair = [e for e in ev if e.get("type") in ("page.evict",)
+                or (e.get("type") == "page.render" and e.get("mode") == "stub")]
+        self.assertEqual([e["type"] for e in pair], ["page.evict", "page.render"])
+        self.assertEqual([e["turn"] for e in pair], [0, 0])
+        self.assertEqual(pair[0]["stubText"], text)
+        self.assertEqual(pair[1]["mode"], "stub")
+        self.assertEqual(list(pair[1])[-1], "ts")
+
+    def test_visibility_turn_is_current_after_pre_llm_render(self):
+        # Host order: pre_llm_call runs render() BEFORE request assembly and
+        # select_context. The stubbed request is sent in the CURRENT turn.
         from plugin import Tracer, TraceInit
         tr = Tracer(TraceInit(agent_id="hermes", model="m", provider="p", budget_tokens=100000))
         tr.page({"ref": "file:x", "kind": "file", "content": "x"})
-        tr.render()  # turn 0 completed
-        visible = tr._turn + 1
-        self.assertEqual(visible, 1)
+        tr.render()  # turn 0 boundary already happened
+        self.assertEqual(tr._turn, 0)
 
 
 if __name__ == "__main__":

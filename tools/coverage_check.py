@@ -472,11 +472,18 @@ def main(argv: list) -> int:
                           "stubDropped=recoverable with evictedTokens>0 requires plugin.stubbedRefs")
                 else:
                     seen = {}
-                    for r in evict_rows:
+                    stub_turns = {}
+                    for r in rows:
+                        if not isinstance(r, dict):
+                            continue
                         pg = r.get("page")
                         if not isinstance(pg, dict) or not isinstance(pg.get("logicalRef"), str):
                             continue
-                        seen[pg["logicalRef"]] = r.get("stubText")
+                        ref = pg["logicalRef"]
+                        if r.get("type") == "page.evict":
+                            seen[ref] = r.get("stubText")
+                        elif r.get("type") == "page.render" and r.get("mode") == "stub":
+                            stub_turns.setdefault(ref, set()).add(r.get("turn"))
                     for rec in stub_refs:
                         if not isinstance(rec, dict) or not isinstance(rec.get("ref"), str):
                             _fail(violations, "plugin", "stubbedRefs entries need a ref string")
@@ -488,6 +495,13 @@ def main(argv: list) -> int:
                         elif seen[ref] != rec.get("stubText"):
                             _fail(violations, "plugin",
                                   "page.evict stubText is not byte-identical to the request stub for "
+                                  + ref[:80])
+                        turn = rec.get("turn")
+                        if not isinstance(turn, int):
+                            _fail(violations, "plugin", "stubbedRefs entry needs a visibility turn")
+                        elif turn not in stub_turns.get(ref, set()):
+                            _fail(violations, "plugin",
+                                  "stubbed ref lacks page.render(mode=stub) at the visibility turn: "
                                   + ref[:80])
 
     if violations:

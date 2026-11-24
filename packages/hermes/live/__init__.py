@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.32"
+PLUGIN_VERSION = "0.13.33"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -1560,7 +1560,11 @@ def register(ctx) -> None:
                         _rows = (payload or {}).get("stubRows") or []
                         _stub_recs = []
                         if (payload or {}).get("stubDropped") == "recoverable" and _rows:
-                            _visible = (_tr._turn + 1) if getattr(_tr, "_turn", -1) >= 0 else 0
+                            # pre_llm_call runs render() BEFORE request assembly /
+                            # select_context, so _turn is already the current turn.
+                            # The stubbed request is sent in THAT turn (RFC-0:
+                            # page.evict@t -> stub visible at t).
+                            _visible = _tr._turn if getattr(_tr, "_turn", -1) >= 0 else 0
                             for _row in _rows:
                                 if not isinstance(_row, dict):
                                     continue
@@ -1571,7 +1575,9 @@ def register(ctx) -> None:
                                 _matched = _tr.refs_for_identity_tokens([_ids])
                                 if len(_matched) == 1:
                                     _tr.emit_evict(_matched[0], _text, _visible)
-                                    _stub_recs.append({"ref": _matched[0], "stubText": _text})
+                                    _tr.emit_stub_render(_matched[0], _visible)
+                                    _stub_recs.append({"ref": _matched[0], "stubText": _text,
+                                                       "turn": _visible})
                         # Per-session, for the coverage sidecar's checker rule: the
                         # exact stubbed refs + text this session sent.
                         _state().setdefault("stubbed_refs_by_session", {})[_target] = _stub_recs
