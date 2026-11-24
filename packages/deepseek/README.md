@@ -1,6 +1,6 @@
 # @ctxvm/dsh — ctxvm adapter for DeepSeek Harness
 
-W22 Phase 1: **mirror-mode xCABI v0 trace capture** from a live dsh session.
+W22: **mirror-mode xCABI v0.1 trace capture** plus passive stub facts from a live dsh session.
 
 The plugin is a Cordis bundle that:
 
@@ -8,7 +8,8 @@ The plugin is a Cordis bundle that:
 2. Maintains one `@ctxvm/node` tracer per session (keyed by `sessionId`).
 3. Maps dsh events to xCABI verbs (see `src/event-map.ts`).
 4. Registers a session projection for the page table (`src/page-table.ts`).
-5. Writes the trace to `<traceDir>/<sessionId>-<ts>.jsonl` on session end.
+5. Writes the trace and exact-byte coverage sidecar to `<traceDir>/<sessionId>-<ts>.jsonl{,.coverage.json}` on session end.
+6. Maps single-node `tool/result` replacements to `page.evict` + `page.render(mode="stub")` without declaring the stub body as a page.
 
 Mirror mode guarantees: the plugin never mutates a dsh message, tool argument,
 surface node, or config; it never raises from an event handler; it writes only
@@ -23,12 +24,9 @@ dsh plugin install /home/theb/Documents/ctxvm/packages/deepseek
 # target=/home/theb/Documents/ctxvm/packages/deepseek
 ```
 
-Prerequisite: build the tracer first, because Node refuses TypeScript under
-`node_modules` and `@ctxvm/node` exports point at `dist/`:
-
-```
-cd packages/node && npm run build
-```
+`@ctxvm/node` is an exact external dependency (`0.1.1`) containing the passive
+`stub()` API. No repository-relative `file:` dependency or workspace symlink is
+used. Publish/install that package before installing this adapter.
 
 ## Config
 
@@ -48,13 +46,13 @@ Set on the `ctxvm-tracer` row in the profile's `cordis.patch.yml`
 ## Validate / replay a captured trace
 
 ```
-venvs/odps/bin/python spec/rfc-0/validate_schema.py <trace.jsonl>   # exit 0 = pass
+venvs/odps/bin/python spec/rfc-0.1/validate_schema_v0_1.py <trace.jsonl>   # exit 0 = pass
 cargo run --release -p ctxvm-conformance --bin replay <trace.jsonl>  # exit 0 = no divergence
+python3 tools/coverage_check.py <trace.jsonl> <trace.jsonl>.coverage.json
 ```
 
-Note: the current `@ctxvm/node` build emits RFC-0.1 additive fields
-(`schemaVersion: "0.1"`, `ts`, …); if the strict v0 schema rejects them, use
-`spec/rfc-0.1/validate_schema_v0_1.py` (see open questions in the W22 doc).
+Traces negotiate `schemaVersion: "0.1"` and use the v0.1 validator. Passive
+stub captures also require the adapter-aware DSH coverage gate.
 
 ## Layout
 

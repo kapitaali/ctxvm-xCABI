@@ -10,12 +10,14 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 
-const repo = process.env.CTXVX_REPO ?? process.env.CTXVM_REPO
+const repo = process.env.CTXVM_REPO
 const trace = process.env.CTXVM_TEST_TRACE
 
 test('captured trace validates and replays without divergence', { skip: !repo || !trace }, () => {
-  execFileSync(`${repo}/venvs/odps/bin/python`, [`${repo}/spec/rfc-0/validate_schema.py`, trace!], { stdio: 'pipe' })
-  const out = execFileSync('cargo', ['run', '--quiet', '--release', '-p', 'ctxvm-conformance', '--bin', 'replay', trace!], { cwd: repo, stdio: 'pipe' })
+  execFileSync(`${repo}/venvs/odps/bin/python`, [`${repo}/spec/rfc-0.1/validate_schema_v0_1.py`, trace!], { stdio: 'pipe' })
+  const out = execFileSync('cargo', [
+    'run', '--quiet', '--release', '-p', 'ctxvm-conformance', '--bin', 'replay', trace!,
+  ], { cwd: repo, stdio: 'pipe' })
   const report = JSON.parse(out.toString())
   assert.deepEqual(report.divergences, [])
 })

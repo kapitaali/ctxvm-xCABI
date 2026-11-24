@@ -1,8 +1,11 @@
 {
   "name": "@ctxvm/node",
-  "version": "0.1.0",
-  "description": "Telemetry-first tracer for agent loops — RFC-0 xCABI JSONL in TypeScript, zero runtime dependencies.",
+  "version": "0.1.1",
+  "description": "Telemetry-first tracer for agent loops — RFC-0 xCABI JSONL with passive stub facts, zero runtime dependencies.",
   "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "repository": {
     "type": "git",

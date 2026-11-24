@@ -3,6 +3,21 @@
  */
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 
+/** One successful passive stub observation. */
+export interface StubRecord {
+  ref: string
+  contentHash: string
+  stubText: string
+  turn: number
+}
+
+/** Original append-origin tool result identity. */
+export interface ResultPageIdentity {
+  logicalRef: string
+  contentHash: string
+  tokens: number
+}
+
 /** One live tracer per session. */
 export interface SessionTracer {
   sessionId: SessionId
@@ -10,8 +25,20 @@ export interface SessionTracer {
   tracer?: import('@ctxvm/node').Tracer
   /** callId → (name, parsed arguments) built from tool/call events. */
   calls: Map<string, { name: string; args: unknown }>
+  /** Original result seq → exact PageId, used by replacement provenance. */
+  pagesBySeq: Map<number, ResultPageIdentity>
+  /** Zero-based xCABI turn; only turn/start advances it. */
+  turn: number
+  /** Successful stub pairs observed in this session. */
+  stubbedRefs: StubRecord[]
+  /** Original full-page tokens replaced by stubs. */
+  evictedTokens: number
+  /** Bounded non-fatal diagnostics; never raised into the session loop. */
+  diagnostics: string[]
   /** Trace file path once written. */
   tracePath?: string
+  /** Coverage sidecar path once written. */
+  coveragePath?: string
   /** Events seen before request/header, replayed once the identity is known. */
   pending?: unknown[]
 }

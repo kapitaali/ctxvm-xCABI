@@ -100,6 +100,125 @@ def _fail(violations: list, check: str, detail: str) -> None:
     violations.append(f"{check}: {detail}")
 
 
+def _declared_page_id(row: dict) -> tuple[str, str] | None:
+    page = row.get("page")
+    identity = page.get("id") if isinstance(page, dict) else None
+    if not isinstance(identity, dict):
+        return None
+    ref, digest = identity.get("logicalRef"), identity.get("contentHash")
+    return (ref, digest) if isinstance(ref, str) and isinstance(digest, str) else None
+
+
+def _event_page_id(row: dict) -> tuple[str, str] | None:
+    page = row.get("page")
+    if not isinstance(page, dict):
+        return None
+    ref, digest = page.get("logicalRef"), page.get("contentHash")
+    return (ref, digest) if isinstance(ref, str) and isinstance(digest, str) else None
+
+
+def _check_dsh_stub_wire(rows: list, plugin: dict, violations: list) -> None:
+    """Adapter-aware passive stub gate; Hermes rules remain in main()."""
+    capabilities = plugin.get("capabilities")
+    if capabilities is not None and not isinstance(capabilities, dict):
+        _fail(violations, "plugin", "plugin.capabilities must be an object")
+        return
+    stub_wire = capabilities.get("stubWire") if isinstance(capabilities, dict) else None
+    if stub_wire is not None and not (_int(stub_wire) and stub_wire >= 0):
+        _fail(violations, "plugin", "plugin.capabilities.stubWire must be a non-negative integer")
+        return
+    # Legacy DSH sidecars without the capability remain exempt.
+    if not (_int(stub_wire) and stub_wire >= 1):
+        return
+
+    refs = plugin.get("stubbedRefs")
+    if not isinstance(refs, list):
+        _fail(violations, "plugin", "stubWire>=1 requires plugin.stubbedRefs to be a list")
+        return
+    count = plugin.get("stubCount")
+    if not (_int(count) and count >= 0):
+        _fail(violations, "plugin", "stubWire>=1 requires a non-negative integer stubCount")
+    elif count != len(refs):
+        _fail(violations, "plugin", f"stubCount {count} != len(stubbedRefs) {len(refs)}")
+    evicted = plugin.get("evictedTokens")
+    if not (_int(evicted) and evicted >= 0):
+        _fail(violations, "plugin", "stubWire>=1 requires a non-negative integer evictedTokens")
+    dropped = plugin.get("stubDropped")
+    if dropped not in ("off", "recoverable"):
+        _fail(violations, "plugin", "stubWire>=1 requires stubDropped off or recoverable")
+    if refs and dropped != "recoverable":
+        _fail(violations, "plugin", "non-empty stubbedRefs requires stubDropped=recoverable")
+    if dropped == "off" and refs:
+        _fail(violations, "plugin", "stubDropped=off contradicts non-empty stubbedRefs")
+
+    declared = {_declared_page_id(row) for row in rows
+                if row.get("type") == "page.declare" and _declared_page_id(row) is not None}
+    declared_tokens = {}
+    for row in rows:
+        page_id = _declared_page_id(row) if row.get("type") == "page.declare" else None
+        tokens = (row.get("page") or {}).get("tokens") if isinstance(row.get("page"), dict) else None
+        if page_id is not None and _int(tokens):
+            declared_tokens[page_id] = tokens
+    expected_evicted = 0
+    evictions: dict[tuple[tuple[str, str], int, str], int] = {}
+    evict_pages: dict[tuple[str, str], set[int]] = {}
+    renders: dict[tuple[tuple[str, str], int], int] = {}
+    render_pages: dict[tuple[str, str], set[int]] = {}
+    for row in rows:
+        page_id = _event_page_id(row)
+        if page_id is None or not _int(row.get("turn")):
+            continue
+        turn = row["turn"]
+        if row.get("type") == "page.evict" and isinstance(row.get("stubText"), str):
+            key = (page_id, turn, row["stubText"])
+            evictions[key] = evictions.get(key, 0) + 1
+            evict_pages.setdefault(page_id, set()).add(turn)
+        elif row.get("type") == "page.render" and row.get("mode") == "stub":
+            key = (page_id, turn)
+            renders[key] = renders.get(key, 0) + 1
+            render_pages.setdefault(page_id, set()).add(turn)
+
+    for index, record in enumerate(refs):
+        if not isinstance(record, dict):
+            _fail(violations, "plugin", f"stubbedRefs[{index}] must be an object")
+            continue
+        ref, digest = record.get("ref"), record.get("contentHash")
+        text, turn = record.get("stubText"), record.get("turn")
+        if not isinstance(ref, str) or not isinstance(digest, str):
+            _fail(violations, "plugin", f"stubbedRefs[{index}] requires ref and contentHash strings")
+            continue
+        if not isinstance(text, str):
+            _fail(violations, "plugin", f"stubbedRefs[{index}].stubText must be a string")
+            continue
+        if not (_int(turn) and turn >= 0):
+            _fail(violations, "plugin", f"stubbedRefs[{index}].turn must be a non-negative integer")
+            continue
+        page_id = (ref, digest)
+        if page_id not in declared:
+            _fail(violations, "plugin", f"stubbedRefs[{index}] names an undeclared PageId")
+        else:
+            expected_evicted += declared_tokens.get(page_id, 0)
+        evict_key = (page_id, turn, text)
+        if evictions.get(evict_key, 0) > 0:
+            evictions[evict_key] -= 1
+        elif page_id not in evict_pages:
+            _fail(violations, "plugin", f"stubbedRefs[{index}] lacks page.evict for its PageId")
+        elif turn not in evict_pages[page_id]:
+            _fail(violations, "plugin", f"stubbedRefs[{index}] page.evict is at the wrong turn")
+        else:
+            _fail(violations, "plugin", f"stubbedRefs[{index}] page.evict stubText mismatch")
+        render_key = (page_id, turn)
+        if renders.get(render_key, 0) > 0:
+            renders[render_key] -= 1
+        elif page_id not in render_pages:
+            _fail(violations, "plugin", f"stubbedRefs[{index}] lacks page.render(mode=stub)")
+        else:
+            _fail(violations, "plugin", f"stubbedRefs[{index}] stub render is at the wrong turn")
+    if _int(evicted) and evicted != expected_evicted:
+        _fail(violations, "plugin",
+              f"evictedTokens {evicted} != declared original tokens {expected_evicted}")
+
+
 def main(argv: list) -> int:
     if len(argv) != 2:
         print(USAGE, file=sys.stderr)
@@ -341,6 +460,7 @@ def main(argv: list) -> int:
 
     # ---- plugin: present and typed; a pairing fact, not a byte claim ----
     if plugin is not None:
+        is_dsh = plugin.get("adapter") == "dsh"
         if not (isinstance(plugin.get("version"), str) and plugin["version"].strip()):
             _fail(violations, "plugin", "plugin.version must be a non-empty string")
         if not (isinstance(plugin.get("harness"), str) and plugin["harness"].strip()):
@@ -364,7 +484,7 @@ def main(argv: list) -> int:
                 return (0,)
         calls = plugin.get("callSizes")
         budget = plugin.get("budgetTokens")
-        if _v23(plugin.get("version")) >= (0, 13, 23) and isinstance(calls, list) and calls:
+        if not is_dsh and _v23(plugin.get("version")) >= (0, 13, 23) and isinstance(calls, list) and calls:
             for c in calls:
                 if not isinstance(c, dict):
                     _fail(violations, "plugin", "callSizes entries must be objects")
@@ -440,7 +560,7 @@ def main(argv: list) -> int:
                 return tuple(int(x) for x in str(v).split(".")[:3])
             except Exception:
                 return (0,)
-        if isinstance(plugin.get("evictedTokens"), int) and plugin["evictedTokens"] > 0 \
+        if not is_dsh and isinstance(plugin.get("evictedTokens"), int) and plugin["evictedTokens"] > 0 \
                 and plugin.get("arm") != "control" and _v(plugin.get("version")) >= (0, 13, 2):
             n = plugin.get("evictedPagesCount")
             if not isinstance(n, int) or n <= 0:
@@ -450,7 +570,7 @@ def main(argv: list) -> int:
 
         # Part C: a recoverable stub that changed the request must leave a per-call
         # count. Version- and presence-gated so pre-0.13.31 fixtures stay valid.
-        if plugin.get("stubDropped") == "recoverable" and _v(plugin.get("version")) >= (0, 13, 31):
+        if not is_dsh and plugin.get("stubDropped") == "recoverable" and _v(plugin.get("version")) >= (0, 13, 31):
             ev = plugin.get("evictedTokens")
             if isinstance(ev, int) and ev > 0:
                 sc = plugin.get("stubCount")
@@ -461,7 +581,7 @@ def main(argv: list) -> int:
         # page.evict (stub mode): a request that carries stubbed slots and reports
         # evictions must have a matching page.evict row. Version- and presence-
         # gated so pre-change fixtures stay valid.
-        if plugin.get("stubDropped") == "recoverable" and _v(plugin.get("version")) >= (0, 13, 32):
+        if not is_dsh and plugin.get("stubDropped") == "recoverable" and _v(plugin.get("version")) >= (0, 13, 32):
             ev = plugin.get("evictedTokens")
             if isinstance(ev, int) and ev > 0:
                 stub_refs = plugin.get("stubbedRefs")
@@ -503,6 +623,9 @@ def main(argv: list) -> int:
                             _fail(violations, "plugin",
                                   "stubbed ref lacks page.render(mode=stub) at the visibility turn: "
                                   + ref[:80])
+
+        if is_dsh:
+            _check_dsh_stub_wire(rows, plugin, violations)
 
     if violations:
         for line in violations:

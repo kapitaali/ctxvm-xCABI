@@ -16,7 +16,7 @@ import z from '@deepseek-ai/schemastery'
 import type { Context } from '@deepseek-ai/cordis'
 import { makeConfig, type CtxvmDshConfig } from './config.ts'
 import { mapEvent } from './event-map.ts'
-import { ensureTracer, finalizeTracer, flushTracer } from './tracer.ts'
+import { createSessionTracer, ensureTracer, finalizeTracer, flushTracer } from './tracer.ts'
 import { ctxvmPageTableProjection, makePageTableStateSchema, setPageTableStateSchema } from './page-table.ts'
 import type { SessionTracer } from './types.ts'
 
@@ -43,7 +43,7 @@ export function apply(ctx: Context, config: CtxvmDshConfig): void {
 
     const offCreated = ctx.on('session/created', (session) => {
       log('session/created', String(session.id))
-      sessions.set(String(session.id), { sessionId: session.id, calls: new Map() })
+      sessions.set(String(session.id), createSessionTracer(session.id))
     })
 
     let eventCount = 0
@@ -52,7 +52,7 @@ export function apply(ctx: Context, config: CtxvmDshConfig): void {
       const key = String(session.id)
       let st = sessions.get(key)
       if (!st) {
-        st = { sessionId: session.id, calls: new Map() }
+        st = createSessionTracer(session.id)
         sessions.set(key, st)
       }
       if (eventCount <= 5 || eventCount % 100 === 0) log('session/event #' + eventCount, key.slice(0, 8), (event as { type?: string }).type)

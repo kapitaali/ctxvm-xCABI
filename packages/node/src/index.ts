@@ -9,6 +9,7 @@
  *   vm.recall({ tool, args })               // pre-execution re-call mark (tool_recall)
  *   vm.render({ latencyMs })                // turn boundary; reveals + turn.render + call.meta
  *   vm.scan({ text })                       // identifier_scan over model output
+ *   vm.stub({ ref, contentHash?, stubText, turn? }) // passive eviction + stub render
  *   vm.finish()                             // → RFC-0 JSONL + stats
  *
  * T6/T7 design sketches referred to these as `page_raw`/`observe_recall`/`scan_text`;
@@ -37,6 +38,7 @@ export type {
   RecallInput,
   RenderInput,
   ScanInput,
+  StubInput,
   TraceInit,
   Tracer,
 } from "./tracer.ts";

@@ -512,3 +512,106 @@ test("W14 deriveEnvironmentId is opaque, stable, and never leaks the path", () =
   assert.equal(r1, r2, "one remote, one environment, wherever it is cloned");
   assert.match(r1, /^env-[0-9a-f]{12}$/);
 });
+
+test("stub emits an atomic eviction + stub render with exact PageId/text/turn", () => {
+  const vm = createTrace(INIT);
+  const original = vm.page({ ref: "file:a.ts", content: "full body", tokens: 10 });
+  vm.render(); // full reveal at turn 0 is superseded by the later same-turn stub
+  assert.equal(vm.stub({ ref: original.logicalRef, contentHash: original.contentHash, stubText: "  exact\nstub  " }), true);
+  const { events } = vm.finish();
+  const evicts = of(events, "page.evict");
+  const renders = of(events, "page.render");
+  assert.equal(evicts.length, 1);
+  assert.equal(renders.length, 1);
+  const { ts: _evictTs, ...evictWire } = evicts[0];
+  const { ts: _renderTs, ...renderWire } = renders[0];
+  assert.deepEqual(evictWire, {
+    type: "page.evict",
+    turn: 0,
+    page: { logicalRef: original.logicalRef, contentHash: original.contentHash },
+    stubText: "  exact\nstub  ",
+  });
+  assert.deepEqual(renderWire, {
+    type: "page.render",
+    turn: 0,
+    page: { logicalRef: original.logicalRef, contentHash: original.contentHash },
+    mode: "stub",
+  });
+  const evictKeys = Object.keys(evicts[0]);
+  const renderKeys = Object.keys(renders[0]);
+  assert.equal(evictKeys.filter(key => key !== "ts").join(","), "type,turn,page,stubText");
+  assert.equal(renderKeys.filter(key => key !== "ts").join(","), "type,turn,page,mode");
+  if ("ts" in evicts[0]) assert.equal(evictKeys.at(-1), "ts");
+  if ("ts" in renders[0]) assert.equal(renderKeys.at(-1), "ts");
+  assert.ok(events.indexOf(evicts[0]) < events.indexOf(renders[0]));
+  assert.deepEqual(of(events, "turn.render").map(e => [e.residentTokens, e.evictedTokens]), [[0, 10]]);
+});
+
+test("stub refusal emits no half-pair", () => {
+  const vm = createTrace(INIT);
+  vm.page({ ref: "file:a.ts", content: "full" });
+  assert.equal(vm.stub({ ref: "file:missing", stubText: "stub" }), false);
+  assert.equal(vm.stub({ ref: "file:a.ts", stubText: "" }), false);
+  assert.equal(vm.stub({ ref: "file:a.ts", stubText: "stub", turn: -1 }), false);
+  assert.equal(vm.stub({ ref: "file:a.ts", stubText: "stub", turn: 1.5 }), false);
+  const { events } = vm.finish();
+  assert.equal(of(events, "page.evict").length, 0);
+  assert.equal(of(events, "page.render").filter(e => e.mode === "stub").length, 0);
+});
+
+test("stub selects an exact historical PageId and uses stub-aware resident totals", () => {
+  const vm = createTrace(INIT);
+  const first = vm.page({ ref: "tool:read({\"path\":\"a\"})", content: "v1", tokens: 5 });
+  vm.render(); // turn 0
+  const second = vm.page({ ref: "tool:read({\"path\":\"a\"})", content: "v2", tokens: 7 });
+  vm.render(); // turn 1
+  assert.equal(vm.stub({ ref: first.logicalRef, contentHash: first.contentHash, stubText: "stub-v1", turn: 1 }), true);
+  const { events } = vm.finish();
+  const evict = of(events, "page.evict")[0];
+  assert.deepEqual(evict.page, { logicalRef: first.logicalRef, contentHash: first.contentHash });
+  assert.notEqual(first.contentHash, second.contentHash);
+  assert.deepEqual(of(events, "turn.render").map(e => [e.turn, e.residentTokens, e.evictedTokens]), [
+    [0, 12, 0],
+    [1, 7, 5],
+  ]);
+});
+
+test("ref-only stub selects the first declared PageId", () => {
+  const vm = createTrace(INIT);
+  const first = vm.page({ ref: "file:a.ts", content: "v1" });
+  vm.page({ ref: "file:a.ts", content: "v2" });
+  vm.stub({ ref: first.logicalRef, stubText: "stub" });
+  assert.equal(of(vm.finish().events, "page.evict")[0].page.contentHash, first.contentHash);
+});
+
+test("a full re-fetch after stub restores full mode from the next turn", () => {
+  const vm = createTrace(INIT);
+  const original = vm.page({ tool: "read_file", args: { path: "a.ts" }, content: "full", tokens: 10 });
+  vm.render(); // turn 0
+  vm.stub({ ref: original.logicalRef, contentHash: original.contentHash, stubText: "stub" });
+  vm.recall({ tool: "read_file", args: { path: "a.ts" } });
+  vm.page({ tool: "read_file", args: { path: "a.ts" }, content: "full" });
+  vm.render(); // turn 1
+  const { events } = vm.finish();
+  assert.deepEqual(of(events, "page.fault").map(e => [e.source, e.turn]), [["tool_recall", 0]]);
+  assert.deepEqual(of(events, "page.render").map(e => [e.turn, e.mode]), [[0, "stub"], [1, "full"]]);
+  assert.deepEqual(of(events, "turn.render").map(e => [e.turn, e.residentTokens, e.evictedTokens]), [
+    [0, 0, 10],
+    [1, 10, 0],
+  ]);
+});
+
+test("stub state is isolated per tracer and finish remains idempotent", () => {
+  const a = createTrace(INIT);
+  const b = createTrace(INIT);
+  const pa = a.page({ ref: "file:a.ts", content: "A", tokens: 2 });
+  const pb = b.page({ ref: "file:a.ts", content: "B", tokens: 3 });
+  a.render();
+  b.render();
+  a.stub({ ref: pa.logicalRef, contentHash: pa.contentHash, stubText: "stub-A" });
+  const first = a.finish();
+  assert.equal(a.finish().jsonl, first.jsonl);
+  assert.equal(of(first.events, "page.evict").length, 1);
+  assert.equal(of(b.finish().events, "page.evict").length, 0);
+  assert.notEqual(pa.contentHash, pb.contentHash);
+});

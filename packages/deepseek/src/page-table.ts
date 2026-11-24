@@ -8,8 +8,8 @@
  *                       resident page re-called is a FaultOfResidentPage ledger
  *                       row — emitted trace-side by event-map's tracer.recall,
  *                       not stored in this projection)
- *   surface op        → append: declaring page resident; replace: shadowed
- *                       pages (sourceEventSeqs / startSeq..endSeq) become stub
+ *   tool/result replace→ original page becomes stub; hash/tokens stay full
+ *   tool/result append → full result restores stub to resident
  *   compaction/summary → shadowedSeqs' pages become evicted
  *
  * Page identity reuses @ctxvm/node's minters (toolRef/contentHash/approx4) so
@@ -27,6 +27,7 @@ import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import type { SessionEvent, SessionHeader } from '@deepseek-ai/dsh-session/types'
 import type { PageEntry, PageTableState } from './types.ts'
 import { eventData, asRecord, asString, asNumberArray } from './event-data.ts'
+import { isReplacement, replacementSourceSeq } from './surface.ts'
 
 type Z = typeof import('@deepseek-ai/schemastery').default
 
@@ -82,30 +83,14 @@ function markPages(state: PageTableState, seqs: readonly number[], status: PageE
   return changed ? { ...state, pages } : state
 }
 
-function range(start: number, end: number): number[] {
-  const out: number[] = []
-  for (let s = start; s <= end; s++) out.push(s)
-  return out
-}
-
-function applySurfaceOp(state: PageTableState, ev: Record<string, unknown>): PageTableState {
-  const op = asRecord(ev.surfaceOp)
-  if (!op || op.op !== 'replace') return state
-  const start = op.startSeq
-  const end = op.endSeq
-  const shadowed = asNumberArray(ev.sourceEventSeqs)?.length
-    ? asNumberArray(ev.sourceEventSeqs)!
-    : (typeof start === 'number' && typeof end === 'number' ? range(start, end) : [])
-  return markPages(state, shadowed, 'stub')
-}
-
 export const ctxvmPageTableProjection: ProjectionDefinition<'ctxvmPageTable', PageTableState> = {
   key: 'ctxvmPageTable',
   get stateSchema(): any {
     return _pageTableStateSchema
   },
-  // stateVersion 2: state gained `calls` and PageEntry gained `seq` (Phase 1 task 5 fold).
-  stateVersion: 2,
+  // stateVersion 3: only single-node tool/result replacements mark pages stub;
+  // replacement text no longer refreshes the original hash/token accounting.
+  stateVersion: 3,
   init(_header: SessionHeader, _inheritedEventCount: number): PageTableState {
     return { pages: {}, order: [], calls: {} }
   },
@@ -121,6 +106,10 @@ export const ctxvmPageTableProjection: ProjectionDefinition<'ctxvmPageTable', Pa
         return { ...state, calls }
       }
       case 'tool/result': {
+        if (isReplacement(ev)) {
+          const originalSeq = replacementSourceSeq(ev)
+          return originalSeq === undefined ? state : markPages(state, [originalSeq], 'stub')
+        }
         const message = asRecord(ev.message)
         const call = state.calls[asString(message?.toolCallId)]
         const ref = toolRef(undefined, call?.name ?? 'unknown', (call?.args ?? null) as never)
@@ -131,22 +120,22 @@ export const ctxvmPageTableProjection: ProjectionDefinition<'ctxvmPageTable', Pa
         const existing = pages[ref]
         let next: PageTableState
         if (existing) {
-          // first-declare-wins content hash; refresh tokens and residency
-          pages[ref] = { ...existing, tokens, status: 'resident' }
+          // First-declare-wins hash. A full append restores a stub; evicted is terminal.
+          pages[ref] = { ...existing, tokens, status: existing.status === 'evicted' ? 'evicted' : 'resident' }
           next = { ...state, pages }
         } else {
           pages[ref] = { kind: 'tool_result', contentHash: hash, tokens, status: 'resident', seq }
           next = { ...state, pages, order: [...state.order, ref] }
         }
-        return applySurfaceOp(next, ev)
+        return next
       }
       case 'compaction/summary': {
         return markPages(state, asNumberArray(ev.shadowedSeqs) ?? [], 'evicted')
       }
       default: {
-        // other surface events (user/system/assistant/developer messages): only
-        // a replace op can shadow tool pages; append touches nothing
-        return applySurfaceOp(state, ev)
+        // User/system/assistant replacements and pruner replacements are not
+        // ctxvm stubs. Only the tool/result branch above may shadow tool pages.
+        return state
       }
     }
   },

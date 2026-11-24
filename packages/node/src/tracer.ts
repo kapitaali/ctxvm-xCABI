@@ -1,10 +1,9 @@
 /**
- * `@ctxvm/node` v0 tracer — telemetry-first, mirror-only (RFC-0 §6 event grammar).
- *
- * The tracer never mutates anything it is given, never throws on semantic conditions
- * (RFC-0 §13: violations are logged values, state untouched), and never evicts — v0 has
- * no paging/eviction logic (control ships later per `design/mcp-shim.md` §5). Faults
- * against resident pages are legal xCABI facts that replay records as
+ * `@ctxvm/node` tracer — telemetry-first mirror capture plus passive stub facts
+ * (RFC-0 §6 event grammar). It never mutates caller data and never throws on
+ * semantic conditions (RFC-0 §13: violations are logged values, state untouched).
+ * `stub()` records an already-decided replacement; it does not select or rewrite
+ * content. Faults against resident pages are legal xCABI facts that replay records as
  * `FaultOfResidentPage` ledger rows — that row IS the double-fetch waste metric (T6 §4).
  *
  * Turn-level facts (`turn.render`, `call.meta`) flush at `finish()`: replay's static
@@ -117,6 +116,17 @@ export interface PinInput {
   reason: string;
 }
 
+export interface StubInput {
+  /** Logical ref of the originally declared page. */
+  ref: string;
+  /** Exact original hash; omitted selects the first declared PageId for ref. */
+  contentHash?: string;
+  /** Exact text placed in the request; never rewritten by the tracer. */
+  stubText: string;
+  /** Visibility turn; defaults to the tracer's current turn (0 before render). */
+  turn?: number;
+}
+
 export interface TraceStats {
   turns: number;
   pages: number;
@@ -153,6 +163,8 @@ export interface Tracer {
   scan(input: ScanInput): void;
   pin(input: PinInput): void;
   unpin(input: PinInput): void;
+  /** Emit an atomic eviction + stub-render pair for an original PageId. */
+  stub(input: StubInput): boolean;
   /**
    * Attach the provider's own usage receipt (RFC-0.1 R3) to a turn's `call.meta`.
    * W2b: the ai-sdk tap relays each step's `finish-step` usage; the fact rides
@@ -197,11 +209,14 @@ export function inferKind(content: Json | string): PageKind {
 
 interface Page {
   logicalRef: string;
+  /** First declared hash: the original PageId used by passive stub provenance. */
+  initialContentHash: string;
   contentHash: string;
   kind: PageKind;
   tokens: number;
   revealed: boolean;
   revealedAtPrev: boolean;
+  stubbed: boolean;
   identities: readonly string[];
 }
 
@@ -268,13 +283,18 @@ function defaultRun(dir: string): (cmd: string, args: string[]) => string | null
 export function createTrace(init: TraceInit): Tracer {
   const events: object[] = [];
   const tokenizerId = init.tokenizerId ?? "apx4-char";
-  const declared = new Map<string, Page>(); // key = logicalRef (identity = ref+hash pair in facts)
+  const declared = new Map<string, Page>(); // key = logicalRef (latest version)
+  const versions = new Map<string, Page>(); // key = logicalRef|contentHash (exact PageId)
   const pendingRecall = new Set<string>();
   const touched = new Set<string>(); // T3 v0 touch proxy: one fault per page per source
+  /** Exact PageId mode schedule, mirroring Rust (effective turn, stream order). */
+  const modeChanges = new Map<string, { turn: number; order: number; mode: "full" | "stub" }[]>();
   let turn = -1;
   let faultCount = 0;
   /** Every declared page key (ref|hash → tokens) — the derived-composition table. */
   const allDeclared = new Map<string, number>();
+  /** Tokens replaced by a stub at each visibility turn (sidecar/turn.render fact). */
+  const evictedByTurn = new Map<number, number>();
   /** RFC-0.1 §R4 (D9 policy): every event gains `ts` — RFC 3339 UTC ms. Default
    * ON; the per-trace opt-out `CTXVM_TRACE_TS=0` covers byte-stability needs
    * (canon-derived fixtures, determinism pins, drop minting). Stamps are minted
@@ -292,7 +312,14 @@ export function createTrace(init: TraceInit): Tracer {
   // W13: prefix snapshots keyed by turn; last attempt of a turn wins.
   const turnPrefixes = new Map<number, PrefixCost>();
   /** Per-turn `call.meta` snapshots — flushed at finish() in turn order (see render). */
-  type PendingMeta = { turn: number; hit: number; residentAtTurn: number; latencyMs?: number; providerUsage?: { inputTokens: number; outputTokens: number; cachedInputTokens?: number }; ts?: string };
+  type PendingMeta = {
+    turn: number;
+    hit: number;
+    residentAtTurn: number;
+    latencyMs?: number;
+    providerUsage?: { inputTokens: number; outputTokens: number; cachedInputTokens?: number };
+    ts?: string;
+  };
   const pendingMeta: PendingMeta[] = [];
   /** A usage fact handed in before its turn is buffered — claimed by the next render, exactly once. */
   let orphanUsage: PendingMeta["providerUsage"] = undefined;
@@ -305,6 +332,27 @@ export function createTrace(init: TraceInit): Tracer {
   const push = (e: object): void => {
     if (tsEnabled) (e as { ts?: string }).ts = stamp(); // R4-ts: rides LAST (assignment order)
     events.push(e);
+  };
+
+  const pageKey = (p: Pick<Page, "logicalRef" | "contentHash">): string => `${p.logicalRef}|${p.contentHash}`;
+
+  const scheduleMode = (p: Page, atTurn: number, mode: "full" | "stub"): void => {
+    const key = pageKey(p);
+    const changes = modeChanges.get(key) ?? [];
+    changes.push({ turn: atTurn, order: events.length, mode });
+    modeChanges.set(key, changes);
+  };
+
+  const residentAt = (atTurn: number): number => {
+    let resident = 0;
+    for (const [key, tokens] of allDeclared) {
+      const changes = modeChanges.get(key) ?? [];
+      const mode = changes
+        .filter(change => change.turn <= atTurn)
+        .sort((left, right) => right.turn - left.turn || right.order - left.order)[0]?.mode ?? "full";
+      if (mode === "full") resident += tokens;
+    }
+    return resident;
   };
 
   push({
@@ -328,6 +376,8 @@ export function createTrace(init: TraceInit): Tracer {
     touched.add(dedupeKey);
     faultCount += 1;
     const t = turn < 0 ? 0 : turn; // recalls during the pre-first-render lifecycles belong to turn 0
+    // RFC-0 timing: a fault observed at t restores full visibility from t+1.
+    scheduleMode(p, t + 1, "full");
     const e: Record<string, unknown> = {
       type: "page.fault",
       turn: t,
@@ -393,14 +443,17 @@ export function createTrace(init: TraceInit): Tracer {
       if (existing === undefined) {
         const p: Page = {
           logicalRef: ref,
+          initialContentHash: hash,
           contentHash: hash,
           kind,
           tokens,
           revealed: false,
           revealedAtPrev: false,
+          stubbed: false,
           identities: identityTokens(ref),
         };
         declared.set(ref, p);
+        versions.set(`${ref}|${hash}`, p);
         allDeclared.set(`${ref}|${hash}`, tokens);
         declarePage(ref, hash, kind, tokens, declareLatency, toolEffect);
         // A page can only be a double fetch if it pre-existed; a first call's own landing
@@ -410,18 +463,36 @@ export function createTrace(init: TraceInit): Tracer {
       }
 
       if (existing.contentHash === hash) {
-        if (pendingRecall.delete(ref)) emitFault(existing, "tool_recall", undefined);
+        if (!existing.stubbed && pendingRecall.delete(ref)) emitFault(existing, "tool_recall", undefined);
       } else {
         // Fresh fetch: same logicalRef, new content ⇒ new page identity (T6 §4); the
-        // changed-underlying-resource case is never scored as waste.
-        existing.contentHash = hash;
-        existing.tokens = tokens;
-        existing.kind = kind;
-        existing.revealed = false;
-        existing.revealedAtPrev = false;
+        // changed-underlying-resource case is never scored as waste. Keep the old
+        // version addressable so passive provenance can stub its exact PageId.
+        const fresh: Page = {
+          logicalRef: ref,
+          initialContentHash: hash,
+          contentHash: hash,
+          kind,
+          tokens,
+          revealed: false,
+          revealedAtPrev: false,
+          stubbed: false,
+          identities: identityTokens(ref),
+        };
+        declared.set(ref, fresh);
+        versions.set(`${ref}|${hash}`, fresh);
         allDeclared.set(`${ref}|${hash}`, tokens); // fresh fetch ⇒ a second page key (ref, hash-v2)
         declarePage(ref, hash, kind, tokens, declareLatency, toolEffect);
         pendingRecall.delete(ref);
+        return { logicalRef: ref, contentHash: hash, tokens };
+      }
+      if (existing.stubbed) {
+        const recalled = pendingRecall.delete(ref);
+        if (recalled) emitFault(existing, "tool_recall", undefined);
+        else emitFault(existing, "explicit_api", undefined);
+        existing.stubbed = false;
+        existing.revealed = false;
+        existing.revealedAtPrev = false;
       }
       return { logicalRef: ref, contentHash: hash, tokens: existing.tokens };
     },
@@ -477,6 +548,54 @@ export function createTrace(init: TraceInit): Tracer {
       push({ type: "page.unpin", page: { logicalRef: p.logicalRef, contentHash: p.contentHash }, reason: input.reason });
     },
 
+    stub(input) {
+      if (typeof input.ref !== "string" || input.ref.length === 0
+        || typeof input.stubText !== "string" || input.stubText.length === 0) return false;
+      const requestedTurn = input.turn ?? (turn < 0 ? 0 : turn);
+      if (!Number.isSafeInteger(requestedTurn) || requestedTurn < 0) return false;
+      let page: Page | undefined;
+      if (input.contentHash !== undefined) {
+        if (typeof input.contentHash !== "string" || input.contentHash.length === 0) return false;
+        page = versions.get(`${input.ref}|${input.contentHash}`);
+      } else {
+        page = [...versions.values()].find(candidate => candidate.logicalRef === input.ref);
+      }
+      if (page === undefined) return false;
+
+      // Static replay compares every render fact against the final same-turn
+      // schedule. A full reveal earlier in this visibility turn would contradict
+      // the later stub, so retire that internal fact before emitting the pair.
+      for (let index = events.length - 1; index >= 0; index--) {
+        const event = events[index] as Record<string, unknown>;
+        const renderedPage = event.page as Record<string, unknown> | undefined;
+        if (event.type === "page.render" && event.turn === requestedTurn && event.mode === "full"
+          && renderedPage?.logicalRef === page.logicalRef && renderedPage.contentHash === page.contentHash) {
+          events.splice(index, 1);
+        }
+      }
+
+      // A re-fetch after this stub is a new restoration fact, not a duplicate of
+      // a pre-stub recall for the same ref.
+      for (const key of [...touched]) if (key.startsWith(`${page.logicalRef}|`)) touched.delete(key);
+      scheduleMode(page, requestedTurn, "stub");
+      evictedByTurn.set(requestedTurn, (evictedByTurn.get(requestedTurn) ?? 0) + page.tokens);
+      push({
+        type: "page.evict",
+        turn: requestedTurn,
+        page: { logicalRef: page.logicalRef, contentHash: page.contentHash },
+        stubText: input.stubText,
+      });
+      push({
+        type: "page.render",
+        turn: requestedTurn,
+        page: { logicalRef: page.logicalRef, contentHash: page.contentHash },
+        mode: "stub",
+      });
+      page.stubbed = true;
+      page.revealed = true;
+      return true;
+    },
+
     noteUsage(input: ProviderUsageInput) {
       // All-or-nothing validation upstream (R3 law): invalid intake is omitted,
       // never coerced. Attaches to the newest buffered turn snapshot; a fact
@@ -511,10 +630,9 @@ export function createTrace(init: TraceInit): Tracer {
     },
 
     finish() {
-      // Derived-composition arithmetic (RFC-0 replay's static analysis): every declared
-      // page key is resident at every turn in v0 — there is no evict path, and
-      // ctxvm-core `tally_at` sums the WHOLE table. Turn facts therefore flush here,
-      // after all content is known, instead of eagerly mid-session.
+      // Turn facts flush after the full schedule is known. Mirror-only traces have
+      // no mode changes and retain the historical whole-table tally; passive stub
+      // traces derive resident tokens from the same effective-turn schedule as Rust.
       //
       // T17.7 parity (hermes plugin.py finish, docstring mirrored): "Flush:
       // turn.render × (turn+1) then call.meta × len(pending_meta). Idempotent:
@@ -523,24 +641,21 @@ export function createTrace(init: TraceInit): Tracer {
       // the same JSONL instead of duplicating turn/meta records." pendingMeta
       // is never cleared — the tail re-renders from live state each call, so
       // lifecycle recorded AFTER a first flush joins the next transcript.
-      let resident = 0;
-      for (const tokens of allDeclared.values()) resident += tokens;
+      const resident = residentAt(turn < 0 ? 0 : turn);
       const tail: object[] = [];
       for (let t = 0; t <= turn; t++) {
-        // The wire value is the WHOLE-TABLE tally (ctxvm-core `tally_at`): a page
-        // declared at any stream point is resident from turn 0, and replay infers it that
-        // way — a per-turn value here makes replay exit 1 (probe 2026-11-07).
+        const residentAtTurn = residentAt(t);
         const tr: Record<string, unknown> = {
           type: "turn.render",
           turn: t,
-          residentTokens: resident,
-          evictedTokens: 0,
+          residentTokens: residentAtTurn,
+          evictedTokens: evictedByTurn.get(t) ?? 0,
         };
         // v0's headroom is UNSIGNED: a resident set above the declared budget has no
         // representable value, so the key is omitted — never a negative integer (the
         // codec rejects it) and never a clamp to 0 (which would read as "full").
-        if (init.budgetTokens > 0 && resident <= init.budgetTokens) {
-          tr.headroom = init.budgetTokens - resident;
+        if (init.budgetTokens > 0 && residentAtTurn <= init.budgetTokens) {
+          tr.headroom = init.budgetTokens - residentAtTurn;
         }
         // R4-ts: cached from snapshot time — repeated flushes stay byte-stable.
         // W13: the render row carries the static cost. A harness with no request

@@ -7,13 +7,15 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { toolRef, contentHash } from '@ctxvm/node'
 import { ctxvmPageTableProjection } from '../src/page-table.ts'
+import type { PageTableState } from '../src/types.ts'
+import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 
 function env(type: string, data: Record<string, unknown> = {}, seq = 0, extra: Record<string, unknown> = {}): never {
   return { type, seq, time: 1794841561000, data, ...extra } as never
 }
 
-const apply = (s: never, e: never) => ctxvmPageTableProjection.apply(s, e) as never as import('../src/types.ts').PageTableState
-const init = () => ctxvmPageTableProjection.init({} as never, 0)
+const apply = (state: PageTableState, event: SessionEvent): PageTableState => ctxvmPageTableProjection.apply(state, event)
+const init = (): PageTableState => ctxvmPageTableProjection.init({} as never, 0 as never)
 
 test('init yields an empty page table', () => {
   assert.deepEqual(init(), { pages: {}, order: [], calls: {} })
@@ -64,18 +66,63 @@ test('re-declared page keeps first-declare-wins content hash but refreshes token
   assert.deepEqual(s.order, [ref], 'no duplicate order entry')
 })
 
-test('surface replace op marks shadowed pages stub, never regresses evicted', () => {
+test('tool/result replacement marks the original page stub without refreshing hash/tokens', () => {
   let s = init()
   s = apply(s, env('tool/call', { callId: 'c1', name: 'bash', arguments: '{"cmd":"ls"}' }, 1))
-  s = apply(s, env('tool/result', { message: { toolCallId: 'c1', content: 'x' } }, 2))
+  s = apply(s, env('tool/result', { message: { toolCallId: 'c1', content: 'x' } }, 2, { surfaceOp: 'append' }))
   const ref = toolRef(undefined, 'bash', { cmd: 'ls' } as never)
-  s = apply(s, env('user/message', {}, 5, { surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [2] }))
-  assert.equal(s.pages[ref].status, 'stub')
+  const original = s.pages[ref]
+  s = apply(s, env('tool/result', { message: { toolCallId: 'c1', content: 'a much longer stub body' } }, 5, {
+    surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [1, 2],
+  }))
+  assert.deepEqual(s.pages[ref], { ...original, status: 'stub' })
   s = apply(s, env('compaction/summary', { shadowedSeqs: [2] }, 6))
   assert.equal(s.pages[ref].status, 'evicted')
-  s = apply(s, env('user/message', {}, 7, { surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [2] }))
+  s = apply(s, env('tool/result', { message: { toolCallId: 'c1', content: 'stub again' } }, 7, {
+    surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [2],
+  }))
   assert.equal(s.pages[ref].status, 'evicted')
 })
+
+test('later append-origin full result restores stub residency and full token accounting', () => {
+  let s = init()
+  s = apply(s, env('tool/call', { callId: 'c1', name: 'bash', arguments: '{}' }, 1))
+  s = apply(s, env('tool/result', { message: { toolCallId: 'c1', content: 'short' } }, 2, { surfaceOp: 'append' }))
+  const ref = toolRef(undefined, 'bash', {} as never)
+  const firstHash = s.pages[ref].contentHash
+  s = apply(s, env('tool/result', { message: { toolCallId: 'c1', content: 'stub' } }, 3, {
+    surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [2],
+  }))
+  s = apply(s, env('tool/result', {
+    message: { toolCallId: 'c1', content: 'a much longer full result again' },
+  }, 4, { surfaceOp: 'append' }))
+  assert.equal(s.pages[ref].status, 'resident')
+  assert.equal(s.pages[ref].contentHash, firstHash)
+  assert.ok(s.pages[ref].tokens > originalTokens('short'))
+})
+
+test('non-tool and malformed replacements do not mark tool pages stub', () => {
+  let s = init()
+  s = apply(s, env('tool/call', { callId: 'c1', name: 'bash', arguments: '{}' }, 1))
+  s = apply(s, env('tool/result', { message: { toolCallId: 'c1', content: 'full' } }, 2, { surfaceOp: 'append' }))
+  const ref = toolRef(undefined, 'bash', {} as never)
+  s = apply(s, env('user/message', { message: { content: 'replacement' } }, 3, {
+    surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [2],
+  }))
+  assert.equal(s.pages[ref].status, 'resident')
+  const before = s
+  s = apply(s, env('tool/result', { message: { content: 'stub' } }, 4, {
+    surfaceOp: { op: 'replace', startSeq: 2, endSeq: 3 }, sourceEventSeqs: [2, 3],
+  }))
+  assert.equal(s, before)
+})
+
+function originalTokens(text: string): number {
+  let s = init()
+  s = apply(s, env('tool/call', { callId: 'x', name: 'bash', arguments: '{}' }, 1))
+  s = apply(s, env('tool/result', { message: { toolCallId: 'x', content: text } }, 2, { surfaceOp: 'append' }))
+  return Object.values(s.pages)[0].tokens
+}
 
 test('unmapped events leave state untouched (same reference)', () => {
   const s = init()

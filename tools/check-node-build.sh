@@ -28,6 +28,9 @@ function run(createTrace) {
   vm.render();
   vm.render();
   vm.scan({ text: "opening src/auth/session.ts to verify the change", latencyMs: 12 });
+  const stubbed = vm.page({ ref: "file:stub.ts", kind: "file", content: "full stub source", tokens: 10 });
+  vm.render();
+  vm.stub({ ref: stubbed.logicalRef, contentHash: stubbed.contentHash, stubText: "exact stub" });
   vm.render({ latencyMs: 1240 });
   return vm.finish().jsonl;
 }

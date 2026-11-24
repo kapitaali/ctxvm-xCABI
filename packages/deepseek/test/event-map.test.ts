@@ -6,7 +6,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { mapEvent } from '../src/event-map.ts'
-import { openTracer, ensureTracer } from '../src/tracer.ts'
+import { openTracer, ensureTracer, createSessionTracer } from '../src/tracer.ts'
 
 const config = {
   enabled: true,
@@ -17,8 +17,8 @@ const config = {
 } as const
 
 /** DSH publishes {type, seq, time, data}; payload fields live under data. */
-function env(type: string, data: Record<string, unknown> = {}, seq = 0): never {
-  return { type, seq, time: 1794841561000, data } as never
+function env(type: string, data: Record<string, unknown> = {}, seq = 0, extra: Record<string, unknown> = {}): never {
+  return { type, seq, time: 1794841561000, data, ...extra } as never
 }
 
 function makeTracer() {
@@ -51,8 +51,10 @@ test('request/header feeds onApiRequest without throwing', () => {
 })
 
 test('request/header yields real provider/model in session.open', () => {
-  const st = { sessionId: 's' as never, calls: new Map() }
-  ensureTracer(st, env('request/header', { header: { config: { provider: 'opencode', model: 'hy4-flash-free' }, tools: [] } }, 5), config as never)
+  const st = createSessionTracer('s' as never)
+  ensureTracer(st, env('request/header', {
+    header: { config: { provider: 'opencode', model: 'hy4-flash-free' }, tools: [] },
+  }, 5), config as never)
   const first = JSON.parse(st.tracer!.finish().jsonl.trim().split('\n')[0])
   assert.equal(first.type, 'session.open')
   assert.equal(first.provider, 'opencode')
@@ -74,7 +76,7 @@ test('assistant/message usage is carried into providerUsage', () => {
 })
 
 test('a later request/header supplies identity and replays buffered pages', () => {
-  const st = { sessionId: 's' as never, calls: new Map() }
+  const st = createSessionTracer('s' as never)
   const header = env('request/header', { header: { config: { provider: 'opencode', model: 'hy4-flash-free' }, tools: [] } }, 3)
   ensureTracer(st, env('turn/start', { turn: 0 }, 1), config as never)
   const systemEvent = env('system/message', { message: { content: 'buffered system page' } }, 2)
@@ -93,4 +95,99 @@ test('mapEvent never throws on unknown events', () => {
   const st = makeTracer()
   mapEvent(st, env('something/else', {}, 6))
   mapEvent(st, env('tool/call', { arguments: '{not json' }, 7))
+})
+
+test('append result plus single-node replacement emits one declaration and one exact stub pair', () => {
+  const st = makeTracer()
+  mapEvent(st, env('turn/start', { turn: 1 }, 0))
+  mapEvent(st, env('tool/call', { callId: 'c1', name: 'bash', arguments: '{"cmd":"ls"}' }, 1))
+  mapEvent(st, env('tool/result', { message: { toolCallId: 'c1', content: 'full result' } }, 2, {
+    surfaceOp: 'append', sourceEventSeqs: [1],
+  }))
+  const original = st.pagesBySeq.get(2)!
+  const stubText = '  [ctxvm: exact]\nbody  '
+  mapEvent(st, env('tool/result', { message: { toolCallId: 'c1', content: [{ type: 'text', text: stubText }] } }, 3, {
+    surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [1, 2],
+  }))
+  const events = st.tracer!.finish().events as Record<string, unknown>[]
+  assert.equal(events.filter(e => e.type === 'page.declare').length, 1)
+  const evicts = events.filter(e => e.type === 'page.evict')
+  const stubRenders = events.filter(e => e.type === 'page.render' && e.mode === 'stub')
+  assert.equal(evicts.length, 1)
+  assert.equal(stubRenders.length, 1)
+  assert.deepEqual(evicts[0].page, { logicalRef: original.logicalRef, contentHash: original.contentHash })
+  assert.deepEqual(stubRenders[0].page, evicts[0].page)
+  assert.equal(evicts[0].stubText, stubText)
+  assert.equal(evicts[0].turn, 0)
+  assert.equal(stubRenders[0].turn, 0)
+  assert.ok(events.indexOf(evicts[0]) < events.indexOf(stubRenders[0]))
+  assert.deepEqual(st.stubbedRefs, [{ ref: original.logicalRef, contentHash: original.contentHash, stubText, turn: 0 }])
+  assert.equal(st.evictedTokens, original.tokens)
+})
+
+test('append sourceEventSeqs and user replacements are not stubs', () => {
+  const st = makeTracer()
+  mapEvent(st, env('tool/call', { callId: 'c1', name: 'bash', arguments: '{}' }, 1))
+  mapEvent(st, env('tool/result', { message: { toolCallId: 'c1', content: 'full' } }, 2, {
+    surfaceOp: 'append', sourceEventSeqs: [1],
+  }))
+  mapEvent(st, env('user/message', { message: { content: 'replacement' } }, 3, {
+    surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [2],
+  }))
+  const events = st.tracer!.finish().events as Record<string, unknown>[]
+  const toolDeclares = events.filter(event => event.type === 'page.declare'
+    && (event.page as { kind?: string }).kind === 'tool_result')
+  assert.equal(toolDeclares.length, 1)
+  assert.equal(events.some(event => event.type === 'page.evict'), false)
+  assert.equal(st.stubbedRefs.length, 0)
+})
+
+test('unknown or malformed replacement origin is diagnostic-only', () => {
+  const st = makeTracer()
+  mapEvent(st, env('tool/result', { message: { content: 'stub' } }, 3, {
+    surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [2],
+  }))
+  mapEvent(st, env('tool/result', { message: { content: 'stub' } }, 4, {
+    surfaceOp: { op: 'replace', startSeq: 2, endSeq: 3 }, sourceEventSeqs: [2, 3],
+  }))
+  assert.equal(verbsOf(st).includes('page.evict'), false)
+  assert.equal(st.stubbedRefs.length, 0)
+  assert.equal(st.diagnostics.length, 2)
+})
+
+test('multi-step DSH turn shares one visibility turn and the next turn advances', () => {
+  const st = makeTracer()
+  mapEvent(st, env('turn/start', { turn: 1 }, 0))
+  for (const [seq, text] of [[1, 'one'], [2, 'two']] as const) {
+    mapEvent(st, env('tool/call', { callId: `c${seq}`, name: 'read', arguments: '{}' }, seq * 2))
+    mapEvent(st, env('tool/result', { message: { toolCallId: `c${seq}`, content: `full-${text}` } }, seq * 2 + 1, {
+      surfaceOp: 'append', sourceEventSeqs: [seq * 2],
+    }))
+    mapEvent(st, env('tool/result', { message: { toolCallId: `c${seq}`, content: `stub-${text}` } }, seq * 2 + 2, {
+      surfaceOp: { op: 'replace', startSeq: seq * 2 + 1, endSeq: seq * 2 + 1 }, sourceEventSeqs: [seq * 2 + 1],
+    }))
+  }
+  assert.deepEqual(st.stubbedRefs.map(record => record.turn), [0, 0])
+  mapEvent(st, env('turn/start', { turn: 2 }, 10))
+  mapEvent(st, env('tool/call', { callId: 'c3', name: 'read', arguments: '{}' }, 11))
+  mapEvent(st, env('tool/result', { message: { toolCallId: 'c3', content: 'full-three' } }, 12, { surfaceOp: 'append' }))
+  mapEvent(st, env('tool/result', { message: { toolCallId: 'c3', content: 'stub-three' } }, 13, {
+    surfaceOp: { op: 'replace', startSeq: 12, endSeq: 12 }, sourceEventSeqs: [12],
+  }))
+  assert.deepEqual(st.stubbedRefs.map(record => record.turn), [0, 0, 1])
+})
+
+test('two sessions with identical seqs do not share stub state', () => {
+  const a = makeTracer()
+  const b = makeTracer()
+  for (const [st, body] of [[a, 'A'], [b, 'B']] as const) {
+    mapEvent(st, env('tool/call', { callId: 'same', name: 'read', arguments: '{}' }, 1))
+    mapEvent(st, env('tool/result', { message: { toolCallId: 'same', content: body } }, 2, { surfaceOp: 'append' }))
+  }
+  mapEvent(a, env('tool/result', { message: { toolCallId: 'same', content: 'stub-A' } }, 3, {
+    surfaceOp: { op: 'replace', startSeq: 2, endSeq: 2 }, sourceEventSeqs: [2],
+  }))
+  assert.equal(a.stubbedRefs.length, 1)
+  assert.equal(b.stubbedRefs.length, 0)
+  assert.notEqual(a.pagesBySeq.get(2)!.contentHash, b.pagesBySeq.get(2)!.contentHash)
 })
