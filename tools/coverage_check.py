@@ -448,6 +448,16 @@ def main(argv: list) -> int:
                       "evictedTokens > 0 but no per-page detail: plugin.evictedPagesCount must be a "
                       "positive integer once the engine reports identities")
 
+        # Part C: a recoverable stub that changed the request must leave a per-call
+        # count. Version- and presence-gated so pre-0.13.31 fixtures stay valid.
+        if plugin.get("stubDropped") == "recoverable" and _v(plugin.get("version")) >= (0, 13, 31):
+            ev = plugin.get("evictedTokens")
+            if isinstance(ev, int) and ev > 0:
+                sc = plugin.get("stubCount")
+                if not isinstance(sc, int) or sc <= 0:
+                    _fail(violations, "plugin",
+                          "stubDropped=recoverable with evictedTokens>0 requires plugin.stubCount > 0")
+
     if violations:
         for line in violations:
             print(f"coverage_check: violated {line}")

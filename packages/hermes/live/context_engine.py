@@ -291,6 +291,23 @@ OBSERVER: Dict[str, Any] = {"cb": None, "plan": None}
 CALL_LOG: List[Dict[str, int]] = []
 
 
+# Part C fix: read-only tools may carry a capped argument excerpt in a stub;
+# every other tool (the MUTATING fail-safe class) names the call above instead.
+_STUB_READ_ONLY_TOOLS = frozenset({"read_file", "search_files"})
+_STUB_ARG_LIMIT = 200
+
+
+def _stub_arg_excerpt(raw: Any) -> str:
+    """Bounded, frame-safe argument text for a recoverable stub. Strips control
+    characters/newlines, escapes the `[`/`]` frame, caps length with a marker."""
+    s = raw if isinstance(raw, str) else json.dumps(raw, default=str)
+    s = "".join(ch if ch.isprintable() else " " for ch in s)
+    s = s.replace("[", "\\[").replace("]", "\\]")
+    if len(s) > _STUB_ARG_LIMIT:
+        s = s[:_STUB_ARG_LIMIT] + "...[truncated]"
+    return s
+
+
 class _PageUnit:
     """One tool-call → tool-result page in the CURRENT request (pairing is
     1:1 by ``tool_call_id``)."""
@@ -1034,9 +1051,18 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
             if not isinstance(fn, dict):
                 fn = {}
             name = fn.get("name") or call.get("name") or "tool"
-            args = fn.get("arguments") or call.get("arguments") or ""
+            raw_args = fn.get("arguments") or call.get("arguments") or ""
+            # Part C fix: arguments are an injection + size surface (Part II
+            # §7.3/§12.4). The producing call stays in the carrier, so the
+            # arguments are already in the request: MUTATING tools (write,
+            # execute — anything outside the read-only table) get NO excerpt;
+            # read-only tools get a capped, frame-escaped one.
+            if name in _STUB_READ_ONLY_TOOLS:
+                args = _stub_arg_excerpt(raw_args)
+            else:
+                args = "see the call above"
         else:
-            name, args = "tool", ""
+            name, args = "tool", "see the call above"
         return {"role": "tool", "tool_call_id": u.call_id,
                 "content": f"[ctxvm: dropped result for {name}({args}); re-run to restore.]"}
 
