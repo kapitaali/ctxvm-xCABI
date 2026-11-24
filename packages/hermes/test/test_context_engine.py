@@ -23,8 +23,10 @@ from pathlib import Path
 from unittest import mock
 
 _LIVE_DIR = str(Path(__file__).resolve().parents[1] / "live")
-if _LIVE_DIR not in sys.path:
-    sys.path.insert(0, _LIVE_DIR)
+_SRC_DIR = str(Path(__file__).resolve().parents[1] / "src")
+for _p in (_LIVE_DIR, _SRC_DIR):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 # --- the arm policy, pinned for the suite -------------------------------------
 # The engine asks `profile_policy.policy()` which arm this session belongs to, and outside the host
@@ -1283,6 +1285,71 @@ class StubProfilePolicyTests(unittest.TestCase):
         pol = _REAL_POLICY(d)
         self.assertEqual(pol["stubDropped"], "off")
         self.assertEqual(pol["stubDroppedSource"], "default")
+
+
+class PageEvictStubTests(unittest.TestCase):
+    """page.evict in stub mode — sealed v0, byte-identical stubText, visibility turn."""
+
+    @staticmethod
+    def _engine(mode="recoverable", n=20, chars=20000, budget=90000):
+        e = ce.build_engine(v_budget=budget, stub_dropped=mode)
+        tx = [_msg("system", "sys"), _msg("user", "go")]
+        for i in range(1, n + 1):
+            tx.append(_msg("assistant", "", tool_calls=[_call(f"c{i}", f"notes/f{i}.md")]))
+            tx.append(_msg("tool", _result(chars, f"f{i}"), tool_call_id=f"c{i}"))
+        return e, tx
+
+    def test_stub_rows_are_byte_identical_to_the_request_body(self):
+        e, tx = self._engine()
+        plans = []
+        e.set_observer(lambda p: None, plans.append)
+        out = e.select_context(list(tx))
+        rows = plans[0]["stubRows"]
+        self.assertGreater(len(rows), 0)
+        stubs = [m["content"] for m in out if m.get("role") == "tool"
+                 and "re-run to restore" in str(m.get("content", ""))]
+        self.assertEqual([r["stubText"] for r in rows], stubs)
+
+    def test_drop_mode_emits_no_stub_rows(self):
+        e, tx = self._engine(mode="off")
+        plans = []
+        e.set_observer(lambda p: None, plans.append)
+        e.select_context(list(tx))
+        self.assertEqual(plans[0]["stubRows"], [])
+
+    def test_emit_evict_is_byte_identical_and_ts_last(self):
+        from plugin import Tracer, TraceInit
+        tr = Tracer(TraceInit(agent_id="hermes", model="m", provider="p", budget_tokens=100000))
+        for i in (2, 3, 4):
+            tr.page({"tool": "read_file", "args": {"path": f"notes/f{i}.md"},
+                     "content": f"body {i}", "toolEffect": "READ_ONLY"})
+        tr.render()
+        ref = tr.refs_for_identity_tokens([["notes/f2"]])[0]
+        text = '[ctxvm: dropped result for read_file({"path": "notes/f2.md"}); re-run to restore.]'
+        self.assertTrue(tr.emit_evict(ref, text, 1))
+        ev = [json.loads(l) for l in tr.finish().jsonl.splitlines()]
+        got = [e for e in ev if e.get("type") == "page.evict"]
+        self.assertEqual(len(got), 1)
+        self.assertEqual(got[0]["stubText"], text)
+        self.assertEqual(got[0]["turn"], 1)
+        self.assertEqual(list(got[0])[-1], "ts")
+
+    def test_emit_evict_refuses_unknown_ref_and_non_string(self):
+        from plugin import Tracer, TraceInit
+        tr = Tracer(TraceInit(agent_id="hermes", model="m", provider="p", budget_tokens=100000))
+        self.assertFalse(tr.emit_evict("unknown", "stub", 0))
+        tr.page({"ref": "file:x", "kind": "file", "content": "x"})
+        self.assertFalse(tr.emit_evict("file:x", 123, 0))
+
+    def test_visibility_turn_is_next_after_completed_turn(self):
+        # The stub is sent in the request AFTER render() increments; RFC-0 says
+        # page.evict@t means the stub is visible at t, so tag _turn + 1.
+        from plugin import Tracer, TraceInit
+        tr = Tracer(TraceInit(agent_id="hermes", model="m", provider="p", budget_tokens=100000))
+        tr.page({"ref": "file:x", "kind": "file", "content": "x"})
+        tr.render()  # turn 0 completed
+        visible = tr._turn + 1
+        self.assertEqual(visible, 1)
 
 
 if __name__ == "__main__":

@@ -576,6 +576,9 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                 }
         else:
             dropped, repositioned, plan_facts = self._plan(request_messages, units, keep_hard)
+        # page.evict and the request body come from ONE assembly: compute it before
+        # the observer so self._stub_rows (exact stub strings) is ready at emit time.
+        assembled = self._assemble(request_messages, units, keep_hard, dropped, repositioned)
         # H9: report the DECISION on every selection, including both no-change reasons. The eviction
         # channel below is silent on a no-op by design (L7), so before this block a reader could not
         # separate "the plan found nothing" from "the engine was never asked" — three closed cells
@@ -597,6 +600,10 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                 OBSERVER["plan"](dict(plan_facts,
                                       stubDropped=self._stub_dropped,
                                       stubCount=(len(dropped) if self._stub_dropped == "recoverable" else 0),
+                                      # page.evict rows: exact stub text from the assembly, with the
+                                      # producing page's identity tokens for the tracer's refs join.
+                                      stubRows=(list(self._stub_rows)
+                                                if self._stub_dropped == "recoverable" else []),
                                       budgetTokens=self._v_budget,
                                       prefixHash="sha256:" + _digest,
                                       selectionMode=self._selection_mode,
@@ -637,7 +644,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
             _before = sum(_tokens_for(m) for m in request_messages)
             if dropped or repositioned:
                 _after = sum(_tokens_for(m) for m in
-                             self._assemble(request_messages, units, keep_hard, dropped, repositioned))
+                             assembled)
             else:
                 _after = _before
             CALL_LOG.append({
@@ -659,8 +666,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
             _dbg_before = sum(_tokens_for(m) for m in request_messages)
             _dbg_after = _dbg_before
             if dropped or repositioned:
-                _dbg_after = sum(_tokens_for(m) for m in self._assemble(
-                    request_messages, units, keep_hard, dropped, repositioned))
+                _dbg_after = sum(_tokens_for(m) for m in assembled)
             import os as _os, time as _time
             _d = Path(_os.environ.get("CTXVM_TRACE_DIR") or
                       (Path(_os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
@@ -684,8 +690,6 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                 pass
         if not dropped and not repositioned:
             return None  # L7: nothing changed → byte-identical request
-
-        assembled = self._assemble(request_messages, units, keep_hard, dropped, repositioned)
 
         # W8C: tell the observer what this selection cost. Until 2026-11-11 the engine rewrote the
         # request and said nothing, so the trace reported evictedTokens 0 on a session whose
@@ -1011,6 +1015,11 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         removed_ids = ({units[i].call_id for i in dropped} | repositioned_calls) - stubbed_calls
 
         out: List[Dict[str, Any]] = []
+        # Part C/page.evict: the exact stub strings inserted into this request,
+        # paired with the producing page's identity tokens. The bridge observer
+        # joins ids→refs via refs_for_identity_tokens and emits page.evict with
+        # BYTE-IDENTICAL stubText. Never derive event text from the plan.
+        self._stub_rows: List[Dict[str, Any]] = []
         # (a) system prompt verbatim, first
         for i, m in enumerate(messages):
             if isinstance(m, dict) and m.get("role") == "system":
@@ -1082,7 +1091,10 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         if u is not None and m.get("role") == "tool":
             if i in removed_results:
                 if i in stubbed:
-                    out.append(self._stub_message(u, messages))
+                    stub = self._stub_message(u, messages)
+                    self._stub_rows.append({"ids": sorted(u.id_toks),
+                                            "stubText": stub["content"]})
+                    out.append(stub)
                 return  # verbatim page rides the block; a stub is recoverable, not the body
             out.append(m)
             return

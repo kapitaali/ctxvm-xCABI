@@ -404,6 +404,24 @@ class Tracer:
         if isinstance(tokens, int) and tokens > 0:
             self._evicted_pending += tokens
 
+    def emit_evict(self, ref: str, stub_text: str, turn: Optional[int] = None) -> bool:
+        """Part C/page.evict: emit a sealed-v0 eviction for a STUBBED page.
+        `stub_text` must be the exact content placed in the request — the caller
+        passes the string from the engine's assembly, never a reformat. Returns
+        False (no event) when the ref was never declared or text is not a string."""
+        page = self._declared.get(ref)
+        if page is None or not isinstance(stub_text, str) or not stub_text:
+            return False
+        t = self._turn if self._turn >= 0 else 0
+        event: Dict[str, Any] = {
+            "type": "page.evict",
+            "turn": t if turn is None else turn,
+            "page": {"logicalRef": ref, "contentHash": page["contentHash"]},
+            "stubText": stub_text,
+        }
+        self._push(event)  # _push appends ts LAST (law 3)
+        return True
+
     def render(self, input: Optional[Dict[str, Any]] = None) -> None:
         """Turn boundary: reveals newly declared pages; turn-level facts flush at finish()."""
         input = input or {}

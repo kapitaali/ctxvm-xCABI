@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.31"
+PLUGIN_VERSION = "0.13.32"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -880,6 +880,9 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # Absent/null means off — never guessed on from a capture that never planned.
             "stubDropped": (((_state().get("plan_by_session") or {}).get(session_id or "") or {})
                             .get("stubDropped") or "off"),
+            # page.evict: the stubbed refs + byte-exact text this session sent,
+            # for the version-gated checker rule. Empty when drop mode / no plan.
+            "stubbedRefs": _state().get("stubbed_refs_by_session", {}).get(session_id or "", []),
         },
         "captures": {
             "turns": len(turns),
@@ -1549,6 +1552,29 @@ def register(ctx) -> None:
                         if _refs:
                             _state().setdefault("evicted_refs_by_session", {}) \
                                 .setdefault(_target, set()).update(_refs)
+                        # Part C/page.evict: emit from the stub seam's exact text.
+                        # The observer joins identity tokens to refs (the engine
+                        # knows content, not refs); visibility is the NEXT turn,
+                        # since render() increments at the boundary before the
+                        # stubbed request is sent (RFC-0: page.evict@t → visible@t).
+                        _rows = (payload or {}).get("stubRows") or []
+                        _stub_recs = []
+                        if (payload or {}).get("stubDropped") == "recoverable" and _rows:
+                            _visible = (_tr._turn + 1) if getattr(_tr, "_turn", -1) >= 0 else 0
+                            for _row in _rows:
+                                if not isinstance(_row, dict):
+                                    continue
+                                _ids = _row.get("ids")
+                                _text = _row.get("stubText")
+                                if not isinstance(_ids, list) or not isinstance(_text, str):
+                                    continue
+                                _matched = _tr.refs_for_identity_tokens([_ids])
+                                if len(_matched) == 1:
+                                    _tr.emit_evict(_matched[0], _text, _visible)
+                                    _stub_recs.append({"ref": _matched[0], "stubText": _text})
+                        # Per-session, for the coverage sidecar's checker rule: the
+                        # exact stubbed refs + text this session sent.
+                        _state().setdefault("stubbed_refs_by_session", {})[_target] = _stub_recs
                     except Exception as _exc:  # noqa: BLE001 - observability must never break a turn
                         _swallow("record_selection", _exc)
 

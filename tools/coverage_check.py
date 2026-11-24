@@ -458,6 +458,38 @@ def main(argv: list) -> int:
                     _fail(violations, "plugin",
                           "stubDropped=recoverable with evictedTokens>0 requires plugin.stubCount > 0")
 
+        # page.evict (stub mode): a request that carries stubbed slots and reports
+        # evictions must have a matching page.evict row. Version- and presence-
+        # gated so pre-change fixtures stay valid.
+        if plugin.get("stubDropped") == "recoverable" and _v(plugin.get("version")) >= (0, 13, 32):
+            ev = plugin.get("evictedTokens")
+            if isinstance(ev, int) and ev > 0:
+                stub_refs = plugin.get("stubbedRefs")
+                evict_rows = [r for r in rows if isinstance(r, dict)
+                              and r.get("type") == "page.evict"]
+                if not isinstance(stub_refs, list) or not stub_refs:
+                    _fail(violations, "plugin",
+                          "stubDropped=recoverable with evictedTokens>0 requires plugin.stubbedRefs")
+                else:
+                    seen = {}
+                    for r in evict_rows:
+                        pg = r.get("page")
+                        if not isinstance(pg, dict) or not isinstance(pg.get("logicalRef"), str):
+                            continue
+                        seen[pg["logicalRef"]] = r.get("stubText")
+                    for rec in stub_refs:
+                        if not isinstance(rec, dict) or not isinstance(rec.get("ref"), str):
+                            _fail(violations, "plugin", "stubbedRefs entries need a ref string")
+                            continue
+                        ref = rec["ref"]
+                        if ref not in seen:
+                            _fail(violations, "plugin",
+                                  "stubbed ref lacks a page.evict row: " + ref[:80])
+                        elif seen[ref] != rec.get("stubText"):
+                            _fail(violations, "plugin",
+                                  "page.evict stubText is not byte-identical to the request stub for "
+                                  + ref[:80])
+
     if violations:
         for line in violations:
             print(f"coverage_check: violated {line}")
