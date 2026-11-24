@@ -268,7 +268,7 @@ Conventional logging cannot distinguish these two cases. It records the tool cal
 
 **Why this matters for ctxvm specifically:**
 
-The wire can record this; the shipped adapters record part of it. The `page.render` event can carry the render mode (`full` or `stub`) for a page on a turn. As of the repository's state on 2026-11-16, the shipped adapters emit it once per page, at the page's first reveal, always as `full`; no shipped adapter emits `stub`, so a live trace cannot yet say which pages a turn's request carried. The wire has no event for omission by removal (P12), so a removal policy's omissions are not recorded either. The `turn.render` event captures resident/evicted token totals and headroom. The `page.fault` event captures when the model re-requested evicted content. The `call.meta` event captures estimated cache hit/miss and latency.
+The wire can record this. The `page.render` event carries the render mode (`full` or `stub`) for a page on a turn, and `page.evict` carries the exact stub text used. As of 2026-11-24, Hermes stub mode (opt-in, plugin 0.13.33) emits `page.render(mode=stub)` and `page.evict` for each dropped result at the same visibility turn; drop mode emits neither, because no substitute was sent. Other shipped adapters still emit `full` at first reveal. Stub mode therefore makes its omissions observable; drop-mode omissions remain unrecorded (P12). The `turn.render` event captures resident/evicted token totals and headroom. The `page.fault` event captures when the model re-requested evicted content. The `call.meta` event captures estimated cache hit/miss and latency.
 
 The gap is not in recording — it is in *using* the record. The trace enables deterministic replay, but the replay engine is a verification tool, not an action tool. The trace enables session handoff, but the handoff is within-harness only. The trace enables compliance, but the compliance check requires running `ctxvm replay` manually.
 
@@ -586,7 +586,7 @@ Two cautions. Compliance guidance notes that tamper resistance is implied by the
 - **It cannot establish causation.** Rendering a page is not causing an answer. Only an intervention (§10) can support a causal claim, and the intervention is not the trace.
 - **It cannot make the harness honest.** See §9.
 - **It can create false confidence.** The most likely misuse of this work is an audit that reads a complete trace and concludes the system was understood. The record covers the input side. Safety claims need the model side, and this paper does not supply it.
-- **It cannot reconstruct the request's bytes.** It records page identities, content hashes, token counts, and an estimated size for each request. That estimate is character-based and can differ from the provider's count. The shipped adapters do not emit stub renders, so a turn's omissions are not recorded.
+- **It cannot reconstruct the request's bytes.** It records page identities, content hashes, token counts, and an estimated size for each request. That estimate is character-based and can differ from the provider's count. Hermes stub mode records the stubbed page identities and exact stub text; drop mode still does not record its omissions.
 
 ## 17. Research agenda
 
