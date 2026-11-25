@@ -63,3 +63,7 @@ listed gates. Active DSH mode remains a separate owner-approved checkpoint.
 
 Passive stub wire and checker parity only. No active paging, cost, quality,
 determinism, availability, or redaction claim.
+
+## Packaging correction (2026-11-25)
+
+The owner ruled that `@ctxvm/node@0.1.1` stays in the ctxvm repository and is not published to npm. The canonical adapter now uses `file:../node`; the open-dsh copy points to the same ctxvm package with a repository-relative path. The earlier publish/install sequence in this report is superseded; see `RR-W22-LOCAL-NODE-20261125.md`.

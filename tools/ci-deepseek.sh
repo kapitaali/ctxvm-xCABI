@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ci-deepseek.sh — whole @ctxvm/dsh suite plus adapter-aware checker tests.
 #
-# The adapter consumes @ctxvm/node as an exact external package. This gate builds
-# and packs the node tracer, then installs the tarball into the adapter package;
-# it never creates a repository-relative workspace symlink.
+# The adapter consumes @ctxvm/node from this repository. This gate builds and
+# packs the node tracer, then installs the local tarball into the adapter package;
+# it performs no registry lookup and creates no workspace symlink.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -38,10 +38,10 @@ TARBALL="$TMPDIR_PACK/$(cat "$TMPDIR_PACK/name.txt")"
 # ctxvm checkout; the adapter's runtime tests import those peers only as types.
 npm install --prefix "$PKG" --no-save --ignore-scripts --legacy-peer-deps "$TARBALL" || exit 2
 [ -f "$PKG/node_modules/@ctxvm/node/dist/index.js" ] || {
-  echo "ci-deepseek: external @ctxvm/node tarball did not install dist/index.js" >&2; exit 2;
+  echo "ci-deepseek: repo-local @ctxvm/node tarball did not install dist/index.js" >&2; exit 2;
 }
 
-echo "ci-deepseek: suite: $SUITE (external @ctxvm/node tarball)"
+echo "ci-deepseek: suite: $SUITE (repo-local @ctxvm/node tarball)"
 echo "ci-deepseek: one skip is declared, by name: $ALLOWED_SKIP"
 
 OUT="$(mktemp)"
