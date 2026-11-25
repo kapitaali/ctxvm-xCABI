@@ -338,7 +338,8 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
     def __init__(self, v_budget: Optional[int] = None,
                  protect_first_n: int = 3, protect_last_n: int = 6,
                  selection_mode: Optional[str] = None,
-                 stub_dropped: Optional[str] = None):
+                 stub_dropped: Optional[str] = None,
+                 shadow_selection: Optional[bool] = None):
         super().__init__()
         # H11 / design/w8-cache-stable-selection.md. `fresh` is the shipped behaviour: every request
         # is planned from scratch. `stable` HOLDS the selection it last applied, byte-for-byte, until a
@@ -356,6 +357,11 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         if self._stub_dropped not in ("off", "recoverable"):
             self._stub_dropped = "off"
         self._stub_explicit = stub_dropped is not None
+        # Shadow mode: opt-in profile/constructor only. It records a counterfactual
+        # keep-law plan without changing the live request or mutating live page/pin
+        # state. No env channel, default off.
+        self._shadow_selection = False if shadow_selection is None else bool(shadow_selection)
+        self._shadow_explicit = shadow_selection is not None
         try:
             self._stable_every = max(1, int(os.environ.get("CTXVM_SELECTION_EVERY") or 4))
         except (TypeError, ValueError):
@@ -443,6 +449,50 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
 
     # ---- the selection seam (§3.3) ---------------------------------------------
 
+    def _emit_shadow_plan(self, messages: List[Dict[str, Any]], pol: Dict[str, Any],
+                          applied: bool) -> None:
+        """Counterfactual keep-law plan for a CONTROL session. Uses a fresh
+        short-lived engine: no live page/pin mutation, no request change. The
+        observer receives a shadow payload; the live return stays None."""
+        try:
+            budget = pol.get("budget") if isinstance(pol.get("budget"), int) else self._v_budget
+            shadow = CtxvmFaultPinEngine(
+                v_budget=budget, protect_first_n=self._protect_first_n,
+                protect_last_n=self._protect_last_n, selection_mode="fresh",
+                stub_dropped="off", shadow_selection=False)
+            units = shadow._classify(messages)
+            # A fresh engine has no page table; initialize a LOCAL one from the
+            # current request. No live page/pin state is read or mutated.
+            for u in units.values():
+                shadow._pages[u.key] = {"tokens": u.tokens, "pinned": False,
+                                        "demand_count": 1, "id_toks": u.id_toks,
+                                        "birth": u.result_index}
+            keep_hard = shadow._hard_keep(messages, units)
+            dropped, repositioned, facts = shadow._plan(messages, units, keep_hard)
+            shadow._assemble(messages, units, keep_hard, dropped, repositioned)
+            changed = set(dropped)
+            for u in units.values():
+                if u.key in repositioned:
+                    changed.add(u.result_index)
+            cut = min(changed) if changed else len(messages)
+            digest = hashlib.sha256(json.dumps(
+                messages[:min(cut, 8)], sort_keys=True, default=str).encode("utf-8")).hexdigest()[:16]
+            payload = dict(
+                facts, shadow=True, shadowSelection=True, policyApplied=applied,
+                requestUnchanged=True,
+                dropped=[sorted(units[i].id_toks) for i in sorted(dropped) if i in units],
+                droppedPages=[{"ids": sorted(units[i].id_toks), "tokens": units[i].tokens}
+                              for i in sorted(dropped) if i in units],
+                budgetTokens=budget, prefixHash="sha256:" + digest,
+                selectionMode="fresh", policyMode=(pol or {}).get("selectionMode"),
+                policyModeSource=(pol or {}).get("selectionModeSource"), modeExplicit=False,
+                selectionHash=shadow._selection_hash(dropped, repositioned, units),
+                trigger=None, callIndex=len(CALL_LOG))
+            if OBSERVER["plan"] is not None:
+                OBSERVER["plan"](payload)
+        except Exception:  # noqa: BLE001 - shadow observation must never break a turn
+            pass
+
     def select_context(
         self,
         request_messages: List[Dict[str, Any]],
@@ -489,6 +539,12 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
             pol = None
         self._last_policy = pol
         if pol is not None:
+            _home = pol.get("home") or ""
+            _real_home = bool(_home) and __import__("os").path.isdir(_home)
+            # Shadow opt-in is adopted BEFORE the control early-return, so a
+            # control profile can be observed without changing its request.
+            if not self._shadow_explicit and _real_home:
+                self._shadow_selection = bool(pol.get("shadowSelection"))
             _prof = pol.get("profile") or "?"
             _bucket = self._meter.setdefault("by_profile", {}).setdefault(
                 _prof, {"select": 0, "skip": 0})
@@ -509,12 +565,12 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                                  f"home={pol.get('home')!r} session_profile={pol.get('profile')!r}\n")
                 except Exception:
                     pass
+                if self._shadow_selection:
+                    self._emit_shadow_plan(request_messages, pol, applied=False)
                 return None
             # A budget given to the constructor is the caller's decision (the test suite uses tiny
             # ones to exercise the laws), and a policy whose home does not exist is not a session
             # (the suite patches one to keep the laws runnable). Only a real, unset session adopts.
-            _home = pol.get("home") or ""
-            _real_home = bool(_home) and __import__("os").path.isdir(_home)
             if (not self._v_budget_explicit and _real_home and isinstance(pol.get("budget"), int)
                     and pol["budget"] != self._v_budget):
                 self._v_budget = pol["budget"]
@@ -600,6 +656,13 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                 OBSERVER["plan"](dict(plan_facts,
                                       stubDropped=self._stub_dropped,
                                       stubCount=(len(dropped) if self._stub_dropped == "recoverable" else 0),
+                                      shadowSelection=self._shadow_selection,
+                                      shadow=False,
+                                      policyApplied=True,
+                                      requestUnchanged=True,
+                                      droppedPages=[{"ids": sorted(units[i].id_toks),
+                                                     "tokens": units[i].tokens}
+                                                    for i in sorted(dropped) if i in units],
                                       # page.evict rows: exact stub text from the assembly, with the
                                       # producing page's identity tokens for the tracer's refs join.
                                       stubRows=(list(self._stub_rows)
@@ -1214,7 +1277,8 @@ def _resolve_v_budget(ctor_value: Optional[int]) -> Tuple[int, str, bool]:
 def build_engine(v_budget: Optional[int] = None,
                  protect_first_n: int = 3, protect_last_n: int = 6,
                  selection_mode: Optional[str] = None,
-                 stub_dropped: Optional[str] = None) -> Optional[Any]:
+                 stub_dropped: Optional[str] = None,
+                 shadow_selection: Optional[bool] = None) -> Optional[Any]:
     """Registration-time factory. Returns None outside the hermes runtime (the
     plugin's observer duties never depend on the engine — the registration in
     live/__init__.py is fail-open)."""
@@ -1223,4 +1287,5 @@ def build_engine(v_budget: Optional[int] = None,
     return CtxvmFaultPinEngine(v_budget=v_budget, selection_mode=selection_mode,
                                protect_first_n=protect_first_n,
                                protect_last_n=protect_last_n,
-                               stub_dropped=stub_dropped)
+                               stub_dropped=stub_dropped,
+                               shadow_selection=shadow_selection)

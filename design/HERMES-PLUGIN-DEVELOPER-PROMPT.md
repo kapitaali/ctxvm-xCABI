@@ -269,11 +269,16 @@ harnessVersion null                FIXED 2026-11-19 (RR-HARNESSVER + RR-HVREV): 
 post-H12 direction                 PARKED by owner (RR-DEFAULTS-20261119) while E1 offline replay runs;
                                    tail-only eviction candidate if reopened (RR-P8H12-20261119 §2);
                                    no cell authorized, $1 cap stands
-Part C stub seam (opt-in)         LANDED 2026-11-23 (RR-PARTC-IMPL-20261123), 0.13.30 synced;
-                                   profile setting stubDropped off/recoverable, no env channel,
-                                   coverage attests; gateway restart owed; stub arm is experiment lane
-                                   writer+consumer tools/redaction-block.py, contract gate step, scanner hook;
-                                   stubText/reason RATIFIED DEFERRED by owner (RR-DEFAULTS-20261119)
+Part C stub seam (opt-in)         LANDED + LIVE through 0.13.33 (RR-PARTC-IMPL / RR-STUB-RENDER /
+                                   RR-STUB-RENDER-LIVE): stubDropped off/recoverable profile setting,
+                                   no env channel; page.evict + page.render(mode=stub) at the same
+                                   visibility turn, byte-identical stubText, coverage attests;
+                                   stubText/reason RATIFIED DEFERRED (RR-DEFAULTS)
+shadow mode (opt-in)              LANDED 2026-11-25 (RR-SHADOW-IMPL): one temp profile w8-shadow,
+                                   shadowSelection true, hashed page ids only, private 0700/0600,
+                                   retention = profile lifetime; control sessions use a pure shadow
+                                   planner, live request/pins unchanged; candidate pins OFFLINE ONLY
+                                   unless a separate live-arm ruling; 0.13.34 synced, restart owed
 docs/quickstart.md                 top-level dir not listed in AGENTS §3 (owner layout call)
 ```
 

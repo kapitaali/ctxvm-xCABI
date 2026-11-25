@@ -69,7 +69,7 @@ def read_yaml_subset(path: Path) -> Dict[str, Any]:
     implementation here would be a second source of truth about a file the host owns.
     """
     out: Dict[str, Any] = {"engine": None, "budgetTokens": None, "selectionMode": None,
-                           "stubDropped": None}
+                           "stubDropped": None, "shadowSelection": None}
     try:
         lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
@@ -103,6 +103,12 @@ def read_yaml_subset(path: Path) -> Dict[str, Any]:
             val = _strip(rest)
             if val in ("off", "recoverable"):
                 out["stubDropped"] = val
+        elif block == "plugins" and key == "shadowSelection" and in_plugin_entry:
+            # Shadow mode: opt-in profile only, no env backdoor. Records what the
+            # keep law WOULD do without perturbing the request.
+            val = _strip(rest).lower()
+            if val in ("true", "false"):
+                out["shadowSelection"] = val == "true"
         elif block == "plugins" and key == "selectionMode" and in_plugin_entry:
             # H11: `fresh` (default) or `stable`. A profile setting, not an env ritual — the same rule
             # the budget follows, for the same reason: one gateway serves every arm.
@@ -161,6 +167,11 @@ def policy(home: Optional[Path] = None) -> Dict[str, Any]:
     if not stub:
         stub, stub_source = "off", "default"
 
+    shadow = cfg.get("shadowSelection")
+    shadow_source = "settings" if shadow is not None else "default"
+    if shadow is None:
+        shadow = False
+
     return {
         "home": str(h),
         "profile": profile_name(h),
@@ -171,6 +182,8 @@ def policy(home: Optional[Path] = None) -> Dict[str, Any]:
         "selectionModeSource": mode_source,
         "stubDropped": stub,
         "stubDroppedSource": stub_source,
+        "shadowSelection": bool(shadow),
+        "shadowSelectionSource": shadow_source,
         # The arm is decided by the profile's own setting, never by what the process happens to hold.
         "arm": "paged" if engine == "ctxvm" else "control",
     }

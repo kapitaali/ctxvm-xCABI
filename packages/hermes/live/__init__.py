@@ -91,7 +91,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.33"
+PLUGIN_VERSION = "0.13.34"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -883,6 +883,11 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # page.evict: the stubbed refs + byte-exact text this session sent,
             # for the version-gated checker rule. Empty when drop mode / no plan.
             "stubbedRefs": _state().get("stubbed_refs_by_session", {}).get(session_id or "", []),
+            # Shadow mode is opt-in and content-free; failures are visible, never
+            # allowed to break the request. Retention = the profile's lifetime.
+            "shadowSelection": bool(((_state().get("policy_by_session") or {}).get(session_id or "")
+                                      or {}).get("shadowSelection")),
+            "shadowWriteFailures": int(_state().get("shadowWriteFailures") or 0),
         },
         "captures": {
             "turns": len(turns),
@@ -1206,6 +1211,80 @@ def _make_plugin() -> Optional[Any]:
         "budgetTokens": _state().get("budget_tokens") or _budget_from_env(),
         "environmentId": _environment_id(),
     })
+
+
+_SHADOW_SCHEMA = "ctxvm-shadow-selection/v1"
+
+
+def _write_shadow_record(session_id: str, payload: Dict[str, Any], tracer: Any) -> None:
+    """Append one content-free shadow record under the OPT-IN profile's home.
+    Page ids are hashed; no bodies, prompts, answers, arguments or raw refs.
+    Retention = profile lifetime. Fail-open for the request, visible counter."""
+    st = _state()
+    try:
+        pol = (st.get("policy_by_session") or {}).get(session_id) or {}
+        home = pol.get("home")
+        if not home or not os.path.isdir(home):
+            return
+        directory = Path(home) / "ctxvm-shadow"
+        directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+        os.chmod(directory, 0o700)
+        path = directory / "selection.jsonl"
+        dropped_pages = []
+        for entry in (payload.get("droppedPages") or []):
+            if not isinstance(entry, dict) or not isinstance(entry.get("ids"), list):
+                continue
+            refs = tracer.refs_for_identity_tokens([entry["ids"]])
+            if len(refs) != 1:
+                continue
+            page = tracer._declared.get(refs[0])
+            if not isinstance(page, dict):
+                continue
+            page_id = "sha256:" + hashlib.sha256(
+                (refs[0] + "|" + str(page.get("contentHash") or "")).encode("utf-8")).hexdigest()
+            dropped_pages.append({"page_id": page_id,
+                                  "tokens": int(entry.get("tokens") or 0),
+                                  "kind": page.get("kind") or "tool_result"})
+        counts = st.setdefault("shadow_counts_by_session", {})
+        counts[session_id] = int(counts.get(session_id, 0)) + 1
+        engine_path = Path(__file__).with_name("context_engine.py")
+        policy_version = hashlib.sha256(engine_path.read_bytes()).hexdigest()[:16]
+        record = {
+            "schema": _SHADOW_SCHEMA,
+            "session_id": session_id,
+            "turn": tracer._turn if getattr(tracer, "_turn", -1) >= 0 else 0,
+            "call_index": counts[session_id] - 1,
+            "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
+            "policy": {"name": "keep-law", "version": policy_version,
+                       "mode": payload.get("selectionMode") or "fresh"},
+            "budget_tokens": int(payload.get("budgetTokens") or 0),
+            "resident_tokens": int(payload.get("residentTokens") or 0),
+            "floor_tokens": int(payload.get("floorTokens") or 0),
+            "dropped_tokens": int(payload.get("droppedTokens") or 0),
+            "dropped_pages": dropped_pages,
+            "repositioned_pages": [],
+            "selection_hash": payload.get("selectionHash"),
+            "prefix_hash": payload.get("prefixHash"),
+            "trigger": payload.get("trigger"),
+            "request_unchanged": True,
+            "policy_applied": bool(payload.get("policyApplied")),
+        }
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        try:
+            os.fchmod(fd, 0o600)
+            with os.fdopen(fd, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record, sort_keys=True) + "\n")
+        finally:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+    except Exception as _exc:  # noqa: BLE001 - shadow must never break a request
+        st["shadowWriteFailures"] = int(st.get("shadowWriteFailures") or 0) + 1
+        try:
+            _swallow("shadow_record", _exc)
+        except Exception:
+            pass
 
 
 def register(ctx) -> None:
@@ -1584,13 +1663,20 @@ def register(ctx) -> None:
                     except Exception as _exc:  # noqa: BLE001 - observability must never break a turn
                         _swallow("record_selection", _exc)
 
-                def _record_plan(payload, _sid=_sid):
+                def _record_plan(payload, _sid=_sid, _vm=_vm):
                     # H9: the plan channel fires on EVERY selection (including fits/floor_bust),
                     # so a capture can name the reason instead of inferring it from resident and
                     # headroom. Per session, like every other arm field: a process-global slot
                     # would report whichever session planned last.
                     _target = _sid
                     try:
+                        if (payload or {}).get("shadowSelection"):
+                            _write_shadow_record(_target, dict(payload or {}),
+                                                 _vm.tracer_for(_target))
+                        # A control-arm shadow plan is counterfactual: write the shadow
+                        # record, but never overwrite the real plan/tally sidecar.
+                        if (payload or {}).get("shadow"):
+                            return
                         _st = _state()
                         _st.setdefault("plan_by_session", {})[_target] = dict(payload or {})
                         _tally = _st.setdefault("plan_tally_by_session", {}).setdefault(
