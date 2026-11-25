@@ -1,11 +1,11 @@
-# State (updated 2026-11-19; E1 approved, G4 done, H12 negative, D17 held)
+# State (updated 2026-11-25; DSH active stub landed, D17 held)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
 
 ## Artifacts and versions
-- Wire: RFC-0 sealed (`spec/rfc-0/`); RFC-0.1 additive landed (`spec/rfc-0.1/`). Corpus: ODPS 0.8.0, m1–m8 checksummed; hub byte-identical. Plugins: hermes (authoritative: `live/__init__.py:94` + `live/plugin.yaml:2`; **0.13.29** on 2026-11-19, `harnessVersion: "0.23.2"` live); node 0.1.0, opencode/ai-sdk 0.0.1.
-- Papers: P13/P14 applied (`e10d249`); Part III landed (`5ab5d38`); PDF 26pp, recalculated. Live traces private under `~/.local/state/ctxvm/traces`; budget 200000.
+- Wire: RFC-0 sealed; RFC-0.1 additive landed. Corpus: ODPS 0.8.0, m1–m8 checksummed; hub byte-identical. Plugins: hermes 0.13.33 LIVE (harness 0.23.4); node 0.1.1; DSH adapter active stub opt-in, mirror default; opencode/ai-sdk 0.0.1.
+- Papers: Part I/II A3/A4 updated; PDFs 26pp/23pp committed (`afb1b4f`). Live traces private under `~/.local/state/ctxvm/traces`; budget 200000.
 
 ## Done (last 3 items: one line each, with locators)
 
@@ -13,14 +13,14 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 (`e10d249`), Part III + §9.2 fix (`d10c325`, `99f62f9`), `datamining/` tracked (`97cf743`), E1 LANDED (`a1bd004`), `fixture-bank/` v2 (2-hop, 442/442) + parked E0/E2 notes LANDED & VERIFIED (`e8149b5`, `RR-E0ENRICH-VERIFY`; E0/E2 $0).
-- Hermes lane: stub render landed + visibility turn fixed (`RR-STUB-RENDER`), 0.13.33 LIVE (`RR-STUB-RENDER-LIVE`), suite 247; arm cites 0.13.33.
+- Hermes lane: DONE — stub wire + visibility fix (`RR-STUB-RENDER`), 0.13.33 LIVE (`RR-STUB-RENDER-LIVE`), suite 247.
 
-- **dsh lane (W22):** CLOSED. All 7 acceptance items DONE; T-B capture full run COMPLETE 581/588 (`RR-TBDSHFULL`); counter fix verified (`RR-TBDSHCOUNTER-FIX`). Corpus naming deferred to Phase 2 (`RR-DSHPARK`); Plan D other lane.
-- Gateway: pid 139920 (22:51 restart 11-19) holds 0.13.29; real session `local-f913ef14` flushed `harnessVersion: "0.23.2"` (`RR-HVERR-REVIEW`).
+- **dsh lane (W22):** passive + active stub LANDED in ctxvm/open-dsh (`c623936`, `2eb8b4c`); mirror default, active opt-in. Adapter 35 pass + 1 skip; local mock + real Nous receipts clean (`RR-ACTIVESTUB-REVIEW`).
+- Gateway: pid 100399 (17:05 restart 11-24) holds 0.13.33; real sidecars attest harnessVersion 0.23.4 (`RR-STUB-RENDER-LIVE`).
 ## Next three (ordered, one line each)
-1. All routed hermes, research, review queues DONE & VERIFIED (see RR-* review cards).
-2. E0 double negative PUBLISHED (`RR-E0-NEGATIVE`); E2 FAIL 2/5 (instrument specificity, not paging) CLOSED (`RR-E2CLOSE`), HELD $0 — retry = new ruling. W8 parked.
-3. page.evict design RULED (`RR-PAGE-EVICT-RULING`), card cleared to author (owner placement); not implemented. G3 prereg, D17, D19/P11/H19 owner-gated.
+1. DSH active mode committed/reviewed; no real profile enabled. Node 0.1.1 committed, unpublished (D17).
+2. E0 double negative PUBLISHED; E2 FAIL 2/5 CLOSED, HELD $0 — retry = new ruling. W8 parked.
+3. G3 prereg, D17 publication, D19/P11/H19 owner-gated; page.evict/stub wire landed.
 
 ## Decisions made (date, decision, reason)
 - 2026-10-30 → 2026-11-10: D3-c OTel layered; D4 adopts RFC-0.1; D8 splits → schemaVersion first; D12 est* keep page-table semantics; W8 ruled FAILED, capture default-on; D-U1 caveat, D-U3 same-build, D-U2 two baselines (`RR-DECISIONS-20261030` … `RR-P7BASE-20261110`).
@@ -45,7 +45,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. Unverified claims stay marked UNVERIFIED. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% is an external controller's (law 7).
 
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
-- Conformance gate: GREEN 2026-11-20 (re-run; `run-ci.sh` → ALL GATES GREEN; ts 24+62+46+14, py 229+8+66, schema 682); witness №123 `f16df322`.
+- Conformance gate: GREEN 2026-11-25 (`run-ci.sh` → ALL GATES GREEN; ts 30+62+46+35, py 247+8+66, schema 682); witness `c623936`.
 - XERJ Hub: NOT LISTED 2026-11-19 (`RR-UNVERIFIED`). openai row + cache nulls intentionally null (`prices.json`). Part II METR STILL UNVERIFIED. Hard-fault recall ≥95% UNMEASURED (n=4).
 - W8D rewrite-events: 9 vs 16 — mechanism confirmed 0.13.27 (`RR-UNVERIFIED`); counts historical.
 
