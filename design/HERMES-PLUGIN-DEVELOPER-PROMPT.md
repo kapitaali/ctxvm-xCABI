@@ -274,11 +274,13 @@ Part C stub seam (opt-in)         LANDED + LIVE through 0.13.33 (RR-PARTC-IMPL /
                                    no env channel; page.evict + page.render(mode=stub) at the same
                                    visibility turn, byte-identical stubText, coverage attests;
                                    stubText/reason RATIFIED DEFERRED (RR-DEFAULTS)
-shadow mode (opt-in)              LANDED 2026-11-25 (RR-SHADOW-IMPL): one temp profile w8-shadow,
-                                   shadowSelection true, hashed page ids only, private 0700/0600,
-                                   retention = profile lifetime; control sessions use a pure shadow
-                                   planner, live request/pins unchanged; candidate pins OFFLINE ONLY
-                                   unless a separate live-arm ruling; 0.13.34 synced, restart owed
+shadow mode (opt-in)              LANDED + DATA-INTEGRITY FIXED (RR-SHADOW-IMPL / RR-SHADOW-FIX):
+                                   one temp profile w8-shadow, shadowSelection true, hashed exact
+                                   historical PageIds, private 0700/0600, retention = profile lifetime;
+                                   control shadow planner replays real demand/pin/reposition state,
+                                   live request/pins unchanged; versioned schema validator enforced
+                                   before disk, repositioned_pages populated; candidate pins OFFLINE
+                                   ONLY unless a separate live-arm ruling; 0.13.35 synced, restart owed
 docs/quickstart.md                 top-level dir not listed in AGENTS §3 (owner layout call)
 ```
 

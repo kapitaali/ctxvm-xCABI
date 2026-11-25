@@ -248,6 +248,11 @@ def _rollup(body: str) -> str:
     return hashlib.sha256(body.encode("utf-8", "surrogatepass")).hexdigest()[:16]
 
 
+def _content_hash(body: str) -> str:
+    """Exact tracer-compatible PageId content hash (sha256:<8 hex>)."""
+    return "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()[:8]
+
+
 # Activation record (2026-11-07, RR-W8ARM2): the engine object is CONSTRUCTED
 # unconditionally at plugin load, so "a ctxvm engine was built" is true in every process and
 # says nothing about which arm ran. What the experiment needs is whether the host ever
@@ -313,17 +318,19 @@ class _PageUnit:
     1:1 by ``tool_call_id``)."""
 
     __slots__ = ("key", "identity", "id_toks", "tokens",
-                 "result_index", "call_index", "call_id")
+                 "result_index", "call_index", "call_id", "content_hash")
 
     def __init__(self, key: str, identity: str, id_toks: FrozenSet[str], tokens: int,
-                 result_index: int, call_index: int, call_id: str):
-        self.key = key
-        self.identity = identity     # tool name + argument values (the L4 track)
-        self.id_toks = id_toks       # the page's identifier tokens (the L3 surface)
-        self.tokens = tokens         # L6 estimate of the tool message's bytes
+                 result_index: int, call_index: int, call_id: str,
+                 content_hash: str):
+        self.key = key             # tool name + content rollup
+        self.identity = identity   # tool name + argument values (the L4 track)
+        self.id_toks = id_toks     # the page's identifier tokens (the L3 surface)
+        self.tokens = tokens       # the L6 estimate of the tool message's bytes
         self.result_index = result_index
         self.call_index = call_index
         self.call_id = call_id
+        self.content_hash = content_hash  # exact PageId half, never latest-by-ref
 
 
 class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
@@ -461,12 +468,12 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                 protect_last_n=self._protect_last_n, selection_mode="fresh",
                 stub_dropped="off", shadow_selection=False)
             units = shadow._classify(messages)
-            # A fresh engine has no page table; initialize a LOCAL one from the
-            # current request. No live page/pin state is read or mutated.
-            for u in units.values():
-                shadow._pages[u.key] = {"tokens": u.tokens, "pinned": False,
-                                        "demand_count": 1, "id_toks": u.id_toks,
-                                        "birth": u.result_index}
+            # Replay the SAME page-state and demand passes as the live engine,
+            # on the short-lived clone only. This reproduces second-demand
+            # pinning, identity release and reposition state for control profiles.
+            shadow._update_page_state(units)
+            shadow._credit_demand(messages)
+            by_key = {u.key: u for u in units.values()}
             keep_hard = shadow._hard_keep(messages, units)
             dropped, repositioned, facts = shadow._plan(messages, units, keep_hard)
             shadow._assemble(messages, units, keep_hard, dropped, repositioned)
@@ -481,8 +488,13 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                 facts, shadow=True, shadowSelection=True, policyApplied=applied,
                 requestUnchanged=True,
                 dropped=[sorted(units[i].id_toks) for i in sorted(dropped) if i in units],
-                droppedPages=[{"ids": sorted(units[i].id_toks), "tokens": units[i].tokens}
+                droppedPages=[{"ids": sorted(units[i].id_toks), "tokens": units[i].tokens,
+                               "contentHash": units[i].content_hash}
                               for i in sorted(dropped) if i in units],
+                repositionedPages=[{"ids": sorted(by_key[k].id_toks),
+                                    "tokens": by_key[k].tokens,
+                                    "contentHash": by_key[k].content_hash}
+                                   for k in sorted(repositioned) if k in by_key],
                 budgetTokens=budget, prefixHash="sha256:" + digest,
                 selectionMode="fresh", policyMode=(pol or {}).get("selectionMode"),
                 policyModeSource=(pol or {}).get("selectionModeSource"), modeExplicit=False,
@@ -641,6 +653,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
         # were diagnosed with arithmetic that this states in one word.
         try:
             if OBSERVER["plan"] is not None:
+                by_key = {u.key: u for u in units.values()}
                 _changed = set(dropped)
                 for _u in units.values():
                     if _u.key in repositioned:
@@ -661,8 +674,13 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                                       policyApplied=True,
                                       requestUnchanged=True,
                                       droppedPages=[{"ids": sorted(units[i].id_toks),
-                                                     "tokens": units[i].tokens}
+                                                     "tokens": units[i].tokens,
+                                                     "contentHash": units[i].content_hash}
                                                     for i in sorted(dropped) if i in units],
+                                      repositionedPages=[{"ids": sorted(by_key[k].id_toks),
+                                                          "tokens": by_key[k].tokens,
+                                                          "contentHash": by_key[k].content_hash}
+                                                         for k in sorted(repositioned) if k in by_key],
                                       # page.evict rows: exact stub text from the assembly, with the
                                       # producing page's identity tokens for the tracer's refs join.
                                       stubRows=(list(self._stub_rows)
@@ -808,7 +826,8 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                     continue  # a bodyless tool reply is not a page
                 identity = "{0}[{1}]".format(tool_name, ",".join(sorted(arg_toks)))
                 units[i] = _PageUnit(key, identity, arg_toks, _tokens_for(m),
-                                     i, call_index, m["tool_call_id"])
+                                     i, call_index, m["tool_call_id"],
+                                     _content_hash(text))
         return units
 
     # ---- pass 2: page table -----------------------------------------------------

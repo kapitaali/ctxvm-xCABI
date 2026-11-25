@@ -75,6 +75,7 @@ if str(_plugin_dir) not in sys.path:
     sys.path.insert(1, str(_plugin_dir))
 
 from plugin import create_ctxvm_plugin, identity_from_payload  # noqa: E402
+from shadow_schema import validate_record as _validate_shadow_record  # noqa: E402
 from uc_registry import (
     TRACE_FEATURE,
     UC1_FEATURE,
@@ -91,7 +92,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.34"
+PLUGIN_VERSION = "0.13.35"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -1230,21 +1231,30 @@ def _write_shadow_record(session_id: str, payload: Dict[str, Any], tracer: Any) 
         directory.mkdir(mode=0o700, parents=True, exist_ok=True)
         os.chmod(directory, 0o700)
         path = directory / "selection.jsonl"
-        dropped_pages = []
-        for entry in (payload.get("droppedPages") or []):
-            if not isinstance(entry, dict) or not isinstance(entry.get("ids"), list):
-                continue
-            refs = tracer.refs_for_identity_tokens([entry["ids"]])
-            if len(refs) != 1:
-                continue
-            page = tracer._declared.get(refs[0])
-            if not isinstance(page, dict):
-                continue
-            page_id = "sha256:" + hashlib.sha256(
-                (refs[0] + "|" + str(page.get("contentHash") or "")).encode("utf-8")).hexdigest()
-            dropped_pages.append({"page_id": page_id,
-                                  "tokens": int(entry.get("tokens") or 0),
-                                  "kind": page.get("kind") or "tool_result"})
+
+        def _hashed_pages(entries: Any) -> List[Dict[str, Any]]:
+            pages = []
+            for entry in (entries or []):
+                if not isinstance(entry, dict) or not isinstance(entry.get("ids"), list):
+                    raise ValueError("page entry needs an identity-token list")
+                content_hash = entry.get("contentHash")
+                if not isinstance(content_hash, str) or not content_hash.startswith("sha256:"):
+                    raise ValueError("page entry needs an exact contentHash")
+                refs = tracer.refs_for_identity_tokens([entry["ids"]])
+                if len(refs) != 1:
+                    raise ValueError("page entry does not resolve to exactly one logical ref")
+                page = tracer._declared.get(refs[0])
+                if not isinstance(page, dict):
+                    raise ValueError("page entry ref is not declared")
+                page_id = "sha256:" + hashlib.sha256(
+                    (refs[0] + "|" + content_hash).encode("utf-8")).hexdigest()
+                pages.append({"page_id": page_id,
+                              "tokens": int(entry.get("tokens") or 0),
+                              "kind": page.get("kind") or "tool_result"})
+            return pages
+
+        dropped_pages = _hashed_pages(payload.get("droppedPages"))
+        repositioned_pages = _hashed_pages(payload.get("repositionedPages"))
         counts = st.setdefault("shadow_counts_by_session", {})
         counts[session_id] = int(counts.get(session_id, 0)) + 1
         engine_path = Path(__file__).with_name("context_engine.py")
@@ -1262,13 +1272,15 @@ def _write_shadow_record(session_id: str, payload: Dict[str, Any], tracer: Any) 
             "floor_tokens": int(payload.get("floorTokens") or 0),
             "dropped_tokens": int(payload.get("droppedTokens") or 0),
             "dropped_pages": dropped_pages,
-            "repositioned_pages": [],
+            "repositioned_pages": repositioned_pages,
             "selection_hash": payload.get("selectionHash"),
             "prefix_hash": payload.get("prefixHash"),
             "trigger": payload.get("trigger"),
             "request_unchanged": True,
             "policy_applied": bool(payload.get("policyApplied")),
         }
+        # Fail-closed data-integrity gate: no malformed record reaches disk.
+        _validate_shadow_record(record)
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
         try:
             os.fchmod(fd, 0o600)

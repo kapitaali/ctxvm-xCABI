@@ -54,6 +54,7 @@ assert _pp_spec is not None and _pp_spec.loader is not None
 profile_policy = importlib.util.module_from_spec(_pp_spec)
 _pp_spec.loader.exec_module(profile_policy)
 from plugin import Tracer, TraceInit
+from shadow_schema import ShadowSchemaError, validate_record
 
 
 def _tx(n=20, chars=20000):
@@ -141,9 +142,12 @@ class ShadowRecordTests(unittest.TestCase):
 
     def test_record_is_hashed_private_and_content_free(self):
         payload = {"budgetTokens": 30000, "residentTokens": 50000, "floorTokens": 10000,
-                   "droppedTokens": 20000, "droppedPages": [{"ids": ["notes/f2"], "tokens": 20000}],
-                   "selectionMode": "fresh", "selectionHash": "sha256:a",
-                   "prefixHash": "sha256:b", "trigger": None, "policyApplied": False}
+                   "droppedTokens": 20000, "droppedPages": [{"ids": ["notes/f2"],
+                   "tokens": 20000, "contentHash": self.tr._declared[
+                       self.tr.refs_for_identity_tokens([["notes/f2"]])[0]]["contentHash"]}],
+                   "selectionMode": "fresh", "selectionHash": "sha256:" + "a" * 64,
+                   "prefixHash": "sha256:" + "b" * 64, "trigger": None,
+                   "policyApplied": False}
         live._write_shadow_record("s1", payload, self.tr)
         path = self.home / "ctxvm-shadow" / "selection.jsonl"
         self.assertTrue(path.exists())
@@ -160,9 +164,12 @@ class ShadowRecordTests(unittest.TestCase):
     def test_two_sessions_produce_disjoint_records(self):
         live._state().setdefault("policy_by_session", {})["s2"] = {"home": str(self.home)}
         payload = {"budgetTokens": 30000, "residentTokens": 50000, "floorTokens": 10000,
-                   "droppedTokens": 20000, "droppedPages": [{"ids": ["notes/f2"], "tokens": 20000}],
-                   "selectionMode": "fresh", "selectionHash": "sha256:a",
-                   "prefixHash": "sha256:b", "trigger": None, "policyApplied": False}
+                   "droppedTokens": 20000, "droppedPages": [{"ids": ["notes/f2"],
+                   "tokens": 20000, "contentHash": self.tr._declared[
+                       self.tr.refs_for_identity_tokens([["notes/f2"]])[0]]["contentHash"]}],
+                   "selectionMode": "fresh", "selectionHash": "sha256:" + "a" * 64,
+                   "prefixHash": "sha256:" + "b" * 64, "trigger": None,
+                   "policyApplied": False}
         live._write_shadow_record("s1", payload, self.tr)
         live._write_shadow_record("s2", payload, self.tr)
         rows = [json.loads(l) for l in (self.home / "ctxvm-shadow" / "selection.jsonl").read_text().splitlines()]
@@ -173,6 +180,101 @@ class ShadowRecordTests(unittest.TestCase):
         with mock.patch.object(Path, "mkdir", side_effect=OSError("read-only")):
             live._write_shadow_record("s1", {}, self.tr)
         self.assertEqual(live._state()["shadowWriteFailures"], 1)
+
+    def test_historical_page_id_uses_the_payload_hash_not_latest(self):
+        ref = "file:same.md"
+        self.tr.page({"ref": ref, "kind": "file", "content": "v1"})
+        v1 = self.tr._declared[ref]["contentHash"]
+        self.tr.page({"ref": ref, "kind": "file", "content": "v2"})
+        v2 = self.tr._declared[ref]["contentHash"]
+        payload = {"budgetTokens": 30000, "residentTokens": 50000, "floorTokens": 10000,
+                   "droppedTokens": 20000, "droppedPages": [{"ids": ["same.md"],
+                   "tokens": 20000, "contentHash": v1}], "selectionMode": "fresh",
+                   "selectionHash": "sha256:" + "a" * 64,
+                   "prefixHash": "sha256:" + "b" * 64, "trigger": None,
+                   "policyApplied": False}
+        live._write_shadow_record("s1", payload, self.tr)
+        rec = json.loads((self.home / "ctxvm-shadow" / "selection.jsonl").read_text())
+        expected = "sha256:" + __import__("hashlib").sha256((ref + "|" + v1).encode()).hexdigest()
+        wrong = "sha256:" + __import__("hashlib").sha256((ref + "|" + v2).encode()).hexdigest()
+        self.assertEqual(rec["dropped_pages"][0]["page_id"], expected)
+        self.assertNotEqual(rec["dropped_pages"][0]["page_id"], wrong)
+
+    def test_invalid_record_is_rejected_before_write(self):
+        payload = {"budgetTokens": -1, "residentTokens": 1, "floorTokens": 0,
+                   "droppedTokens": 2, "droppedPages": [], "selectionMode": "fresh",
+                   "selectionHash": None, "prefixHash": None, "trigger": None,
+                   "policyApplied": False}
+        live._write_shadow_record("s1", payload, self.tr)
+        self.assertFalse((self.home / "ctxvm-shadow" / "selection.jsonl").exists())
+        self.assertEqual(live._state()["shadowWriteFailures"], 1)
+
+    def test_repositioned_pages_are_populated_and_hashed(self):
+        ref = self.tr.refs_for_identity_tokens([["notes/f2"]])[0]
+        ch = self.tr._declared[ref]["contentHash"]
+        payload = {"budgetTokens": 30000, "residentTokens": 50000, "floorTokens": 10000,
+                   "droppedTokens": 0, "droppedPages": [],
+                   "repositionedPages": [{"ids": ["notes/f2"], "tokens": 20000,
+                                          "contentHash": ch}],
+                   "selectionMode": "fresh", "selectionHash": "sha256:" + "a" * 64,
+                   "prefixHash": "sha256:" + "b" * 64, "trigger": None,
+                   "policyApplied": False}
+        live._write_shadow_record("s1", payload, self.tr)
+        rec = json.loads((self.home / "ctxvm-shadow" / "selection.jsonl").read_text())
+        self.assertEqual(len(rec["repositioned_pages"]), 1)
+        self.assertTrue(rec["repositioned_pages"][0]["page_id"].startswith("sha256:"))
+
+    def test_schema_rejects_invalid_counts_hashes_and_shape(self):
+        good = json.loads((Path(__file__).resolve().parents[3] /
+                           "tools/fixtures/shadow/valid.jsonl").read_text())
+        validate_record(good)
+        cases = []
+        for field, value in (("budget_tokens", -1), ("dropped_tokens", 999999),
+                             ("selection_hash", None), ("prefix_hash", None)):
+            bad = json.loads(json.dumps(good)); bad[field] = value; cases.append(bad)
+        bad = json.loads(json.dumps(good)); bad["extra"] = 1; cases.append(bad)
+        bad = json.loads(json.dumps(good)); bad["dropped_pages"][0]["page_id"] = "raw"; cases.append(bad)
+        for bad in cases:
+            with self.assertRaises(ShadowSchemaError):
+                validate_record(bad)
+
+
+class ShadowParityTests(unittest.TestCase):
+    def test_duplicate_page_control_shadow_matches_real_plan(self):
+        home = Path(tempfile.mkdtemp(prefix="ctxvm-shadow-parity-"))
+        control = {"engine": "compressor", "budget": 20000, "budgetSource": "settings",
+                   "profile": "w8-shadow", "arm": "control", "home": str(home),
+                   "selectionMode": "fresh", "selectionModeSource": "default",
+                   "stubDropped": "off", "stubDroppedSource": "default",
+                   "shadowSelection": True, "shadowSelectionSource": "settings"}
+        paged = dict(control, engine="ctxvm", arm="paged")
+        msgs = [{"role": "system", "content": "sys"}, {"role": "user", "content": "go"}]
+        # Same PageId twice -> second-demand pin/reposition, then pressure.
+        for i in range(2):
+            msgs.append({"role": "assistant", "content": "", "tool_calls": [{
+                "id": f"dup{i}", "type": "function", "function": {
+                    "name": "read_file", "arguments": json.dumps({"path": "dup.md"})}}]})
+            msgs.append({"role": "tool", "content": "same", "tool_call_id": f"dup{i}"})
+        for i in range(10):
+            msgs.append({"role": "assistant", "content": "", "tool_calls": [{
+                "id": f"u{i}", "type": "function", "function": {
+                    "name": "read_file", "arguments": json.dumps({"path": f"u{i}.md"})}}]})
+            msgs.append({"role": "tool", "content": ("u%d" % i) + "." * 20000,
+                         "tool_call_id": f"u{i}"})
+        real = ce.build_engine(v_budget=20000)
+        real_plans = []
+        real.set_observer(lambda p: None, real_plans.append)
+        with mock.patch.object(ce, "_POLICY_MOD", types.SimpleNamespace(policy=lambda: dict(paged))):
+            real.select_context(list(msgs))
+        shadow_engine = ce.build_engine(v_budget=20000)
+        shadow_plans = []
+        shadow_engine.set_observer(lambda p: None, shadow_plans.append)
+        with mock.patch.object(ce, "_POLICY_MOD", types.SimpleNamespace(policy=lambda: dict(control))):
+            shadow_engine.select_context(list(msgs))
+        self.assertEqual(real_plans[0]["droppedCount"], shadow_plans[0]["droppedCount"])
+        self.assertEqual(real_plans[0]["repositionedCount"], shadow_plans[0]["repositionedCount"])
+        self.assertEqual(real_plans[0]["selectionHash"], shadow_plans[0]["selectionHash"])
+        self.assertGreater(real_plans[0]["repositionedCount"], 0)
 
 
 if __name__ == "__main__":

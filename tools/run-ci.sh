@@ -168,6 +168,7 @@ done
 # G4 (RR-REDACTIMPL-20261119): the redaction sidecar contract — every consumer
 # string/exit, the writer's frozen-drop refusal, and the scanner integration.
 run_step "redaction sidecar contract (G4)" python3 tools/redaction-contract-test.py
+run_step "shadow selection schema (ctxvm-shadow-selection/v1)" python3 tools/shadow-selection-validate.py tools/fixtures/shadow/valid.jsonl
 bash tools/export-roundtrip.sh
 log "schema + export round-trip gate green"
 

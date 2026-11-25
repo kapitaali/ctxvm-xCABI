@@ -151,6 +151,8 @@ jobs:
         working-directory: corpus/m8
       - name: redaction sidecar contract (G4 consumer strings + writer refusal; mirror of run-ci gate 3)
         run: python3 tools/redaction-contract-test.py
+      - name: shadow selection schema (ctxvm-shadow-selection/v1; mirror of run-ci gate 3)
+        run: python3 tools/shadow-selection-validate.py tools/fixtures/shadow/valid.jsonl
 
   hub:
     runs-on: ubuntu-latest
