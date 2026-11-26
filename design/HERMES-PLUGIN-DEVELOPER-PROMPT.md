@@ -281,9 +281,10 @@ shadow mode (opt-in)              LANDED + DATA-INTEGRITY FIXED (RR-SHADOW-IMPL 
                                    live request/pins unchanged; versioned schema validator enforced
                                    before disk; exact ref|contentHash resolves empty/ambiguous token
                                    joins; shadowWriteFailures is per session, process total separate;
-                                   candidate pins OFFLINE ONLY. 0.13.37 SYNCED, gateway restart owed;
-                                   installed replay persists real dropped pages with floor<budget<resident.
-                                   Fresh live acceptance run still owed; no rates/pins yet.
+                                   candidate pins OFFLINE ONLY. 0.13.37 LIVE + ACCEPTED
+                                   (RR-SHADOW-LIVE-ACCEPT): 6 records, 1 persisted drop,
+                                   floor<budget<resident, zero failures; schema/checker/replay clean.
+                                   Offline join unblocked; no rates/pins yet.
 docs/quickstart.md                 top-level dir not listed in AGENTS §3 (owner layout call)
 ```
 
