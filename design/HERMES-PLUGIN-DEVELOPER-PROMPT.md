@@ -282,7 +282,9 @@ shadow mode (opt-in)              LANDED + DATA-INTEGRITY FIXED (RR-SHADOW-IMPL 
                                    before disk, repositioned_pages populated; candidate pins OFFLINE
                                    ONLY unless a separate live-arm ruling; LIVE CONTROL PATH ADDED
                                    via pre_api_request + by-path policy stamp (RR-SHADOW-LIVE-FIX),
-                                   shadowSelections attested; 0.13.36 synced, restart owed
+                                   shadowSelections attested; 0.13.36 LIVE + VERIFIED
+                                   (RR-SHADOW-LIVE-VERIFY): valid control records, one-turn floor-bust
+                                   yields no drops; multi-turn collection next
 docs/quickstart.md                 top-level dir not listed in AGENTS §3 (owner layout call)
 ```
 
