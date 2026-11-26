@@ -48,7 +48,7 @@ benchmarks/metrics           metrics suite + policy simulator
 hub/                         ODPS hub artefacts (byte-identity checked)
 tools/                       run-ci.sh, rehearsal, export round-trip, node-build parity
 reports/                     RR-<CARD>-<date>.md, LOG.md (closed history), LOG02.md (active append-only), RR-DAY-<date>.md
-design/                      plans of record, one file per card (owner clears new ones)
+design/                      plans of record; design/experiment-runs/ = authorized run plans/preregs (owner clears new ones)
 handoff/                     PROJECT-STATE, QUESTIONS, packets, LANES.md (lane ownership)
 docs/                        reader-facing docs (quickstart); added by A3, 2026-11-09
 ```
