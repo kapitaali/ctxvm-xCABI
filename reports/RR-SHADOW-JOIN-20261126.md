@@ -8,20 +8,23 @@ model call, spend, export, commit, or push.
 
 ## 0. Current state (verified 2026-11-26)
 
-- Installed plugin: **0.13.35** (`~/.hermes/plugins/ctxvm-tracer/__init__.py`).
-- Gateway pid **3913** is live on 0.13.35 (`sync-plugin.sh --check` confirms it holds the build).
-- `w8-shadow` config resolves correctly offline: `engine=compressor`, `budget=24000`,
+- Installed plugin: **0.13.36** (`~/.hermes/plugins/ctxvm-tracer/__init__.py`).
+- Gateway pid **90481** is live on 0.13.36 (`sync-plugin.sh --check` confirms it holds the build).
+- `w8-shadow` config resolves correctly offline and live: `engine=compressor`, `budget=24000`,
   `shadowSelection=true/settings`.
-- A successful free-model session (`tencent/hy4-flash:free`, session
-  `local-0b6b2f710b79a56f2f835c7ee96996ed1ea0e0a0d7f1b53d2de7a820d0144bee`) read four files and
-  produced a valid 0.13.35 capture with **4 pages / 102,076 resident tokens**, but its sidecar reports
-  `engineSelections=0` and `shadowSelection=false`.
-- Exact record path `~/.hermes/profiles/w8-shadow/ctxvm-shadow/selection.jsonl` **does not exist**.
-- Therefore there is **no live shadow data to join**, and collection is blocked by two live-integration
-  defects: compressor/control profiles never invoke `CtxvmFaultPinEngine.select_context()`, and the
-  per-session policy stamp did not attest the configured shadow flag. See
-  `RR-SHADOW-LIVE-BLOCKER-20261126.md`. The join implementation remains blocked until Hermes fixes the
-  live collection path and fresh records pass the gates below.
+- The 0.13.36 `pre_api_request` collection path produced **65 schema-valid records across 12
+  successful free-model sessions**. All 12 captures pass the coverage checker and Rust replay with
+  `divergences=[]`, `violations=[]`.
+- However, **zero dropped/repositioned pages are present in the persisted records**. Two live shadow
+  writes failed with `ValueError: page entry does not resolve to exactly one logical ref`
+  (`~/.local/state/ctxvm/traces/_swallowed.log`, 19:56:43 and 19:57:58), so the actual drop attempts were
+  lost. The exact `contentHash` is present in the payload but the writer rejects ambiguous identity-token
+  joins instead of disambiguating by `ref|contentHash`.
+- Every sidecar reports `shadowWriteFailures=2` because the counter is process-global, so the mandatory
+  zero-failure gate excludes all 12 sessions even though their traces are valid.
+- Therefore there is **no joinable would-drop data yet**. Hermes must fix exact-hash disambiguation and
+  per-session failure accounting, then fresh sessions must produce persisted `dropped_pages`. See
+  `RR-SHADOW-LIVE-DATA-REVIEW-20261126.md`.
 
 ## 1. Inputs and gates
 
@@ -163,6 +166,7 @@ The script does not exist yet. This card is the specification and acceptance tes
 
 Research/experiment lane implements the offline join and reports counts. Review lane verifies
 session mapping, hash equality, ordering, denominators, and privacy. The gateway is already
-running 0.13.35; the immediate blocker is Hermes live collection on the control profile
-(`RR-SHADOW-LIVE-BLOCKER-20261126.md`). After that fix and fresh valid `w8-shadow` records,
-route this card to research/experiment. No live stub-arm or candidate-pin activation is authorized.
+running 0.13.36 and live collection works, but the corpus is blocked by exact-hash disambiguation
+and per-session failure accounting (`RR-SHADOW-LIVE-DATA-REVIEW-20261126.md`). After that fix and
+fresh valid records with persisted `dropped_pages`, route this card to research/experiment. No live
+stub-arm or candidate-pin activation is authorized.
