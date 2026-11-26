@@ -1,10 +1,10 @@
-# State (updated 2026-11-25; DSH active stub landed, D17 held)
+# State (updated 2026-11-26; shadow data-integrity fix synced, D17 held)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
 
 ## Artifacts and versions
-- Wire: RFC-0 sealed; RFC-0.1 additive landed. Corpus: ODPS 0.8.0, m1–m8 checksummed; hub byte-identical. Plugins: hermes 0.13.35 LIVE (harness 0.23.4); node 0.1.1 repo-local; DSH adapter active stub opt-in, mirror default; opencode/ai-sdk 0.0.1.
+- Wire: RFC-0 sealed; RFC-0.1 additive landed. Corpus: ODPS 0.8.0, m1–m8 checksummed; hub byte-identical. Plugins: hermes 0.13.37 synced; gateway holds 0.13.36 (harness 0.23.4); node 0.1.1 repo-local; DSH active stub opt-in, mirror default; opencode/ai-sdk 0.0.1.
 - Papers: Part I/II A3/A4 updated; PDFs 26pp/23pp committed (`afb1b4f`). Live traces private under `~/.local/state/ctxvm/traces`; budget 200000.
 
 ## Done (last 3 items: one line each, with locators)
@@ -13,10 +13,10 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 (`e10d249`), Part III + §9.2 fix (`d10c325`, `99f62f9`), `datamining/` tracked (`97cf743`), E1 LANDED (`a1bd004`), `fixture-bank/` v2 (2-hop, 442/442) + parked E0/E2 notes LANDED & VERIFIED (`e8149b5`, `RR-E0ENRICH-VERIFY`; E0/E2 $0).
-- Hermes lane: 0.13.36 LIVE, 65 shadow records / 12 sessions; data join BLOCKED (ambiguous-ref drops lost; global failure counter). Follow-up: `RR-SHADOW-LIVE-DATA-REVIEW`.
+- Hermes lane: 0.13.37 fixes exact-hash shadow joins + per-session failures; installed replay persists 2/2 real failed drop shapes. Fresh live acceptance awaits restart (`RR-SHADOW-DATA-FIX-20261126`).
 
 - **dsh lane (W22):** passive + active stub LANDED in ctxvm/open-dsh (`c623936`, `2eb8b4c`); mirror default, active opt-in. Adapter 35 pass + 1 skip; local mock + real Nous receipts clean (`RR-ACTIVESTUB-REVIEW`).
-- Gateway: pid 100399 (17:05 restart 11-24) holds 0.13.33; real sidecars attest harnessVersion 0.23.4 (`RR-STUB-RENDER-LIVE`).
+- Gateway: pid 90481 holds 0.13.36; installed 0.13.37 awaits operator restart.
 ## Next three (ordered, one line each)
 1. DSH active mode committed/reviewed; no real profile enabled. Node 0.1.1 committed, unpublished (D17).
 2. E0 double negative PUBLISHED; E2 FAIL 2/5 CLOSED, HELD $0 — retry = new ruling. W8 parked.
@@ -45,7 +45,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. Unverified claims stay marked UNVERIFIED. No cost-saving claim: none measured on our data; arXiv:2610.22732v1's 18.4–30.9% is an external controller's (law 7).
 
 ## Verification status (gate pointer, UNVERIFIED items and what would verify each)
-- Conformance gate: GREEN 2026-11-25 (`run-ci.sh` → ALL GATES GREEN; ts 30+62+46+35, py 247+8+66, schema 682); witness `c623936`.
+- Conformance gate: GREEN 2026-11-26 (`run-ci.sh` → ALL GATES GREEN; ts 30+62+46+35, py 264+8+66, schema 682); `RR-SHADOW-DATA-FIX-20261126`.
 - XERJ Hub: NOT LISTED 2026-11-19 (`RR-UNVERIFIED`). openai row + cache nulls intentionally null (`prices.json`). Part II METR STILL UNVERIFIED. Hard-fault recall ≥95% UNMEASURED (n=4).
 - W8D rewrite-events: 9 vs 16 — mechanism confirmed 0.13.27 (`RR-UNVERIFIED`); counts historical.
 
