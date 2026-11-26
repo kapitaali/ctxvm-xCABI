@@ -13,7 +13,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 (`e10d249`), Part III + §9.2 fix (`d10c325`, `99f62f9`), `datamining/` tracked (`97cf743`), E1 LANDED (`a1bd004`), `fixture-bank/` v2 (2-hop, 442/442) + parked E0/E2 notes LANDED & VERIFIED (`e8149b5`, `RR-E0ENRICH-VERIFY`; E0/E2 $0).
-- Hermes lane: shadow fix VERIFIED, 0.13.35 LIVE; live control collection BLOCKED (`select_context` not called; shadow flag not attested). Follow-up: `RR-SHADOW-LIVE-BLOCKER`.
+- Hermes lane: live control shadow collection fixed (`RR-SHADOW-LIVE-FIX`): pre_api_request pure planner + by-path policy stamp + shadowSelections attestation; 0.13.36 synced, suite 260; restart owed.
 
 - **dsh lane (W22):** passive + active stub LANDED in ctxvm/open-dsh (`c623936`, `2eb8b4c`); mirror default, active opt-in. Adapter 35 pass + 1 skip; local mock + real Nous receipts clean (`RR-ACTIVESTUB-REVIEW`).
 - Gateway: pid 100399 (17:05 restart 11-24) holds 0.13.33; real sidecars attest harnessVersion 0.23.4 (`RR-STUB-RENDER-LIVE`).
