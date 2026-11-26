@@ -5,11 +5,11 @@
 > card from §5, execute it, and report per §4. Do not skip ahead, do not re-plan.
 >
 > **Several lanes work here at once.** Read `handoff/LANES.md` before your first edit: it names
-> who owns which paths, and the rules for `reports/LOG.md`, `handoff/PROJECT-STATE.md`, the one
+> who owns which paths, and the rules for `reports/LOG02.md`, `handoff/PROJECT-STATE.md`, the one
 > installed plugin copy and the gateway. A shared file is claimed by a commit, not by a message.
 
 *Last updated: 2026-10-30 · Maintainer rule: whoever completes a task MUST update its card
-status in §5 and append the report index line in `reports/LOG.md`. This file is always the
+status in §5 and append the report index line in `reports/LOG02.md`. This file is always the
 single source of truth for "what's next".*
 
 ---
@@ -1410,7 +1410,7 @@ When a card's Definition-of-Done is met:
    - **Deviations from card:** anything you did differently and why (or "none")
    - **Discoveries:** facts that should update other files/cards (be specific)
    - **Open questions:** for the orchestrator (or "none")
-2. Append one line to `reports/LOG.md`: `| RR-<TASK-ID>-<date> | <task id> | <one-line summary> |`
+2. Append one line to `reports/LOG02.md`: `| RR-<TASK-ID>-<date> | <task id> | <one-line summary> |`
 3. Update the card's **Status** row in §5 below (and shift the "Next frontier" line in §0).
 4. Finally, print a ≤10-line summary of the report to the user.
 

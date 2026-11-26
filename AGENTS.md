@@ -47,7 +47,7 @@ corpus/m1..m8                frozen trace drops with checksums
 benchmarks/metrics           metrics suite + policy simulator
 hub/                         ODPS hub artefacts (byte-identity checked)
 tools/                       run-ci.sh, rehearsal, export round-trip, node-build parity
-reports/                     RR-<CARD>-<date>.md, LOG.md (append-only), RR-DAY-<date>.md
+reports/                     RR-<CARD>-<date>.md, LOG.md (closed history), LOG02.md (active append-only), RR-DAY-<date>.md
 design/                      plans of record, one file per card (owner clears new ones)
 handoff/                     PROJECT-STATE, QUESTIONS, packets, LANES.md (lane ownership)
 docs/                        reader-facing docs (quickstart); added by A3, 2026-11-09
@@ -104,7 +104,8 @@ Every card produces:
 
 1. `reports/RR-<CARD>-<date>.md` — what was done, repro commands, numbers with intervals,
    limitations, deviations, open questions.
-2. A row appended to `reports/LOG.md` (append-only; never rewrite existing rows).
+2. A row appended to `reports/LOG02.md` (active append-only ledger; never rewrite existing rows).
+   `reports/LOG.md` is closed immutable history.
 3. A section in `reports/RR-DAY-<date>.md`, and a day-close line in `08-HANDOFF.md` when the day ends.
 
 Plans of record live in `design/` (e.g. `design/W15-tool-effect.md`). If a chat summary and a file
@@ -117,8 +118,9 @@ disagree, the file wins.
 - Commits are attributed `kapitaali <teppo@kapitaali.com>`.
 - Do not stage unrelated work in progress — another agent may own it. Check `git status` and
   `git log --oneline -5` before staging anything, and read `handoff/LANES.md` for who owns which
-  paths. A shared file (`reports/LOG.md`, `handoff/PROJECT-STATE.md`) is claimed by a commit,
-  not by a message; never stage one that carries another lane's uncommitted row.
+  paths. A shared file (`reports/LOG02.md`, `handoff/PROJECT-STATE.md`) is claimed by a commit,
+  not by a message; never stage one that carries another lane's uncommitted row. `reports/LOG.md`
+  is closed immutable history.
 - Note that `git rev-list --count origin/main..HEAD` reads the *local* tracking ref, which goes stale
   here. Use `git ls-remote --heads origin` to see the real remote head.
 - **Commit through a private index when lanes share a tree, then reset the shared one.** `GIT_INDEX_FILE=/tmp/idx

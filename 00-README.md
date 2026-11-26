@@ -81,7 +81,7 @@ manifest → 0.5.0 (`x-cabi.latestDrop corpus/m5`) + hub re-linked — see
 ## Task/report flow
 
 Work is managed via `08-HANDOFF.md` §5 task board. Completed work lands as a report in
-`reports/RR-<TASK-ID>-<date>.md` + one index line in `reports/LOG.md`, and the task card's
+`reports/RR-<TASK-ID>-<date>.md` + one index line in `reports/LOG02.md`, and the task card's
 status is updated in place. `contracts/` holds the ODCS v3.0.2 data contract (lint green).
 
 ## Next actions (in order)

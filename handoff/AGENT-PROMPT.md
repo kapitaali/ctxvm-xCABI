@@ -17,8 +17,8 @@ which paths, which files cannot be owned, and how a shared file is claimed. Read
    `bash tools/run-ci.sh > /tmp/ci.log 2>&1; rc=$?` and gate every commit on `$rc`. Never pipe the
    gate through `tail`: a pipeline returns the last command's status and has landed a commit on a
    red tree once. Never hand-write an `env -u` list — it drifts on the first new key; enumerate.
-5. State of record is `handoff/PROJECT-STATE.md`; history is `reports/LOG.md` (append-only). If chat
-   and a file disagree, the file wins. Never hardcode gate totals: date them and name the command.
+5. State of record is `handoff/PROJECT-STATE.md`; active history is `reports/LOG02.md` (append-only).
+   `reports/LOG.md` is closed immutable history. If chat and a file disagree, the file wins. Never hardcode gate totals: date them and name the command.
 
 ## 1. Session state (verify, don't trust — this section ages fastest)
 
@@ -78,12 +78,12 @@ recorded (echo law).
   subdirectory explicitly (e.g. the literal `~` artifact dir inside the repo root) and never use
   `~` as the target root. A target computed from a variable counts as the same defect: an unset
   `$VAR` makes `rm -rf "$TARGET"` a home delete. Non-negotiable, and it outranks convenience.
-- Shared files, restated because they cost the most: `reports/LOG.md` and
+- Shared files, restated because they cost the most: `reports/LOG02.md` and
   `handoff/PROJECT-STATE.md` are claimed by a commit, never by a message. Commit your hunks only.
 
 ## 4. Sharing a shared file with a concurrent lane (paid-for lesson)
 
-Before ANY `git restore` on `reports/LOG.md` or `handoff/PROJECT-STATE.md`, snapshot to a temp dir
+Before ANY `git restore` on `reports/LOG02.md` or `handoff/PROJECT-STATE.md`, snapshot to a temp dir
 outside the repo — the copy may be the only one of another lane's uncommitted rows. If you clobber
 it, re-append by RR-id from the snapshot in order, dedup, and record the erratum in the day file.
 To commit only your hunks, build the exact staged content from HEAD plus your edits with

@@ -25,10 +25,10 @@ propose them to the review lane or the owner, do not edit them in passing.
 
 ## Shared files that cannot be owned, and the rule for each
 
-**`reports/LOG.md`** — append-only, exactly four pipes per row.
-Append your row in the same commit as your card. Do **not** stage the file while another lane's
-row is uncommitted: you would commit their work under your message. If it must happen, say so in
-the commit message. Never rewrite or reorder committed rows; an erratum is a new row.
+**`reports/LOG02.md`** — active append-only ledger, exactly four pipes per row. `reports/LOG.md` is
+closed immutable history. Append your row in the same commit as your card. Do **not** stage the file
+while another lane's row is uncommitted: you would commit their work under your message. If it must
+happen, say so in the commit message. Never rewrite or reorder committed rows; an erratum is a new row.
 
 **`handoff/PROJECT-STATE.md`** — one mutable document, and the usual lost-update victim.
 Edit it only in a commit that contains nothing else. Re-read it immediately before writing, and

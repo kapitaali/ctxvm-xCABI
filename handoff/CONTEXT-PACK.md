@@ -58,5 +58,5 @@ Agents apply all five to their own work BEFORE asking; an item that cannot answe
 - W-numbers: workstream IDs, defined in `08.1-UPDATE-PROMPT.md` §W (e.g. W8 does-paging-help, W19 tier-2 interventions).
 - W8 vocabulary: cell = one preregistered task×page-family measurement point; slice = the two-cell restart prompt (`design/W8-PROMPT-SLICE.md`); arm = the naive-vs-paged half of a paired run.
 - D-numbers: the decision ledger — D1–D12 owner-ruled (e.g. D9 ts opt-out, D11 signing); D13–D19 tracked in PROJECT-STATE.
-- RR-<slug>-<date>[-n]: one card's report file under `reports/`; `reports/LOG.md` rows `| card | area | summary |` are the append-only ledger. Some cards exist only as a LOG row beside the commit carrying them (e.g. RR-W8BOOK-20261107 → `89ff8e4`).
+- RR-<slug>-<date>[-n]: one card's report file under `reports/`; `reports/LOG02.md` rows `| card | area | summary |` are the active append-only ledger. `reports/LOG.md` is closed immutable history. Some cards exist only as a LOG row beside the commit carrying them (e.g. RR-W8BOOK-20261107 → `89ff8e4`).
 - lane: one agent session owning one scope; owned paths + must-not-write map in `handoff/LANES.md`.
