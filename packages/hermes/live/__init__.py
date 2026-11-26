@@ -95,7 +95,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.36"
+PLUGIN_VERSION = "0.13.37"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -895,7 +895,9 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
                                        or {}).get("shadowSelectionSource") or "default"),
             "shadowSelections": int((_state().get("shadow_selections_by_session") or {}).get(
                 session_id or "", 0)),
-            "shadowWriteFailures": int(_state().get("shadowWriteFailures") or 0),
+            "shadowWriteFailures": int((_state().get("shadowWriteFailuresBySession") or {}).get(
+                session_id or "", 0)),
+            "shadowWriteFailuresProcess": int(_state().get("shadowWriteFailuresProcess") or 0),
         },
         "captures": {
             "turns": len(turns),
@@ -999,6 +1001,8 @@ def _state() -> Dict[str, Any]:
             "register_calls": 0,
             "last_written_events": 0,
             "flushed_sessions": set(),
+            "shadowWriteFailuresProcess": 0,
+            "shadowWriteFailuresBySession": {},
         }
         setattr(sys, _STATE_ATTR, state)
     return state
@@ -1263,7 +1267,7 @@ def _write_shadow_record(session_id: str, payload: Dict[str, Any], tracer: Any) 
                 content_hash = entry.get("contentHash")
                 if not isinstance(content_hash, str) or not content_hash.startswith("sha256:"):
                     raise ValueError("page entry needs an exact contentHash")
-                refs = tracer.refs_for_identity_tokens([entry["ids"]])
+                refs = tracer.refs_for_identity_tokens([entry["ids"]], content_hash=content_hash)
                 if len(refs) != 1:
                     raise ValueError("page entry does not resolve to exactly one logical ref")
                 page = tracer._declared.get(refs[0])
@@ -1315,7 +1319,9 @@ def _write_shadow_record(session_id: str, payload: Dict[str, Any], tracer: Any) 
             except OSError:
                 pass
     except Exception as _exc:  # noqa: BLE001 - shadow must never break a request
-        st["shadowWriteFailures"] = int(st.get("shadowWriteFailures") or 0) + 1
+        st["shadowWriteFailuresProcess"] = int(st.get("shadowWriteFailuresProcess") or 0) + 1
+        failures = st.setdefault("shadowWriteFailuresBySession", {})
+        failures[session_id] = int(failures.get(session_id, 0)) + 1
         try:
             _swallow("shadow_record", _exc)
         except Exception:

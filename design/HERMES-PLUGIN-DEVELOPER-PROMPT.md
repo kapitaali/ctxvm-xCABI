@@ -274,17 +274,16 @@ Part C stub seam (opt-in)         LANDED + LIVE through 0.13.33 (RR-PARTC-IMPL /
                                    no env channel; page.evict + page.render(mode=stub) at the same
                                    visibility turn, byte-identical stubText, coverage attests;
                                    stubText/reason RATIFIED DEFERRED (RR-DEFAULTS)
-shadow mode (opt-in)              LANDED + DATA-INTEGRITY FIXED (RR-SHADOW-IMPL / RR-SHADOW-FIX):
-                                   one temp profile w8-shadow, shadowSelection true, hashed exact
+shadow mode (opt-in)              LANDED + DATA-INTEGRITY FIXED (RR-SHADOW-IMPL / RR-SHADOW-FIX /
+                                   RR-SHADOW-DATA-FIX): one temp profile w8-shadow, hashed exact
                                    historical PageIds, private 0700/0600, retention = profile lifetime;
                                    control shadow planner replays real demand/pin/reposition state,
                                    live request/pins unchanged; versioned schema validator enforced
-                                   before disk, repositioned_pages populated; candidate pins OFFLINE
-                                   ONLY unless a separate live-arm ruling; LIVE CONTROL PATH ADDED
-                                   via pre_api_request + by-path policy stamp (RR-SHADOW-LIVE-FIX),
-                                   shadowSelections attested; 0.13.36 LIVE + VERIFIED
-                                   (RR-SHADOW-LIVE-VERIFY): valid control records, one-turn floor-bust
-                                   yields no drops; multi-turn collection next
+                                   before disk; exact ref|contentHash resolves empty/ambiguous token
+                                   joins; shadowWriteFailures is per session, process total separate;
+                                   candidate pins OFFLINE ONLY. 0.13.37 SYNCED, gateway restart owed;
+                                   installed replay persists real dropped pages with floor<budget<resident.
+                                   Fresh live acceptance run still owed; no rates/pins yet.
 docs/quickstart.md                 top-level dir not listed in AGENTS §3 (owner layout call)
 ```
 

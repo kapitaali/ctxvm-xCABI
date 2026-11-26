@@ -179,7 +179,28 @@ class ShadowRecordTests(unittest.TestCase):
     def test_write_failure_is_visible_and_fail_open(self):
         with mock.patch.object(Path, "mkdir", side_effect=OSError("read-only")):
             live._write_shadow_record("s1", {}, self.tr)
-        self.assertEqual(live._state()["shadowWriteFailures"], 1)
+        self.assertEqual(live._state()["shadowWriteFailuresProcess"], 1)
+        self.assertEqual(live._state()["shadowWriteFailuresBySession"]["s1"], 1)
+
+    def test_shadow_write_failures_are_isolated_by_session(self):
+        live._state().setdefault("policy_by_session", {})["s2"] = {"home": str(self.home)}
+        ref = self.tr.refs_for_identity_tokens([["notes/f2"]])[0]
+        payload = {"budgetTokens": 30000, "residentTokens": 50000, "floorTokens": 10000,
+                   "droppedTokens": 20000, "droppedPages": [{"ids": ["notes/f2"],
+                   "tokens": 20000, "contentHash": self.tr._declared[ref]["contentHash"]}],
+                   "selectionMode": "fresh", "selectionHash": "sha256:" + "a" * 64,
+                   "prefixHash": "sha256:" + "b" * 64, "trigger": None,
+                   "policyApplied": False}
+        with mock.patch.object(Path, "mkdir", side_effect=OSError("read-only")):
+            live._write_shadow_record("s1", {}, self.tr)
+        live._write_shadow_record("s2", payload, self.tr)
+        trace = self.tr.finish().jsonl
+        first = live._coverage_manifest("s1", "s1.jsonl", trace)["plugin"]
+        second = live._coverage_manifest("s2", "s2.jsonl", trace)["plugin"]
+        self.assertEqual(first["shadowWriteFailures"], 1)
+        self.assertEqual(second["shadowWriteFailures"], 0)
+        self.assertEqual(first["shadowWriteFailuresProcess"], 1)
+        self.assertEqual(second["shadowWriteFailuresProcess"], 1)
 
     def test_historical_page_id_uses_the_payload_hash_not_latest(self):
         ref = "file:same.md"
@@ -200,6 +221,59 @@ class ShadowRecordTests(unittest.TestCase):
         self.assertEqual(rec["dropped_pages"][0]["page_id"], expected)
         self.assertNotEqual(rec["dropped_pages"][0]["page_id"], wrong)
 
+    def test_ambiguous_identity_tokens_use_exact_content_hash(self):
+        first_ref = 'tool:read_file({"path":"same.md"})'
+        exact_ref = 'tool:search_files({"path":"same.md"})'
+        self.tr.page({"ref": first_ref, "kind": "tool_result", "content": "other body"})
+        self.tr.page({"ref": exact_ref, "kind": "tool_result", "content": "target body"})
+        exact_hash = self.tr._declared[exact_ref]["contentHash"]
+        payload = {"budgetTokens": 30000, "residentTokens": 50000, "floorTokens": 10000,
+                   "droppedTokens": 20000,
+                   "droppedPages": [{"ids": ["same.md"], "tokens": 20000,
+                                     "contentHash": exact_hash}],
+                   "selectionMode": "fresh", "selectionHash": "sha256:" + "a" * 64,
+                   "prefixHash": "sha256:" + "b" * 64, "trigger": None,
+                   "policyApplied": False}
+        live._write_shadow_record("s1", payload, self.tr)
+        rec = json.loads((self.home / "ctxvm-shadow" / "selection.jsonl").read_text())
+        expected = "sha256:" + __import__("hashlib").sha256(
+            (exact_ref + "|" + exact_hash).encode()).hexdigest()
+        self.assertEqual(rec["dropped_pages"][0]["page_id"], expected)
+
+    def test_empty_identity_tokens_use_unique_exact_content_hash(self):
+        ref = 'tool:read_file({"path":"L2.md"})'
+        self.tr.page({"ref": ref, "kind": "tool_result", "content": "large body"})
+        exact_hash = self.tr._declared[ref]["contentHash"]
+        payload = {"budgetTokens": 30000, "residentTokens": 50000, "floorTokens": 10000,
+                   "droppedTokens": 20000,
+                   "droppedPages": [{"ids": [], "tokens": 20000,
+                                     "contentHash": exact_hash}],
+                   "selectionMode": "fresh", "selectionHash": "sha256:" + "a" * 64,
+                   "prefixHash": "sha256:" + "b" * 64, "trigger": None,
+                   "policyApplied": False}
+        live._write_shadow_record("s1", payload, self.tr)
+        rec = json.loads((self.home / "ctxvm-shadow" / "selection.jsonl").read_text())
+        expected = "sha256:" + __import__("hashlib").sha256(
+            (ref + "|" + exact_hash).encode()).hexdigest()
+        self.assertEqual(rec["dropped_pages"][0]["page_id"], expected)
+
+    def test_unique_exact_hash_resolves_despite_nonmatching_identity_tokens(self):
+        ref = 'tool:read_file({"path":"L2.md"})'
+        self.tr.page({"ref": ref, "kind": "tool_result", "content": "large body"})
+        exact_hash = self.tr._declared[ref]["contentHash"]
+        payload = {"budgetTokens": 30000, "residentTokens": 50000, "floorTokens": 10000,
+                   "droppedTokens": 20000,
+                   "droppedPages": [{"ids": ["unrelated"], "tokens": 20000,
+                                     "contentHash": exact_hash}],
+                   "selectionMode": "fresh", "selectionHash": "sha256:" + "a" * 64,
+                   "prefixHash": "sha256:" + "b" * 64, "trigger": None,
+                   "policyApplied": False}
+        live._write_shadow_record("s1", payload, self.tr)
+        rec = json.loads((self.home / "ctxvm-shadow" / "selection.jsonl").read_text())
+        expected = "sha256:" + __import__("hashlib").sha256(
+            (ref + "|" + exact_hash).encode()).hexdigest()
+        self.assertEqual(rec["dropped_pages"][0]["page_id"], expected)
+
     def test_invalid_record_is_rejected_before_write(self):
         payload = {"budgetTokens": -1, "residentTokens": 1, "floorTokens": 0,
                    "droppedTokens": 2, "droppedPages": [], "selectionMode": "fresh",
@@ -207,7 +281,8 @@ class ShadowRecordTests(unittest.TestCase):
                    "policyApplied": False}
         live._write_shadow_record("s1", payload, self.tr)
         self.assertFalse((self.home / "ctxvm-shadow" / "selection.jsonl").exists())
-        self.assertEqual(live._state()["shadowWriteFailures"], 1)
+        self.assertEqual(live._state()["shadowWriteFailuresProcess"], 1)
+        self.assertEqual(live._state()["shadowWriteFailuresBySession"]["s1"], 1)
 
     def test_repositioned_pages_are_populated_and_hashed(self):
         ref = self.tr.refs_for_identity_tokens([["notes/f2"]])[0]

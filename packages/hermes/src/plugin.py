@@ -373,11 +373,14 @@ class Tracer:
         if ref in self._declared:
             self._pending_recall.add(ref)
 
-    def refs_for_identity_tokens(self, dropped: Any) -> List[str]:
-        """Map the engine's dropped identity-token sets back to the pages they belong to.
+    def refs_for_identity_tokens(self, dropped: Any,
+                                 content_hash: Optional[str] = None) -> List[str]:
+        """Map engine identity-token sets back to declared logical refs.
 
-        The engine knows content, not refs; the tracer knows refs and the identity tokens each page
-        exposes. Intersection is the join. A set that matches nothing is dropped rather than guessed.
+        With ``content_hash``, restrict candidates to exact historical
+        ``ref|contentHash`` declarations. This disambiguates shared identity
+        tokens and also resolves pages whose engine token set is empty. Without
+        it, preserve the original first-match behaviour used by trace mirrors.
         """
         out: List[str] = []
         if not isinstance(dropped, list):
@@ -392,11 +395,23 @@ class Tracer:
             if not isinstance(toks, list):
                 continue
             want = {_stem(t) for t in toks if isinstance(t, str) and len(str(t)) >= 3}
-            for ref, page in self._declared.items():
-                have = {_stem(t) for t in (page.get("identities") or [])}
-                if want & have:
-                    out.append(ref)
-                    break
+            if content_hash is not None:
+                exact = [ref for ref in self._declared
+                         if f"{ref}|{content_hash}" in self._all_declared]
+                if len(exact) == 1:
+                    out.append(exact[0])
+                    continue
+                candidates = exact
+            else:
+                candidates = list(self._declared)
+            matches = [ref for ref in candidates
+                       if not want or want & {_stem(t) for t in
+                                               (self._declared[ref].get("identities") or [])}]
+            if content_hash is None:
+                if matches:
+                    out.append(matches[0])
+            else:
+                out.extend(matches)
         return out
 
     def note_evicted(self, tokens: int) -> None:
