@@ -277,5 +277,70 @@ class ShadowParityTests(unittest.TestCase):
         self.assertGreater(real_plans[0]["repositionedCount"], 0)
 
 
+class ShadowLiveIntegrationTests(unittest.TestCase):
+    def setUp(self):
+        live._clear_env_for_tests()
+        self.home = Path(tempfile.mkdtemp(prefix="ctxvm-shadow-live-"))
+        self.traces = Path(tempfile.mkdtemp(prefix="ctxvm-shadow-live-traces-"))
+        (self.home / "config.yaml").write_text(
+            "context:\n  engine: compressor\nplugins:\n  entries:\n"
+            "    ctxvm-tracer:\n      settings:\n        budgetTokens: 24000\n"
+            "        shadowSelection: true\n")
+        self.pol = {"engine": "compressor", "budget": 24000, "budgetSource": "settings",
+                    "profile": "w8-shadow", "arm": "control", "home": str(self.home),
+                    "selectionMode": "fresh", "selectionModeSource": "default",
+                    "stubDropped": "off", "stubDroppedSource": "default",
+                    "shadowSelection": True, "shadowSelectionSource": "settings"}
+
+    def test_control_pre_api_request_writes_record_and_attests(self):
+        class Ctx:
+            def __init__(self): self.hooks = {}; self.commands = {}
+            def register_hook(self, n, cb): self.hooks[n] = cb; return lambda: None
+            def on_unload(self, cb): return None
+            def register_command(self, n, cb, description=""): self.commands[n] = cb; return None
+            def get_config(self, key): return None
+            def register_context_engine(self, engine): self.engine = engine
+
+        with mock.patch.dict(os.environ, {"CTXVM_TRACE_DIR": str(self.traces),
+                                          "HERMES_HOME": str(self.home)}):
+            ctx = Ctx()
+            live.register(ctx)
+            h = ctx.hooks
+            h["on_session_start"](session_id="live-s", model="m", provider="p")
+            msgs = _tx(n=20, chars=20000)
+            tr = live._state()["plugin"].tracer_for("live-s")
+            # Declare the exact pages the request carries, so the shadow writer
+            # can resolve ids to refs and historical content hashes.
+            for m in msgs:
+                if m.get("role") != "tool":
+                    continue
+                cid = m["tool_call_id"]
+                call = next(c for x in msgs if x.get("role") == "assistant"
+                            for c in (x.get("tool_calls") or []) if c.get("id") == cid)
+                args = json.loads(call["function"]["arguments"])
+                tr.page({"tool": "read_file", "args": args, "content": m["content"],
+                         "toolEffect": "READ_ONLY"})
+            h["pre_llm_call"](session_id="live-s", conversation_history=msgs)
+            before = json.dumps(msgs, sort_keys=True)
+            h["pre_api_request"](session_id="live-s", request_messages=msgs,
+                                 conversation_history=msgs, system_prompt="sys")
+            self.assertEqual(json.dumps(msgs, sort_keys=True), before)
+            record_path = self.home / "ctxvm-shadow" / "selection.jsonl"
+            self.assertTrue(record_path.exists())
+            records = [json.loads(l) for l in record_path.read_text().splitlines()]
+            self.assertGreaterEqual(len(records), 1)
+            for rec in records:
+                validate_record(rec)
+                self.assertFalse(rec["policy_applied"])
+                self.assertTrue(rec["request_unchanged"])
+            h["on_session_end"](session_id="live-s")
+        cov = json.loads((self.traces / "live-s.coverage.json").read_text())["plugin"]
+        self.assertTrue(cov["shadowSelection"])
+        self.assertEqual(cov["shadowSelectionSource"], "settings")
+        self.assertGreater(cov["shadowSelections"], 0)
+        self.assertEqual(cov["engineSelections"], 0)
+        self.assertEqual(cov["shadowWriteFailures"], 0)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

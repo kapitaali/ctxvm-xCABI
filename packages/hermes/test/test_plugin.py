@@ -1811,6 +1811,7 @@ class CanonicalSidecarParity(unittest.TestCase):
         )
 
     def test_canon_meta_shape_and_mapping(self):
+        _clear_env_for_tests()
         hook_stats = {
             "session_starts": 1,
             "pre_tool_calls": 2,

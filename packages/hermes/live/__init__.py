@@ -76,6 +76,9 @@ if str(_plugin_dir) not in sys.path:
 
 from plugin import create_ctxvm_plugin, identity_from_payload  # noqa: E402
 from shadow_schema import validate_record as _validate_shadow_record  # noqa: E402
+# Kept as a static import so sync-plugin's import-derived set installs the sibling.
+# The live adapter uses the by-path loader below, never this possibly-stale binding.
+from profile_policy import policy as _policy_for_module_set  # noqa: E402,F401
 from uc_registry import (
     TRACE_FEATURE,
     UC1_FEATURE,
@@ -92,7 +95,7 @@ from uc3_planner import UC3Planner
 
 # Bumped whenever the adapter's wire behaviour changes. Written into every
 # .meta.json so a stale in-process copy is identifiable from its output alone.
-PLUGIN_VERSION = "0.13.35"
+PLUGIN_VERSION = "0.13.36"
 
 # --- KIT-1 sidecar + witness canonicalization (09-plugin-parity.md §3, §5) ----
 # Both flush paths build .meta.json through _canon_meta so the harnesses emit
@@ -888,6 +891,10 @@ def _coverage_manifest(session_id: str, file: str, trace_jsonl: str,
             # allowed to break the request. Retention = the profile's lifetime.
             "shadowSelection": bool(((_state().get("policy_by_session") or {}).get(session_id or "")
                                       or {}).get("shadowSelection")),
+            "shadowSelectionSource": (((_state().get("policy_by_session") or {}).get(session_id or "")
+                                       or {}).get("shadowSelectionSource") or "default"),
+            "shadowSelections": int((_state().get("shadow_selections_by_session") or {}).get(
+                session_id or "", 0)),
             "shadowWriteFailures": int(_state().get("shadowWriteFailures") or 0),
         },
         "captures": {
@@ -1215,6 +1222,22 @@ def _make_plugin() -> Optional[Any]:
 
 
 _SHADOW_SCHEMA = "ctxvm-shadow-selection/v1"
+_LIVE_POLICY_MOD: Any = None
+
+
+def _live_policy_module() -> Any:
+    """Load the sibling policy file by path, independent of test/global patches
+    and stale profile-local bare imports. Same file the engine resolves."""
+    global _LIVE_POLICY_MOD
+    if _LIVE_POLICY_MOD is None:
+        import importlib.util
+        path = Path(__file__).with_name("profile_policy.py")
+        spec = importlib.util.spec_from_file_location("ctxvm_live_profile_policy", path)
+        if spec is None or spec.loader is None:
+            raise RuntimeError("cannot load profile_policy sibling")
+        _LIVE_POLICY_MOD = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_LIVE_POLICY_MOD)
+    return _LIVE_POLICY_MOD
 
 
 def _write_shadow_record(session_id: str, payload: Dict[str, Any], tracer: Any) -> None:
@@ -1494,8 +1517,9 @@ def register(ctx) -> None:
         # serves every profile, so a value captured at registration is the wrong arm for all but
         # one of them (measured 2026-11-11: naive reported `ctxvm` and `70000/settings`).
         try:
-            from profile_policy import policy as _policy_for_turn
-            pol = _policy_for_turn()
+            # By-path sibling loader: same file as the engine, independent of
+            # stale profile-local bare imports and test-global patches.
+            pol = _live_policy_module().policy()
         except Exception:  # noqa: BLE001
             pol = None
         st = _state()
@@ -1685,6 +1709,9 @@ def register(ctx) -> None:
                         if (payload or {}).get("shadowSelection"):
                             _write_shadow_record(_target, dict(payload or {}),
                                                  _vm.tracer_for(_target))
+                            _st = _state()
+                            _counts = _st.setdefault("shadow_selections_by_session", {})
+                            _counts[_target] = int(_counts.get(_target, 0)) + 1
                         # A control-arm shadow plan is counterfactual: write the shadow
                         # record, but never overwrite the real plan/tally sidecar.
                         if (payload or {}).get("shadow"):
@@ -2245,6 +2272,22 @@ def register(ctx) -> None:
         vm = _ensure_plugin()
         if vm is not None:
             vm.on_pre_api_request(kwargs)
+            # Control profiles never call select_context (the host uses the
+            # compressor engine). pre_api_request is the proven per-request
+            # seam: run the PURE shadow clone planner without changing the
+            # request or any live page/pin state.
+            engine = _state().get("engine_obj")
+            pol = (_state().get("policy_by_session") or {}).get(
+                kwargs.get("session_id", "") or "")
+            if (engine is not None and pol and pol.get("shadowSelection")
+                    and pol.get("engine") != "ctxvm"
+                    and hasattr(engine, "_emit_shadow_plan")):
+                request_messages = kwargs.get("request_messages")
+                if isinstance(request_messages, list) and request_messages:
+                    try:
+                        engine._emit_shadow_plan(request_messages, pol, applied=False)
+                    except Exception as _exc:  # noqa: BLE001 - fail-open
+                        _swallow("shadow_pre_api_request", _exc)
             _maybe_write_through(vm, stats)
 
     ctx.register_hook("pre_llm_call", on_pre_llm_call)

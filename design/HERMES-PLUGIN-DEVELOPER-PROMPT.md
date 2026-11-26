@@ -280,7 +280,9 @@ shadow mode (opt-in)              LANDED + DATA-INTEGRITY FIXED (RR-SHADOW-IMPL 
                                    control shadow planner replays real demand/pin/reposition state,
                                    live request/pins unchanged; versioned schema validator enforced
                                    before disk, repositioned_pages populated; candidate pins OFFLINE
-                                   ONLY unless a separate live-arm ruling; 0.13.35 synced, restart owed
+                                   ONLY unless a separate live-arm ruling; LIVE CONTROL PATH ADDED
+                                   via pre_api_request + by-path policy stamp (RR-SHADOW-LIVE-FIX),
+                                   shadowSelections attested; 0.13.36 synced, restart owed
 docs/quickstart.md                 top-level dir not listed in AGENTS §3 (owner layout call)
 ```
 
