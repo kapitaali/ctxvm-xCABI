@@ -77,7 +77,7 @@ Repo `/home/theb/Documents/ctxvm`, branch `main`. Gates: `bash tools/run-ci.sh` 
   a **pair attempt**, recorded as such and not in any denominator.
 - Arm attribution is runner-side: `engineSelections` and the invocation's profile, never the trace.
 - Report what happened, including NO RECORD, as the outcome; do not promote a diagnostic to a result.
-- Nothing pushed; the owner pushes. The kit (`handoff/`, `reports/LOG.md`, `08-HANDOFF.md`) is
+- Nothing pushed; the owner pushes. The kit (`handoff/`, `reports/LOG02.md`, `08-HANDOFF.md`) is
   append-only: append, never rewrite a committed row.
 - A recursive delete aimed at `~`, `$HOME`, `/` or a path computed from a variable that may be empty —
   `AGENTS.md` law 10. Cleanup names the exact subdirectory; the home directory is never a target root.
@@ -101,9 +101,9 @@ per-session delta (snapshot the meter at the session's first hook, subtract at f
 **profile half** of the precondition (§2 above) can become a gate rather than a reading, provided the
 recording is keyed per session.
 
-**Shared-file warning (read before you stage anything).** `reports/LOG.md` is the append-only ledger and
+**Shared-file warning (read before you stage anything).** `reports/LOG02.md` is the append-only ledger and
 it is a **shared** file. This lane found the working-tree copy *behind* the commit by ten rows (the
-committed rows would have been dropped by a plain `git add reports/LOG.md`) and restored it. So, before
-you stage the LOG: `diff <(git show HEAD:reports/LOG.md) reports/LOG.md` must show **only added rows** —
-if it shows deletions or a changed row, restore the tree first (`git checkout HEAD -- reports/LOG.md`),
+committed rows would have been dropped by a plain `git add reports/LOG02.md`) and restored it. So, before
+you stage the LOG: `diff <(git show HEAD:reports/LOG02.md) reports/LOG02.md` must show **only added rows** —
+if it shows deletions or a changed row, restore the tree first (`git checkout HEAD -- reports/LOG02.md`),
 then append yours and commit. Never rewrite a committed row; append an erratum block instead.

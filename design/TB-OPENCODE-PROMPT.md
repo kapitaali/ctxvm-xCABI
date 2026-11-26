@@ -75,7 +75,7 @@ a Hermes paged cell on this shape". A NO-GO means "change the shape again". Neit
    be preregistered on this shape. If it fails, say the shape changes again. Do not run a paged cell.
 
 **Record it** in the repo, in this shape: `reports/RR-TBOPEN2-<date>.md` (what ran, the exact commands, C/F,
-the three scores, per-file where it failed, what it cannot prove), one row appended to `reports/LOG.md` with
+the three scores, per-file where it failed, what it cannot prove), one row appended to `reports/LOG02.md` with
 exactly four pipes and no `|` inside the summary, and a section in `reports/RR-DAY-<date>.md`. Keep artefacts
 (captures of the export, `replies.jsonl`, `per-reply.txt`, `lookups.json`) under
 `~/.local/state/ctxvm/w8-runs/<run-id>/`, never in `/tmp`, and cite their paths in the report. Commit with

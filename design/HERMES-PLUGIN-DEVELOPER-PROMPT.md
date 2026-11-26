@@ -42,8 +42,8 @@ Judge three things from that:
 
 1. **Is the tree shared?** Uncommitted files under `reports/`, `handoff/`, `08-HANDOFF.md` or
    `research/` are another lane's work in flight. Never stage them. When you must commit
-   `reports/LOG.md` and it carries other rows, build the blob yourself:
-   `git show HEAD:reports/LOG.md` + your row → `git hash-object -w` → `git update-index --cacheinfo`.
+   `reports/LOG02.md` and it carries other rows, build the blob yourself:
+   `git show HEAD:reports/LOG02.md` + your row → `git hash-object -w` → `git update-index --cacheinfo`.
 2. **Is the running gateway older than the installed plugin?** A process started before the file's
    mtime is running old code no matter what the version string on disk says. This has produced three
    false conclusions in this repo.

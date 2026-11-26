@@ -50,7 +50,7 @@ card per commit, explicit staged paths, never `git add -A`.
 git status --short | grep -v '^??' ; git log --oneline -5
 git ls-remote --heads origin          # local tracking refs go stale here
 bash tools/check-handoff.sh
-git log -1 --format='%h %s' -- reports/LOG.md handoff/PROJECT-STATE.md handoff/QUESTIONS.md
+git log -1 --format='%h %s' -- reports/LOG02.md handoff/PROJECT-STATE.md handoff/QUESTIONS.md
 ```
 
 Judge, in order:
@@ -179,7 +179,7 @@ packets pipeline in §4 applies from verify to commit.
 ## 7. Git law — collisions, snapshots, surgical commits
 
 - **Snapshot shared files before ANY `git restore` that touches them**:
-  `mkdir -p /tmp/opencode/<card> ; cp reports/LOG.md reports/RR-DAY-*.md handoff/PROJECT-STATE.md /tmp/opencode/<card>/`.
+  `mkdir -p /tmp/opencode/<card> ; cp reports/LOG02.md reports/RR-DAY-*.md handoff/PROJECT-STATE.md /tmp/opencode/<card>/`.
   When a lane's commits landed under your uncommitted kit edits, the worked tree may be a
   mid-lane snapshot: restore the file to HEAD, re-append YOUR additions by RR-id from the
   snapshot, dedup, and record an erratum (2026-11-09: LOG re-centered 211 -> 212 rows; the
@@ -376,8 +376,8 @@ disqualifies this file from prompt duty:
   Before pushing, run `git show --stat HEAD` and check every path is yours; if a foreign path is there,
   `git rm --cached <path>` (keeps the file on disk) and `git commit --amend --no-edit` — the commit is
   unpublished, so amending is free. For the shared LOG, stage by blob instead: build the file you want
-  (`git show HEAD~1:reports/LOG.md` + your row) and `git update-index --cacheinfo 100644,$(git
-  hash-object -w <file>),reports/LOG.md`, so another lane's pending row cannot be captured.
+  (`git show HEAD~1:reports/LOG02.md` + your row) and `git update-index --cacheinfo 100644,$(git
+  hash-object -w <file>),reports/LOG02.md`, so another lane's pending row cannot be captured.
 - **Private index + resync (standing, from AGENTS.md §7):** commit through a private index when lanes
   share a tree — `GIT_INDEX_FILE=/tmp/idx git read-tree HEAD && git update-index … && git commit` — and
   **after every such commit run `git read-tree HEAD` on the SHARED index**. A private-index commit
@@ -409,6 +409,7 @@ disqualifies this file from prompt duty:
   decides paste-N; a PROJECT delta over ~100 B likely re-breaks paste-3. Pre-measure; trim
   glossary rows (never headings) if over.
 - Day files: 2026-11-09 (sealed), 2026-11-10 (sealed, append-only), 2026-11-11 (current).
-  LOG row count 248 COMMITTED as of the P11 card; verify with `grep -c '^| RR-' reports/LOG.md`.
+  Historical P11 count 248 is preserved in closed `reports/LOG.md`; verify the active count with
+  `grep -c '^| RR-' reports/LOG02.md`.
 - AGENT-PROMPT §1 staleness: refresh PROPOSED, not edited (policy-file law, §0).
 - Watcher baselines reset for free; never treat "quiet" as "no collision".

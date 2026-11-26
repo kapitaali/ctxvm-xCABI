@@ -78,5 +78,5 @@ test-only bundle, in order **H18 → H17 → H16**.
 - `bash tools/check-handoff.sh` → `ALL HANDOFF CHECKS PASS`.
 - `bash tools/git-hygiene.sh` → `OK`.
 - Tick H16, H17, and H18 in `design/ROADMAP-HERMES-LANE.md` only with the passing command outputs in hand.
-- Emit `reports/RR-H16H18-20261119.md` (or `RR-HTESTGAPS-20261119.md`), one four-pipe row in `reports/LOG.md`, and
+- Emit `reports/RR-H16H18-20261119.md` (or `RR-HTESTGAPS-20261119.md`), one four-pipe row in `reports/LOG02.md`, and
   a section in `reports/RR-DAY-20261119.md`.

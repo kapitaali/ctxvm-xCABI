@@ -200,7 +200,7 @@ Per cell, before asking for the next one:
 - `reports/W8-CHUNKLOG.md` — one row, eleven columns.
 - `reports/W8-SPEND.md` — ledger row: `-p`, model, provider, timestamp, cost, verdict.
 - `reports/RR-W8CELL-<date>.md` — the seven checks, the numbers, the verdict, what it does not prove.
-- `reports/LOG.md` — one row, four pipes, only for a card-level finding.
+- `reports/LOG02.md` — one row, four pipes, only for a card-level finding.
 - Commit with explicit paths as `kapitaali <teppo@kapitaali.com>`. Never stage another lane's rows.
 
 ---
