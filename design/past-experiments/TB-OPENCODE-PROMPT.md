@@ -1,7 +1,7 @@
 # Agent brief — the T-B output-completeness run in OpenCode
 
 Paste the block below to the agent. It assumes zero memory of any earlier session. Its source is
-`design/TB-OPENCODE-RUN.md` (`2b470a7`), with two corrections marked **[verified here]**.
+`design/past-experiments/TB-OPENCODE-RUN.md` (`2b470a7`), with two corrections marked **[verified here]**.
 
 ---
 
@@ -9,7 +9,7 @@ You are running one measurement in the ctxvm repository, then recording it. You 
 experiment and you are not asked to improve anything.
 
 **Repo:** `/home/theb/Documents/ctxvm`. Read `AGENTS.md` (laws), `handoff/LANES.md` (who owns what),
-`design/TB-PLAN.md` (what T-B measures) and `design/TB-OPENCODE-RUN.md` (this run's plan of record) before
+`design/past-experiments/TB-PLAN.md` (what T-B measures) and `design/past-experiments/TB-OPENCODE-RUN.md` (this run's plan of record) before
 touching anything. The gate is `bash tools/run-ci.sh`; it must print `ALL GATES GREEN`. `bash
 tools/check-handoff.sh` must print `ALL PASS`. Never push — the owner pushes. Attribution is
 `kapitaali <teppo@kapitaali.com>`.
@@ -42,7 +42,7 @@ It answers one question: does a hand-countable per-prompt workload (150 rows ins
 **complete, exact** per-file replies on a free model when execution tools are available? A GO means "preregister
 a Hermes paged cell on this shape". A NO-GO means "change the shape again". Neither is a cost claim.
 
-**The task, verbatim from `design/TB-PLAN.md` §3:**
+**The task, verbatim from `design/past-experiments/TB-PLAN.md` §3:**
 
 - P1–P192, one per file: *"Read `fixture/data-NN.csv`. Reply with one line per category that appears:
   `<category> <count> <sum> <min_id> <max_id>`. Nothing else."*
@@ -83,7 +83,7 @@ explicit paths only — never `git add -A` — and leave the tree clean or decla
 
 **Do not touch:** `packages/**` (the OpenCode adapter and the tracer), `tools/**` (the runner and the checker —
 if one needs a change, write the proposal in your report instead), `spec/**`, `corpus/**`, `research/**`,
-`handoff/**` (except the day file you append to), or `design/TB-PLAN.md`. If you believe a tool is wrong,
+`handoff/**` (except the day file you append to), or `design/past-experiments/TB-PLAN.md`. If you believe a tool is wrong,
 report it; the lane that owns it decides.
 
 **Six ways this run can lie to you — all of them have happened in this repo:**

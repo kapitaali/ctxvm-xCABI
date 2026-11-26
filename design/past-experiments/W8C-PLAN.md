@@ -1,7 +1,7 @@
 # W8C — plan of record: pin on a model-initiated re-read, not on a harness re-send
 
 Status: proposed 2026-11-11, owner approval required before any instrument change.
-Predecessor: `design/W8B-CLOSURE-20261111.md` (negative, measured twice).
+Predecessor: `design/past-experiments/W8B-CLOSURE-20261111.md` (negative, measured twice).
 
 ## 1. The question
 

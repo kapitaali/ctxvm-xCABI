@@ -1,7 +1,7 @@
 # W8 run plan — model, tasks, and the pilot before the grid
 
 **Status:** plan of record, written 2026-11-06, to be frozen at T0 alongside the task texts and
-checkers. It does not amend `design/w8-capture-design.md`; it fills the choices that design left to the
+checkers. It does not amend `design/past-experiments/w8-capture-design.md`; it fills the choices that design left to the
 owner (model, task content, tool policy) and records the pilot that gates the grid.
 
 **Scope change the owner made today:** one model, GPT-6 Luna. The multi-model variation discussed
@@ -207,7 +207,7 @@ capture does not contain.
 ## 4e. The decision set after consultation (2026-11-08)
 
 A read-only consultant reviewed §4c, §4d and the three paid cells (brief:
-`design/W8-CONSULT-20261108.md`). The rulings below replace the ones they supersede; the
+`design/past-experiments/W8-CONSULT-20261108.md`). The rulings below replace the ones they supersede; the
 superseded text stays in place so the reversal is visible.
 
 **D-A stands — one host gateway.** Per-arm gateways contradict the shipped topology
@@ -358,7 +358,7 @@ capture does not contain.
 ## 4e. The decision set after consultation (2026-11-08)
 
 A read-only consultant reviewed §4c, §4d and the three paid cells (brief:
-`design/W8-CONSULT-20261108.md`). The rulings below replace the ones they supersede; the
+`design/past-experiments/W8-CONSULT-20261108.md`). The rulings below replace the ones they supersede; the
 superseded text stays in place so the reversal is visible.
 
 **D-A stands — one host gateway.** Per-arm gateways contradict the shipped topology
@@ -475,7 +475,7 @@ capture does not contain.
 ## 4e. The decision set after consultation (2026-11-08)
 
 A read-only consultant reviewed §4c, §4d and the three paid cells (brief:
-`design/W8-CONSULT-20261108.md`). The rulings below replace the ones they supersede; the
+`design/past-experiments/W8-CONSULT-20261108.md`). The rulings below replace the ones they supersede; the
 superseded text stays in place so the reversal is visible.
 
 **D-A stands — one host gateway.** Per-arm gateways contradict the shipped topology

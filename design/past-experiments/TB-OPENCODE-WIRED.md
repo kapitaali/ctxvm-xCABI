@@ -6,8 +6,8 @@ shim creation, no run, no spend. Author: opencode lane, 2026-11-16.
 **Owner ruling, verbatim (2026-11-16):** "lets call it a breach. we were supposed to plan for the
 wired experiment anyway"
 
-The plan of record for what T-B measures stays `design/TB-PLAN.md` (rev 2). The harness plan for the
-unwired run is `design/TB-OPENCODE-RUN.md` (AUTHORIZED, now complete as a CEILING/BREACH run). This
+The plan of record for what T-B measures stays `design/past-experiments/TB-PLAN.md` (rev 2). The harness plan for the
+unwired run is `design/past-experiments/TB-OPENCODE-RUN.md` (AUTHORIZED, now complete as a CEILING/BREACH run). This
 card fixes only **how the next, wired run would be configured and gated**.
 
 ## 1. Settled facts this plan does not re-litigate
@@ -95,7 +95,7 @@ explicit owner authorization (§9).
 
 - Same **192 × 150, seed 7** fixture (digest
   `36561425bf57ac156def80a7653ebceccb9a55b24f3c475f585370040156fbec`) and the **verbatim** design
-  prompt from `design/TB-PLAN.md` §3, unless the owner rules otherwise. No reword, no new shape.
+  prompt from `design/past-experiments/TB-PLAN.md` §3, unless the owner rules otherwise. No reword, no new shape.
 - One OpenCode session for all 193 prompts, tools available, graceful shutdown at the end.
 - **New ceiling.** Do **not** reuse 579 (the breached unwired ceiling) or 451 (the earlier phase-1
   freeze), and do **not** derive the ceiling from the unwired 582. The rule to preregister is:
@@ -124,7 +124,7 @@ determinism, if ever claimed, must be scoped to the Rust replayer, never to mode
 - Planning-only handoff gates: `bash tools/check-handoff.sh` → ALL PASS. The repo gate is unchanged
   by a plan; no `run-ci.sh` claim is made here.
 - No change to `packages/**`, `tools/**`, `spec/**`, `corpus/**`, `research/**`, `handoff/**` (except
-  the day file), or `design/TB-PLAN.md`.
+  the day file), or `design/past-experiments/TB-PLAN.md`.
 
 ## 9. Authorization requested (STOP here)
 

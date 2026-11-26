@@ -98,8 +98,8 @@ pin true every card close.
   ~100. **(d) is amended**: the books MEASURED the no-op arm (0 evictions) at $0.0765 vs naive
   $0.0175 = 4.4× (`RR-NOOP-20261109`), so "no worse than control" is falsified — the driver is
   session growth plus output volume, not selection. The no-op byte check the reviewer demands
-  already passes (`RR-W8NOOPBYTES`). Q3 was already executed (`design/W8-CLOSURE-20261110.md`,
-  owner Option A / packet P9); the replacement run is `design/W8B-FREE-PLAN.md` — and it has now
+  already passes (`RR-W8NOOPBYTES`). Q3 was already executed (`design/past-experiments/W8-CLOSURE-20261110.md`,
+  owner Option A / packet P9); the replacement run is `design/past-experiments/W8B-FREE-PLAN.md` — and it has now
   run to NO RECORD (both arms, `nous/longcat-2.5:free`, prompt-1 timeout at 120 s, $0.0000;
   `RR-W8B2-20261111`) — and the w8b lane's own erratum (`RR-W8B2-ERRATUM-20261111`) corrects the
   cause: the arms DID run (naive 9 API calls / 21 tool calls, paged 5 / 11, both reaped as
@@ -112,7 +112,7 @@ pin true every card close.
   metric-replacement rule is adopted as a standing lane rule.
 - [x] **P9 (close W8 or buy a mechanism test) answered 2026-11-10; reviewer confirmed 2026-11-11.**
   Verdict A (close with the negative result) — an independent confirmation, not a new decision; the
-  closure (`design/W8-CLOSURE-20261110.md`, owner Option A) stands and needs NO edit: its items 3–5
+  closure (`design/past-experiments/W8-CLOSURE-20261110.md`, owner Option A) stands and needs NO edit: its items 3–5
   and not-claimed list already state the weaker claim (the cache-write cause is UNKNOWN, not
   "selection rewrites the prefix"). The reviewer's four closure-text corrections were checked against
   the artefacts (`reports/RR-P9CLOSE-20261111.md`): the zero-spend narrowing was ALREADY run and
@@ -120,7 +120,7 @@ pin true every card close.
   no timestamps; call gaps ~18 s; the cache lifetime is UNVERIFIED) ⇒ H1 NOT SUPPORTED, H2 NOT
   TESTABLE, **H3 UNKNOWN cause**; the cap wording stays three-part (billed >= $7.14 / store estimate
   $9.16 / true total UNKNOWN; the 11-07 and 11-09 exports are still missing).
-  *ROUTED, not edited:* `design/w8-cache-stable-selection.md` §1 still says "the paged arm rewrote the
+  *ROUTED, not edited:* `design/past-experiments/w8-cache-stable-selection.md` §1 still says "the paged arm rewrote the
   prefix 14 times" — superseded by `RR-W8CACHE` §4 and `RR-W8NOOPBYTES`; that is another lane's plan
   of record, so its owner may append an erratum block. The owner may also ask the w8b lane to adopt
   the reviewer's one-line weaker-claim summary.
@@ -139,7 +139,7 @@ pin true every card close.
   line per shape AND a negative (a `page.declare` with a flat `page.logicalRef`, which a sniffing
   reader would accept and the validator must reject). Falsifiers adopted verbatim (a valid line where
   type-dispatch misreads identity; a verb mixing both shapes; a new verb with a third shape — a v0.2
-  *HANDOFF WRITTEN (2026-11-11):* `design/W8B-LANE-PROMPT.md` - a small prompt for that lane with the
+  *HANDOFF WRITTEN (2026-11-11):* `design/past-experiments/W8B-LANE-PROMPT.md` - a small prompt for that lane with the
   measured state, the owner's ruled decisions (subject order; new subject = new digests = re-commit the
   block first; the arm-attribution precondition) and four items it owes (level-2 assert, the shape
   erratum, the W8SIM 5.3% scoping, the "C3" rename). **PARTLY LANDED (their `6ae0d38`):** their
@@ -205,7 +205,7 @@ pin true every card close.
   reply and the next prompt), not from the harness re-sending tool results — their W8C plan already
   states it correctly. **Two ceilings must not be conflated:** W8's scoped 5.3 % (policies keeping
   the first three turns, the last six, the system prompt) is not W8B's ~0 evictable share at a
-  read-once shape. **Next owner decision: W8C** (`design/W8C-PLAN.md`, proposed, approval required
+  read-once shape. **Next owner decision: W8C** (`design/past-experiments/W8C-PLAN.md`, proposed, approval required
   before any instrument change; its falsifier: with the new signal and a floor-sized budget the paged
   arm still evicts zero => the FLOOR is binding, not the signal).
   *W8C REVIEW (2026-11-11, `reports/RR-W8CREVIEW-20261111.md`):* the plan is sound and its own
@@ -899,14 +899,14 @@ pin true every card close.
   *Owner:* D17.
 
 - [x] **G7. W8 reopen — CLOSED (2026-11-10): W8 closed NEGATIVE, owner Option A** (packet P9,
-  `design/W8-CLOSURE-20261110.md`; the 2026-11-07 FAILED ruling and its reopen conditions
-  `RR-W8CHUNK-20261107-2 §12` + `design/W8-PROMPT-SLICE.md` are superseded). The reopen question is
+  `design/past-experiments/W8-CLOSURE-20261110.md`; the 2026-11-07 FAILED ruling and its reopen conditions
+  `RR-W8CHUNK-20261107-2 §12` + `design/past-experiments/W8-PROMPT-SLICE.md` are superseded). The reopen question is
   now answered by the P8/P9 answers: a different shape (longer session, more unprotected middle) or a
   different keep law is a **FRESH preregistration, not W8** — and at the measured shape the break-even
   is n\* ≈ 34 calls against 41 measured (`RR-W8BBLOCK-20261111`), so a paid cell at this shape is
   preregistrable while W8 itself is not. The live thread moved on: **W8B is closed negative** (their
   `163787a`; `reports/RR-W8BCLOSURE-20261111.md`), and the successor question is **W8C**
-  (`design/W8C-PLAN.md`) — owner-gated, no money, four tests.
+  (`design/past-experiments/W8C-PLAN.md`) — owner-gated, no money, four tests.
 
 ## 3. W workstreams — the board as it bears on THIS lane
 
@@ -932,7 +932,7 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
 - [x] **W12 Steps 0–1** — done; Steps 2+ are D7 hold (:1064, :110 of frontier 9). My part:
   none until D7 lifts.
 - [x] **W8 the decisive experiment** — CLOSED NEGATIVE 2026-11-10 (owner Option A, packet P9;
-  `design/W8-CLOSURE-20261110.md`; G7 closed). My actionable box is discharged: the results were
+  `design/past-experiments/W8-CLOSURE-20261110.md`; G7 closed). My actionable box is discharged: the results were
   processed into the review lane (P8 and P9 answered, both cards + LOG rows). Side-records kept
   aware of: `RR-W8PAIR-20261109` (first counted pair, negative), `RR-BUDGET-20261109` (200,000 vs
   24,000 provenance), `RR-DRIFT-20261109` (gate printed numbers it didn't measure), `RR-W8H6-20261109`
@@ -1041,7 +1041,7 @@ row lines, noted per item. Boxes below are MY lane's actionable obligations, not
    committed) then **checkpoint B** - **6** pair (one run, ~20 min, $0.00). **CORRECTED HERE: this
    board had said checkpoint A was a plan approval - the plan's own section 8 says it is the PROBE's
    verdict, and the file wins over a summary.** The other lane's remaining items stand
-   (`design/W8B-LANE-PROMPT.md`): the shape erratum in `design/W8B-FREE-PLAN.md`, the W8SIM "5.3%"
+   (`design/past-experiments/W8B-LANE-PROMPT.md`): the shape erratum in `design/past-experiments/W8B-FREE-PLAN.md`, the W8SIM "5.3%"
    scoping, and the "C3" rename (the P11 third level is done - `reports/RR-P11LEVEL2-20261111.md`).
 3. **G1 (`D-U10`) and G2 (`D-U1`) are both applied** ✓ (G1: the ordering clause in `umpire/00-SPEC.md`
    §2, `1f7eae8`; G2: the caller transfer-caveat sentence in `umpire/mcp_server.py` `INSTRUCTIONS` +

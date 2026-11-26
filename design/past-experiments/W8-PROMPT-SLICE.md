@@ -1,4 +1,4 @@
-> SUPERSEDED 2026-11-09 by `design/W8-PROMPT-NEXT-CELL.md` (T-A minus the line measurements,
+> SUPERSEDED 2026-11-09 by `design/past-experiments/W8-PROMPT-NEXT-CELL.md` (T-A minus the line measurements,
 > runner-side attribution, no restart owed). Kept for the record; do not paste this one.
 
 ROLE — W8 executor, the vertical slice (NOT RUNNABLE until the reopen conditions hold)
@@ -15,7 +15,7 @@ If any is false, stop and report — do not run a cell to find out.
 You run two cells, then stop. Not a chunk, not the grid: the slice that proves the harness
 can measure the thing the experiment is about. Everything else is repetition after this.
 
-Read design/W8-RUNBOOK.md first — it is the protocol. This prompt adds only what changed
+Read design/past-experiments/W8-RUNBOOK.md first — it is the protocol. This prompt adds only what changed
 since chunk 1 and what this slice must prove. If this prompt and the repo disagree, the repo
 wins; say so and stop.
 
@@ -34,7 +34,7 @@ WHAT CHANGED SINCE CHUNK 1 — check every line, stop on any miss:
      an earlier gateway cannot prove its arm: 0.10.4 recorded construction, not activation.
   2. The coverage sidecar now carries plugin.engine (null, or "ctxvm") and plugin.profile
      ("w8-naive" / "w8-paged"). tools/coverage_check.py accepts both.
-  3. design/w8-run-plan.md 4d: NTR is defined on the PROVIDER RECEIPT, per cell —
+  3. design/past-experiments/w8-run-plan.md 4d: NTR is defined on the PROVIDER RECEIPT, per cell —
      1 - (paged input)/(naive input), input = uncached + cached (+ cache-write when reported).
      Request-size evidence is the sidecar's perApiRequest series (peak and median).
   4. A `-z` capture may legitimately contain NO turn.render and NO call.meta. That is not a

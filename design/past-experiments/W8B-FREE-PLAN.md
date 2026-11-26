@@ -1,6 +1,6 @@
 # W8B — the same question on an unpaid model (plan, 2026-11-10)
 
-Replacement for the closed W8 (`design/W8-CLOSURE-20261110.md`). Owner's model choice:
+Replacement for the closed W8 (`design/past-experiments/W8-CLOSURE-20261110.md`). Owner's model choice:
 **`nvidia/nemotron-3.5-super-vl-120b-a12b`** on provider **nvidia**.
 
 ## 1. What is verified, and what is not

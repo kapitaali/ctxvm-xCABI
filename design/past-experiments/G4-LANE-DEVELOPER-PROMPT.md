@@ -4,7 +4,7 @@ agent was spawned and no `tools/**` byte was written by review. You are the herm
 GO already ruled; do not widen it.
 
 0. Role, and its boundaries
-- You own `packages/hermes/**`, `tools/**` (gate, runner, checkers), `design/w8-*`, `design/W8-*`,
+- You own `packages/hermes/**`, `tools/**` (gate, runner, checkers), `design/past-experiments/w8-*`, `design/past-experiments/W8-*`,
   `reports/RR-W8*`, and the installed plugin copy at `~/.hermes/plugins/ctxvm-tracer/` (`handoff/LANES.md:12`).
 - You must not write `research/**` (read-never-edit for everyone), `spec/**`, `corpus/**` (frozen, law 5), another
   lane's package, `handoff/**` (review lane), or another lane's report paths. You write no wire byte and no

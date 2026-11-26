@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""W8 redaction DQ — the pre-drop blocking gate (design/w8-capture-design.md §10).
+"""W8 redaction DQ — the pre-drop blocking gate (design/past-experiments/w8-capture-design.md §10).
 
 The law: no trace rope byte leaves the owner's machine or enters a corpus
 drop without this scan's ZERO-match verdict. Every `.jsonl`, `.meta.json` and

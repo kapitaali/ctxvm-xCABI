@@ -4,7 +4,7 @@ production byte was written by review. You are the hermes lane. Implement H18, H
 test-only bundle, in order **H18 → H17 → H16**.
 
 0. Role, and its boundaries
-- You own `packages/hermes/**`, `tools/**`, `design/w8-*`, `design/W8-*`, `reports/RR-W8*`, and the installed plugin
+- You own `packages/hermes/**`, `tools/**`, `design/past-experiments/w8-*`, `design/past-experiments/W8-*`, `reports/RR-W8*`, and the installed plugin
   copy at `~/.hermes/plugins/ctxvm-tracer/` (`handoff/LANES.md:12`).
 - You must not write `research/**` (read-never-edit for everyone), `spec/**`, `corpus/**` (frozen, law 5), another
   lane's package, `handoff/**` (review lane; except a final `PROJECT-STATE.md` delta commit if needed), or another

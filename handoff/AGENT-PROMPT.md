@@ -27,7 +27,7 @@ which paths, which files cannot be owned, and how a shared file is claimed. Read
 - Reviewer round P1–P3 closed and verified. Packets `P4`–`P7` exist as files but are **not
   registered** in `handoff/QUESTIONS.md` — registering them is agent work, then the owner pastes.
 - W8 is **BLOCKED**: 0 cells counted, $1.1541 of the $25 cap spent, four reopen conditions gated in
-  `design/w8-run-plan.md` §4e. Do not start a paid cell.
+  `design/past-experiments/w8-run-plan.md` §4e. Do not start a paid cell.
 - REDLINE measures **1.0968x** at 16k against a claimed 1.5x (`reports/RR-REDLINE-20261108.md`):
   a negative result, recorded. Do not restate the 1.5x claim anywhere.
 - Plugin `ctxvm-tracer` **0.13.29** on disk (authoritative: `live/__init__.py` + `live/plugin.yaml`,
@@ -41,7 +41,7 @@ which paths, which files cannot be owned, and how a shared file is claimed. Read
 
 ## 2. Work split (who does what)
 
-- **hermes lane** — `packages/hermes/**`, `tools/**`, `design/w8-*`, `reports/RR-W8*`, the installed
+- **hermes lane** — `packages/hermes/**`, `tools/**`, `design/past-experiments/w8-*`, `reports/RR-W8*`, the installed
   plugin copy. Owns the gate and the runner.
 - **opencode lane** — `packages/opencode/**`, `packages/ai-sdk/**`, `packages/node/**` and their
   fixtures.

@@ -10,7 +10,7 @@ makes the paging question meaningful.
 ======================================================================
 AGENTS.md                                   laws (note Law 7 and the never-touch list)
 handoff/LANES.md                            who owns what — you own nothing; you write two files
-design/w8-run-plan.md §3, §3b, §4e        the templates, the freeze holes, the current decisions
+design/past-experiments/w8-run-plan.md §3, §3b, §4e        the templates, the freeze holes, the current decisions
 reports/RR-W8PILOT-20261107.md              the first pilot: both arms solved, no pressure
 reports/RR-W8CHUNK-20261107-1.md             cell 1: 150/150 iterations, no artefact
 reports/RR-W8CHUNK-20261107-2.md             cell A: same ceiling, and the search-bound evidence
@@ -81,12 +81,12 @@ binary, and the agent found that out and stopped reading.
 ======================================================================
 5. DELIVERABLES
 ======================================================================
-`design/w8-tasks/README.md`
+`design/past-experiments/w8-tasks/README.md`
   - the two designs side by side: name, what the agent must produce, floor, estimated calls, the
     anti-search property, the falsifier, and what a PASS at 150 iterations would prove.
   - one paragraph per design on why the previous two attempts failed and how this one differs.
 
-`design/w8-tasks/T-A.md` and `design/w8-tasks/T-B.md`, each ≤ 2,000 words:
+`design/past-experiments/w8-tasks/T-A.md` and `design/past-experiments/w8-tasks/T-B.md`, each ≤ 2,000 words:
   - the task text as it would be pasted to the agent (the agent sees only this);
   - the fixture specification (files, sizes, how generated, seed) — do not create the fixture;
   - the expected artefact, byte-exact, or the rule that generates it deterministically;

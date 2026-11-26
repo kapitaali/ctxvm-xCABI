@@ -1,6 +1,6 @@
 """W8 engine tests — the seven laws of the paged arm's v1 FaultPinPolicy
 (`packages/hermes/live/context_engine.py`; the preregistered law is
-`design/w8-capture-design.md` §3.3/§4, and the simulator mirror is
+`design/past-experiments/w8-capture-design.md` §3.3/§4, and the simulator mirror is
 `benchmarks/metrics/policies.py` fault-pin @2nd-demand, served or not).
 
 Run: cd packages/hermes && python -m pytest test/ -q   (or this file alone).
@@ -1007,7 +1007,7 @@ class EnginePlanRecordTests(unittest.TestCase):
 class StableSelectionTests(unittest.TestCase):
     """H11 — `selectionMode: stable` holds a selection until a trigger fires.
 
-    design/w8-cache-stable-selection.md: a selection that rewrites the prefix on every call forfeits
+    design/past-experiments/w8-cache-stable-selection.md: a selection that rewrites the prefix on every call forfeits
     the provider's prefix cache, which is what the W8C pair measured (2.11x dollars). The mode is off by
     default; these laws pin what it does when it is on.
     """

@@ -6,7 +6,7 @@ The fixture is *sized by a residency curve, not by a declared floor*. T-B.md com
 truth. What decides this experiment is when the cumulative resident set crosses the arm's budget, so the
 generator takes `--files` and `--rows` and `--measure` prints the curve.
 
-Format (pinned by design/w8-tasks/REVIEW.md F5, so the task is aggregation and not CSV parsing):
+Format (pinned by design/past-experiments/w8-tasks/REVIEW.md F5, so the task is aggregation and not CSV parsing):
   header exactly `id,category,value`, no quoting, no embedded commas, no padding, LF endings.
 
 Determinism: one `random.Random(seed)` consumed in file order, rows drawn as

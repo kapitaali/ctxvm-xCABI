@@ -15,4 +15,4 @@ root of `design/`.
   explicit owner ruling.
 - Historical run plans at the root of `design/` remain in place so existing links keep working.
 
-Use `TEMPLATE.md` as the starting point.
+Use `TEMPLATE.md` as the starting point. Past/closed experiments live in `../past-experiments/`.

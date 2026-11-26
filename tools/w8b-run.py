@@ -43,7 +43,7 @@ TRACES = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / 
 BUDGET = 70000
 PARTS = 20
 
-# One runner, two task shapes (design/TB-PLAN.md §6). The T-A v2 shape keeps its built-in prompts in
+# One runner, two task shapes (design/past-experiments/TB-PLAN.md §6). The T-A v2 shape keeps its built-in prompts in
 # the driver; T-B v3 supplies a prompt file, because its prompts are derived from the fixture (the
 # revisit lookups name real rows). Everything else - arm isolation, key sync, preflight, the bundle -
 # is shared, which is why this is a table and not a second runner.
@@ -58,7 +58,7 @@ TASKS = {
 def build_tb_prompts(fixture: Path, run_dir: Path) -> list[str]:
     """T-B v3: one prompt per file, then a reconciliation that REVISITS three early files.
 
-    The lookups are the point (design/TB-PLAN.md §3): a per-file reply carries aggregates, not rows, so
+    The lookups are the point (design/past-experiments/TB-PLAN.md §3): a per-file reply carries aggregates, not rows, so
     a lookup can only be answered from a file's bytes. If paging dropped that page the model must
     re-read it — a hard fault — or answer wrongly. The answer key is written beside the prompts so the
     reply can be scored later without re-deriving which row was asked for.

@@ -19,9 +19,9 @@ Do not build a fourth witness. Do not scale to a grid. Run the cell, verify it, 
 ======================================================================
 AGENTS.md                                   laws
 handoff/LANES.md                            your lane's paths; shared-file rules
-design/w8-run-plan.md §4d, §4e              metric + decisions in force
-design/w8-cache-stable-selection.md         the arithmetic this cell feeds
-design/w8-tasks/T-A.md                      task, artefact, fixture
+design/past-experiments/w8-run-plan.md §4d, §4e              metric + decisions in force
+design/past-experiments/w8-cache-stable-selection.md         the arithmetic this cell feeds
+design/past-experiments/w8-tasks/T-A.md                      task, artefact, fixture
 reports/RR-BUDGET-20261109.md               why the last pair was a no-op
 
 ======================================================================

@@ -1,9 +1,9 @@
 # MASTER PROMPT — W8 experiment executor
 
-> **Status 2026-11-19: W8 CLOSED 2026-11-10 (owner, option A; `design/W8-CLOSURE-20261110.md`).**
+> **Status 2026-11-19: W8 CLOSED 2026-11-10 (owner, option A; `design/past-experiments/W8-CLOSURE-20261110.md`).**
 > The paid-cell line is withdrawn; this prompt is kept as the record of the counting rules. The live
 > experiment line ran H11–H12 (closed NEGATIVE 2026-11-19, `reports/RR-H12RESULT-20261119.md`); follow-on
-> options are owner-gated (`design/w8-cache-stable-selection.md`). The law-10 bullet below was re-landed
+> options are owner-gated (`design/past-experiments/w8-cache-stable-selection.md`). The law-10 bullet below was re-landed
 > from the 2026-11-18 abandoned snapshot (`RR-W8ABANDON-20261118`).
 
 Give this to the agent that runs paid cells. It is not a runbook of commands; it is the set of rules

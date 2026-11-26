@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """W8 multi-turn driver + acceptance verifier.
 
-Source of truth for the prompt sequence is design/w8-multi-turn-driver.md; this file
+Source of truth for the prompt sequence is design/past-experiments/w8-multi-turn-driver.md; this file
 must keep PROMPTS in sync with it.
 
 Why this file is in tools/ and not experiments/: the driver produces the experiment's

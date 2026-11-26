@@ -11,8 +11,8 @@ than improvising.
 1. READ FIRST, IN THIS ORDER
 ======================================================================
 AGENTS.md                                   rules of the repo
-design/w8-run-plan.md §3, §3b, §4c, §5      templates, freeze holes, execution model
-design/w8-capture-design.md                 FROZEN. Read. Never edit.
+design/past-experiments/w8-run-plan.md §3, §3b, §4c, §5      templates, freeze holes, execution model
+design/past-experiments/w8-capture-design.md                 FROZEN. Read. Never edit.
 reports/W8-SPEND.md                         the ledger — the control variable
 reports/RR-W8PILOT-20261107.md              what the pilot measured and got wrong
 reports/RR-HEADROOM-20261107.md             why an over-budget trace used to be unreadable
@@ -53,7 +53,7 @@ Gate: bash tools/run-ci.sh -> ALL GATES GREEN. Counts: rust 73 (74 with tiktoken
   kapitaali <teppo@kapitaali.com>. NEVER push.
 - reports/LOG.md is append-only, four pipes per row. Every card writes
   reports/RR-<CARD>-<date>.md.
-- Frozen: corpus/**, spec/**, design/w8-capture-design.md. Never edit them.
+- Frozen: corpus/**, spec/**, design/past-experiments/w8-capture-design.md. Never edit them.
 - No new wire field without five touchpoints (Rust model before ts, FIELD_ALLOWLIST,
   schema branch, check_version gate, validator negative). ts always rides last.
 - No cost-saving claim, no "deterministic" without scope, no safety claim from a trace.

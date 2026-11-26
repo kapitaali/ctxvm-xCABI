@@ -1,7 +1,7 @@
 # W8B lane — small handoff prompt (2026-11-11)
 
 Give this to the agent running the W8B lane. It assumes no memory of our chat and no repo access
-beyond what it reads itself. Companion to `design/W8B-PROMPT.md` (the master); this file carries
+beyond what it reads itself. Companion to `design/past-experiments/W8B-PROMPT.md` (the master); this file carries
 only what changed since, and what the lane owes.
 
 Repo `/home/theb/Documents/ctxvm`, branch `main`. Gates: `bash tools/run-ci.sh` (capture `$?`),
@@ -9,7 +9,7 @@ Repo `/home/theb/Documents/ctxvm`, branch `main`. Gates: `bash tools/run-ci.sh` 
 
 ## 1. What you inherit (measured, not to be repeated)
 
-- **W8 is closed negative** (`design/W8-CLOSURE-20261110.md`): the keep law is turn-granular, a
+- **W8 is closed negative** (`design/past-experiments/W8-CLOSURE-20261110.md`): the keep law is turn-granular, a
   `-z` session is one turn, so selection cannot act; the shape caps any evictable share at **5.3 %**
   session-weighted (25,404 of 479,076 request tokens; the first middle appears at turn 9).
 - **T-A v2 landed** (your lane): the per-prompt question now asks only for what `read_file` reports
@@ -24,7 +24,7 @@ Repo `/home/theb/Documents/ctxvm`, branch `main`. Gates: `bash tools/run-ci.sh` 
   attempt, not a cell** — the prediction block was unfilled, so nothing was bookable. The block for
   `w8b-cell-01` is now filled and committed in `reports/RR-W8B2CLASS-20261111.md`.
 - **The measured shape** (your own runs): per-turn request 9,141 → 98,934, crossing 70,000 around
-  turn 13 (the first middle in this card). `design/W8B-FREE-PLAN.md` estimated ~90k peak and ~21k
+  turn 13 (the first middle in this card). `design/past-experiments/W8B-FREE-PLAN.md` estimated ~90k peak and ~21k
   evictable (~23 %) — the measurement is ~98.9k and ~28.9k (**29.2 %**), i.e. ~8k more evictable
   than planned.
 - **The P11 conformance pair + test** are yours and are landing: four vectors
@@ -61,7 +61,7 @@ Repo `/home/theb/Documents/ctxvm`, branch `main`. Gates: `bash tools/run-ci.sh` 
    ctxvm_core::render::derive_projection(&b, turn), …)` per turn (the draft is in
    `reports/RR-P11GAP-20261111.md` §7; `TurnProjection` derives `PartialEq`). Without it, the note's
    C2 clause rests on an untested inference — and the RFC-0.1 note's C2 pointer names that test.
-2. **Append an erratum to `design/W8B-FREE-PLAN.md`** for the stale shape estimate (measured peak
+2. **Append an erratum to `design/past-experiments/W8B-FREE-PLAN.md`** for the stale shape estimate (measured peak
    98,934 vs ~90k planned; evictable ~28.9k vs ~21k planned). Per your own rule, the prediction was
    the instrument that was wrong, and the correction belongs where the estimate lives.
 3. **Scope the W8SIM sentence.** "No policy can save more than 5.3 %" holds only for policies that keep

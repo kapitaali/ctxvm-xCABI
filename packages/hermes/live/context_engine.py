@@ -1,6 +1,6 @@
 """W8 v1 ``FaultPinPolicy`` context engine — the paged arm's control plane.
 
-Design: ``design/w8-capture-design.md`` §3.3/§4 (preregistered; after the first
+Design: ``design/past-experiments/w8-capture-design.md`` §3.3/§4 (preregistered; after the first
 run, that file changes nothing). The engine enforces the virtual budget
 ``vBudget`` by SELECTION (``select_context``), never by compaction:
 ``should_compress()`` is always False, ``compress()`` implements the abstract
@@ -258,7 +258,7 @@ def _content_hash(body: str) -> str:
 # says nothing about which arm ran. What the experiment needs is whether the host ever
 # ACTIVATED this engine — i.e. whether select_context() was called at all. That is a
 # behavioural fact of the process, so it is only meaningful when one gateway serves one
-# arm (design/w8-run-plan.md 4c); a multiplexer serving both arms cannot attest either one.
+# arm (design/past-experiments/w8-run-plan.md 4c); a multiplexer serving both arms cannot attest either one.
 # ROOT CAUSE, measured 2026-11-18: the engine imported its sibling as `from profile_policy import
 # policy`. A bare name resolves through sys.modules/sys.path, and the gateway serves every profile, so a
 # STALE profile-local plugin copy (`~/.hermes/profiles/w8cp-*/plugins/ctxvm-tracer`, 0.13.23, no
@@ -348,7 +348,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                  stub_dropped: Optional[str] = None,
                  shadow_selection: Optional[bool] = None):
         super().__init__()
-        # H11 / design/w8-cache-stable-selection.md. `fresh` is the shipped behaviour: every request
+        # H11 / design/past-experiments/w8-cache-stable-selection.md. `fresh` is the shipped behaviour: every request
         # is planned from scratch. `stable` HOLDS the selection it last applied, byte-for-byte, until a
         # trigger fires (a page it did not hold appears, the request overflows the budget, or every B-th
         # call). The point is the provider's prefix cache: a selection that rewrites the prefix on every
@@ -971,7 +971,7 @@ class CtxvmFaultPinEngine(ContextEngine):  # type: ignore[misc, valid-type]
                         units: Dict[int, _PageUnit]) -> str:
         """Hash the SELECTION, by page identity — not the message bytes.
 
-        design/w8-cache-stable-selection.md asks for volatile markers (timestamps, session ids, cwd,
+        design/past-experiments/w8-cache-stable-selection.md asks for volatile markers (timestamps, session ids, cwd,
         counters) to be canonicalised before hashing. Hashing identities instead is stronger and
         cheaper: a page key is `tool#content-rollup`, so no volatile marker can enter the hash at all,
         and the value answers the question the cache actually asks — "would this call send the same

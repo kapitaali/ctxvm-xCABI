@@ -48,7 +48,7 @@ benchmarks/metrics           metrics suite + policy simulator
 hub/                         ODPS hub artefacts (byte-identity checked)
 tools/                       run-ci.sh, rehearsal, export round-trip, node-build parity
 reports/                     RR-<CARD>-<date>.md, LOG.md (closed history), LOG02.md (active append-only), RR-DAY-<date>.md
-design/                      plans of record; design/experiment-runs/ = authorized run plans/preregs (owner clears new ones)
+design/                      product plans of record; experiment-runs/ = future authorized runs; past-experiments/ = closed history (owner clears new placement)
 handoff/                     PROJECT-STATE, QUESTIONS, packets, LANES.md (lane ownership)
 docs/                        reader-facing docs (quickstart); added by A3, 2026-11-09
 ```
@@ -159,7 +159,7 @@ The gate prints the authoritative totals; do not hardcode counts in docs.
   (`schemaVersion`, `providerUsage`, `ts` on all four lanes). W16 (causal edges), W19 (tier-2
   interventions) and W20 (trace-surface extensions) are design notes only, owner-gated. The §5
   card board is fully statused; the remaining open work is owner-gated: W8 reopen (ruled FAILED
-  2026-11-07; reopen conditions in RR-W8CHUNK-20261107-2 §12 + `design/W8-PROMPT-SLICE.md`), W12
+  2026-11-07; reopen conditions in RR-W8CHUNK-20261107-2 §12 + `design/past-experiments/W8-PROMPT-SLICE.md`), W12
   beyond Steps 0–1 (D7 hold), publication (D17). The OTLP exporter is promoted to the supported
   path with a field-set drift guard (D3-c, 2026-11-08, `reports/RR-D3COTEL-20261108.md`).
 - Review round: reviewer Packets 1–3 answered 2026-11-08 (`handoff/QUESTIONS.md`): D13 Pillar-1

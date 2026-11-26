@@ -17,7 +17,7 @@ WHAT IS ALREADY KNOWN (do not re-derive)
   but nothing in the CLI reads a config key for it; a custom set must be registered from code (a
   plugin import is enough).
 - A checker must take its paths as argv and print what it read. The T-A checker now does.
-- The task is `design/w8-tasks/T-A.md`: 14 files × 250 lines, floor ≈ 54,700 tokens, artefact =
+- The task is `design/past-experiments/w8-tasks/T-A.md`: 14 files × 250 lines, floor ≈ 54,700 tokens, artefact =
   `lines`, `bytes`, `long`, `short`, `widest_file`, `total_long` (no line measurements).
 
 ======================================================================
@@ -116,7 +116,7 @@ T1.3  Only if T1.1 cannot work (the host refuses plugin-registered sets): build 
 ======================================================================
 DELIVERABLES
 ======================================================================
-- `design/exp-surface.md`: the inventory, what the offending pair actually had, the decision row
+- `design/past-experiments/exp-surface.md`: the inventory, what the offending pair actually had, the decision row
   (A/B/C/D), the chosen surface, and its one-line reproduction command.
 - `reports/RR-EXPTOOLS-<date>.md`: the cells, their refs mix, calls, resident tokens, verdicts, cost.
 - One LOG row, four pipes; explicit staged paths; commit as `kapitaali <teppo@kapitaali.com>`.

@@ -3,8 +3,8 @@
 Status: **AUTHORIZED 2026-11-16 / plan of record for a run, not a cell.** Author: review lane, 2026-11-16, at the
 owner's request ("plan for a run but in opencode. raise the call ceiling. use the prompt in design/"). The owner
 explicitly authorized the re-preregistration and the free run on 2026-11-16 ("yes it is authorized"); recorded in
-`reports/RR-TBAUTH-20261116.md`. The plan of record for what T-B measures stays `design/TB-PLAN.md` (rev 2);
-`design/TB-FREE-RUN.md` is the Hermes run plan. This card fixes **which harness runs the next shape**. Phase 0 is
+`reports/RR-TBAUTH-20261116.md`. The plan of record for what T-B measures stays `design/past-experiments/TB-PLAN.md` (rev 2);
+`design/past-experiments/TB-FREE-RUN.md` is the Hermes run plan. This card fixes **which harness runs the next shape**. Phase 0 is
 verified (`RR-TBPHASE0-20261116`); phase 1 may proceed. No paid call is authorized by this card.
 
 ## 1. Why this run exists
@@ -60,7 +60,7 @@ the run's phase-0 gate must compute it from the engine tokenizer before prompt 1
 Reproduce: `python3 tools/gen-tb-fixture.py --out <tmp> --files 192 --rows 150 --seed 7 --budget 60000 --measure`
 and `--check` for byte identity. The generator refuses to write into a populated directory; use a fresh temp dir.
 
-## 5. The prompt — verbatim from `design/TB-PLAN.md` §3, no reword
+## 5. The prompt — verbatim from `design/past-experiments/TB-PLAN.md` §3, no reword
 
 - **P1–P192**, one per file: *"Read `fixture/data-NN.csv`. Reply with one line per category that appears:
   `<category> <count> <sum> <min_id> <max_id>`. Nothing else."* No writes, no prose.
@@ -117,7 +117,7 @@ prompt to retry until green.
 ## 10. Out of scope
 
 No cost or saving claim; no model-output determinism; no paged-arm or H3/H4 comparison; no change to
-`design/TB-PLAN.md`, the corpus, the specs, `packages/**`, or `tools/**` (this card proposes, it edits nothing
+`design/past-experiments/TB-PLAN.md`, the corpus, the specs, `packages/**`, or `tools/**` (this card proposes, it edits nothing
 outside its own bytes). No cell until the shape passes and a Hermes paged cell is preregistered.
 
 ## 11. Verification of this card

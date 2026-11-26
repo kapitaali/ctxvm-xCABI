@@ -9,7 +9,7 @@ A lane **owns** a set of paths. A shared file is **claimed by a commit**, never 
 
 | lane | owns | must not write |
 |---|---|---|
-| **hermes lane** | `packages/hermes/**`, `tools/**` (gate, runner, checkers), `design/w8-*`, `design/W8-*`, `reports/RR-W8*`, the installed plugin copy at `~/.hermes/plugins/ctxvm-tracer/` | `packages/opencode`, `packages/ai-sdk`, `packages/node`, `research/**` |
+| **hermes lane** | `packages/hermes/**`, `tools/**` (gate, runner, checkers), `design/past-experiments/w8-*`, `design/past-experiments/W8-*`, `reports/RR-W8*`, the installed plugin copy at `~/.hermes/plugins/ctxvm-tracer/` | `packages/opencode`, `packages/ai-sdk`, `packages/node`, `research/**` |
 | **opencode lane** | `packages/opencode/**`, `packages/ai-sdk/**`, `packages/node/**`, their fixtures | `packages/hermes`, `research/**` |
 | **dsh lane** | `packages/deepseek/**` (the `@ctxvm/dsh` DeepSeek Harness adapter), `reports/RR-W22*` | `packages/{node,opencode,ai-sdk,hermes,py}`, `tools/**`, `research/**`, `spec/**`, `corpus/**`, `design/**` (a `design/W22-*` card here needs owner clearance first) |
 | **research lane** | `research/**` | everything else; `research/**` is read-never-edit for every other lane |

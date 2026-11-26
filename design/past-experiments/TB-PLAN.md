@@ -1,14 +1,14 @@
 # T-B — the second task shape (revision 2): plan of record, preregistered before any cell
 
 **Status:** plan, not run. No cell booked. Nothing here authorises a paid call.
-**CLOSED 2026-11-18 — owner decision "close it" (`design/TB-CLOSURE-20261118.md`).** This plan is
+**CLOSED 2026-11-18 — owner decision "close it" (`design/past-experiments/TB-CLOSURE-20261118.md`).** This plan is
 **withdrawn as a runnable design** and kept as the record of what was designed and why the shape failed.
 Its fixture generator, checker and task-aware runner survive in `tools/`; its prompt shape does not. No
 further T-B run is authorized on any harness or model. Reopen needs all three conditions in the closure's §5.
 **Revision 2 (2026-11-16), reviewer round.** §0b records what the reviewer found, what was confirmed against
 the repo, and what was refused. The reviewer read this plan and the runtime code, not `T-B.md`, the generator
 or the captures; three of its findings were verified here before being accepted.
-**Supersedes:** `design/w8-tasks/T-B.md` as a *runnable* design (artefact schema, fixture format and
+**Supersedes:** `design/past-experiments/w8-tasks/T-B.md` as a *runnable* design (artefact schema, fixture format and
 anti-search argument survive; prompt shape and size do not). Precedent: `T-A-v2.md` superseded `T-A.md`.
 
 ---
@@ -18,7 +18,7 @@ anti-search argument survive; prompt shape and size do not). Precedent: `T-A-v2.
 **Blocker 1 — one prompt is one turn, and the keep law is turn-granular.** `T-B.md` is a single prompt; the
 agent makes ~22 calls inside one user turn. The engine protects `protect_first_n=3` + `protect_last_n=6` turns
 + system prompt + last user prompt + open tool call, so on a one-turn session the protected set is the whole
-request and `_plan` returns early at any budget (`design/W8-CLOSURE-20261110.md` claim 1: 9 selections, 0
+request and `_plan` returns early at any budget (`design/past-experiments/W8-CLOSURE-20261110.md` claim 1: 9 selections, 0
 evictions, peak 63,246 at 24,000).
 
 **Blocker 2 — T-B's arithmetic is inherent, and arithmetic prompts time out.** T-A v1's counting prompt timed

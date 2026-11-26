@@ -32,7 +32,7 @@ Five files first: `00-README.md`; `08-HANDOFF.md` §0–§4; `spec/rfc-0/RFC-0-x
 ## 4. Metric definitions and formulas (paths)
 `benchmarks/metrics/metrics.py` (docstring lines 6–15, executable): net_token_reduction (124), refetch_rate (146), hard_fault_recall (159), touch_ratio (14; waste = 1 − TR), thrash_index (15; windows mandatory for thrash claims — RR-UC3-WINDOWSHEET-20261025).
 CIs: `bootstrap.py`, seed 20261029, 2000 resamples (RR-W3-20261029). Pricing: `prices.json`, priceModelVersion 2, USD per 1M, owner-supplied; unknowns null, NEVER substituted with 0; cache-write unmodeled in v0.
-W8's NTR (plan §4d): `1 − paged_input / naive_input` on provider receipts (`perApiRequest` request evidence; turn.render when present, never imputed; design/w8-run-plan.md; RR-W8RESCOPE-20261107). Tier-1 monitor: `monitor_replay.py` → `monitor-results.json` (`--check` fails on drift).
+W8's NTR (plan §4d): `1 − paged_input / naive_input` on provider receipts (`perApiRequest` request evidence; turn.render when present, never imputed; design/past-experiments/w8-run-plan.md; RR-W8RESCOPE-20261107). Tier-1 monitor: `monitor_replay.py` → `monitor-results.json` (`--check` fails on drift).
 
 ## 5. The determinism boundary (five lines)
 1. Core = pure replayable engine: no LLM, no embedding, no network in the deterministic layer (white-paper.md §5.2).
@@ -56,7 +56,7 @@ Agents apply all five to their own work BEFORE asking; an item that cannot answe
 
 ## 8. Labels (how to read the books)
 - W-numbers: workstream IDs, defined in `08.1-UPDATE-PROMPT.md` §W (e.g. W8 does-paging-help, W19 tier-2 interventions).
-- W8 vocabulary: cell = one preregistered task×page-family measurement point; slice = the two-cell restart prompt (`design/W8-PROMPT-SLICE.md`); arm = the naive-vs-paged half of a paired run.
+- W8 vocabulary: cell = one preregistered task×page-family measurement point; slice = the two-cell restart prompt (`design/past-experiments/W8-PROMPT-SLICE.md`); arm = the naive-vs-paged half of a paired run.
 - D-numbers: the decision ledger — D1–D12 owner-ruled (e.g. D9 ts opt-out, D11 signing); D13–D19 tracked in PROJECT-STATE.
 - RR-<slug>-<date>[-n]: one card's report file under `reports/`; `reports/LOG02.md` rows `| card | area | summary |` are the active append-only ledger. `reports/LOG.md` is closed immutable history. Some cards exist only as a LOG row beside the commit carrying them (e.g. RR-W8BOOK-20261107 → `89ff8e4`).
 - lane: one agent session owning one scope; owned paths + must-not-write map in `handoff/LANES.md`.

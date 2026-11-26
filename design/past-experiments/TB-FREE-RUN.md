@@ -2,7 +2,7 @@
 
 **Owner instruction, 2026-11-16:** call free models, and specifically **Hermes** free models — the ones the
 gateway already serves — not third-party ones. This is the run plan for that, not a new experiment design:
-`design/TB-PLAN.md` remains the plan of record for what is measured; this file fixes *what runs it*.
+`design/past-experiments/TB-PLAN.md` remains the plan of record for what is measured; this file fixes *what runs it*.
 
 ## 1. The subject
 

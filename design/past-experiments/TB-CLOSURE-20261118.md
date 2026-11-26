@@ -4,7 +4,7 @@ Owner decision, verbatim: **"close it"** — option 1 of `reports/RR-TBSHAPE-202
 ("read N rows of a CSV, report exact per-category aggregates") is **closed as a shape**. No further T-B run of
 any kind is authorized: not on Hermes, not on OpenCode, not wired or unwired, not on any model.
 
-The plan of record `design/TB-PLAN.md` (rev 2) is hereby **withdrawn as a runnable plan** and kept only as the
+The plan of record `design/past-experiments/TB-PLAN.md` (rev 2) is hereby **withdrawn as a runnable plan** and kept only as the
 record of what was designed and why it failed. Its fixture, checker and prompt machinery remain usable by a
 future shape; its claim about "the second task shape" does not.
 
@@ -54,7 +54,7 @@ The paging question does not close with the shape. It moves to a workload that d
 1. **Extraction shapes** (T-A v2 style), where the model reports values a tool already returned. That shape
    measured engagement in W8C — the paged arm held the request at the budget and cost **2.11× dollars** because
    mid-prefix dropping forfeits the provider cache (`RR-PAIDRESULT-20261112`).
-2. **The cache-stable line** (`design/w8-cache-stable-selection.md`, H11 → H12), which is the only proposed cell
+2. **The cache-stable line** (`design/past-experiments/w8-cache-stable-selection.md`, H11 → H12), which is the only proposed cell
    that could turn that measured negative positive: a stable prefix should raise `cache_read` and drop the
    dollar ratio below 2.11×. H11 is unimplemented; H12 is one pair behind the owner's $1 cap.
 3. **The Hermes paged arm can now be run at all** — the surface defect that invalidated every Hermes cell from
@@ -73,5 +73,5 @@ with-code or CEILING results with their verdicts attached.
 
 ## 6. Record
 
-This closure; `design/TB-PLAN.md` marked withdrawn; one LOG row; one day-file section; the gate and kit green.
+This closure; `design/past-experiments/TB-PLAN.md` marked withdrawn; one LOG row; one day-file section; the gate and kit green.
 Nothing pushed. No model call was made by writing it.

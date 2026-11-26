@@ -58,15 +58,15 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
 - [ ] **H7. First countable cell.** Attempted 2026-11-10, **VOID** (`RR-W8CELL2`): budget 55,000
   sat under floor 53,790 + scaffold, so 0 evictions; prompt 12 never defined `widest_file`, so
   the artefact failed. Fixed: budget 72,000, field definitions in the prompt. Next run is the test.
-  *Done when:* checks 1–7 of `design/W8-EXECUTOR-PROMPT.md` §5 pass **and** `evictedTokens > 0`.
+  *Done when:* checks 1–7 of `design/past-experiments/W8-EXECUTOR-PROMPT.md` §5 pass **and** `evictedTokens > 0`.
   Cells counted goes 0 → 1. Budget: ask first; estimate $0.10–0.20.
 
-**W8 CLOSED 2026-11-10 (owner, option A): negative result, `design/W8-CLOSURE-20261110.md`. H7/H8 are withdrawn with it; the replacement is `design/W8B-FREE-PLAN.md` (free model, 20-part shape).**
+**W8 CLOSED 2026-11-10 (owner, option A): negative result, `design/past-experiments/W8-CLOSURE-20261110.md`. H7/H8 are withdrawn with it; the replacement is `design/past-experiments/W8B-FREE-PLAN.md` (free model, 20-part shape).**
 
 - [ ] **H8. Decide the 48-cell grid, with numbers.** After H7: if the cell evicted and the artefact
   held, price a grid from the measured per-cell cost; if it did not, write the negative finding and
   close the card.
-  *Done when:* `design/w8-run-plan.md` carries either a costed grid with a preregistered stopping rule
+  *Done when:* `design/past-experiments/w8-run-plan.md` carries either a costed grid with a preregistered stopping rule
   or a closure paragraph. Owner gate: spend.
 
 ---
@@ -96,7 +96,7 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
 
 ## 3. Cache-stable selection — the hypothesis the data actually supports
 
-- [x] **H11. (done 2026-11-18, `9e05548`, `RR-H11-20261118`; verified `RR-H11-REVIEW`) Implement `selectionMode: stable`.** Design: `design/w8-cache-stable-selection.md`.
+- [x] **H11. (done 2026-11-18, `9e05548`, `RR-H11-20261118`; verified `RR-H11-REVIEW`) Implement `selectionMode: stable`.** Design: `design/past-experiments/w8-cache-stable-selection.md`.
   Hold the resident set verbatim between triggers; re-select only on residency change, budget
   overflow, or every B-th turn; canonicalise volatile markers before hashing; emit `prefixHash` per
   call.
@@ -173,12 +173,12 @@ plug-in side of `design/`. It does not own `research/**`, `spec/**`, `corpus/**`
   *Done when:* `AGENTS.md` §3 lists `docs/` **or** the file moved and the reference updated — **met at `AGENTS.md:53`** (verified 2026-11-20).
 
 - [x] **H20. (done 2026-11-19, `RR-HBOOKS-20261119`) Keep the two master prompts current.** `design/HERMES-PLUGIN-DEVELOPER-PROMPT.md` and
-  `design/W8-EXECUTOR-PROMPT.md` name versions, paths and open items. Re-read them at every card close;
+  `design/past-experiments/W8-EXECUTOR-PROMPT.md` name versions, paths and open items. Re-read them at every card close;
   a prompt that describes a version two releases old is the drift this lane keeps fixing.
   *Done when (rewritten 2026-11-19 — the old grep pinned 0.10.11, a version long gone):* the developer
   prompt's open items and profile names match the measured state, and the executor prompt carries its
   closure status. Verify: `grep -n 'w8cn' design/HERMES-PLUGIN-DEVELOPER-PROMPT.md` and
-  `grep -n 'W8 CLOSED' design/W8-EXECUTOR-PROMPT.md` both match.
+  `grep -n 'W8 CLOSED' design/past-experiments/W8-EXECUTOR-PROMPT.md` both match.
   *Done 2026-11-19:* developer prompt §0/§7/§8/§12 refreshed (w8cn pair, enginePlan live by capture,
   G4 routed, post-H12 options + harnessVersion gap added); executor prompt given a closure banner and the
   law-10 bullet re-landed from the abandoned snapshot. NOT lane property, flagged for review/owner:

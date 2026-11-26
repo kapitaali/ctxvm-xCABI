@@ -2356,7 +2356,7 @@ def register(ctx) -> None:
         )
 
     # --- W8 gate 3: register the paged arm's context engine (fail-open) ----
-    # design/w8-capture-design.md §3.3: the host activates the engine ONLY
+    # design/past-experiments/w8-capture-design.md §3.3: the host activates the engine ONLY
     # when a profile carries `context.engine: "ctxvm"` (the naive arm runs the
     # default profile — the one-factor design). Outside the hermes runtime
     # (the plugin's own test suite) build_engine() returns None and nothing

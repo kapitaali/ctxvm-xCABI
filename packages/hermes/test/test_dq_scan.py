@@ -1,5 +1,5 @@
 """W8 redaction DQ scan tests — the pre-drop blocking gate's law
-(`design/w8-capture-design.md` §10; tool: `tools/dq-secret-scan.py`, list
+(`design/past-experiments/w8-capture-design.md` §10; tool: `tools/dq-secret-scan.py`, list
 ``w8-dq-v1``).
 
 Run: cd packages/hermes && python -m pytest test/ -q

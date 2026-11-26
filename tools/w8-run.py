@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """W8 grid runner — one row per run, per-run trace relocation, all assertions in code.
 
-Design of record: design/w8-run-plan.md (P2/P4). Two facts measured at P0 shape this file:
+Design of record: design/past-experiments/w8-run-plan.md (P2/P4). Two facts measured at P0 shape this file:
 
   * Hermes v0.23.0 loads plugins in the gateway (hermes_cli/cli_single_query.py:486, PLG-7),
     so a run's CTXVM_TRACE_DIR/NAME come from the gateway's environment, not from the
@@ -33,7 +33,7 @@ REPO = Path(__file__).resolve().parent.parent
 PRICES = REPO / "benchmarks/metrics/prices.json"
 LEDGER_HEADER = """# W8 spend ledger
 
-Control variable for the $25 hard cap (design/w8-run-plan.md §6). One row per run:
+Control variable for the $25 hard cap (design/past-experiments/w8-run-plan.md §6). One row per run:
 date · arm · task · round · model · provider-receipt tokens · USD from the pinned price row ·
 running total. The est columns are page-table-only (`cacheEstimate`), the receipt columns are
 the provider's own numbers; cached reads are unpriced in the catalogue, so USD prices them at

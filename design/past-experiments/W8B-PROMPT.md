@@ -3,7 +3,7 @@
 Give this to the agent running W8B. It assumes no memory of W8 and no access to our chat.
 
 > **STATUS 2026-11-11: W8B IS CLOSED.** The fault-pin policy selected 43 times and evicted nothing at
-> both 70,000 and 90,000; the arms were identical within 0.5 %. See `design/W8B-CLOSURE-20261111.md`.
+> both 70,000 and 90,000; the arms were identical within 0.5 %. See `design/past-experiments/W8B-CLOSURE-20261111.md`.
 > Both profiles are deleted and the runner refuses to create one, so nothing here can be run as
 > written. It is kept because the instrument and the fourteen traps below are what the next card
 > starts from — and because every one of them was paid for.
@@ -56,7 +56,7 @@ Handoff: `bash tools/check-handoff.sh`.
 
 ## 2. The record you inherit (do not repeat it)
 
-W8 closed 2026-11-10 as a **negative result** (`design/W8-CLOSURE-20261110.md`):
+W8 closed 2026-11-10 as a **negative result** (`design/past-experiments/W8-CLOSURE-20261110.md`):
 
 - A turn-granular keep law cannot act on a single-turn session: every `page.declare` carries `turn: 0`.
 - On a 12-turn session the protected floor (53,790) plus scaffold exceeded 24,000, 28,000 and 55,000 —
@@ -91,7 +91,7 @@ tools/w8-driver.py                          20 prompts, seal of parts 01-03 afte
 tools/w8-checker-ta-v2.py                   parsed-equality gate, argv only
 tools/w8b-run.py                            THE RUNNER: preflight, probe, both arms, bundle
 tools/w8b-profiles.sh                       the two-profile check
-design/w8-tasks/T-A-v2.md                   the task of record
+design/past-experiments/w8-tasks/T-A-v2.md                   the task of record
 ```
 
 If you believe one of these is wrong, stop and report it. Do not fix it inside a run.
