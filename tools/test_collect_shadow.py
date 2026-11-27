@@ -7,6 +7,7 @@ import importlib.util
 import json
 import os
 import shutil
+import sqlite3
 import stat
 import subprocess
 import sys
@@ -69,6 +70,25 @@ def write_profile(profile_home: Path, *, engine="compressor", budget=24000,
     )
 
 
+def write_session_store(profile_home: Path) -> None:
+    path = profile_home / "state.db"
+    with sqlite3.connect(path) as con:
+        con.execute("CREATE TABLE IF NOT EXISTS sessions "
+                    "(id TEXT PRIMARY KEY, model TEXT, model_config TEXT, "
+                    "billing_provider TEXT, billing_base_url TEXT)")
+
+
+def write_store_route(cfg: Any, sid: str, *, model: str = MODEL,
+                      provider: str = PROVIDER, fallback_active: bool = False) -> None:
+    runtime = {"provider": provider, "model": model, "fallback_active": fallback_active}
+    with sqlite3.connect(cfg.profile_home / "state.db") as con:
+        con.execute("INSERT OR REPLACE INTO sessions "
+                    "(id, model, model_config, billing_provider, billing_base_url) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (sid, model, json.dumps({"gateway_runtime": runtime}), provider,
+                     "https://inference-api.nousresearch.com/v1"))
+
+
 def write_manifest(path: Path) -> dict:
     shapes = {}
     for shape in SHAPES:
@@ -117,6 +137,7 @@ def make_config(root: Path, **overrides) -> Any:
     write_sync_script(repo, "echo 'gateway: pid 123 started after these files were written; it holds this build.'")
     write_required_gates(repo)
     write_profile(profile_home)
+    write_session_store(profile_home)
     write_manifest(manifest)
     values = dict(
         repo=repo,
@@ -183,6 +204,18 @@ class PreflightTests(unittest.TestCase):
             cfg = collect.Config(**{**cfg.__dict__, "profile_home": other})
             with self.assertRaises(collect.PreflightError):
                 collect.Collector(cfg, sync_runner=sync_ok).preflight()
+
+    def test_missing_or_malformed_session_store_fails_preflight(self):
+        for mode in ("missing", "malformed"):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory(prefix="collect-shadow-store-preflight-") as td:
+                cfg = make_config(Path(td))
+                path = cfg.profile_home / "state.db"
+                if mode == "missing":
+                    path.unlink()
+                else:
+                    path.write_text("not a sqlite database")
+                with self.assertRaises(collect.PreflightError):
+                    collect.Collector(cfg, sync_runner=sync_ok).preflight()
 
     def test_rejects_stale_plugin_version(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
@@ -362,6 +395,7 @@ def write_fake_session(cfg: Any, sid: str, *, label: Optional[str] = None,
                        floor=17000, resident=33000, dropped=15000, budget=24000,
                        model=MODEL, provider=PROVIDER, selections=1,
                        process_failures=0, session_failures=0, arm="control",
+                       store_model=MODEL, store_provider=PROVIDER, fallback_active=False,
                        ref='tool:read_file({"path":"private/secret.md"})') -> None:
     digest = "sha256:abcdef01"
     pid = page_id(ref, digest)
@@ -406,6 +440,8 @@ def write_fake_session(cfg: Any, sid: str, *, label: Optional[str] = None,
     cov = cfg.trace_dir / f"{sid}.coverage.json"
     cov.write_text(json.dumps(coverage, indent=2) + "\n")
     cov.chmod(0o600)
+    write_store_route(cfg, sid, model=store_model, provider=store_provider,
+                      fallback_active=fallback_active)
     with cfg.shadow.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(shadow_record(sid, pid, floor=floor, resident=resident,
                                           dropped=dropped, budget=budget), sort_keys=True) + "\n")
@@ -452,8 +488,13 @@ class FakeSessionRunner:
                            process_failures=plan.get("process_failures", 0),
                            session_failures=plan.get("session_failures", 0),
                            arm=plan.get("arm", "control"),
+                           store_model=plan.get("store_model", MODEL),
+                           store_provider=plan.get("store_provider", PROVIDER),
+                           fallback_active=plan.get("fallback_active", False),
                            ref=plan.get("ref", 'tool:read_file({"path":"private/secret.md"})'))
         stdout = f"Session: {sid}\nanswer body must stay private\nsk-abcdefghijklmnop\n/home/private/workspace\n"
+        if plan.get("no_sid"):
+            stdout = "answer body without a durable session id\n"
         return subprocess.CompletedProcess(args, plan.get("rc", 0), stdout, plan.get("stderr", ""))
 
 
@@ -505,6 +546,11 @@ class AuthFailureTests(unittest.TestCase):
             "is no longer free",
             "HTTP 429 insufficient quota",
             "HTTP 402 payment required",
+            "Missing API key",
+            "API key not provided",
+            "quota exceeded",
+            "rate limit exceeded",
+            "model overloaded",
         )
         for message in messages:
             with self.subTest(message=message):
@@ -603,7 +649,51 @@ class ExecutionTests(unittest.TestCase):
             for env in sync_envs + session_envs:
                 self.assertIsInstance(env, dict)
                 self.assertEqual(env["HERMES_HOME"], str(cfg.hermes_home))
-                self.assertFalse(any(key.startswith("CTXVM_") for key in env))
+                self.assertEqual(env["CTXVM_TRACE_DIR"], str(cfg.trace_dir))
+                self.assertNotIn("CTXVM_MODEL", env)
+                self.assertFalse(any(key.startswith("CTXVM_") and key != "CTXVM_TRACE_DIR" for key in env))
+
+    def test_unbound_coverage_stops_before_later_attempts(self):
+        cases = ("missing", "malformed_json", "malformed_object", "multiple", "wrong_sid")
+        for case in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory(prefix="collect-shadow-coverage-stop-") as td:
+                cfg = make_config(Path(td), target_informative=3, max_attempts=3,
+                                  max_attempts_per_shape=1)
+                plans = {
+                    "read-once-pressure": [{}],
+                    "deliberate-later-reread": [{"label": "tool_recall"}],
+                    "dependency-chain": [{"label": "identifier_scan"}],
+                }
+                session = FakeSessionRunner(cfg, plans, gate_runner=green_gates, join_runner=green_join)
+                calls = {"n": 0}
+                def runner(cmd, **kw):
+                    result = session(cmd, **kw)
+                    calls["n"] += 1
+                    if calls["n"] == 1:
+                        sid = result.stdout.split("Session:", 1)[1].splitlines()[0].strip()
+                        path = cfg.trace_dir / f"{sid}.coverage.json"
+                        if case == "missing":
+                            path.unlink()
+                        elif case == "malformed_json":
+                            path.write_text("not-json\n")
+                        elif case == "malformed_object":
+                            path.write_text("[]\n")
+                        elif case == "multiple":
+                            shutil.copy2(path, cfg.trace_dir / f"{sid}.duplicate.coverage.json")
+                        else:
+                            data = json.loads(path.read_text())
+                            data["session"]["sessionID"] = "local-other-session"
+                            path.write_text(json.dumps(data))
+                    return result
+                result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=runner,
+                                           gate_runner=green_gates, join_runner=session.join_runner).run()
+                receipts = [json.loads(path.read_text()) for path in sorted((cfg.out / "attempts").glob("*/receipt.json"))]
+                self.assertEqual(len(receipts), 1)
+                self.assertEqual(result["status"], "STOPPED_MODEL_PROVIDER")
+                self.assertEqual(result["attempts"], 1)
+                self.assertTrue(receipts[0]["model_provider_failure"])
+                self.assertEqual(receipts[0]["route_error"], "coverage_unbound")
+                self.assertTrue((cfg.out / "aggregate.json").is_file())
 
     def test_malformed_evidence_produces_excluded_receipt(self):
         cases = ("policy_string", "dropped_page_none", "plugin_string")
@@ -641,12 +731,18 @@ class ExecutionTests(unittest.TestCase):
                 result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=runner,
                                            gate_runner=green_gates, join_runner=session.join_runner).run()
                 receipts = [json.loads(path.read_text()) for path in sorted((cfg.out / "attempts").glob("*/receipt.json"))]
-                self.assertEqual(len(receipts), 3)
                 self.assertFalse(receipts[0]["valid"])
                 self.assertTrue(receipts[0]["failed_gates"])
-                self.assertEqual(result["attempts"], 3)
-                self.assertEqual(result["all_valid_sessions"], 2)
                 self.assertTrue((cfg.out / "aggregate.json").is_file())
+                if malformed == "plugin_string":
+                    self.assertEqual(len(receipts), 1)
+                    self.assertEqual(result["status"], "STOPPED_MODEL_PROVIDER")
+                    self.assertEqual(result["attempts"], 1)
+                    self.assertEqual(result["all_valid_sessions"], 0)
+                else:
+                    self.assertEqual(len(receipts), 3)
+                    self.assertEqual(result["attempts"], 3)
+                    self.assertEqual(result["all_valid_sessions"], 2)
 
     def test_denominator_views_are_per_shape_and_pooled(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-denominators-") as td:
@@ -834,26 +930,83 @@ class ExecutionTests(unittest.TestCase):
             self.assertIn("join_contract", receipt["failed_gates"])
             self.assertEqual(result["all_valid_sessions"], 0)
 
-    def test_unknown_provider_stops_batch_with_receipt(self):
+    def test_missing_session_id_excludes_attempt_without_route_stop(self):
+        with tempfile.TemporaryDirectory(prefix="collect-shadow-missing-sid-") as td:
+            cfg = make_config(Path(td), target_informative=3, max_attempts=3,
+                              max_attempts_per_shape=1)
+            plans = {
+                "read-once-pressure": [{"no_sid": True}],
+                "deliberate-later-reread": [{"label": "tool_recall"}],
+                "dependency-chain": [{"label": "identifier_scan"}],
+            }
+            session = FakeSessionRunner(cfg, plans, gate_runner=green_gates, join_runner=green_join)
+            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+                                       gate_runner=green_gates, join_runner=session.join_runner).run()
+            receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
+            self.assertFalse(receipt["valid"])
+            self.assertFalse(receipt["model_provider_failure"])
+            self.assertIn("session_id", receipt["failed_gates"])
+            self.assertEqual(result["status"], "UNDERPOWERED")
+            self.assertEqual(result["attempts"], 3)
+            self.assertEqual(result["all_valid_sessions"], 2)
+
+    def test_unknown_trace_provider_is_proven_by_session_store(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-provider-") as td:
             cfg = make_config(Path(td), target_informative=3, max_attempts=3,
                               max_attempts_per_shape=1)
             plans = {
                 "read-once-pressure": [{"provider": "unknown"}],
+                "deliberate-later-reread": [{"label": "tool_recall", "provider": "unknown"}],
+                "dependency-chain": [{"label": "identifier_scan", "provider": "unknown"}],
+            }
+            session = FakeSessionRunner(cfg, plans)
+            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+                                       gate_runner=green_gates, join_runner=session.join_runner).run()
+            self.assertEqual(result["status"], "TARGET_MET")
+            self.assertEqual(result["attempts"], 3)
+            self.assertEqual(result["all_valid_sessions"], 3)
+            receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
+            self.assertEqual(receipt["requested_provider"], PROVIDER)
+            self.assertEqual(receipt["observed_provider"], "unknown")
+            self.assertEqual(receipt["route_provider"], PROVIDER)
+            self.assertEqual(receipt["route_proof_source"], "session_store")
+            self.assertFalse(receipt["model_provider_failure"])
+
+    def test_session_store_fallback_activation_stops_batch(self):
+        with tempfile.TemporaryDirectory(prefix="collect-shadow-store-fallback-") as td:
+            cfg = make_config(Path(td), target_informative=3, max_attempts=3,
+                              max_attempts_per_shape=1)
+            plans = {
+                "read-once-pressure": [{"provider": "unknown", "fallback_active": True}],
                 "deliberate-later-reread": [{"label": "tool_recall"}],
                 "dependency-chain": [{"label": "identifier_scan"}],
             }
             session = FakeSessionRunner(cfg, plans)
             result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
+            receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
             self.assertEqual(result["status"], "STOPPED_MODEL_PROVIDER")
             self.assertEqual(result["attempts"], 1)
-            self.assertEqual(result["all_valid_sessions"], 0)
-            receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
-            self.assertEqual(receipt["requested_provider"], PROVIDER)
-            self.assertEqual(receipt["observed_provider"], "unknown")
             self.assertTrue(receipt["model_provider_failure"])
-            self.assertIn("sidecar_provider", receipt["failed_gates"])
+            self.assertIs(receipt["route_fallback_active"], True)
+
+    def test_session_store_route_drift_stops_batch(self):
+        with tempfile.TemporaryDirectory(prefix="collect-shadow-store-drift-") as td:
+            cfg = make_config(Path(td), target_informative=3, max_attempts=3,
+                              max_attempts_per_shape=1)
+            plans = {
+                "read-once-pressure": [{"provider": "unknown", "store_provider": "other"}],
+                "deliberate-later-reread": [{"label": "tool_recall"}],
+                "dependency-chain": [{"label": "identifier_scan"}],
+            }
+            session = FakeSessionRunner(cfg, plans)
+            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+                                       gate_runner=green_gates, join_runner=session.join_runner).run()
+            receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
+            self.assertEqual(result["status"], "STOPPED_MODEL_PROVIDER")
+            self.assertEqual(result["attempts"], 1)
+            self.assertEqual(receipt["route_provider"], "other")
+            self.assertTrue(receipt["model_provider_failure"])
 
     def test_known_route_drift_stops_batch(self):
         for plan, reason in (({"model": "other/model"}, "sidecar_model"),
@@ -896,6 +1049,41 @@ class ExecutionTests(unittest.TestCase):
             self.assertEqual(result["attempts"], 3)
             self.assertEqual(result["all_valid_sessions"], 2)
             self.assertEqual(result["informative_sessions"], 2)
+
+    def test_preexisting_session_id_cannot_receive_quota_credit(self):
+        with tempfile.TemporaryDirectory(prefix="collect-shadow-baseline-sid-") as td:
+            cfg = make_config(Path(td), target_informative=3, max_attempts=3,
+                              max_attempts_per_shape=1)
+            old_sid = "local-preexisting-session"
+            cfg.shadow.write_text(json.dumps({"session_id": old_sid}) + "\n")
+            plans = {
+                "read-once-pressure": [{"sid": old_sid}],
+                "deliberate-later-reread": [{"label": "tool_recall"}],
+                "dependency-chain": [{"label": "identifier_scan"}],
+            }
+            session = FakeSessionRunner(cfg, plans, gate_runner=green_gates, join_runner=green_join)
+            calls = {"n": 0}
+            def runner(cmd, **kw):
+                before = cfg.shadow.read_bytes()
+                result = session(cmd, **kw)
+                calls["n"] += 1
+                if calls["n"] == 1:
+                    cfg.shadow.write_bytes(before)
+                return result
+            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=runner,
+                                       gate_runner=green_gates, join_runner=session.join_runner).run()
+            receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
+            self.assertIn("duplicate_session", receipt["failed_gates"])
+            self.assertEqual(result["attempts"], 3)
+            self.assertEqual(result["all_valid_sessions"], 2)
+            self.assertEqual(result["informative_sessions"], 2)
+
+    def test_malformed_shadow_baseline_fails_preflight(self):
+        with tempfile.TemporaryDirectory(prefix="collect-shadow-bad-baseline-") as td:
+            cfg = make_config(Path(td))
+            cfg.shadow.write_text("not-json\n")
+            with self.assertRaises(collect.PreflightError):
+                collect.Collector(cfg, sync_runner=sync_ok).preflight()
 
     def test_process_failure_total_is_diagnostic_only(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-process-counter-") as td:

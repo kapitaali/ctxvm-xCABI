@@ -29,6 +29,7 @@ import importlib.util
 import json
 import os
 import re
+import sqlite3
 import stat
 import subprocess
 import sys
@@ -73,9 +74,10 @@ class Config:
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 
 
-def _subprocess_env(hermes_home: Path) -> Dict[str, str]:
+def _subprocess_env(hermes_home: Path, trace_dir: Path) -> Dict[str, str]:
     env = {key: value for key, value in os.environ.items() if not key.startswith("CTXVM_")}
     env["HERMES_HOME"] = str(hermes_home)
+    env["CTXVM_TRACE_DIR"] = str(trace_dir)
     return env
 
 
@@ -259,12 +261,14 @@ def _auth_model_failure(rc: int, stdout: str, stderr: str) -> bool:
     text = (stdout + "\n" + stderr).lower()
     patterns = (
         r"\b401\b", r"\b402\b", r"\b403\b", r"\b404\b", r"\b429\b",
-        r"no api key found", r"invalid[_ -]?api[_ -]?key", r"invalid token", r"token expired",
+        r"no api key found", r"missing api key", r"api key not provided",
+        r"invalid[_ -]?api[_ -]?key", r"invalid token", r"token expired",
         r"access denied", r"unauthori[sz]ed", r"authentication",
         r"auth(?:entication)? (?:failed|error)",
         r"model[_ ]not[_ ]found", r"model not found", r"model unavailable", r"no such model",
         r"is not a valid model", r"unknown model", r"unsupported model", r"is no longer free",
-        r"does not exist", r"provider.*unavailable", r"insufficient quota", r"payment required",
+        r"does not exist", r"provider.*unavailable", r"insufficient quota", r"quota exceeded",
+        r"payment required", r"rate limit exceeded", r"model overloaded",
     )
     return any(re.search(pattern, text) for pattern in patterns)
 
@@ -289,11 +293,14 @@ class Collector:
         self.preflight_facts: Dict[str, Any] = {}
         self.join: Any = None
         self.subprocess_env: Optional[Dict[str, str]] = None
+        self.profile_home: Optional[Path] = None
+        self.baseline_session_ids: set[str] = set()
 
     def _default_runner(self, cmd: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
         if kwargs.get("env") is None:
             kwargs["env"] = self.subprocess_env or _subprocess_env(
-                self.config.hermes_home or Path(os.environ.get("HERMES_HOME") or Path.home() / ".hermes"))
+                self.config.hermes_home or Path(os.environ.get("HERMES_HOME") or Path.home() / ".hermes"),
+                self.config.trace_dir)
         return subprocess.run(list(cmd), capture_output=True, text=True, check=False, **kwargs)
 
     def _gate(self, name: str, cmd: List[str]) -> Dict[str, Any]:
@@ -350,6 +357,40 @@ class Collector:
         if self.join is None:
             raise PreflightError("join module was not loaded")
         return self.join._session_result(sid, records, coverage, snapshot_dir)
+
+    def _session_store_route(self, sid: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        if self.profile_home is None:
+            return None, "profile_unbound"
+        path = self.profile_home / "state.db"
+        con = None
+        try:
+            con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+            row = con.execute(
+                "SELECT model, billing_provider, model_config FROM sessions WHERE id = ?",
+                (sid,),
+            ).fetchone()
+        except (OSError, sqlite3.Error) as exc:
+            return None, f"session_store:{type(exc).__name__}"
+        finally:
+            if con is not None:
+                con.close()
+        if row is None:
+            return None, "session_not_found"
+        model, billing_provider, raw_config = row
+        try:
+            config = json.loads(raw_config) if isinstance(raw_config, str) else {}
+        except ValueError as exc:
+            return None, f"model_config:{type(exc).__name__}"
+        runtime = config.get("gateway_runtime") if isinstance(config, dict) else None
+        if not isinstance(runtime, dict):
+            runtime = {}
+        provider = runtime.get("provider") or billing_provider
+        return {
+            "model": model,
+            "provider": provider,
+            "fallback_active": runtime.get("fallback_active"),
+            "source": "session_store",
+        }, None
 
     @staticmethod
     def _empty_summary(sid: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -488,8 +529,6 @@ class Collector:
             "version": version_ok,
             "profile": plugin.get("profile") == "w8-shadow",
             "arm": plugin.get("arm") == "control",
-            "model": observed_model == cfg.model,
-            "provider": observed_provider == cfg.provider,
             "engine": plugin.get("engineSetting") == "compressor",
             "budget": plugin.get("budgetTokens") == 24000 and plugin.get("budgetSource") == "settings",
             "shadow": plugin.get("shadowSelection") is True and plugin.get("shadowSelectionSource") == "settings",
@@ -554,9 +593,39 @@ class Collector:
             "never_observed_opportunities": summary.get("never_observed_opportunities", 0),
             "ambiguous_opportunities": summary.get("ambiguous_opportunities", 0),
         }
-        route_observed = session_obj.get("sessionID") == sid
-        model_provider_failure = route_observed and not (
-            observed_model == cfg.model and observed_provider == cfg.provider)
+        sid_present = isinstance(sid, str) and bool(sid)
+        coverage_bound = bool(
+            sid_present and cov_path and coverage_obj
+            and session_obj.get("sessionID") == sid
+            and isinstance(plugin_obj, dict)
+            and not evidence_errors
+        )
+        if not sid_present:
+            store_route, route_error = None, "missing_sid"
+        elif coverage_bound:
+            store_route, route_error = self._session_store_route(sid or "")
+        else:
+            store_route, route_error = None, "coverage_unbound"
+        store_ok = bool(
+            store_route
+            and store_route.get("model") == cfg.model
+            and store_route.get("provider") == cfg.provider
+            and store_route.get("fallback_active") is False
+        )
+        unknown_model = observed_model in (None, "", "unknown", "unknown/unknown")
+        unknown_provider = observed_provider in (None, "", "unknown")
+        coverage_known_drift = not (
+            (unknown_model or observed_model == cfg.model)
+            and (unknown_provider or observed_provider == cfg.provider)
+        )
+        route_ok = coverage_bound and store_ok and not coverage_known_drift
+        if sid_present and not route_ok:
+            if not unknown_model and observed_model != cfg.model:
+                failed.append("sidecar_model")
+            if not unknown_provider and observed_provider != cfg.provider:
+                failed.append("sidecar_provider")
+            failed.append("route_unproven")
+        model_provider_failure = sid_present and not route_ok
         valid = not failed and not auth_failure and not model_provider_failure
         if shape == "read-once-pressure":
             informative = valid and bool(drop_records)
@@ -595,6 +664,11 @@ class Collector:
             "requested_provider": cfg.provider,
             "observed_model": observed_model,
             "observed_provider": observed_provider,
+            "route_model": (store_route or {}).get("model"),
+            "route_provider": (store_route or {}).get("provider"),
+            "route_proof_source": (store_route or {}).get("source"),
+            "route_fallback_active": (store_route or {}).get("fallback_active"),
+            "route_error": route_error,
             "started_at": started_at,
             "ended_at": ended_at,
             "duration_ms": duration_ms,
@@ -693,7 +767,7 @@ class Collector:
         stats = {shape: {"attempts": 0, "valid": 0, "informative": 0,
                          "target": per_shape_target, "status": "PENDING"} for shape in SHAPES}
         attempts: List[Dict[str, Any]] = []
-        seen_sessions: set[str] = set()
+        seen_sessions: set[str] = set(self.baseline_session_ids)
         valid_entries: List[Dict[str, Any]] = []
         informative_entries: List[Dict[str, Any]] = []
         informative_count = 0
@@ -834,7 +908,20 @@ class Collector:
         expected_profile = (hermes_home / "profiles" / "w8-shadow").resolve()
         if profile_home != expected_profile:
             raise PreflightError("profile-home must be the w8-shadow profile inside the validated HERMES_HOME")
-        self.subprocess_env = _subprocess_env(hermes_home)
+        self.profile_home = profile_home
+        store_path = profile_home / "state.db"
+        if not store_path.is_file() or not os.access(store_path, os.R_OK):
+            raise PreflightError("profile session store is missing or unreadable")
+        store_con = None
+        try:
+            store_con = sqlite3.connect(f"file:{store_path}?mode=ro", uri=True)
+            store_con.execute("SELECT model, billing_provider, model_config FROM sessions LIMIT 0")
+        except sqlite3.Error as exc:
+            raise PreflightError(f"profile session store is not readable: {exc}") from exc
+        finally:
+            if store_con is not None:
+                store_con.close()
+        self.subprocess_env = _subprocess_env(hermes_home, cfg.trace_dir)
         versions = {
             "repo": _repo_version(cfg.repo),
             "installed": _installed_version(hermes_home),
@@ -895,6 +982,17 @@ class Collector:
             raise PreflightError("shadow records must be a private 0600 file")
         if not os.access(cfg.shadow, os.R_OK):
             raise PreflightError("shadow records are not readable")
+        try:
+            baseline_rows = _read_jsonl(cfg.shadow)
+        except (OSError, UnicodeError, ValueError) as exc:
+            raise PreflightError(f"cannot parse shadow baseline: {exc}") from exc
+        baseline_ids: set[str] = set()
+        for row in baseline_rows:
+            sid = row.get("session_id")
+            if not isinstance(sid, str) or not sid:
+                raise PreflightError("shadow baseline contains a record without a non-empty session_id")
+            baseline_ids.add(sid)
+        self.baseline_session_ids = baseline_ids
         self.fixtures = load_fixtures(cfg.fixture_manifest)
         self.preflight_facts = {
             "plugin_version": versions["repo"],
@@ -906,10 +1004,12 @@ class Collector:
             "selectionMode": policy["selectionMode"],
             "stubDropped": policy["stubDropped"],
             "fallbackDisabled": True,
+            "sessionStoreReady": True,
             "fixture_manifest_sha256": hashlib.sha256(cfg.fixture_manifest.read_bytes()).hexdigest(),
             "target_informative": cfg.target_informative,
             "max_attempts": cfg.max_attempts,
             "max_attempts_per_shape": cfg.max_attempts_per_shape,
+            "baseline_sessions": len(self.baseline_session_ids),
         }
         return self.preflight_facts
 
