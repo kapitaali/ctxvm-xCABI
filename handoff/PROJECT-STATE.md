@@ -18,7 +18,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - **dsh lane (W22):** passive + active stub LANDED in ctxvm/open-dsh (`c623936`, `2eb8b4c`); mirror default, active opt-in. Adapter 35 pass + 1 skip; local mock + real Nous receipts clean (`RR-ACTIVESTUB-REVIEW`).
 - Gateway: pid 3930 holds 0.13.37; three fresh `w8-shadow` acceptance sessions passed.
 ## Next three (ordered, one line each)
-1. Shadow join OK at n=3; collect more varied 0.13.37 `w8-shadow` sessions before interpreting rates. Pins remain empty/offline-only.
+1. Shadow join OK at n=3; varied-session run plan PROPOSED (`design/experiment-runs/SHADOW-VARIED-20261127.md`) — owner authorization owed. Pins remain empty/offline-only.
 2. E0 double negative PUBLISHED; E2 FAIL 2/5 CLOSED, HELD $0 — retry = new ruling. W8 parked.
 3. G3 prereg, D17 publication, D19/P11/H19 owner-gated; page.evict/stub wire landed.
 
