@@ -7,7 +7,8 @@
 # Gates:
 #   1. rust — cargo test (workspace rust/)
 #   2. typescript — packages/node + packages/opencode test suites; node build +
-#      src-vs-dist byte parity (W10 — the publishable artifact)
+#      src-vs-dist byte parity (W10 — the publishable artifact); python —
+#      @ctxvm/hermes + @ctxvm/py binding + no-model shadow collector
 #   3. schema — rfc-0 validator over spec vectors + every committed fixture,
 #      including the corpus/m1 drop, then corpus checksum verification
 #   4. hub — root manifest ODPS validate + regen via their SDK + byte-identity
@@ -129,7 +130,7 @@ run_step "cargo build --release" bash -c 'cd rust && cargo build --release'
 log "release binaries green (UC2/UC1 golden parity)"
 
 # 2) typescript + python
-log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode + @ctxvm/ai-sdk; python — @ctxvm/hermes + @ctxvm/py binding"
+log "gate 2/4: typescript — @ctxvm/node + @ctxvm/opencode + @ctxvm/ai-sdk; python — @ctxvm/hermes + @ctxvm/py binding + shadow collector"
 run_counted "@ctxvm/node suite" node bash -c 'cd packages/node && node --test test/' 
 # W10 build: the source suite above proves the in-repo story; these two prove the
 # PUBLISHABLE artifact. Mirrors ci.yml's ts job step for step.
@@ -144,6 +145,10 @@ run_counted "@ctxvm/ai-sdk suite" node bash -c 'cd packages/ai-sdk && node --tes
 run_counted "deepseek @ctxvm/dsh suite (event-map; page-table+replay not gated)" node bash -c 'bash tools/ci-deepseek.sh' 
 run_counted "@ctxvm/hermes suite" pytest bash -c 'cd packages/hermes && python -m pytest test/ -q' 
 run_counted "@ctxvm/py suite" pytest bash -c 'cd packages/py && python -m pytest test/ -q' 
+# The collector is live-capable, but its gate is strictly no-model: fake runners,
+# temp dirs, and no profile/gateway/config edits. Keep it out of the counted
+# pytest summary because pytest-subtests prints a second "N passed" count.
+run_step "shadow collector no-model suite" python3 -m pytest tools/test_collect_shadow.py -q
 run_step "plugin.yaml version matches PLUGIN_VERSION" bash -c 'ver=$(sed -n "s/^version: *//p" packages/hermes/live/plugin.yaml); grep -q "PLUGIN_VERSION = \"$ver\"" packages/hermes/live/__init__.py'
 # W10 node build: the package ships a copy of the root LICENSE so `npm pack` carries it.
 # The copy must never drift from the single source of truth.

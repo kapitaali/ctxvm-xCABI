@@ -80,6 +80,8 @@ jobs:
       - name: "@ctxvm/py binding tests (byte-compare vs rust CLI on m1/m2 anchors)"
         run: python -m pytest test/ -q
         working-directory: packages/py
+      - name: "shadow collector no-model suite (fake runners; no live sessions)"
+        run: python -m pytest tools/test_collect_shadow.py -q
       - name: plugin.yaml version must match PLUGIN_VERSION
         run: |
           ver=$(sed -n 's/^version: *//p' packages/hermes/live/plugin.yaml)
