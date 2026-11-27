@@ -17,7 +17,7 @@ Fixture manifest shape (research-owned, SHA-256 pinned)::
        ...}}
 
 Exit codes: 0 target met; 2 preflight failed; 3 attempt cap or underpowered;
-4 auth/model failure stopped collection.
+4 auth/model/provider failure stopped collection.
 
 Use --preflight-only to prove every live prerequisite without running a model session.
 """
@@ -67,9 +67,16 @@ class Config:
     provider: str = FROZEN_PROVIDER
     hermes_home: Optional[Path] = None
     profile_home: Optional[Path] = None
+    test_mode: bool = False
 
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
+
+
+def _subprocess_env(hermes_home: Path) -> Dict[str, str]:
+    env = {key: value for key, value in os.environ.items() if not key.startswith("CTXVM_")}
+    env["HERMES_HOME"] = str(hermes_home)
+    return env
 
 
 def _utc() -> str:
@@ -251,9 +258,13 @@ def _auth_model_failure(rc: int, stdout: str, stderr: str) -> bool:
         return False
     text = (stdout + "\n" + stderr).lower()
     patterns = (
-        r"\b401\b", r"\b403\b", r"\b404\b", r"unauthori[sz]ed", r"authentication",
-        r"auth(?:entication)? (?:failed|error)", r"invalid api key", r"model not found",
-        r"model unavailable", r"no such model", r"does not exist", r"provider.*unavailable",
+        r"\b401\b", r"\b402\b", r"\b403\b", r"\b404\b", r"\b429\b",
+        r"no api key found", r"invalid[_ -]?api[_ -]?key", r"invalid token", r"token expired",
+        r"access denied", r"unauthori[sz]ed", r"authentication",
+        r"auth(?:entication)? (?:failed|error)",
+        r"model[_ ]not[_ ]found", r"model not found", r"model unavailable", r"no such model",
+        r"is not a valid model", r"unknown model", r"unsupported model", r"is no longer free",
+        r"does not exist", r"provider.*unavailable", r"insufficient quota", r"payment required",
     )
     return any(re.search(pattern, text) for pattern in patterns)
 
@@ -277,14 +288,18 @@ class Collector:
         self.fixtures: Dict[str, Dict[str, Any]] = {}
         self.preflight_facts: Dict[str, Any] = {}
         self.join: Any = None
+        self.subprocess_env: Optional[Dict[str, str]] = None
 
-    @staticmethod
-    def _default_runner(cmd: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+    def _default_runner(self, cmd: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        if kwargs.get("env") is None:
+            kwargs["env"] = self.subprocess_env or _subprocess_env(
+                self.config.hermes_home or Path(os.environ.get("HERMES_HOME") or Path.home() / ".hermes"))
         return subprocess.run(list(cmd), capture_output=True, text=True, check=False, **kwargs)
 
     def _gate(self, name: str, cmd: List[str]) -> Dict[str, Any]:
         try:
-            result = self.gate_runner(cmd, cwd=str(self.config.repo), timeout=180)
+            result = self.gate_runner(cmd, cwd=str(self.config.repo), timeout=180,
+                                      env=self.subprocess_env)
             receipt = {"name": name, "rc": result.returncode,
                        "stdout": result.stdout or "", "stderr": result.stderr or ""}
         except Exception as exc:  # noqa: BLE001 - a gate failure excludes the attempt
@@ -301,10 +316,10 @@ class Collector:
         return receipt
 
     @staticmethod
-    def _session_id(stdout: str) -> Optional[str]:
-        matches = re.findall(r"(?m)^Session:\s*(\S+)\s*$", stdout)
-        if not matches:
-            matches = re.findall(r"hermes\s+--resume\s+(\S+)", stdout)
+    def _session_id(stdout: str, stderr: str = "") -> Optional[str]:
+        text = stdout + "\n" + stderr
+        matches = re.findall(r"(?mi)^\s*(?:Session|session_id)\s*:\s*(\S+)\s*$", text)
+        matches.extend(re.findall(r"hermes\s+--resume\s+(\S+)", text))
         unique = sorted(set(matches))
         return unique[0] if len(unique) == 1 else None
 
@@ -318,7 +333,12 @@ class Collector:
                 data = json.loads(path.read_text(encoding="utf-8"))
             except Exception:  # noqa: BLE001 - unrelated malformed sidecars are not this session's proof
                 continue
-            if (data.get("session") or {}).get("sessionID") == sid:
+            if not isinstance(data, dict):
+                continue
+            session = data.get("session")
+            if not isinstance(session, dict):
+                continue
+            if session.get("sessionID") == sid:
                 matches.append((path, data))
         if len(matches) != 1:
             errors.append("coverage_missing" if not matches else "coverage_multiple")
@@ -338,7 +358,7 @@ class Collector:
                  "selection_churn": [], "pin_events": Counter(),
                  "pin_sessions": defaultdict(set)})
 
-    def _attempt(self, shape: str, attempt_no: int) -> Dict[str, Any]:
+    def _attempt(self, shape: str, attempt_no: int, seen_sessions: set[str]) -> Dict[str, Any]:
         cfg = self.config
         fixture = self.fixtures[shape]
         directory = cfg.out / "attempts" / f"{attempt_no:04d}-{shape}"
@@ -369,7 +389,8 @@ class Collector:
                "--max-turns", "20", "--provider", cfg.provider, "--model", cfg.model,
                "--in", str(workspace)]
         try:
-            result = self.session_runner(cmd, cwd=str(cfg.repo), timeout=600)
+            result = self.session_runner(cmd, cwd=str(cfg.repo), timeout=600,
+                                         env=self.subprocess_env)
             rc, stdout, stderr = result.returncode, result.stdout or "", result.stderr or ""
         except subprocess.TimeoutExpired as exc:
             rc = 124
@@ -384,7 +405,10 @@ class Collector:
         duration_ms = int((datetime.now(timezone.utc) - started_mono).total_seconds() * 1000)
         _write_private(directory / "stdout.txt", stdout)
         _write_private(directory / "stderr.txt", stderr)
-        sid = self._session_id(stdout)
+        sid = self._session_id(stdout, stderr)
+        duplicate_session = bool(sid and sid in seen_sessions)
+        if sid and not duplicate_session:
+            seen_sessions.add(sid)
         auth_failure = _auth_model_failure(rc, stdout, stderr)
         output_shadow_digest = hashlib.sha256(cfg.shadow.read_bytes()).hexdigest()
 
@@ -398,18 +422,27 @@ class Collector:
         _write_private(directory / "shadow-delta.jsonl", _jsonl(records))
 
         cov_path, coverage, evidence_errors = self._coverage_for(sid)
+        coverage_obj = coverage if isinstance(coverage, dict) else {}
+        session_obj = coverage_obj.get("session")
+        if not isinstance(session_obj, dict):
+            evidence_errors.append("coverage_session")
+            session_obj = {}
+        plugin_obj = coverage_obj.get("plugin")
+        if not isinstance(plugin_obj, dict):
+            evidence_errors.append("coverage_plugin")
+            plugin_obj = {}
         trace_bytes = b""
         trace_digest = None
         trace_rows: List[Dict[str, Any]] = []
-        if cov_path and coverage:
-            trace_name = coverage.get("traceFile")
+        if cov_path and coverage_obj:
+            trace_name = coverage_obj.get("traceFile")
             if not isinstance(trace_name, str) or Path(trace_name).name != trace_name:
                 evidence_errors.append("trace_name")
             else:
                 try:
                     trace_bytes = (cfg.trace_dir / trace_name).read_bytes()
                     trace_digest = hashlib.sha256(trace_bytes).hexdigest()
-                    if trace_digest != coverage.get("traceDigest"):
+                    if trace_digest != coverage_obj.get("traceDigest"):
                         evidence_errors.append("trace_digest")
                     trace_rows: List[Dict[str, Any]] = []
                     for line_no, line in enumerate(trace_bytes.decode("utf-8").splitlines(), 1):
@@ -421,7 +454,7 @@ class Collector:
                 except Exception as exc:  # noqa: BLE001
                     evidence_errors.append(f"trace_read:{type(exc).__name__}")
         _write_private_bytes(directory / "trace.jsonl", trace_bytes)
-        snapshot_coverage = dict(coverage or {})
+        snapshot_coverage = dict(coverage_obj)
         snapshot_coverage["traceFile"] = "trace.jsonl"
         _write_private(directory / "coverage.json", json.dumps(snapshot_coverage, indent=2, sort_keys=True) + "\n")
 
@@ -436,25 +469,27 @@ class Collector:
                                   str(directory / "trace.jsonl")]),
         ]
         failed = [gate["name"] for gate in gates if gate["rc"] != 0]
+        if duplicate_session:
+            failed.append("duplicate_session")
         if rc != 0:
             failed.append("session_rc")
         failed.extend(evidence_errors)
         if shadow_error:
             failed.append("shadow_read")
 
-        plugin = (coverage or {}).get("plugin") or {}
+        plugin = plugin_obj
         try:
             version_ok = _version(plugin.get("version", "")) >= MIN_PLUGIN_VERSION
         except PreflightError:
             version_ok = False
-        observed_model = (coverage or {}).get("session", {}).get("model")
-        observed_provider = (coverage or {}).get("session", {}).get("provider")
+        observed_model = session_obj.get("model")
+        observed_provider = session_obj.get("provider")
         sidecar_required = {
             "version": version_ok,
             "profile": plugin.get("profile") == "w8-shadow",
             "arm": plugin.get("arm") == "control",
             "model": observed_model == cfg.model,
-            "provider": observed_provider in (cfg.provider, "unknown"),
+            "provider": observed_provider == cfg.provider,
             "engine": plugin.get("engineSetting") == "compressor",
             "budget": plugin.get("budgetTokens") == 24000 and plugin.get("budgetSource") == "settings",
             "shadow": plugin.get("shadowSelection") is True and plugin.get("shadowSelectionSource") == "settings",
@@ -462,41 +497,47 @@ class Collector:
             "engineSelections": plugin.get("engineSelections") == 0,
             "stub": plugin.get("stubDropped") == "off",
             "failures": plugin.get("shadowWriteFailures") == 0,
-            "process_failures": plugin.get("shadowWriteFailuresProcess") == 0,
         }
         for name, ok in sidecar_required.items():
             if not ok:
                 failed.append(f"sidecar_{name}")
         if not records:
             failed.append("shadow_records")
+        declared = {self.join._event_page_id(row) for row in trace_rows
+                    if self.join._event_page_id(row) is not None}
+        drop_records: List[Dict[str, Any]] = []
+        page_errors = []
         for record in records:
             if record.get("budget_tokens") != 24000:
                 failed.append("record_budget")
-            if (record.get("policy") or {}).get("mode") != "fresh":
+            policy = record.get("policy")
+            if not isinstance(policy, dict):
+                failed.append("record_policy")
+            elif policy.get("mode") != "fresh":
                 failed.append("not_fresh")
             if record.get("policy_applied") is not False:
                 failed.append("policy_applied")
             if record.get("request_unchanged") is not True:
                 failed.append("request_changed")
-
-        drop_records = [record for record in records if record.get("dropped_pages")
-                        and isinstance(record.get("floor_tokens"), int)
-                        and isinstance(record.get("budget_tokens"), int)
-                        and isinstance(record.get("resident_tokens"), int)
-                        and record["floor_tokens"] < record["budget_tokens"] < record["resident_tokens"]]
-        if not drop_records:
-            failed.append("drop_shape")
-        declared = {self.join._event_page_id(row) for row in trace_rows
-                    if self.join._event_page_id(row) is not None}
-        page_errors = []
-        for record in records:
-            for page in record.get("dropped_pages", []) + record.get("repositioned_pages", []):
-                if page.get("page_id") not in declared:
+            dropped = record.get("dropped_pages", [])
+            repositioned = record.get("repositioned_pages", [])
+            if (not isinstance(dropped, list) or not isinstance(repositioned, list)
+                    or any(not isinstance(page, dict) for page in dropped + repositioned)):
+                failed.append("record_pages")
+                continue
+            if (dropped and isinstance(record.get("floor_tokens"), int)
+                    and isinstance(record.get("budget_tokens"), int)
+                    and isinstance(record.get("resident_tokens"), int)
+                    and record["floor_tokens"] < record["budget_tokens"] < record["resident_tokens"]):
+                drop_records.append(record)
+            for page in dropped + repositioned:
+                page_id = page.get("page_id")
+                if not isinstance(page_id, str) or page_id not in declared:
                     page_errors.append("unmatched_page_id")
         if page_errors:
             failed.append("page_identity")
 
-        if coverage and records and not shadow_error:
+        if coverage_obj and records and not shadow_error:
             try:
                 summary, internal = self._summarize(records, snapshot_coverage, sid or "missing-session",
                                                     directory)
@@ -513,13 +554,16 @@ class Collector:
             "never_observed_opportunities": summary.get("never_observed_opportunities", 0),
             "ambiguous_opportunities": summary.get("ambiguous_opportunities", 0),
         }
-        valid = not failed and not auth_failure
+        route_observed = session_obj.get("sessionID") == sid
+        model_provider_failure = route_observed and not (
+            observed_model == cfg.model and observed_provider == cfg.provider)
+        valid = not failed and not auth_failure and not model_provider_failure
         if shape == "read-once-pressure":
-            informative = valid
+            informative = valid and bool(drop_records)
         elif shape == "deliberate-later-reread":
-            informative = valid and labels["later_tool_recall_opportunities"] > 0
+            informative = valid and bool(drop_records) and labels["later_tool_recall_opportunities"] > 0
         else:
-            informative = valid and labels["later_identifier_scan_opportunities"] > 0
+            informative = valid and bool(drop_records) and labels["later_identifier_scan_opportunities"] > 0
 
         join_receipt = None
         if valid:
@@ -529,7 +573,8 @@ class Collector:
                         "--shadow", str(cfg.shadow), "--trace-dir", str(cfg.trace_dir),
                         "--out", str(join_dir), "--repo", str(cfg.repo)]
             try:
-                joined = self.join_runner(join_cmd, cwd=str(cfg.repo), timeout=180)
+                joined = self.join_runner(join_cmd, cwd=str(cfg.repo), timeout=180,
+                                          env=self.subprocess_env)
                 join_receipt = {"rc": joined.returncode, "stdout": joined.stdout or "",
                                 "stderr": joined.stderr or ""}
             except Exception as exc:  # noqa: BLE001
@@ -555,6 +600,7 @@ class Collector:
             "duration_ms": duration_ms,
             "rc": rc,
             "auth_model_failure": auth_failure,
+            "model_provider_failure": model_provider_failure,
             "input_shadow_sha256": input_shadow_digest,
             "output_shadow_sha256": output_shadow_digest,
             "trace_digest": trace_digest,
@@ -579,6 +625,7 @@ class Collector:
             "session_key": entry["summary"]["session_key"],
             "rc": entry["rc"],
             "auth_model_failure": entry["auth_model_failure"],
+            "model_provider_failure": entry["model_provider_failure"],
             "valid": entry["valid"],
             "informative": entry["informative"],
             "failed_gates": entry["failed_gates"],
@@ -646,10 +693,12 @@ class Collector:
         stats = {shape: {"attempts": 0, "valid": 0, "informative": 0,
                          "target": per_shape_target, "status": "PENDING"} for shape in SHAPES}
         attempts: List[Dict[str, Any]] = []
+        seen_sessions: set[str] = set()
         valid_entries: List[Dict[str, Any]] = []
         informative_entries: List[Dict[str, Any]] = []
         informative_count = 0
         auth_failure = False
+        route_failure = False
         while len(attempts) < cfg.max_attempts and informative_count < cfg.target_informative:
             progressed = False
             for shape in SHAPES:
@@ -659,7 +708,7 @@ class Collector:
                         or stats[shape]["informative"] >= per_shape_target):
                     continue
                 progressed = True
-                entry = self._attempt(shape, len(attempts) + 1)
+                entry = self._attempt(shape, len(attempts) + 1, seen_sessions)
                 attempts.append(entry)
                 stats[shape]["attempts"] += 1
                 if entry["valid"]:
@@ -672,7 +721,10 @@ class Collector:
                 if entry["auth_model_failure"]:
                     auth_failure = True
                     break
-            if auth_failure or not progressed:
+                if entry["model_provider_failure"]:
+                    route_failure = True
+                    break
+            if auth_failure or route_failure or not progressed:
                 break
         for shape in SHAPES:
             if stats[shape]["informative"] >= per_shape_target:
@@ -681,10 +733,14 @@ class Collector:
                 stats[shape]["status"] = "UNDERPOWERED"
             elif auth_failure:
                 stats[shape]["status"] = "STOPPED_AUTH_MODEL"
+            elif route_failure:
+                stats[shape]["status"] = "STOPPED_MODEL_PROVIDER"
             else:
                 stats[shape]["status"] = "PENDING"
         if auth_failure:
             status = "STOPPED_AUTH_MODEL"
+        elif route_failure:
+            status = "STOPPED_MODEL_PROVIDER"
         elif informative_count >= cfg.target_informative:
             status = "TARGET_MET"
         elif all(row["status"] in ("TARGET_MET", "UNDERPOWERED") for row in stats.values()):
@@ -694,6 +750,16 @@ class Collector:
         else:
             status = "UNDERPOWERED"
         public_attempts = [self._public_attempt(entry) for entry in attempts]
+        all_valid_view = {
+            "pooled": self._view(valid_entries),
+            "by_shape": {shape: self._view([entry for entry in valid_entries if entry["shape"] == shape])
+                         for shape in SHAPES},
+        }
+        informative_view = {
+            "pooled": self._view(informative_entries),
+            "by_shape": {shape: self._view([entry for entry in informative_entries if entry["shape"] == shape])
+                         for shape in SHAPES},
+        }
         aggregate = {
             "schema": "ctxvm-shadow-batch-result/v1",
             "status": status,
@@ -706,10 +772,10 @@ class Collector:
             "valid_without_shape_label": len(valid_entries) - informative_count,
             "shapes": stats,
             "denominator_views": {
-                "all_valid": self._view(valid_entries),
-                "informative_only": self._view(informative_entries),
+                "all_valid": all_valid_view,
+                "informative_only": informative_view,
             },
-            "candidate_pins": self._view(valid_entries)["candidate_pins"],
+            "candidate_pins": all_valid_view["pooled"]["candidate_pins"],
             "attempt_receipts": public_attempts,
         }
         _write_private(cfg.out / "aggregate.json", json.dumps(aggregate, indent=2, sort_keys=True) + "\n")
@@ -724,12 +790,35 @@ class Collector:
         _write_private(cfg.out / "aggregate.md", "\n".join(lines))
         return aggregate
 
+    def _prove_fallback_disabled(self) -> None:
+        for key in ("fallback_providers", "fallback_model"):
+            cmd = ["hermes", "config", "get", key, "-p", "w8-shadow", "--json"]
+            try:
+                result = self.sync_runner(cmd, cwd=str(self.config.repo), timeout=60,
+                                          env=self.subprocess_env)
+            except Exception as exc:  # noqa: BLE001 - unproven fallback state is fail-closed
+                raise PreflightError(f"cannot read {key}: {type(exc).__name__}: {exc}") from exc
+            text = ((result.stdout or "") + "\n" + (result.stderr or "")).strip()
+            if result.returncode == 1 and "not set" in text.lower():
+                continue
+            if result.returncode != 0:
+                raise PreflightError(f"cannot prove {key} is empty: {text}")
+            try:
+                value = json.loads(result.stdout or "null")
+            except ValueError as exc:
+                raise PreflightError(f"invalid {key} JSON: {exc}") from exc
+            if value not in (None, [], {}):
+                raise PreflightError(f"{key} must be empty; fallback is not authorized")
+
     def preflight(self) -> Dict[str, Any]:
         cfg = self.config
         if cfg.model != FROZEN_MODEL or cfg.provider != FROZEN_PROVIDER:
             raise PreflightError(f"model/provider are frozen to {FROZEN_MODEL} / {FROZEN_PROVIDER}")
         if cfg.target_informative <= 0 or cfg.target_informative % len(SHAPES):
             raise PreflightError("target-informative must be positive and divisible by three")
+        if not cfg.test_mode and cfg.target_informative != MAX_TARGET_INFORMATIVE:
+            raise PreflightError(
+                f"live target-informative is frozen to {MAX_TARGET_INFORMATIVE}; reduced targets are test-only")
         if cfg.target_informative > MAX_TARGET_INFORMATIVE:
             raise PreflightError(f"target-informative exceeds the authorized cap of {MAX_TARGET_INFORMATIVE}")
         if cfg.max_attempts <= 0 or cfg.max_attempts_per_shape <= 0:
@@ -742,6 +831,10 @@ class Collector:
 
         hermes_home = (cfg.hermes_home or Path(os.environ.get("HERMES_HOME") or Path.home() / ".hermes")).resolve()
         profile_home = (cfg.profile_home or hermes_home / "profiles" / "w8-shadow").resolve()
+        expected_profile = (hermes_home / "profiles" / "w8-shadow").resolve()
+        if profile_home != expected_profile:
+            raise PreflightError("profile-home must be the w8-shadow profile inside the validated HERMES_HOME")
+        self.subprocess_env = _subprocess_env(hermes_home)
         versions = {
             "repo": _repo_version(cfg.repo),
             "installed": _installed_version(hermes_home),
@@ -754,12 +847,13 @@ class Collector:
 
         try:
             sync = self.sync_runner(["bash", str(cfg.repo / "tools" / "sync-plugin.sh"), "--check"],
-                                    cwd=str(cfg.repo), timeout=120)
+                                    cwd=str(cfg.repo), timeout=120, env=self.subprocess_env)
         except Exception as exc:  # noqa: BLE001 - any preflight runner failure is fail-closed
             raise PreflightError(f"sync-plugin --check failed: {type(exc).__name__}: {exc}") from exc
         sync_text = (sync.stdout or "") + (sync.stderr or "")
         if sync.returncode != 0 or "GATEWAY STALE" in sync_text or "holds this build" not in sync_text:
             raise PreflightError("sync-plugin --check did not prove the live gateway holds this build")
+        self._prove_fallback_disabled()
 
         policy = _load_policy(cfg.repo).policy(profile_home)
         required = {
@@ -811,6 +905,7 @@ class Collector:
             "shadowSelection": True,
             "selectionMode": policy["selectionMode"],
             "stubDropped": policy["stubDropped"],
+            "fallbackDisabled": True,
             "fixture_manifest_sha256": hashlib.sha256(cfg.fixture_manifest.read_bytes()).hexdigest(),
             "target_informative": cfg.target_informative,
             "max_attempts": cfg.max_attempts,
@@ -867,7 +962,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     }, sort_keys=True))
     if result["status"] == "TARGET_MET":
         return 0
-    if result["status"] == "STOPPED_AUTH_MODEL":
+    if result["status"] in ("STOPPED_AUTH_MODEL", "STOPPED_MODEL_PROVIDER"):
         return 4
     return 3
 
