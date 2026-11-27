@@ -1,4 +1,4 @@
-# State (updated 2026-11-26; shadow live acceptance passed, D17 held)
+# State (updated 2026-11-27; shadow join landed, D17 held)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
@@ -13,12 +13,12 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 (`e10d249`), Part III + §9.2 fix (`d10c325`, `99f62f9`), `datamining/` tracked (`97cf743`), E1 LANDED (`a1bd004`), `fixture-bank/` v2 (2-hop, 442/442) + parked E0/E2 notes LANDED & VERIFIED (`e8149b5`, `RR-E0ENRICH-VERIFY`; E0/E2 $0).
-- Hermes lane: 0.13.37 LIVE acceptance passed: 6 shadow records, 1 persisted drop (17195<24000<33181), zero failures; schema/checker/replay clean. Offline join unblocked (`RR-SHADOW-LIVE-ACCEPT-20261126`).
+- Hermes lane: 0.13.37 LIVE acceptance passed (6 records, 1 drop, zero failures). Offline join LANDED (`e527e16`): 1 valid session / 3 required, INSUFFICIENT_DATA, no metrics/pins.
 
 - **dsh lane (W22):** passive + active stub LANDED in ctxvm/open-dsh (`c623936`, `2eb8b4c`); mirror default, active opt-in. Adapter 35 pass + 1 skip; local mock + real Nous receipts clean (`RR-ACTIVESTUB-REVIEW`).
 - Gateway: pid 255162 holds 0.13.37; fresh `w8-shadow` acceptance passed.
 ## Next three (ordered, one line each)
-1. DSH active mode committed/reviewed; no real profile enabled. Node 0.1.1 committed, unpublished (D17).
+1. Collect ≥2 more fresh 0.13.37 `w8-shadow` sessions with persisted drops; join requires 3 valid sessions.
 2. E0 double negative PUBLISHED; E2 FAIL 2/5 CLOSED, HELD $0 — retry = new ruling. W8 parked.
 3. G3 prereg, D17 publication, D19/P11/H19 owner-gated; page.evict/stub wire landed.
 
