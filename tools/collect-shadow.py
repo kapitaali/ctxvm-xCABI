@@ -74,6 +74,34 @@ class Config:
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 
 
+def _read_gateway_env(hermes_home: Path) -> Dict[str, str]:
+    lock_path = hermes_home / "gateway.lock"
+    try:
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        pid = int(lock["pid"])
+        raw = Path(f"/proc/{pid}/environ").read_bytes()
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
+        raise PreflightError(f"cannot read gateway environment: {exc}") from exc
+    env: Dict[str, str] = {}
+    for item in raw.split(b"\0"):
+        if b"=" in item:
+            key, value = item.split(b"=", 1)
+            env[key.decode(errors="replace")] = value.decode(errors="replace")
+    if not env:
+        raise PreflightError("gateway environment is empty")
+    return env
+
+
+def _gateway_trace_dir(env: Dict[str, str]) -> Path:
+    configured = env.get("CTXVM_TRACE_DIR", "").strip()
+    if configured:
+        return Path(configured).expanduser().resolve()
+    state_home = env.get("XDG_STATE_HOME", "").strip()
+    home = env.get("HOME", "").strip()
+    base = Path(state_home).expanduser() if state_home else Path(home).expanduser() / ".local/state"
+    return (base / "ctxvm" / "traces").resolve()
+
+
 def _subprocess_env(hermes_home: Path, trace_dir: Path) -> Dict[str, str]:
     env = {key: value for key, value in os.environ.items() if not key.startswith("CTXVM_")}
     env["HERMES_HOME"] = str(hermes_home)
@@ -258,10 +286,10 @@ def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
 def _auth_model_failure(rc: int, stdout: str, stderr: str) -> bool:
     if rc == 0:
         return False
-    text = (stdout + "\n" + stderr).lower()
+    text = re.sub(r"[_-]+", " ", (stdout + "\n" + stderr).lower())
     patterns = (
         r"\b401\b", r"\b402\b", r"\b403\b", r"\b404\b", r"\b429\b",
-        r"no api key found", r"missing api key", r"api key not provided",
+        r"no api key found", r"missing api key", r"api key not provided", r"api key is missing",
         r"invalid[_ -]?api[_ -]?key", r"invalid token", r"token expired",
         r"access denied", r"unauthori[sz]ed", r"authentication",
         r"auth(?:entication)? (?:failed|error)",
@@ -283,12 +311,14 @@ class Collector:
     def __init__(self, config: Config, *, sync_runner: Optional[Runner] = None,
                  session_runner: Optional[Runner] = None,
                  gate_runner: Optional[Runner] = None,
-                 join_runner: Optional[Runner] = None) -> None:
+                 join_runner: Optional[Runner] = None,
+                 gateway_env_reader: Optional[Callable[[Path], Dict[str, str]]] = None) -> None:
         self.config = config
         self.sync_runner = sync_runner or self._default_runner
         self.session_runner = session_runner or self._default_runner
         self.gate_runner = gate_runner or self._default_runner
         self.join_runner = join_runner or self._default_runner
+        self.gateway_env_reader = gateway_env_reader or _read_gateway_env
         self.fixtures: Dict[str, Dict[str, Any]] = {}
         self.preflight_facts: Dict[str, Any] = {}
         self.join: Any = None
@@ -384,12 +414,35 @@ class Collector:
         runtime = config.get("gateway_runtime") if isinstance(config, dict) else None
         if not isinstance(runtime, dict):
             runtime = {}
-        provider = runtime.get("provider") or billing_provider
+        runtime_model = runtime.get("model")
+        runtime_provider = runtime.get("provider")
+        fallback_active = runtime.get("fallback_active")
+        errors = []
+        if model != self.config.model:
+            errors.append("column_model")
+        if billing_provider and billing_provider != self.config.provider:
+            errors.append("billing_provider")
+        if not runtime_model:
+            errors.append("missing_runtime_model")
+        elif runtime_model != self.config.model:
+            errors.append("runtime_model")
+        if not runtime_provider:
+            errors.append("missing_runtime_provider")
+        elif runtime_provider != self.config.provider:
+            errors.append("runtime_provider")
+        if fallback_active is not False:
+            errors.append("fallback_active")
+        provider = runtime_provider or billing_provider
         return {
             "model": model,
             "provider": provider,
-            "fallback_active": runtime.get("fallback_active"),
+            "billing_provider": billing_provider,
+            "runtime_model": runtime_model,
+            "runtime_provider": runtime_provider,
+            "fallback_active": fallback_active,
             "source": "session_store",
+            "consistent": not errors,
+            "errors": errors,
         }, None
 
     @staticmethod
@@ -594,31 +647,26 @@ class Collector:
             "ambiguous_opportunities": summary.get("ambiguous_opportunities", 0),
         }
         sid_present = isinstance(sid, str) and bool(sid)
-        coverage_bound = bool(
-            sid_present and cov_path and coverage_obj
-            and session_obj.get("sessionID") == sid
-            and isinstance(plugin_obj, dict)
-            and not evidence_errors
-        )
         if not sid_present:
             store_route, route_error = None, "missing_sid"
-        elif coverage_bound:
-            store_route, route_error = self._session_store_route(sid or "")
         else:
-            store_route, route_error = None, "coverage_unbound"
+            store_route, route_error = self._session_store_route(sid or "")
         store_ok = bool(
             store_route
+            and store_route.get("consistent") is True
             and store_route.get("model") == cfg.model
             and store_route.get("provider") == cfg.provider
             and store_route.get("fallback_active") is False
         )
+        if store_route and not store_route.get("consistent"):
+            route_error = "route_contradiction"
         unknown_model = observed_model in (None, "", "unknown", "unknown/unknown")
         unknown_provider = observed_provider in (None, "", "unknown")
         coverage_known_drift = not (
             (unknown_model or observed_model == cfg.model)
             and (unknown_provider or observed_provider == cfg.provider)
         )
-        route_ok = coverage_bound and store_ok and not coverage_known_drift
+        route_ok = store_ok and not coverage_known_drift
         if sid_present and not route_ok:
             if not unknown_model and observed_model != cfg.model:
                 failed.append("sidecar_model")
@@ -668,6 +716,7 @@ class Collector:
             "route_provider": (store_route or {}).get("provider"),
             "route_proof_source": (store_route or {}).get("source"),
             "route_fallback_active": (store_route or {}).get("fallback_active"),
+            "route_consistency_errors": (store_route or {}).get("errors", []),
             "route_error": route_error,
             "started_at": started_at,
             "ended_at": ended_at,
@@ -904,6 +953,18 @@ class Collector:
                 f"max-attempts-per-shape exceeds the authorized cap of {MAX_ATTEMPTS_PER_SHAPE}")
 
         hermes_home = (cfg.hermes_home or Path(os.environ.get("HERMES_HOME") or Path.home() / ".hermes")).resolve()
+        try:
+            gateway_env = self.gateway_env_reader(hermes_home)
+        except PreflightError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - unproven gateway environment is fail-closed
+            raise PreflightError(f"cannot read gateway environment: {type(exc).__name__}: {exc}") from exc
+        if not isinstance(gateway_env, dict):
+            raise PreflightError("gateway environment reader did not return an object")
+        gateway_trace_dir = _gateway_trace_dir(gateway_env)
+        if cfg.trace_dir.resolve() != gateway_trace_dir:
+            raise PreflightError(
+                f"requested trace-dir {cfg.trace_dir} does not match gateway trace-dir {gateway_trace_dir}")
         profile_home = (cfg.profile_home or hermes_home / "profiles" / "w8-shadow").resolve()
         expected_profile = (hermes_home / "profiles" / "w8-shadow").resolve()
         if profile_home != expected_profile:
@@ -1005,6 +1066,7 @@ class Collector:
             "stubDropped": policy["stubDropped"],
             "fallbackDisabled": True,
             "sessionStoreReady": True,
+            "gatewayTraceDir": str(gateway_trace_dir),
             "fixture_manifest_sha256": hashlib.sha256(cfg.fixture_manifest.read_bytes()).hexdigest(),
             "target_informative": cfg.target_informative,
             "max_attempts": cfg.max_attempts,

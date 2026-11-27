@@ -79,13 +79,18 @@ def write_session_store(profile_home: Path) -> None:
 
 
 def write_store_route(cfg: Any, sid: str, *, model: str = MODEL,
-                      provider: str = PROVIDER, fallback_active: bool = False) -> None:
-    runtime = {"provider": provider, "model": model, "fallback_active": fallback_active}
+                      provider: str = PROVIDER, fallback_active: bool = False,
+                      billing_provider: Optional[str] = None,
+                      runtime_model: Optional[str] = None,
+                      runtime_provider: Optional[str] = None) -> None:
+    runtime = {"provider": runtime_provider or provider, "model": runtime_model or model,
+               "fallback_active": fallback_active}
     with sqlite3.connect(cfg.profile_home / "state.db") as con:
         con.execute("INSERT OR REPLACE INTO sessions "
                     "(id, model, model_config, billing_provider, billing_base_url) "
                     "VALUES (?, ?, ?, ?, ?)",
-                    (sid, model, json.dumps({"gateway_runtime": runtime}), provider,
+                    (sid, model, json.dumps({"gateway_runtime": runtime}),
+                     billing_provider if billing_provider is not None else provider,
                      "https://inference-api.nousresearch.com/v1"))
 
 
@@ -162,7 +167,7 @@ class PreflightTests(unittest.TestCase):
     def test_accepts_frozen_profile_private_paths_and_manifest(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
             cfg = make_config(Path(td))
-            facts = collect.Collector(cfg, sync_runner=sync_ok).preflight()
+            facts = make_collector(cfg, sync_runner=sync_ok).preflight()
             self.assertEqual(facts["plugin_version"], VERSION)
             self.assertEqual(facts["model"], MODEL)
             self.assertEqual(facts["provider"], PROVIDER)
@@ -174,10 +179,10 @@ class PreflightTests(unittest.TestCase):
             with self.subTest(target=target), tempfile.TemporaryDirectory(prefix="collect-shadow-target-") as td:
                 cfg = make_config(Path(td), target_informative=target, test_mode=False)
                 with self.assertRaises(collect.PreflightError):
-                    collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                    make_collector(cfg, sync_runner=sync_ok).preflight()
         with tempfile.TemporaryDirectory(prefix="collect-shadow-target-") as td:
             cfg = make_config(Path(td), target_informative=12, test_mode=False)
-            collect.Collector(cfg, sync_runner=sync_ok).preflight()
+            make_collector(cfg, sync_runner=sync_ok).preflight()
 
     def test_rejects_nonempty_fallback_chain(self):
         for key, value in (
@@ -192,7 +197,7 @@ class PreflightTests(unittest.TestCase):
                         return subprocess.CompletedProcess(args, 0, json.dumps(value), "")
                     return sync_ok(cmd, **kw)
                 with self.assertRaises(collect.PreflightError):
-                    collect.Collector(cfg, sync_runner=runner).preflight()
+                    make_collector(cfg, sync_runner=runner).preflight()
 
     def test_profile_override_must_match_validated_hermes_home(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-profile-binding-") as td:
@@ -203,7 +208,7 @@ class PreflightTests(unittest.TestCase):
             shutil.copy2(cfg.profile_home / "config.yaml", other / "config.yaml")
             cfg = collect.Config(**{**cfg.__dict__, "profile_home": other})
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
 
     def test_missing_or_malformed_session_store_fails_preflight(self):
         for mode in ("missing", "malformed"):
@@ -215,7 +220,19 @@ class PreflightTests(unittest.TestCase):
                 else:
                     path.write_text("not a sqlite database")
                 with self.assertRaises(collect.PreflightError):
-                    collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                    make_collector(cfg, sync_runner=sync_ok).preflight()
+
+    def test_gateway_trace_dir_must_match_requested(self):
+        with tempfile.TemporaryDirectory(prefix="collect-shadow-gateway-dir-") as td:
+            cfg = make_config(Path(td))
+            reader = lambda home: {"CTXVM_TRACE_DIR": str(Path(td) / "other-traces")}
+            with self.assertRaises(collect.PreflightError):
+                make_collector(cfg, sync_runner=sync_ok, gateway_env_reader=reader).preflight()
+            facts = collect.Collector(
+                cfg, sync_runner=sync_ok,
+                gateway_env_reader=lambda home: {"CTXVM_TRACE_DIR": str(cfg.trace_dir)},
+            ).preflight()
+            self.assertEqual(facts["gatewayTraceDir"], str(cfg.trace_dir))
 
     def test_rejects_stale_plugin_version(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
@@ -223,7 +240,7 @@ class PreflightTests(unittest.TestCase):
             write_plugin(cfg.repo, "0.13.36")
             write_installed(cfg.hermes_home, "0.13.36")
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
 
     def test_missing_version_files_are_preflight_errors(self):
         paths = (
@@ -237,14 +254,14 @@ class PreflightTests(unittest.TestCase):
                 root = cfg.repo if rel.startswith("packages/") else cfg.hermes_home
                 (root / rel).unlink()
                 with self.assertRaises(collect.PreflightError):
-                    collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                    make_collector(cfg, sync_runner=sync_ok).preflight()
 
     def test_rejects_stale_gateway_even_when_sync_exits_zero(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
             cfg = make_config(Path(td))
             runner = lambda cmd, **kw: subprocess.CompletedProcess(cmd, 0, "GATEWAY STALE: pid 123\nsync-plugin: OK\n", "")
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=runner).preflight()
+                make_collector(cfg, sync_runner=runner).preflight()
 
     def test_sync_runner_exception_is_a_preflight_error(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-sync-error-") as td:
@@ -252,7 +269,7 @@ class PreflightTests(unittest.TestCase):
             def broken_sync(cmd, **kw):
                 raise subprocess.TimeoutExpired(cmd, kw.get("timeout", 120))
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=broken_sync).preflight()
+                make_collector(cfg, sync_runner=broken_sync).preflight()
 
     def test_rejects_wrong_profile_budget_shadow_mode_and_stub(self):
         cases = [
@@ -267,14 +284,14 @@ class PreflightTests(unittest.TestCase):
                 cfg = make_config(Path(td))
                 write_profile(cfg.profile_home, **case)
                 with self.assertRaises(collect.PreflightError):
-                    collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                    make_collector(cfg, sync_runner=sync_ok).preflight()
 
     def test_rejects_wrong_model_or_provider(self):
         for overrides in ({"model": "paid/model"}, {"provider": "openrouter"}):
             with self.subTest(overrides=overrides), tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
                 cfg = make_config(Path(td), **overrides)
                 with self.assertRaises(collect.PreflightError):
-                    collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                    make_collector(cfg, sync_runner=sync_ok).preflight()
 
     def test_rejects_owner_caps_missing_gates_and_reused_output(self):
         cases = [
@@ -286,25 +303,25 @@ class PreflightTests(unittest.TestCase):
             with self.subTest(overrides=overrides), tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
                 cfg = make_config(Path(td), **overrides)
                 with self.assertRaises(collect.PreflightError):
-                    collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                    make_collector(cfg, sync_runner=sync_ok).preflight()
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
             cfg = make_config(Path(td))
             (cfg.repo / "rust/target/release/replay").unlink()
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
             cfg = make_config(Path(td))
             cfg.out.mkdir(mode=0o700)
             (cfg.out / "old.txt").write_text("old")
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
 
     def test_rejects_version_disagreement_unsafe_fixtures_and_bad_private_files(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
             cfg = make_config(Path(td))
             write_installed(cfg.hermes_home, "0.13.38")
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
         for field, value in (("workspace", None), ("workspace", "/absolute"),
                              ("files", "not-a-list")):
             with self.subTest(field=field, value=value), tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
@@ -313,17 +330,17 @@ class PreflightTests(unittest.TestCase):
                 data["shapes"][SHAPES[0]][field] = value
                 cfg.fixture_manifest.write_text(json.dumps(data))
                 with self.assertRaises(collect.PreflightError):
-                    collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                    make_collector(cfg, sync_runner=sync_ok).preflight()
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
             cfg = make_config(Path(td))
             cfg.shadow.chmod(0o644)
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
             cfg = make_config(Path(td))
             (cfg.repo / "rust/target/release/replay").chmod(0o600)
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
 
     def test_rejects_unsafe_fixture_paths_and_bad_private_files(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
@@ -332,22 +349,22 @@ class PreflightTests(unittest.TestCase):
             data["shapes"][SHAPES[0]]["workspace"] = None
             cfg.fixture_manifest.write_text(json.dumps(data))
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
             cfg = make_config(Path(td))
             cfg.out.write_text("not a directory")
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
             cfg = make_config(Path(td))
             cfg.shadow.chmod(0o644)
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
             cfg = make_config(Path(td))
             (cfg.repo / "rust/target/release/replay").chmod(0o600)
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
 
     def test_rejects_fixture_hash_mismatch_and_nonprivate_trace_dir(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-preflight-") as td:
@@ -356,11 +373,11 @@ class PreflightTests(unittest.TestCase):
             fixture = cfg.fixture_manifest.parent / SHAPES[0] / "fixture.txt"
             fixture.write_text("tampered\n")
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
             write_manifest(cfg.fixture_manifest)
             cfg.trace_dir.chmod(0o755)
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
 
 
 def page_id(ref: str, digest: str) -> str:
@@ -396,6 +413,9 @@ def write_fake_session(cfg: Any, sid: str, *, label: Optional[str] = None,
                        model=MODEL, provider=PROVIDER, selections=1,
                        process_failures=0, session_failures=0, arm="control",
                        store_model=MODEL, store_provider=PROVIDER, fallback_active=False,
+                       billing_provider: Optional[str] = None,
+                       runtime_model: Optional[str] = None,
+                       runtime_provider: Optional[str] = None,
                        ref='tool:read_file({"path":"private/secret.md"})') -> None:
     digest = "sha256:abcdef01"
     pid = page_id(ref, digest)
@@ -441,7 +461,8 @@ def write_fake_session(cfg: Any, sid: str, *, label: Optional[str] = None,
     cov.write_text(json.dumps(coverage, indent=2) + "\n")
     cov.chmod(0o600)
     write_store_route(cfg, sid, model=store_model, provider=store_provider,
-                      fallback_active=fallback_active)
+                      fallback_active=fallback_active, billing_provider=billing_provider,
+                      runtime_model=runtime_model, runtime_provider=runtime_provider)
     with cfg.shadow.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(shadow_record(sid, pid, floor=floor, resident=resident,
                                           dropped=dropped, budget=budget), sort_keys=True) + "\n")
@@ -490,6 +511,9 @@ class FakeSessionRunner:
                            arm=plan.get("arm", "control"),
                            store_model=plan.get("store_model", MODEL),
                            store_provider=plan.get("store_provider", PROVIDER),
+                           billing_provider=plan.get("billing_provider"),
+                           runtime_model=plan.get("runtime_model"),
+                           runtime_provider=plan.get("runtime_provider"),
                            fallback_active=plan.get("fallback_active", False),
                            ref=plan.get("ref", 'tool:read_file({"path":"private/secret.md"})'))
         stdout = f"Session: {sid}\nanswer body must stay private\nsk-abcdefghijklmnop\n/home/private/workspace\n"
@@ -519,6 +543,11 @@ def sync_ok(cmd: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[st
             return subprocess.CompletedProcess(args, 1, "", "Config key not set: fallback_model")
     return subprocess.CompletedProcess(args, 0,
                                        "gateway: pid 123 started after these files were written; it holds this build.\n", "")
+
+
+def make_collector(cfg: Any, **kwargs: Any) -> Any:
+    kwargs.setdefault("gateway_env_reader", lambda home: {"CTXVM_TRACE_DIR": str(cfg.trace_dir)})
+    return collect.Collector(cfg, **kwargs)
 
 
 class SessionIdTests(unittest.TestCase):
@@ -551,6 +580,12 @@ class AuthFailureTests(unittest.TestCase):
             "quota exceeded",
             "rate limit exceeded",
             "model overloaded",
+            "missing_api_key",
+            "API key is missing",
+            "insufficient_quota",
+            "quota_exceeded",
+            "rate_limit_exceeded",
+            "model_overloaded",
         )
         for message in messages:
             with self.subTest(message=message):
@@ -569,7 +604,7 @@ class ExecutionTests(unittest.TestCase):
                 "dependency-chain": [{"label": "identifier_scan"}],
             }
             session = FakeSessionRunner(cfg, plans, gate_runner=green_gates, join_runner=green_join)
-            collector = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            collector = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                            gate_runner=green_gates, join_runner=session.join_runner)
             config_before = (cfg.profile_home / "config.yaml").read_bytes()
             result = collector.run()
@@ -641,7 +676,7 @@ class ExecutionTests(unittest.TestCase):
             def session_runner(cmd, **kw):
                 session_envs.append(kw.get("env"))
                 return session(cmd, **kw)
-            result = collect.Collector(cfg, sync_runner=sync_runner, session_runner=session_runner,
+            result = make_collector(cfg, sync_runner=sync_runner, session_runner=session_runner,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             self.assertEqual(result["status"], "TARGET_MET")
             self.assertTrue(sync_envs)
@@ -653,8 +688,8 @@ class ExecutionTests(unittest.TestCase):
                 self.assertNotIn("CTXVM_MODEL", env)
                 self.assertFalse(any(key.startswith("CTXVM_") and key != "CTXVM_TRACE_DIR" for key in env))
 
-    def test_unbound_coverage_stops_before_later_attempts(self):
-        cases = ("missing", "malformed_json", "malformed_object", "multiple", "wrong_sid")
+    def test_unbound_coverage_excludes_attempt_without_route_stop(self):
+        cases = ("missing", "malformed_json", "malformed_object", "multiple", "wrong_sid", "digest_mismatch")
         for case in cases:
             with self.subTest(case=case), tempfile.TemporaryDirectory(prefix="collect-shadow-coverage-stop-") as td:
                 cfg = make_config(Path(td), target_informative=3, max_attempts=3,
@@ -680,19 +715,23 @@ class ExecutionTests(unittest.TestCase):
                             path.write_text("[]\n")
                         elif case == "multiple":
                             shutil.copy2(path, cfg.trace_dir / f"{sid}.duplicate.coverage.json")
+                        elif case == "digest_mismatch":
+                            trace = cfg.trace_dir / f"{sid}.jsonl"
+                            trace.write_bytes(trace.read_bytes() + b"\n")
                         else:
                             data = json.loads(path.read_text())
                             data["session"]["sessionID"] = "local-other-session"
                             path.write_text(json.dumps(data))
                     return result
-                result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=runner,
+                result = make_collector(cfg, sync_runner=sync_ok, session_runner=runner,
                                            gate_runner=green_gates, join_runner=session.join_runner).run()
                 receipts = [json.loads(path.read_text()) for path in sorted((cfg.out / "attempts").glob("*/receipt.json"))]
-                self.assertEqual(len(receipts), 1)
-                self.assertEqual(result["status"], "STOPPED_MODEL_PROVIDER")
-                self.assertEqual(result["attempts"], 1)
-                self.assertTrue(receipts[0]["model_provider_failure"])
-                self.assertEqual(receipts[0]["route_error"], "coverage_unbound")
+                self.assertEqual(len(receipts), 3)
+                self.assertEqual(result["status"], "UNDERPOWERED")
+                self.assertEqual(result["attempts"], 3)
+                self.assertFalse(receipts[0]["model_provider_failure"])
+                self.assertFalse(receipts[0]["valid"])
+                self.assertEqual(result["all_valid_sessions"], 2)
                 self.assertTrue((cfg.out / "aggregate.json").is_file())
 
     def test_malformed_evidence_produces_excluded_receipt(self):
@@ -728,21 +767,15 @@ class ExecutionTests(unittest.TestCase):
                                 row["dropped_pages"] = [None]
                             path.write_text("".join(json.dumps(row) + "\n" for row in rows))
                     return result
-                result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=runner,
+                result = make_collector(cfg, sync_runner=sync_ok, session_runner=runner,
                                            gate_runner=green_gates, join_runner=session.join_runner).run()
                 receipts = [json.loads(path.read_text()) for path in sorted((cfg.out / "attempts").glob("*/receipt.json"))]
+                self.assertEqual(len(receipts), 3)
                 self.assertFalse(receipts[0]["valid"])
                 self.assertTrue(receipts[0]["failed_gates"])
+                self.assertEqual(result["attempts"], 3)
+                self.assertEqual(result["all_valid_sessions"], 2)
                 self.assertTrue((cfg.out / "aggregate.json").is_file())
-                if malformed == "plugin_string":
-                    self.assertEqual(len(receipts), 1)
-                    self.assertEqual(result["status"], "STOPPED_MODEL_PROVIDER")
-                    self.assertEqual(result["attempts"], 1)
-                    self.assertEqual(result["all_valid_sessions"], 0)
-                else:
-                    self.assertEqual(len(receipts), 3)
-                    self.assertEqual(result["attempts"], 3)
-                    self.assertEqual(result["all_valid_sessions"], 2)
 
     def test_denominator_views_are_per_shape_and_pooled(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-denominators-") as td:
@@ -754,7 +787,7 @@ class ExecutionTests(unittest.TestCase):
                 "dependency-chain": [{"label": "identifier_scan"}],
             }
             session = FakeSessionRunner(cfg, plans, gate_runner=green_gates, join_runner=green_join)
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             views = result["denominator_views"]
             self.assertEqual(set(views), {"all_valid", "informative_only"})
@@ -778,7 +811,7 @@ class ExecutionTests(unittest.TestCase):
             source = {shape: (cfg.fixture_manifest.parent / shape / "fixture.txt").read_bytes()
                       for shape in SHAPES}
             session = FakeSessionRunner(cfg, plans, gate_runner=green_gates, join_runner=green_join)
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             self.assertEqual(result["status"], "TARGET_MET")
             self.assertEqual(session.observed_fixtures,
@@ -807,7 +840,7 @@ class ExecutionTests(unittest.TestCase):
                     failed_once["done"] = True
                     return subprocess.CompletedProcess(list(cmd), 1, "bad coverage", "")
                 return green_gates(cmd, **kw)
-            collector = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            collector = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                            gate_runner=gates, join_runner=session.join_runner)
             result = collector.run()
             self.assertEqual(result["status"], "STOPPED_AUTH_MODEL")
@@ -829,7 +862,7 @@ class ExecutionTests(unittest.TestCase):
                 "dependency-chain": [{"label": "identifier_scan"}],
             }
             session = FakeSessionRunner(cfg, plans, gate_runner=green_gates, join_runner=green_join)
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
             self.assertTrue(receipt["valid"])
@@ -852,7 +885,7 @@ class ExecutionTests(unittest.TestCase):
                 "dependency-chain": [{"label": "identifier_scan"}],
             }
             session = FakeSessionRunner(cfg, plans, gate_runner=green_gates, join_runner=green_join)
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             self.assertEqual(result["status"], "UNDERPOWERED")
             self.assertEqual(result["all_valid_sessions"], 3)
@@ -892,7 +925,7 @@ class ExecutionTests(unittest.TestCase):
                             failed_once["done"] = True
                             return subprocess.CompletedProcess(list(cmd), 1, "engineered failure", "")
                     return green_gates(cmd, **kw)
-                result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+                result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                            gate_runner=gates, join_runner=session.join_runner).run()
                 receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
                 self.assertFalse(receipt["valid"])
@@ -910,7 +943,7 @@ class ExecutionTests(unittest.TestCase):
                 join_calls["n"] += 1
                 rc = 3 if join_calls["n"] == 1 else 0
                 return subprocess.CompletedProcess(list(cmd), rc, '{"status":"INSUFFICIENT_DATA"}', "")
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=join).run()
             self.assertEqual(result["all_valid_sessions"], 3)
             receipts = [json.loads(p.read_text()) for p in sorted((cfg.out / "attempts").glob("*/receipt.json"))]
@@ -923,7 +956,7 @@ class ExecutionTests(unittest.TestCase):
             plans = {shape: [{}] for shape in SHAPES}
             session = FakeSessionRunner(cfg, plans)
             bad_join = lambda cmd, **kw: subprocess.CompletedProcess(list(cmd), 2, "", "join failed")
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=bad_join).run()
             receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
             self.assertFalse(receipt["valid"])
@@ -940,7 +973,7 @@ class ExecutionTests(unittest.TestCase):
                 "dependency-chain": [{"label": "identifier_scan"}],
             }
             session = FakeSessionRunner(cfg, plans, gate_runner=green_gates, join_runner=green_join)
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
             self.assertFalse(receipt["valid"])
@@ -960,7 +993,7 @@ class ExecutionTests(unittest.TestCase):
                 "dependency-chain": [{"label": "identifier_scan", "provider": "unknown"}],
             }
             session = FakeSessionRunner(cfg, plans)
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             self.assertEqual(result["status"], "TARGET_MET")
             self.assertEqual(result["attempts"], 3)
@@ -982,7 +1015,7 @@ class ExecutionTests(unittest.TestCase):
                 "dependency-chain": [{"label": "identifier_scan"}],
             }
             session = FakeSessionRunner(cfg, plans)
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
             self.assertEqual(result["status"], "STOPPED_MODEL_PROVIDER")
@@ -1000,13 +1033,65 @@ class ExecutionTests(unittest.TestCase):
                 "dependency-chain": [{"label": "identifier_scan"}],
             }
             session = FakeSessionRunner(cfg, plans)
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
             self.assertEqual(result["status"], "STOPPED_MODEL_PROVIDER")
             self.assertEqual(result["attempts"], 1)
             self.assertEqual(receipt["route_provider"], "other")
             self.assertTrue(receipt["model_provider_failure"])
+
+    def test_session_store_route_sources_must_agree(self):
+        cases = (
+            ({"billing_provider": "other"}, "billing_provider"),
+            ({"runtime_model": "other/model"}, "runtime_model"),
+            ({"runtime_provider": "other"}, "runtime_provider"),
+        )
+        for plan, expected_error in cases:
+            with self.subTest(plan=plan), tempfile.TemporaryDirectory(prefix="collect-shadow-store-consistency-") as td:
+                cfg = make_config(Path(td), target_informative=3, max_attempts=3,
+                                  max_attempts_per_shape=1)
+                plans = {
+                    "read-once-pressure": [dict(plan, provider="unknown")],
+                    "deliberate-later-reread": [{"label": "tool_recall"}],
+                    "dependency-chain": [{"label": "identifier_scan"}],
+                }
+                session = FakeSessionRunner(cfg, plans)
+                result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
+                                        gate_runner=green_gates, join_runner=session.join_runner).run()
+                receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
+                self.assertEqual(result["status"], "STOPPED_MODEL_PROVIDER")
+                self.assertEqual(result["attempts"], 1)
+                self.assertTrue(receipt["model_provider_failure"])
+                self.assertIn(expected_error, receipt["route_consistency_errors"])
+
+    def test_missing_runtime_route_proof_stops_batch(self):
+        with tempfile.TemporaryDirectory(prefix="collect-shadow-missing-runtime-route-") as td:
+            cfg = make_config(Path(td), target_informative=3, max_attempts=3,
+                              max_attempts_per_shape=1)
+            plans = {
+                "read-once-pressure": [{"provider": "unknown"}],
+                "deliberate-later-reread": [{"label": "tool_recall"}],
+                "dependency-chain": [{"label": "identifier_scan"}],
+            }
+            session = FakeSessionRunner(cfg, plans)
+            calls = {"n": 0}
+            def runner(cmd, **kw):
+                result = session(cmd, **kw)
+                calls["n"] += 1
+                if calls["n"] == 1:
+                    sid = result.stdout.split("Session:", 1)[1].splitlines()[0].strip()
+                    with sqlite3.connect(cfg.profile_home / "state.db") as con:
+                        con.execute("UPDATE sessions SET model_config=? WHERE id=?",
+                                    (json.dumps({"gateway_runtime": {"fallback_active": False}}), sid))
+                return result
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=runner,
+                                    gate_runner=green_gates, join_runner=session.join_runner).run()
+            receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
+            self.assertEqual(result["status"], "STOPPED_MODEL_PROVIDER")
+            self.assertEqual(result["attempts"], 1)
+            self.assertIn("missing_runtime_model", receipt["route_consistency_errors"])
+            self.assertIn("missing_runtime_provider", receipt["route_consistency_errors"])
 
     def test_known_route_drift_stops_batch(self):
         for plan, reason in (({"model": "other/model"}, "sidecar_model"),
@@ -1020,7 +1105,7 @@ class ExecutionTests(unittest.TestCase):
                     "dependency-chain": [{"label": "identifier_scan"}],
                 }
                 session = FakeSessionRunner(cfg, plans)
-                result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+                result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                            gate_runner=green_gates, join_runner=session.join_runner).run()
                 receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
                 self.assertEqual(result["status"], "STOPPED_MODEL_PROVIDER")
@@ -1039,7 +1124,7 @@ class ExecutionTests(unittest.TestCase):
                 "dependency-chain": [{"sid": "local-unique-session", "label": "identifier_scan"}],
             }
             session = FakeSessionRunner(cfg, plans, gate_runner=green_gates, join_runner=green_join)
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             receipts = [json.loads(path.read_text()) for path in sorted((cfg.out / "attempts").glob("*/receipt.json"))]
             self.assertEqual(len(receipts), 3)
@@ -1070,7 +1155,7 @@ class ExecutionTests(unittest.TestCase):
                 if calls["n"] == 1:
                     cfg.shadow.write_bytes(before)
                 return result
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=runner,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=runner,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
             self.assertIn("duplicate_session", receipt["failed_gates"])
@@ -1083,7 +1168,7 @@ class ExecutionTests(unittest.TestCase):
             cfg = make_config(Path(td))
             cfg.shadow.write_text("not-json\n")
             with self.assertRaises(collect.PreflightError):
-                collect.Collector(cfg, sync_runner=sync_ok).preflight()
+                make_collector(cfg, sync_runner=sync_ok).preflight()
 
     def test_process_failure_total_is_diagnostic_only(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-process-counter-") as td:
@@ -1095,7 +1180,7 @@ class ExecutionTests(unittest.TestCase):
                 "dependency-chain": [{"label": "identifier_scan"}],
             }
             session = FakeSessionRunner(cfg, plans, gate_runner=green_gates, join_runner=green_join)
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
             self.assertTrue(receipt["valid"])
@@ -1120,7 +1205,7 @@ class ExecutionTests(unittest.TestCase):
                     "dependency-chain": [{"label": "identifier_scan"}],
                 }
                 session = FakeSessionRunner(cfg, plans)
-                result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+                result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                            gate_runner=green_gates, join_runner=session.join_runner).run()
                 receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
                 self.assertFalse(receipt["valid"])
@@ -1184,7 +1269,7 @@ class ExecutionTests(unittest.TestCase):
                 "dependency-chain": [{"label": "identifier_scan"}],
             }
             session = FakeSessionRunner(cfg, plans)
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             aggregate = json.dumps(result)
             for forbidden in (str(cfg.repo), str(cfg.out), str(cfg.fixture_manifest.parent),
@@ -1197,7 +1282,7 @@ class ExecutionTests(unittest.TestCase):
                               max_attempts_per_shape=2)
             plans = {shape: [{}, {}] for shape in SHAPES}
             session = FakeSessionRunner(cfg, plans, gate_runner=green_gates, join_runner=green_join)
-            result = collect.Collector(cfg, sync_runner=sync_ok, session_runner=session,
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=session,
                                        gate_runner=green_gates, join_runner=session.join_runner).run()
             self.assertEqual(result["status"], "ATTEMPT_CAP")
             self.assertEqual(result["attempts"], 4)
