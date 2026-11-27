@@ -1,0 +1,126 @@
+{
+  "candidate_pin_status": "not_evaluated_insufficient_data",
+  "candidate_pins": [],
+  "counts": {
+    "dropped_pages": 1,
+    "dropped_records": 1,
+    "later_identifier_scan_opportunities": 0,
+    "later_tool_recall_opportunities": 0,
+    "never_observed_opportunities": 1,
+    "page_opportunities": 1,
+    "selections": 6
+  },
+  "excluded_sessions": [
+    {
+      "reasons": [
+        "session_write_failures",
+        "version_too_old"
+      ],
+      "session_key": "sha256:07e17d9047d05138"
+    },
+    {
+      "reasons": [
+        "session_write_failures",
+        "version_too_old"
+      ],
+      "session_key": "sha256:6411415e9c7421a0"
+    },
+    {
+      "reasons": [
+        "session_write_failures",
+        "version_too_old"
+      ],
+      "session_key": "sha256:7ed6996cd97d9d8f"
+    },
+    {
+      "reasons": [
+        "session_write_failures",
+        "version_too_old"
+      ],
+      "session_key": "sha256:4fbbe0d1b49bd0a2"
+    },
+    {
+      "reasons": [
+        "session_write_failures",
+        "version_too_old"
+      ],
+      "session_key": "sha256:088c31a7de4328c8"
+    },
+    {
+      "reasons": [
+        "session_write_failures",
+        "version_too_old"
+      ],
+      "session_key": "sha256:7c5ac1aee92a1a43"
+    },
+    {
+      "reasons": [
+        "session_write_failures",
+        "version_too_old"
+      ],
+      "session_key": "sha256:c22d2c355a609bd6"
+    },
+    {
+      "reasons": [
+        "session_write_failures",
+        "version_too_old"
+      ],
+      "session_key": "sha256:cf4170658306e30d"
+    },
+    {
+      "reasons": [
+        "session_write_failures",
+        "version_too_old"
+      ],
+      "session_key": "sha256:ad5c14603cf4a3c4"
+    },
+    {
+      "reasons": [
+        "session_write_failures",
+        "version_too_old"
+      ],
+      "session_key": "sha256:e296f98c1a84fed4"
+    },
+    {
+      "reasons": [
+        "session_write_failures",
+        "version_too_old"
+      ],
+      "session_key": "sha256:1192db7b1be2e6f8"
+    },
+    {
+      "reasons": [
+        "session_write_failures",
+        "version_too_old"
+      ],
+      "session_key": "sha256:2d62bf2ffd07b3c9"
+    }
+  ],
+  "generated_at": "2026-11-27T08:07:07+00:00",
+  "input_sha256": "58a855c60961ce839e34abd1d430c25bc7dbf4988b8a49f0981d0bdaaf62276e",
+  "metrics": null,
+  "required_valid_sessions": 3,
+  "schema": "ctxvm-shadow-join-result/v1",
+  "schema_invalid_records": 0,
+  "sessions": [
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "dropped_pages": 1,
+      "dropped_records": 1,
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 1,
+      "page_opportunities": 1,
+      "scope_violation": false,
+      "selections": 6,
+      "session_key": "sha256:06b63f34cf135248",
+      "trace_digest": "1c0747d3730595dc4cc9035f4edd947562b51a46aa48bb828c67f0a57c52ccd8",
+      "unmatched_page_ids": 0
+    }
+  ],
+  "sessions_seen": 13,
+  "shadow_records": 71,
+  "status": "INSUFFICIENT_DATA",
+  "valid_sessions": 1
+}

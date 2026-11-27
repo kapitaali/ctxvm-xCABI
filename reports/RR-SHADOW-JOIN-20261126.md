@@ -1,30 +1,25 @@
-# RR-SHADOW-JOIN-20261126 — offline join over fresh control shadow records (DRAFT, blocked on data)
+# RR-SHADOW-JOIN-20261126 — offline join over fresh control shadow records (IMPLEMENTED; current corpus insufficient)
 
 Lane: experiment/research. Authority: accepted shadow fix `RR-SHADOW-FIX-REVIEW-20261125`
-(`061ebd6`) and the authorized path **fresh control shadow mode on `w8-shadow` only**.
-Stable control parity is explicitly not claimed. This card specifies the offline join; it
-does not authorize a gateway restart, profile activation, live stub arm, candidate-pin use,
-model call, spend, export, commit, or push.
+(`061ebd6`), live acceptance `RR-SHADOW-LIVE-ACCEPT-20261126` (`7b4b0cd`), and the authorized
+path **fresh control shadow mode on `w8-shadow` only**. Stable control parity is explicitly not
+claimed. The join is implemented at `research/shadow-analysis/join.py`; current result:
+`RR-SHADOW-JOIN-RESULT-20261127`. This card does not authorize a gateway restart, profile
+activation, live stub arm, candidate-pin use, model call, spend, export, commit, or push.
 
-## 0. Current state (verified 2026-11-26)
+## 0. Current state (verified 2026-11-27)
 
-- Installed plugin: **0.13.36** (`~/.hermes/plugins/ctxvm-tracer/__init__.py`).
-- Gateway pid **90481** is live on 0.13.36 (`sync-plugin.sh --check` confirms it holds the build).
-- `w8-shadow` config resolves correctly offline and live: `engine=compressor`, `budget=24000`,
-  `shadowSelection=true/settings`.
-- The 0.13.36 `pre_api_request` collection path produced **65 schema-valid records across 12
-  successful free-model sessions**. All 12 captures pass the coverage checker and Rust replay with
-  `divergences=[]`, `violations=[]`.
-- However, **zero dropped/repositioned pages are present in the persisted records**. Two live shadow
-  writes failed with `ValueError: page entry does not resolve to exactly one logical ref`
-  (`~/.local/state/ctxvm/traces/_swallowed.log`, 19:56:43 and 19:57:58), so the actual drop attempts were
-  lost. The exact `contentHash` is present in the payload but the writer rejects ambiguous identity-token
-  joins instead of disambiguating by `ref|contentHash`.
-- Every sidecar reports `shadowWriteFailures=2` because the counter is process-global, so the mandatory
-  zero-failure gate excludes all 12 sessions even though their traces are valid.
-- Therefore there is **no joinable would-drop data yet**. Hermes must fix exact-hash disambiguation and
-  per-session failure accounting, then fresh sessions must produce persisted `dropped_pages`. See
-  `RR-SHADOW-LIVE-DATA-REVIEW-20261126.md`.
+- Installed plugin: **0.13.37**; live acceptance committed as `7b4b0cd` / `5641c82`.
+- The sidecar contains **71 schema-valid records across 13 sessions**. Twelve sessions are
+  0.13.36 captures with the old process-global `shadowWriteFailures=2`; one is the accepted
+  0.13.37 session with per-session failures 0.
+- The accepted 0.13.37 session has **six selections and one persisted dropped page** with
+  `17,195 floor < 24,000 budget < 33,181 resident`; its trace passes schema, coverage, and Rust
+  replay.
+- The implemented join admits only that one session. It returns **INSUFFICIENT_DATA** because
+  the preregistered minimum is three valid sessions. It emits counts and denominators, but
+  `metrics=null`, `candidate_pins=[]`, and no rate or pin claim.
+- See `RR-SHADOW-JOIN-RESULT-20261127` for commands, exclusions, and the exact aggregate output.
 
 ## 1. Inputs and gates
 
@@ -38,7 +33,7 @@ model call, spend, export, commit, or push.
 
 ### Mandatory gates before scoring
 
-1. **Version/profile gate:** every included coverage manifest has `plugin.version >= 0.13.35`,
+1. **Version/profile gate:** every included coverage manifest has `plugin.version >= 0.13.37`,
    `plugin.profile == "w8-shadow"`, `plugin.shadowSelection == true`, and
    `plugin.shadowWriteFailures == 0`.
 2. **Authorized-path gate:** every included shadow record has `policy.mode == "fresh"` and
@@ -57,7 +52,7 @@ model call, spend, export, commit, or push.
 7. **Ordering gate:** shadow records sort by `(session_id, call_index)`. A trace event is
    later than a shadow record if `event.turn > record.turn`, or if turns are equal and both
    have parseable `ts` with `event.ts > record.ts`. Same-turn events without usable `ts` are
-   **ambiguous**, not counted as later. The 0.13.35 tracer emits millisecond UTC `ts` by
+   **ambiguous**, not counted as later. The 0.13.37 tracer emits millisecond UTC `ts` by
    default (`packages/hermes/src/plugin.py:257-270`); missing timestamps degrade the session
    to strictly-later-turn labels only.
 8. **No-perturbation gate:** `request_unchanged == true` is required by schema; any violation
@@ -106,7 +101,9 @@ Per session and pooled only as descriptive counts:
 - `shadow_write_failures`: from coverage manifest; must be zero for included sessions.
 
 Report by `policy.mode`, `trigger`, page `kind`, and source. Do not pool identifier_scan with
-tool_recall into one "reuse" score: E1 showed they have different label quality.
+tool_recall into one "reuse" score: E1 showed they have different label quality. Until at least
+three valid sessions pass the gate, emit counts only: suppress pooled metrics and per-session
+pressure/floor/drop-share/churn summaries.
 
 ## 4. Candidate pins (offline only; proposed frozen rule)
 
@@ -116,8 +113,9 @@ A page may be nominated as an **offline candidate pin** only if:
 - it has at least **3 later tool_recall events** across those sessions.
 
 Identifier_scan alone does not nominate a pin. `never_observed` never proves a page safe to
-drop. Candidate pins remain offline-only; applying one to a live arm requires a separate owner
-ruling and prereg.
+drop. Candidate pins remain offline-only; every emitted entry carries `offline_only=true` and
+`activation=not_authorized`. Applying one to a live arm requires a separate owner ruling and
+prereg.
 
 ## 5. Outputs and privacy
 
@@ -146,27 +144,27 @@ may hold raw refs in memory only to recompute PageId hashes.
 - No causal, cost-saving, paging-quality, model-quality, determinism, availability, or
   redaction claim follows.
 
-## 7. Repro commands (after data exists)
+## 7. Repro commands
 
 ```bash
-cd /home/theb/Documents/ctxvm
+cd "$CTXVM_REPO"
 python3 tools/shadow-selection-validate.py \
   ~/.hermes/profiles/w8-shadow/ctxvm-shadow/selection.jsonl
 
-# Research-lane join script to be implemented against this card:
+python3 research/shadow-analysis/test_join.py -v
 python3 research/shadow-analysis/join.py \
   --shadow ~/.hermes/profiles/w8-shadow/ctxvm-shadow/selection.jsonl \
   --trace-dir ~/.local/state/ctxvm/traces \
   --out research/shadow-analysis/out
 ```
 
-The script does not exist yet. This card is the specification and acceptance test for it.
+The join exits 0 only with at least three valid sessions; otherwise it writes
+`out/result.json` with `status=INSUFFICIENT_DATA` and exits 3.
 
 ## 8. Routing / owner decisions
 
-Research/experiment lane implements the offline join and reports counts. Review lane verifies
-session mapping, hash equality, ordering, denominators, and privacy. The gateway is already
-running 0.13.36 and live collection works, but the corpus is blocked by exact-hash disambiguation
-and per-session failure accounting (`RR-SHADOW-LIVE-DATA-REVIEW-20261126.md`). After that fix and
-fresh valid records with persisted `dropped_pages`, route this card to research/experiment. No live
-stub-arm or candidate-pin activation is authorized.
+Research/experiment lane implemented the offline join. Review lane still needs to verify session
+mapping, hash equality, ordering, denominators, and privacy. The current corpus has one valid
+0.13.37 session, so no rates or candidate pins are emitted. More fresh 0.13.37 `w8-shadow` sessions
+with persisted drops are required before descriptive rates can be reported. No live stub-arm or
+candidate-pin activation is authorized.
