@@ -2,13 +2,13 @@
   "candidate_pins": [],
   "counts": {
     "ambiguous_same_turn_events": 0,
-    "dropped_pages": 3,
-    "dropped_records": 3,
+    "dropped_pages": 9,
+    "dropped_records": 5,
     "later_identifier_scan_opportunities": 0,
     "later_tool_recall_opportunities": 0,
-    "never_observed_opportunities": 3,
-    "page_opportunities": 3,
-    "selections": 18,
+    "never_observed_opportunities": 9,
+    "page_opportunities": 9,
+    "selections": 42,
     "unmatched_page_ids": 0
   },
   "excluded_sessions": [
@@ -97,38 +97,143 @@
       "session_key": "sha256:2d62bf2ffd07b3c9"
     }
   ],
-  "generated_at": "2026-11-27T12:52:54+00:00",
-  "input_sha256": "10ea1c33093244322d30946f625e59540b082a9f5fdccc92f11f8ed98c24e468",
+  "generated_at": "2026-11-27T13:08:13+00:00",
+  "input_sha256": "dd55d2e04054e1ad77eae6b09a37b96fb04194bee2cc7bb8cbf0307ab964fc00",
   "metrics": {
     "drop_share": {
-      "max": 0.48145022753985717,
-      "mean": 0.07847991534480364,
+      "max": 0.633088608925724,
+      "mean": 0.06376496843824617,
       "min": 0.0
     },
     "floor_pressure": {
-      "max": 1.427,
-      "mean": 0.9646250000000001,
+      "max": 2.3272083333333335,
+      "mean": 0.9338670634920635,
       "min": 0.0425
     },
     "later_identifier_scan_rate": 0.0,
     "later_tool_recall_rate": 0.0,
     "never_observed_rate": 1.0,
     "pressure": {
-      "max": 1.429625,
-      "mean": 1.0756388888888888,
+      "max": 2.380541666666667,
+      "mean": 1.1590277777777778,
       "min": 0.0425
     },
     "selection_churn": {
       "max": 1.0,
-      "mean": 0.8,
+      "mean": 0.8787878787878788,
       "min": 0.0
     },
-    "would_drop_rate": 0.16666666666666666
+    "would_drop_rate": 0.11904761904761904
   },
   "required_valid_sessions": 3,
   "schema": "ctxvm-shadow-join-result/v1",
   "schema_invalid_records": 0,
   "sessions": [
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "dropped_pages": 0,
+      "dropped_records": 0,
+      "floor_pressure": {
+        "max": 1.6254166666666667,
+        "mean": 0.8575833333333334,
+        "min": 0.08975
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 0,
+      "page_opportunities": 0,
+      "pressure": {
+        "max": 1.670375,
+        "mean": 0.8800625,
+        "min": 0.08975
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0
+      },
+      "selections": 2,
+      "session_key": "sha256:3d7959e556791cf1",
+      "trace_digest": "7354492f0bc2c9ee937138fc13aa5fc3c0c0a5c48feb72f9d1d3929274eca134",
+      "unmatched_page_ids": 0
+    },
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "dropped_pages": 0,
+      "dropped_records": 0,
+      "floor_pressure": {
+        "max": 2.220458333333333,
+        "mean": 1.458702380952381,
+        "min": 0.08966666666666667
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 0,
+      "page_opportunities": 0,
+      "pressure": {
+        "max": 2.225791666666667,
+        "mean": 1.762720238095238,
+        "min": 0.08966666666666667
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0
+      },
+      "selections": 7,
+      "session_key": "sha256:5080e8a35500af43",
+      "trace_digest": "be3245b8d1514712a833423b9fa77f56a4e3f6603dd6da46bb222f9f8ee5e0d6",
+      "unmatched_page_ids": 0
+    },
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "dropped_pages": 0,
+      "dropped_records": 0,
+      "floor_pressure": {
+        "max": 1.2034583333333333,
+        "mean": 0.6465624999999999,
+        "min": 0.08966666666666667
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 0,
+      "page_opportunities": 0,
+      "pressure": {
+        "max": 1.2034583333333333,
+        "mean": 0.6465624999999999,
+        "min": 0.08966666666666667
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0
+      },
+      "selections": 2,
+      "session_key": "sha256:259a878ca4b1c2b1",
+      "trace_digest": "e4de5f0f95650a0af53d72f02c82eac3d5870e4f93891742ee070f9f4d78cf35",
+      "unmatched_page_ids": 0
+    },
     {
       "ambiguous_opportunities": 0,
       "ambiguous_same_turn_events": 0,
@@ -203,6 +308,41 @@
       "ambiguous_opportunities": 0,
       "ambiguous_same_turn_events": 0,
       "drop_share": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "dropped_pages": 0,
+      "dropped_records": 0,
+      "floor_pressure": {
+        "max": 0.2800416666666667,
+        "mean": 0.18491666666666667,
+        "min": 0.08979166666666667
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 0,
+      "page_opportunities": 0,
+      "pressure": {
+        "max": 0.6397083333333333,
+        "mean": 0.36475,
+        "min": 0.08979166666666667
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0
+      },
+      "selections": 2,
+      "session_key": "sha256:8975b65af63e1c33",
+      "trace_digest": "d377d7d4ec6733720ee870ce69d517eef2680324ed95de159994f918b076fff4",
+      "unmatched_page_ids": 0
+    },
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
         "max": 0.48145022753985717,
         "mean": 0.08024170458997619,
         "min": 0.0
@@ -233,10 +373,80 @@
       "session_key": "sha256:06b63f34cf135248",
       "trace_digest": "1c0747d3730595dc4cc9035f4edd947562b51a46aa48bb828c67f0a57c52ccd8",
       "unmatched_page_ids": 0
+    },
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.633088608925724,
+        "mean": 0.1406100220222082,
+        "min": 0.0
+      },
+      "dropped_pages": 6,
+      "dropped_records": 2,
+      "floor_pressure": {
+        "max": 2.3272083333333335,
+        "mean": 0.8778101851851852,
+        "min": 0.08975
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 6,
+      "page_opportunities": 6,
+      "pressure": {
+        "max": 2.380541666666667,
+        "mean": 1.385152777777778,
+        "min": 0.08975
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 0.875,
+        "min": 0.0
+      },
+      "selections": 9,
+      "session_key": "sha256:2fc166359efe5d2c",
+      "trace_digest": "cc593b951c7eb8a86ff102adf80440c0b8494c7f972246ba9af53076fb089a05",
+      "unmatched_page_ids": 0
+    },
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "dropped_pages": 0,
+      "dropped_records": 0,
+      "floor_pressure": {
+        "max": 0.2800416666666667,
+        "mean": 0.18491666666666667,
+        "min": 0.08979166666666667
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 0,
+      "page_opportunities": 0,
+      "pressure": {
+        "max": 0.6397083333333333,
+        "mean": 0.36475,
+        "min": 0.08979166666666667
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0
+      },
+      "selections": 2,
+      "session_key": "sha256:9a360ac2962ae312",
+      "trace_digest": "9776316aeaf4b8458a776e1524ee7e468fd22512299934e2febabf197d20d561",
+      "unmatched_page_ids": 0
     }
   ],
-  "sessions_seen": 15,
-  "shadow_records": 83,
+  "sessions_seen": 21,
+  "shadow_records": 107,
   "status": "OK",
-  "valid_sessions": 3
+  "valid_sessions": 9
 }

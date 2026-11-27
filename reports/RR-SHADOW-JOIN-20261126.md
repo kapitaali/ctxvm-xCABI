@@ -1,24 +1,26 @@
-# RR-SHADOW-JOIN-20261126 — offline join over fresh control shadow records (IMPLEMENTED; current corpus OK, n=3)
+# RR-SHADOW-JOIN-20261126 — offline join over fresh control shadow records (IMPLEMENTED; current corpus OK, n=9)
 
 Lane: experiment/research. Authority: accepted shadow fix `RR-SHADOW-FIX-REVIEW-20261125`
 (`061ebd6`), live acceptance `RR-SHADOW-LIVE-ACCEPT-20261126` (`7b4b0cd`), and the authorized
 path **fresh control shadow mode on `w8-shadow` only**. Stable control parity is explicitly not
 claimed. The join is implemented at `research/shadow-analysis/join.py`; current result:
-`RR-SHADOW-JOIN-RESULT2-20261127`. This card does not authorize a gateway restart, profile
+`RR-SHADOW-VARIED-RESULT-20261127`. This card does not authorize a gateway restart, profile
 activation, live stub arm, candidate-pin use, model call, spend, export, commit, or push.
 
 ## 0. Current state (verified 2026-11-27)
 
 - Installed plugin: **0.13.37**; live acceptance committed as `7b4b0cd` / `5641c82`.
-- The sidecar contains **83 schema-valid records across 15 sessions**. Twelve sessions are
-  0.13.36 captures with the old process-global `shadowWriteFailures=2`; three are valid
+- The sidecar contains **107 schema-valid records across 21 sessions**. Twelve sessions are
+  0.13.36 captures with the old process-global `shadowWriteFailures=2`; nine are valid
   0.13.37 sessions with per-session failures 0.
-- Each valid 0.13.37 session has **six selections and one persisted dropped page**. Across the
-  three sessions the join sees 18 selections, 3 dropped pages, 0 unmatched PageIds, 0 later
-  tool_recall, 0 later identifier_scan, and 3 right-censored `never_observed` opportunities.
-- The join returns **OK** at the preregistered three-session minimum. It emits descriptive
-  metrics with denominators; `candidate_pins=[]` because there are no later tool_recall events.
-- See `RR-SHADOW-JOIN-RESULT2-20261127` for commands, exclusions, metrics, and limits.
+- The varied batch added six sessions across many-small, medium-middle, and mixed-size workloads.
+  Only one mixed session persisted drops (six pages); the other five were below-budget or
+  floor-bust no-ops. Across all nine valid sessions the join sees 42 selections, 5 dropped
+  records, 9 dropped pages, 0 unmatched PageIds, 0 later tool_recall, 0 later identifier_scan,
+  and 9 right-censored `never_observed` opportunities.
+- The join returns **OK**. It emits descriptive metrics with denominators; `candidate_pins=[]`
+  because there are no later tool_recall events.
+- See `RR-SHADOW-VARIED-RESULT-20261127` for per-shape outcomes, metrics, and limits.
 
 ## 1. Inputs and gates
 
@@ -164,7 +166,7 @@ The join exits 0 only with at least three valid sessions; otherwise it writes
 
 Research/experiment lane implemented the offline join. Review lane verified session mapping, hash
 equality, ordering, denominators, privacy, and the three corrections in
-`RR-SHADOW-JOIN-FIX-REVIEW-20261127`. The current corpus has three valid 0.13.37 sessions and
-returns OK with descriptive metrics; candidate pins remain empty and offline-only. More varied
-sessions are recommended before interpreting rates. No live stub-arm or candidate-pin activation
-is authorized.
+`RR-SHADOW-JOIN-FIX-REVIEW-20261127`. The current corpus has nine valid 0.13.37 sessions and
+returns OK with descriptive metrics; candidate pins remain empty and offline-only. The varied batch
+showed that only one mixed-size session produced an evictable middle; more informative workloads
+are needed before treating rates as stable. No live stub-arm or candidate-pin activation is authorized.
