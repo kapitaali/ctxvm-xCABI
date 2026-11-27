@@ -228,7 +228,7 @@ class PreflightTests(unittest.TestCase):
             reader = lambda home: {"CTXVM_TRACE_DIR": str(Path(td) / "other-traces")}
             with self.assertRaises(collect.PreflightError):
                 make_collector(cfg, sync_runner=sync_ok, gateway_env_reader=reader).preflight()
-            facts = collect.Collector(
+            facts = make_collector(
                 cfg, sync_runner=sync_ok,
                 gateway_env_reader=lambda home: {"CTXVM_TRACE_DIR": str(cfg.trace_dir)},
             ).preflight()
@@ -547,7 +547,105 @@ def sync_ok(cmd: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[st
 
 def make_collector(cfg: Any, **kwargs: Any) -> Any:
     kwargs.setdefault("gateway_env_reader", lambda home: {"CTXVM_TRACE_DIR": str(cfg.trace_dir)})
+    kwargs.setdefault("gateway_status_runner", lambda home, profile, sids: {
+        "enabled": True, "trace_dir": cfg.trace_dir, "source": "start (defaults)", "version": VERSION,
+    })
     return collect.Collector(cfg, **kwargs)
+
+
+class GatewayTraceDirTests(unittest.TestCase):
+    def test_disable_values_and_empty_dir_match_plugin(self):
+        for value in ("0", "off", "false", "no", " OFF "):
+            with self.subTest(value=value):
+                self.assertIsNone(collect._gateway_trace_dir(
+                    {"CTXVM_TRACE": value, "CTXVM_TRACE_DIR": "/tmp/traces", "HOME": "/home/test"}))
+        self.assertIsNone(collect._gateway_trace_dir(
+            {"CTXVM_TRACE": "", "CTXVM_TRACE_DIR": "", "HOME": "/home/test"}))
+
+    def test_default_and_expansion_match_plugin(self):
+        self.assertEqual(collect._gateway_trace_dir({"HOME": "/home/test"}),
+                         Path("/home/test/.local/state/ctxvm/traces"))
+        self.assertEqual(collect._gateway_trace_dir(
+            {"HOME": "/home/test", "XDG_STATE_HOME": "/state", "CTXVM_TRACE_DIR": None}),
+            Path("/state/ctxvm/traces"))
+        self.assertEqual(collect._gateway_trace_dir(
+            {"HOME": "/home/test", "ROOT": "/srv", "CTXVM_TRACE_DIR": "~/traces/$ROOT"}),
+            Path("/home/test/traces//srv").resolve())
+
+
+class GatewayStatusTests(unittest.TestCase):
+    def test_parses_active_plugin_status(self):
+        output = ("ctxvm-trace: enabled=True, dir=/home/test/.local/state/ctxvm/traces "
+                  "(source: start (defaults)), name=<session-id>, version=0.13.37, "
+                  "register_calls=6, tracers=[]")
+        status = collect._parse_trace_status(output)
+        self.assertTrue(status["enabled"])
+        self.assertEqual(status["trace_dir"], Path("/home/test/.local/state/ctxvm/traces"))
+        self.assertEqual(status["source"], "start (defaults)")
+        self.assertEqual(status["version"], VERSION)
+        disabled = collect._parse_trace_status(
+            "ctxvm-trace: enabled=False, dir=<none> (source: disabled in this process (/ctxvm-trace stop)), "
+            "name=<session-id>, version=0.13.37, register_calls=6, tracers=[]")
+        self.assertFalse(disabled["enabled"])
+        self.assertIsNone(disabled["trace_dir"])
+
+    def test_read_only_rpc_uses_command_dispatch_without_leaking_ticket(self):
+        attach = subprocess.CompletedProcess(
+            ["hermes"], 0,
+            json.dumps({"url": "ws://127.0.0.1:1/api/ws",
+                        "protocols": ["hermes-gateway-v1", "hermes-gateway-ticket.secret"]}),
+            "",
+        )
+        output = ("ctxvm-trace: enabled=True, dir=/gateway/traces (source: start (defaults)), "
+                  "name=<session-id>, version=0.13.37, register_calls=1, tracers=[]")
+        ws = mock.Mock()
+        ws.getsubprotocol.return_value = "hermes-gateway-v1"
+        ws.recv.side_effect = [
+            json.dumps({"jsonrpc": "2.0", "method": "event", "params": {"type": "gateway.ready"}}),
+            json.dumps({"jsonrpc": "2.0", "id": 1,
+                        "result": {"type": "exec", "output": output}}),
+        ]
+        fake_websocket = mock.Mock()
+        fake_websocket.create_connection.return_value = ws
+        with mock.patch.object(collect.subprocess, "run", return_value=attach) as run, \
+                mock.patch.dict(sys.modules, {"websocket": fake_websocket}):
+            status = collect._query_gateway_trace_status(
+                Path("/hermes"), Path("/hermes/profiles/w8-shadow"), ["local-one"])
+        request = json.loads(ws.send.call_args.args[0])
+        self.assertEqual(request["method"], "command.dispatch")
+        self.assertEqual(request["params"],
+                         {"name": "ctxvm-trace", "arg": "status", "session_id": "local-one"})
+        self.assertEqual(status["trace_dir"], Path("/gateway/traces"))
+        self.assertNotIn("secret", repr(status))
+        env = run.call_args.kwargs["env"]
+        self.assertEqual(env["HERMES_HOME"], "/hermes")
+        self.assertFalse(any(key.startswith("CTXVM_") for key in env))
+        ws.close.assert_called_once_with()
+
+    def test_active_status_must_match_launch_without_override(self):
+        with tempfile.TemporaryDirectory(prefix="collect-shadow-active-status-") as td:
+            cfg = make_config(Path(td))
+            cfg.shadow.write_text(json.dumps({"session_id": "local-baseline"}) + "\n")
+            base = {"enabled": True, "trace_dir": cfg.trace_dir, "source": "start (defaults)",
+                    "version": VERSION}
+            facts = make_collector(
+                cfg, sync_runner=sync_ok,
+                gateway_status_runner=lambda home, profile, sids: dict(base),
+            ).preflight()
+            self.assertEqual(facts["gatewayTraceDir"], str(cfg.trace_dir))
+            self.assertEqual(facts["gatewayTraceSource"], "start (defaults)")
+            cases = (
+                dict(base, trace_dir=Path(td) / "other"),
+                dict(base, source="slash command"),
+                dict(base, enabled=False, trace_dir=None),
+                dict(base, version="0.13.38"),
+            )
+            for status in cases:
+                with self.subTest(status=status), self.assertRaises(collect.PreflightError):
+                    make_collector(
+                        cfg, sync_runner=sync_ok,
+                        gateway_status_runner=lambda home, profile, sids, status=status: status,
+                    ).preflight()
 
 
 class SessionIdTests(unittest.TestCase):

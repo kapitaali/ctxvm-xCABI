@@ -92,14 +92,106 @@ def _read_gateway_env(hermes_home: Path) -> Dict[str, str]:
     return env
 
 
-def _gateway_trace_dir(env: Dict[str, str]) -> Path:
-    configured = env.get("CTXVM_TRACE_DIR", "").strip()
-    if configured:
-        return Path(configured).expanduser().resolve()
-    state_home = env.get("XDG_STATE_HOME", "").strip()
-    home = env.get("HOME", "").strip()
-    base = Path(state_home).expanduser() if state_home else Path(home).expanduser() / ".local/state"
-    return (base / "ctxvm" / "traces").resolve()
+def _gateway_trace_dir(env: Dict[str, str]) -> Optional[Path]:
+    if env.get("CTXVM_TRACE", "").strip().lower() in {"0", "off", "false", "no"}:
+        return None
+    raw = env.get("CTXVM_TRACE_DIR")
+    if raw is None:
+        state_home = env.get("XDG_STATE_HOME", "").strip()
+        home = env.get("HOME", "").strip() or str(Path.home())
+        base = Path(state_home) if state_home else Path(home) / ".local" / "state"
+        return (base / "ctxvm" / "traces").resolve()
+    raw = raw.strip()
+    if not raw:
+        return None
+    home = env.get("HOME", "").strip() or str(Path.home())
+    if raw == "~":
+        raw = home
+    elif raw.startswith("~/"):
+        raw = home + raw[1:]
+    def expand(match: re.Match[str]) -> str:
+        name = match.group(1)
+        if name.startswith("{") and name.endswith("}"):
+            name = name[1:-1]
+        return env.get(name, match.group(0))
+    raw = re.sub(r"\$(\w+|\{[^}]*\})", expand, raw)
+    return Path(raw).resolve()
+
+
+def _parse_trace_status(output: str) -> Dict[str, Any]:
+    if not isinstance(output, str):
+        raise PreflightError("gateway trace status was not text")
+    enabled = re.search(r"\benabled=(True|False)\b", output)
+    directory = re.search(r"\bdir=(.*?) \(source: (.*?)\), name=", output)
+    version = re.search(r"\bversion=([^, ]+)", output)
+    if not enabled or not directory or not version:
+        raise PreflightError("gateway trace status was incomplete")
+    raw_dir = directory.group(1).strip()
+    return {
+        "enabled": enabled.group(1) == "True",
+        "trace_dir": None if raw_dir == "<none>" else Path(raw_dir).resolve(),
+        "source": directory.group(2).strip(),
+        "version": version.group(1),
+    }
+
+
+def _query_gateway_trace_status(hermes_home: Path, profile_home: Path,
+                                session_ids: Sequence[str]) -> Dict[str, Any]:
+    if not session_ids:
+        raise PreflightError("no baseline session id is available for the read-only gateway status query")
+    env = {key: value for key, value in os.environ.items() if not key.startswith("CTXVM_")}
+    env["HERMES_HOME"] = str(hermes_home)
+    attach = subprocess.run(
+        ["hermes", "-p", profile_home.name, "gateway", "attach", "--json"],
+        capture_output=True, text=True, check=False, env=env, timeout=30,
+    )
+    if attach.returncode != 0:
+        raise PreflightError(f"gateway attach failed with exit {attach.returncode}")
+    try:
+        target = json.loads(attach.stdout)
+        url = target["url"]
+        protocols = target["protocols"]
+    except (ValueError, KeyError, TypeError) as exc:
+        raise PreflightError("gateway attach returned an invalid target") from exc
+    try:
+        import websocket
+    except ImportError as exc:
+        raise PreflightError("websocket-client is required for active gateway status proof") from exc
+    ws = None
+    try:
+        ws = websocket.create_connection(url, subprotocols=protocols, timeout=10,
+                                         suppress_origin=True)
+        if protocols and ws.getsubprotocol() != protocols[0]:
+            raise PreflightError("gateway WebSocket protocol mismatch")
+        for sid in session_ids:
+            ws.send(json.dumps({"jsonrpc": "2.0", "id": 1, "method": "command.dispatch",
+                                "params": {"name": "ctxvm-trace", "arg": "status",
+                                           "session_id": sid}}))
+            for _ in range(100):
+                frame = json.loads(ws.recv())
+                if frame.get("id") != 1:
+                    continue
+                error = frame.get("error")
+                if error:
+                    reason = (error.get("data") or {}).get("reason") if isinstance(error, dict) else None
+                    if reason == "not_found":
+                        break
+                    raise PreflightError("gateway refused the read-only trace status query")
+                result = frame.get("result") or {}
+                output = result.get("output")
+                if not isinstance(output, str):
+                    raise PreflightError("gateway trace status was not text")
+                return _parse_trace_status(output)
+            else:
+                raise PreflightError("gateway trace status query did not answer")
+        raise PreflightError("no baseline session could query the active trace status")
+    except PreflightError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - never echo a ticket-bearing attach target
+        raise PreflightError(f"active gateway status query failed: {type(exc).__name__}") from exc
+    finally:
+        if ws is not None:
+            ws.close()
 
 
 def _subprocess_env(hermes_home: Path, trace_dir: Path) -> Dict[str, str]:
@@ -312,13 +404,15 @@ class Collector:
                  session_runner: Optional[Runner] = None,
                  gate_runner: Optional[Runner] = None,
                  join_runner: Optional[Runner] = None,
-                 gateway_env_reader: Optional[Callable[[Path], Dict[str, str]]] = None) -> None:
+                 gateway_env_reader: Optional[Callable[[Path], Dict[str, str]]] = None,
+                 gateway_status_runner: Optional[Callable[[Path, Path, Sequence[str]], Dict[str, Any]]] = None) -> None:
         self.config = config
         self.sync_runner = sync_runner or self._default_runner
         self.session_runner = session_runner or self._default_runner
         self.gate_runner = gate_runner or self._default_runner
         self.join_runner = join_runner or self._default_runner
         self.gateway_env_reader = gateway_env_reader or _read_gateway_env
+        self.gateway_status_runner = gateway_status_runner or _query_gateway_trace_status
         self.fixtures: Dict[str, Dict[str, Any]] = {}
         self.preflight_facts: Dict[str, Any] = {}
         self.join: Any = None
@@ -953,6 +1047,22 @@ class Collector:
                 f"max-attempts-per-shape exceeds the authorized cap of {MAX_ATTEMPTS_PER_SHAPE}")
 
         hermes_home = (cfg.hermes_home or Path(os.environ.get("HERMES_HOME") or Path.home() / ".hermes")).resolve()
+        if not cfg.shadow.is_file() or stat.S_IMODE(cfg.shadow.stat().st_mode) != 0o600:
+            raise PreflightError("shadow records must be a private 0600 file")
+        if not os.access(cfg.shadow, os.R_OK):
+            raise PreflightError("shadow records are not readable")
+        try:
+            baseline_rows = _read_jsonl(cfg.shadow)
+        except (OSError, UnicodeError, ValueError) as exc:
+            raise PreflightError(f"cannot parse shadow baseline: {exc}") from exc
+        baseline_ids: set[str] = set()
+        for row in baseline_rows:
+            sid = row.get("session_id")
+            if not isinstance(sid, str) or not sid:
+                raise PreflightError("shadow baseline contains a record without a non-empty session_id")
+            baseline_ids.add(sid)
+        self.baseline_session_ids = baseline_ids
+        profile_home = (cfg.profile_home or hermes_home / "profiles" / "w8-shadow").resolve()
         try:
             gateway_env = self.gateway_env_reader(hermes_home)
         except PreflightError:
@@ -962,13 +1072,33 @@ class Collector:
         if not isinstance(gateway_env, dict):
             raise PreflightError("gateway environment reader did not return an object")
         gateway_trace_dir = _gateway_trace_dir(gateway_env)
-        if cfg.trace_dir.resolve() != gateway_trace_dir:
+        if gateway_trace_dir is None or cfg.trace_dir.resolve() != gateway_trace_dir:
             raise PreflightError(
                 f"requested trace-dir {cfg.trace_dir} does not match gateway trace-dir {gateway_trace_dir}")
-        profile_home = (cfg.profile_home or hermes_home / "profiles" / "w8-shadow").resolve()
         expected_profile = (hermes_home / "profiles" / "w8-shadow").resolve()
         if profile_home != expected_profile:
             raise PreflightError("profile-home must be the w8-shadow profile inside the validated HERMES_HOME")
+        try:
+            active_status = self.gateway_status_runner(
+                hermes_home, profile_home, sorted(baseline_ids) or ["test-session"])
+        except PreflightError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - unproven active state is fail-closed
+            raise PreflightError(f"cannot query active gateway trace status: {type(exc).__name__}") from exc
+        if not isinstance(active_status, dict):
+            raise PreflightError("active gateway trace status was not an object")
+        active_dir = active_status.get("trace_dir")
+        if isinstance(active_dir, str):
+            active_dir = Path(active_dir).resolve()
+        allowed_sources = {"start (defaults)", "env CTXVM_TRACE_DIR",
+                           "default (set CTXVM_TRACE=0 to disable)"}
+        if active_status.get("enabled") is not True or active_dir != cfg.trace_dir.resolve():
+            raise PreflightError("active gateway trace directory is disabled or differs from the requested path")
+        if active_status.get("source") not in allowed_sources:
+            raise PreflightError("active gateway trace directory has an unapproved override")
+        if active_status.get("version") != _repo_version(cfg.repo):
+            raise PreflightError("active gateway trace status reports a different plugin version")
+        gateway_trace_source = active_status["source"]
         self.profile_home = profile_home
         store_path = profile_home / "state.db"
         if not store_path.is_file() or not os.access(store_path, os.R_OK):
@@ -1039,21 +1169,6 @@ class Collector:
         if not os.access(replay, os.X_OK):
             raise PreflightError("Rust replay binary is not executable")
         self.join = _load_join(cfg.repo)
-        if not cfg.shadow.is_file() or stat.S_IMODE(cfg.shadow.stat().st_mode) != 0o600:
-            raise PreflightError("shadow records must be a private 0600 file")
-        if not os.access(cfg.shadow, os.R_OK):
-            raise PreflightError("shadow records are not readable")
-        try:
-            baseline_rows = _read_jsonl(cfg.shadow)
-        except (OSError, UnicodeError, ValueError) as exc:
-            raise PreflightError(f"cannot parse shadow baseline: {exc}") from exc
-        baseline_ids: set[str] = set()
-        for row in baseline_rows:
-            sid = row.get("session_id")
-            if not isinstance(sid, str) or not sid:
-                raise PreflightError("shadow baseline contains a record without a non-empty session_id")
-            baseline_ids.add(sid)
-        self.baseline_session_ids = baseline_ids
         self.fixtures = load_fixtures(cfg.fixture_manifest)
         self.preflight_facts = {
             "plugin_version": versions["repo"],
@@ -1067,6 +1182,7 @@ class Collector:
             "fallbackDisabled": True,
             "sessionStoreReady": True,
             "gatewayTraceDir": str(gateway_trace_dir),
+            "gatewayTraceSource": gateway_trace_source,
             "fixture_manifest_sha256": hashlib.sha256(cfg.fixture_manifest.read_bytes()).hexdigest(),
             "target_informative": cfg.target_informative,
             "max_attempts": cfg.max_attempts,
