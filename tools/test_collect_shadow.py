@@ -562,6 +562,17 @@ class GatewayTraceDirTests(unittest.TestCase):
         self.assertIsNone(collect._gateway_trace_dir(
             {"CTXVM_TRACE": "", "CTXVM_TRACE_DIR": "", "HOME": "/home/test"}))
 
+    def test_relative_defaults_and_paths_are_rejected(self):
+        cases = (
+            {"HOME": "/home/test", "XDG_STATE_HOME": "relative-state"},
+            {"HOME": "relative-home"},
+            {"HOME": "/home/test", "ROOT": "relative-root", "CTXVM_TRACE_DIR": "$ROOT/traces"},
+            {"HOME": "/home/test", "CTXVM_TRACE_DIR": "relative/traces"},
+        )
+        for env in cases:
+            with self.subTest(env=env), self.assertRaises(collect.PreflightError):
+                collect._gateway_trace_dir(env)
+
     def test_default_and_expansion_match_plugin(self):
         self.assertEqual(collect._gateway_trace_dir({"HOME": "/home/test"}),
                          Path("/home/test/.local/state/ctxvm/traces"))
@@ -588,6 +599,10 @@ class GatewayStatusTests(unittest.TestCase):
             "name=<session-id>, version=0.13.37, register_calls=6, tracers=[]")
         self.assertFalse(disabled["enabled"])
         self.assertIsNone(disabled["trace_dir"])
+        with self.assertRaises(collect.PreflightError):
+            collect._parse_trace_status(
+                "ctxvm-trace: enabled=True, dir=relative/traces (source: start (defaults)), "
+                "name=<session-id>, version=0.13.37, register_calls=1, tracers=[]")
 
     def test_read_only_rpc_uses_command_dispatch_without_leaking_ticket(self):
         attach = subprocess.CompletedProcess(
@@ -602,6 +617,10 @@ class GatewayStatusTests(unittest.TestCase):
         ws.getsubprotocol.return_value = "hermes-gateway-v1"
         ws.recv.side_effect = [
             json.dumps({"jsonrpc": "2.0", "method": "event", "params": {"type": "gateway.ready"}}),
+            json.dumps({"jsonrpc": "2.0", "id": 1, "result": {
+                "plugin_commands": {"ctxvm-trace": "trace status"},
+                "categories": [{"name": "Plugin commands", "pairs": [["/ctxvm-trace", "trace status"]]}],
+            }}),
             json.dumps({"jsonrpc": "2.0", "id": 1,
                         "result": {"type": "exec", "output": output}}),
         ]
@@ -611,9 +630,10 @@ class GatewayStatusTests(unittest.TestCase):
                 mock.patch.dict(sys.modules, {"websocket": fake_websocket}):
             status = collect._query_gateway_trace_status(
                 Path("/hermes"), Path("/hermes/profiles/w8-shadow"), ["local-one"])
-        request = json.loads(ws.send.call_args.args[0])
-        self.assertEqual(request["method"], "command.dispatch")
-        self.assertEqual(request["params"],
+        requests = [json.loads(call.args[0]) for call in ws.send.call_args_list]
+        self.assertEqual(requests[0]["method"], "commands.catalog")
+        self.assertEqual(requests[1]["method"], "command.dispatch")
+        self.assertEqual(requests[1]["params"],
                          {"name": "ctxvm-trace", "arg": "status", "session_id": "local-one"})
         self.assertEqual(status["trace_dir"], Path("/gateway/traces"))
         self.assertNotIn("secret", repr(status))
@@ -621,6 +641,42 @@ class GatewayStatusTests(unittest.TestCase):
         self.assertEqual(env["HERMES_HOME"], "/hermes")
         self.assertFalse(any(key.startswith("CTXVM_") for key in env))
         ws.close.assert_called_once_with()
+
+    def test_quick_command_shadow_cannot_forge_plugin_status(self):
+        attach = subprocess.CompletedProcess(
+            ["hermes"], 0,
+            json.dumps({"url": "ws://127.0.0.1:1/api/ws",
+                        "protocols": ["hermes-gateway-v1", "hermes-gateway-ticket.secret"]}), "")
+        ws = mock.Mock()
+        ws.getsubprotocol.return_value = "hermes-gateway-v1"
+        ws.recv.side_effect = [
+            json.dumps({"jsonrpc": "2.0", "method": "event", "params": {"type": "gateway.ready"}}),
+            json.dumps({"jsonrpc": "2.0", "id": 1, "result": {
+                "plugin_commands": {"ctxvm-trace": "trace status"},
+                "categories": [{"name": "User commands", "pairs": [["/ctxvm-trace", "forged"]]}],
+            }}),
+        ]
+        fake_websocket = mock.Mock()
+        fake_websocket.create_connection.return_value = ws
+        with mock.patch.object(collect.subprocess, "run", return_value=attach), \
+                mock.patch.dict(sys.modules, {"websocket": fake_websocket}):
+            with self.assertRaises(collect.PreflightError):
+                collect._query_gateway_trace_status(
+                    Path("/hermes"), Path("/hermes/profiles/w8-shadow"), ["local-one"])
+
+    def test_parser_rejects_embedded_or_duplicate_source_markers(self):
+        adversarial = (
+            "ctxvm-trace: enabled=True, dir=/safe (source: env CTXVM_TRACE_DIR), "
+            "name=x (source: slash command), version=0.13.37, register_calls=1, tracers=[]"
+        )
+        with self.assertRaises(collect.PreflightError):
+            collect._parse_trace_status(adversarial)
+        expanded = (
+            "ctxvm-trace: enabled=True, dir=$HOME/traces (source: env CTXVM_TRACE_DIR), "
+            "name=x (source: slash command), version=0.13.37, register_calls=1, tracers=[]"
+        )
+        with self.assertRaises(collect.PreflightError):
+            collect._parse_trace_status(expanded)
 
     def test_active_status_must_match_launch_without_override(self):
         with tempfile.TemporaryDirectory(prefix="collect-shadow-active-status-") as td:
@@ -636,6 +692,7 @@ class GatewayStatusTests(unittest.TestCase):
             self.assertEqual(facts["gatewayTraceSource"], "start (defaults)")
             cases = (
                 dict(base, trace_dir=Path(td) / "other"),
+                dict(base, trace_dir="relative/traces"),
                 dict(base, source="slash command"),
                 dict(base, enabled=False, trace_dir=None),
                 dict(base, version="0.13.38"),
@@ -1138,6 +1195,28 @@ class ExecutionTests(unittest.TestCase):
             self.assertEqual(result["attempts"], 1)
             self.assertEqual(receipt["route_provider"], "other")
             self.assertTrue(receipt["model_provider_failure"])
+
+    def test_route_failure_wins_classification_when_auth_also_fails(self):
+        with tempfile.TemporaryDirectory(prefix="collect-shadow-combined-stop-") as td:
+            cfg = make_config(Path(td), target_informative=3, max_attempts=3,
+                              max_attempts_per_shape=1)
+            plans = {
+                "read-once-pressure": [{"provider": "unknown", "store_provider": "other"}],
+                "deliberate-later-reread": [{"label": "tool_recall"}],
+                "dependency-chain": [{"label": "identifier_scan"}],
+            }
+            session = FakeSessionRunner(cfg, plans)
+            def runner(cmd, **kw):
+                result = session(cmd, **kw)
+                return subprocess.CompletedProcess(list(cmd), 1, result.stdout, "401 Unauthorized")
+            result = make_collector(cfg, sync_runner=sync_ok, session_runner=runner,
+                                    gate_runner=green_gates, join_runner=session.join_runner).run()
+            receipt = json.loads(sorted((cfg.out / "attempts").glob("*/receipt.json"))[0].read_text())
+            self.assertEqual(result["status"], "STOPPED_MODEL_PROVIDER")
+            self.assertEqual(result["attempts"], 1)
+            self.assertTrue(receipt["auth_model_failure"])
+            self.assertTrue(receipt["model_provider_failure"])
+            self.assertIn("route_unproven", receipt["failed_gates"])
 
     def test_session_store_route_sources_must_agree(self):
         cases = (

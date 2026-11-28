@@ -100,6 +100,8 @@ def _gateway_trace_dir(env: Dict[str, str]) -> Optional[Path]:
         state_home = env.get("XDG_STATE_HOME", "").strip()
         home = env.get("HOME", "").strip() or str(Path.home())
         base = Path(state_home) if state_home else Path(home) / ".local" / "state"
+        if not base.is_absolute():
+            raise PreflightError("gateway default trace directory must be absolute")
         return (base / "ctxvm" / "traces").resolve()
     raw = raw.strip()
     if not raw:
@@ -115,24 +117,51 @@ def _gateway_trace_dir(env: Dict[str, str]) -> Optional[Path]:
             name = name[1:-1]
         return env.get(name, match.group(0))
     raw = re.sub(r"\$(\w+|\{[^}]*\})", expand, raw)
+    if not Path(raw).is_absolute():
+        raise PreflightError("gateway trace directory must be absolute")
     return Path(raw).resolve()
 
 
 def _parse_trace_status(output: str) -> Dict[str, Any]:
-    if not isinstance(output, str):
-        raise PreflightError("gateway trace status was not text")
-    enabled = re.search(r"\benabled=(True|False)\b", output)
-    directory = re.search(r"\bdir=(.*?) \(source: (.*?)\), name=", output)
-    version = re.search(r"\bversion=([^, ]+)", output)
-    if not enabled or not directory or not version:
-        raise PreflightError("gateway trace status was incomplete")
-    raw_dir = directory.group(1).strip()
+    if not isinstance(output, str) or "\n" in output or "\r" in output:
+        raise PreflightError("gateway trace status was not one text line")
+    if (output.count(" (source: ") != 1 or output.count("), name=") != 1
+            or output.count(", version=") != 1 or output.count(", register_calls=") != 1):
+        raise PreflightError("gateway trace status contained ambiguous field markers")
+    match = re.fullmatch(
+        r"ctxvm-trace: enabled=(True|False), dir=(.*) \(source: (.*)\), "
+        r"name=(.*), version=([0-9]+\.[0-9]+\.[0-9]+), register_calls=\d+(?:, .*)?",
+        output,
+    )
+    if not match:
+        raise PreflightError("gateway trace status was incomplete or malformed")
+    raw_dir = match.group(2).strip()
+    if raw_dir != "<none>" and not Path(raw_dir).is_absolute():
+        raise PreflightError("active gateway trace directory must be absolute")
     return {
-        "enabled": enabled.group(1) == "True",
+        "enabled": match.group(1) == "True",
         "trace_dir": None if raw_dir == "<none>" else Path(raw_dir).resolve(),
-        "source": directory.group(2).strip(),
-        "version": version.group(1),
+        "source": match.group(3).strip(),
+        "version": match.group(5),
     }
+
+
+def _plugin_status_proven(catalog: Dict[str, Any]) -> bool:
+    plugin_commands = catalog.get("plugin_commands")
+    if not isinstance(plugin_commands, dict) or "ctxvm-trace" not in plugin_commands:
+        return False
+    matches = []
+    categories = catalog.get("categories")
+    if not isinstance(categories, list):
+        return False
+    for category in categories:
+        if not isinstance(category, dict):
+            continue
+        for pair in category.get("pairs") or []:
+            name = pair[0] if isinstance(pair, (list, tuple)) and pair else pair
+            if isinstance(name, str) and name.lower() == "/ctxvm-trace":
+                matches.append(category.get("name"))
+    return matches == ["Plugin commands"]
 
 
 def _query_gateway_trace_status(hermes_home: Path, profile_home: Path,
@@ -163,6 +192,20 @@ def _query_gateway_trace_status(hermes_home: Path, profile_home: Path,
                                          suppress_origin=True)
         if protocols and ws.getsubprotocol() != protocols[0]:
             raise PreflightError("gateway WebSocket protocol mismatch")
+        ws.send(json.dumps({"jsonrpc": "2.0", "id": 1, "method": "commands.catalog", "params": {}}))
+        for _ in range(100):
+            frame = json.loads(ws.recv())
+            if frame.get("id") != 1:
+                continue
+            error = frame.get("error")
+            if error:
+                raise PreflightError("gateway refused the command catalog query")
+            catalog = frame.get("result") or {}
+            if not _plugin_status_proven(catalog):
+                raise PreflightError("ctxvm-trace is shadowed or not proven to be the plugin command")
+            break
+        else:
+            raise PreflightError("gateway command catalog query did not answer")
         for sid in session_ids:
             ws.send(json.dumps({"jsonrpc": "2.0", "id": 1, "method": "command.dispatch",
                                 "params": {"name": "ctxvm-trace", "arg": "status",
@@ -178,6 +221,8 @@ def _query_gateway_trace_status(hermes_home: Path, profile_home: Path,
                         break
                     raise PreflightError("gateway refused the read-only trace status query")
                 result = frame.get("result") or {}
+                if result.get("type") not in ("exec", "plugin"):
+                    raise PreflightError("gateway trace status had an unexpected result type")
                 output = result.get("output")
                 if not isinstance(output, str):
                     raise PreflightError("gateway trace status was not text")
@@ -937,9 +982,9 @@ class Collector:
                     informative_count += 1
                 if entry["auth_model_failure"]:
                     auth_failure = True
-                    break
                 if entry["model_provider_failure"]:
                     route_failure = True
+                if entry["auth_model_failure"] or entry["model_provider_failure"]:
                     break
             if auth_failure or route_failure or not progressed:
                 break
@@ -948,16 +993,16 @@ class Collector:
                 stats[shape]["status"] = "TARGET_MET"
             elif stats[shape]["attempts"] >= cfg.max_attempts_per_shape:
                 stats[shape]["status"] = "UNDERPOWERED"
-            elif auth_failure:
-                stats[shape]["status"] = "STOPPED_AUTH_MODEL"
             elif route_failure:
                 stats[shape]["status"] = "STOPPED_MODEL_PROVIDER"
+            elif auth_failure:
+                stats[shape]["status"] = "STOPPED_AUTH_MODEL"
             else:
                 stats[shape]["status"] = "PENDING"
-        if auth_failure:
-            status = "STOPPED_AUTH_MODEL"
-        elif route_failure:
+        if route_failure:
             status = "STOPPED_MODEL_PROVIDER"
+        elif auth_failure:
+            status = "STOPPED_AUTH_MODEL"
         elif informative_count >= cfg.target_informative:
             status = "TARGET_MET"
         elif all(row["status"] in ("TARGET_MET", "UNDERPOWERED") for row in stats.values()):
@@ -1089,6 +1134,8 @@ class Collector:
             raise PreflightError("active gateway trace status was not an object")
         active_dir = active_status.get("trace_dir")
         if isinstance(active_dir, str):
+            if not Path(active_dir).is_absolute():
+                raise PreflightError("active gateway trace directory must be absolute")
             active_dir = Path(active_dir).resolve()
         allowed_sources = {"start (defaults)", "env CTXVM_TRACE_DIR",
                            "default (set CTXVM_TRACE=0 to disable)"}
