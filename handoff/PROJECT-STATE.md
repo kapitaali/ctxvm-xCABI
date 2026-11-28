@@ -1,4 +1,4 @@
-# State (updated 2026-11-28; collector accepted, fixture freeze ratified, D17 held)
+# State (updated 2026-11-28; shadow batch underpowered, D17 held)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
@@ -13,12 +13,12 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 2. H12 NEGATIVE, mode engaged: no hold on read-once sweep; mid-prefix hole defeats cache (`RR-H12RESULT-20261119`).
 ## In progress (one item: what, blocker, next command)
 - Research lane: P13/P14 (`e10d249`), Part III + §9.2 fix (`d10c325`, `99f62f9`), `datamining/` tracked (`97cf743`), E1 LANDED (`a1bd004`), `fixture-bank/` v2 (2-hop, 442/442) + parked E0/E2 notes LANDED & VERIFIED (`e8149b5`, `RR-E0ENRICH-VERIFY`; E0/E2 $0).
-- Hermes lane: offline join OK at n=9: 107 records / 21 sessions / 9 valid; 42 selections, 9 drops, 0 later reuse, no pins. Varied batch: only mixed-2 informative (`RR-SHADOW-VARIED-RESULT`).
+- Hermes lane: ratified shadow batch UNDERPOWERED at 18 attempts: 7 collector-valid / 2 informative (both read-once), 4 drops, 0 later recall/scan, no pins. Frozen join: 8 valid / 40 selections; attempt 10 is collector-excluded (`RR-SHADOW-BATCH-RESULT`).
 
 - **dsh lane (W22):** passive + active stub LANDED in ctxvm/open-dsh (`c623936`, `2eb8b4c`); mirror default, active opt-in. Adapter 35 pass + 1 skip; local mock + real Nous receipts clean (`RR-ACTIVESTUB-REVIEW`).
 - Gateway: pid 3930 holds 0.13.37; nine fresh `w8-shadow` sessions passed trace/schema/checker/replay gates.
 ## Next three (ordered, one line each)
-1. Shadow collector ACCEPTED at `7c53889`; fixture/prompt freeze RATIFIED (`RR-SHADOW-BATCH-FIXTURE-FREEZE`). Fresh preflight next, then authorized batch <=18 attempts, <=6/shape, 12 informative. Pins offline-only.
+1. Shadow batch COMPLETE UNDERPOWERED: 18 attempts, 7 collector-valid, 2 informative, 0 later recall/scan, no pins (`RR-SHADOW-BATCH-RESULT`). No broadening; any new run needs a ruling. Collector/freeze remain accepted/ratified.
 2. E0 double negative PUBLISHED; E2 FAIL 2/5 CLOSED, HELD $0 — retry = new ruling. W8 parked.
 3. G3 prereg, D17 publication, D19/P11/H19 owner-gated; page.evict/stub wire landed.
 
