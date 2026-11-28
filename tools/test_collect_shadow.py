@@ -572,10 +572,21 @@ class GatewayTraceDirTests(unittest.TestCase):
             {"HOME": "/home/test "},
             {"HOME": "/home/test", "ROOT": "relative-root", "CTXVM_TRACE_DIR": "$ROOT/traces"},
             {"HOME": "/home/test", "CTXVM_TRACE_DIR": "relative/traces"},
+            {"HOME": "/home/test", "CTXVM_TRACE_DIR": " /tmp/traces "},
+            {"HOME": " /home/test ", "CTXVM_TRACE_DIR": "~/traces"},
         )
         for env in cases:
             with self.subTest(env=env), self.assertRaises(collect.PreflightError):
                 collect._gateway_trace_dir(env)
+
+    def test_clean_explicit_paths_remain_accepted(self):
+        self.assertEqual(collect._gateway_trace_dir(
+            {"HOME": "/home/test", "CTXVM_TRACE_DIR": "/tmp/traces"}), Path("/tmp/traces"))
+        self.assertEqual(collect._gateway_trace_dir(
+            {"HOME": "/home/test", "CTXVM_TRACE_DIR": "~/traces"}), Path("/home/test/traces"))
+        self.assertEqual(collect._gateway_trace_dir(
+            {"HOME": "/home/test", "ROOT": "/srv", "CTXVM_TRACE_DIR": "$ROOT/traces"}),
+            Path("/srv/traces"))
 
     def test_default_and_expansion_match_plugin(self):
         self.assertEqual(collect._gateway_trace_dir({"HOME": "/home/test"}),
@@ -711,6 +722,26 @@ class GatewayStatusTests(unittest.TestCase):
                             Path("/hermes"), Path("/hermes/profiles/w8-shadow"), ["local-one"])
                 self.assertEqual(ws.send.call_count, 1)
                 self.assertEqual(json.loads(ws.send.call_args.args[0])["method"], "commands.catalog")
+
+    def test_malformed_catalog_structure_rejects_provenance(self):
+        valid = {"name": "Plugin commands", "pairs": [["/ctxvm-trace", "trace status"]]}
+        cases = (
+            [None, valid],
+            [{"name": "User commands", "pairs": "bad"}, valid],
+            [{"name": "User commands", "pairs": [None]}, valid],
+            [{"name": None, "pairs": []}, valid],
+            [{"name": "User commands", "pairs": [["/only-one"]]}, valid],
+            [{"name": "User commands", "pairs": [["/three", "description", "extra"]]}, valid],
+            [{"name": "User commands", "pairs": [[None, "description"]]}, valid],
+        )
+        for categories in cases:
+            with self.subTest(categories=categories):
+                catalog = {
+                    "plugin_commands": {"ctxvm-trace": "trace status"},
+                    "categories": categories,
+                    "warning": "", "plugin_discovery_error": "",
+                }
+                self.assertFalse(collect._plugin_status_proven(catalog))
 
     def test_benign_catalog_warning_preserves_plugin_provenance(self):
         catalog = {

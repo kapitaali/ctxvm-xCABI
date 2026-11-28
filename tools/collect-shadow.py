@@ -95,24 +95,25 @@ def _read_gateway_env(hermes_home: Path) -> Dict[str, str]:
 def _gateway_trace_dir(env: Dict[str, str]) -> Optional[Path]:
     if env.get("CTXVM_TRACE", "").strip().lower() in {"0", "off", "false", "no"}:
         return None
+    raw_home = env.get("HOME")
+    if raw_home is not None and raw_home != raw_home.strip():
+        raise PreflightError("gateway HOME must not contain surrounding whitespace")
+    home = raw_home or str(Path.home())
     raw = env.get("CTXVM_TRACE_DIR")
     if raw is None:
         raw_state = env.get("XDG_STATE_HOME")
-        raw_home = env.get("HOME")
         if raw_state is not None and raw_state != raw_state.strip():
             raise PreflightError("gateway XDG_STATE_HOME must not contain surrounding whitespace")
-        if raw_home is not None and raw_home != raw_home.strip():
-            raise PreflightError("gateway HOME must not contain surrounding whitespace")
         state_home = raw_state or ""
-        home = raw_home or str(Path.home())
         base = Path(state_home) if state_home else Path(home) / ".local" / "state"
         if not base.is_absolute():
             raise PreflightError("gateway default trace directory must be absolute")
         return (base / "ctxvm" / "traces").resolve()
+    if raw != raw.strip():
+        raise PreflightError("gateway CTXVM_TRACE_DIR must not contain surrounding whitespace")
     raw = raw.strip()
     if not raw:
         return None
-    home = env.get("HOME", "").strip() or str(Path.home())
     if raw == "~":
         raw = home
     elif raw.startswith("~/"):
@@ -165,7 +166,9 @@ def _plugin_status_proven(catalog: Dict[str, Any]) -> bool:
     if any(marker in lowered for marker in ("discovery unavailable", "discovery failed", "discovery error")):
         return False
     plugin_commands = catalog.get("plugin_commands")
-    if not isinstance(plugin_commands, dict) or "ctxvm-trace" not in plugin_commands:
+    if (not isinstance(plugin_commands, dict) or "ctxvm-trace" not in plugin_commands
+            or any(not isinstance(key, str) or not isinstance(value, str)
+                   for key, value in plugin_commands.items())):
         return False
     matches = []
     categories = catalog.get("categories")
@@ -173,11 +176,17 @@ def _plugin_status_proven(catalog: Dict[str, Any]) -> bool:
         return False
     for category in categories:
         if not isinstance(category, dict):
-            continue
-        for pair in category.get("pairs") or []:
-            name = pair[0] if isinstance(pair, (list, tuple)) and pair else pair
-            if isinstance(name, str) and name.lower() == "/ctxvm-trace":
-                matches.append(category.get("name"))
+            return False
+        category_name = category.get("name")
+        pairs = category.get("pairs")
+        if not isinstance(category_name, str) or not category_name or not isinstance(pairs, list):
+            return False
+        for pair in pairs:
+            if (not isinstance(pair, (list, tuple)) or len(pair) != 2
+                    or not all(isinstance(value, str) for value in pair)):
+                return False
+            if pair[0].lower() == "/ctxvm-trace":
+                matches.append(category_name)
     return matches == ["Plugin commands"]
 
 
