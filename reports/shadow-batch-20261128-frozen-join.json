@@ -1,0 +1,393 @@
+{
+  "candidate_pins": [],
+  "counts": {
+    "ambiguous_same_turn_events": 0,
+    "dropped_pages": 4,
+    "dropped_records": 4,
+    "later_identifier_scan_opportunities": 0,
+    "later_tool_recall_opportunities": 0,
+    "never_observed_opportunities": 4,
+    "page_opportunities": 4,
+    "selections": 40,
+    "unmatched_page_ids": 0
+  },
+  "excluded_sessions": [
+    {
+      "reasons": [
+        "session_write_failures"
+      ],
+      "session_key": "sha256:2cb70c72319bba2a"
+    },
+    {
+      "reasons": [
+        "session_write_failures"
+      ],
+      "session_key": "sha256:6692b03131dc21a4"
+    },
+    {
+      "reasons": [
+        "session_write_failures"
+      ],
+      "session_key": "sha256:8afa2586fa3eb501"
+    },
+    {
+      "reasons": [
+        "session_write_failures"
+      ],
+      "session_key": "sha256:6dfeb2273a2ca13e"
+    },
+    {
+      "reasons": [
+        "session_write_failures"
+      ],
+      "session_key": "sha256:caacd461f9a93bcb"
+    },
+    {
+      "reasons": [
+        "session_write_failures"
+      ],
+      "session_key": "sha256:96480d9115df2e87"
+    },
+    {
+      "reasons": [
+        "session_write_failures"
+      ],
+      "session_key": "sha256:a1ffe142cd1d537a"
+    },
+    {
+      "reasons": [
+        "session_write_failures"
+      ],
+      "session_key": "sha256:49295c600b7ac5c8"
+    },
+    {
+      "reasons": [
+        "session_write_failures"
+      ],
+      "session_key": "sha256:1793fb7a47355a76"
+    },
+    {
+      "reasons": [
+        "session_write_failures"
+      ],
+      "session_key": "sha256:3f0086e3437da150"
+    }
+  ],
+  "generated_at": "2026-11-28T17:06:08+00:00",
+  "input_sha256": "84a6f0970db0812fd6876b865166c391b1cf0ea51ad8e3770b9cb270860d0f1c",
+  "metrics": {
+    "drop_share": {
+      "max": 0.4610891390325525,
+      "mean": 0.04606485238142656,
+      "min": 0.0
+    },
+    "floor_pressure": {
+      "max": 2.07075,
+      "mean": 0.9813604166666666,
+      "min": 0.09233333333333334
+    },
+    "later_identifier_scan_rate": 0.0,
+    "later_tool_recall_rate": 0.0,
+    "never_observed_rate": 1.0,
+    "pressure": {
+      "max": 2.07075,
+      "mean": 1.0446718750000001,
+      "min": 0.09233333333333334
+    },
+    "selection_churn": {
+      "max": 1.0,
+      "mean": 0.875,
+      "min": 0.0
+    },
+    "would_drop_rate": 0.1
+  },
+  "required_valid_sessions": 3,
+  "schema": "ctxvm-shadow-join-result/v1",
+  "schema_invalid_records": 0,
+  "sessions": [
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.4610891390325525,
+        "mean": 0.0512321265591725,
+        "min": 0.0
+      },
+      "dropped_pages": 1,
+      "dropped_records": 1,
+      "floor_pressure": {
+        "max": 2.07075,
+        "mean": 1.2426712962962965,
+        "min": 0.09233333333333334
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 1,
+      "page_opportunities": 1,
+      "pressure": {
+        "max": 2.07075,
+        "mean": 1.3128935185185187,
+        "min": 0.09233333333333334
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 0.75,
+        "min": 0.0
+      },
+      "selections": 9,
+      "session_key": "sha256:676b246139b93e02",
+      "trace_digest": "3d3a9c15d86d06e33f4c3e8c5ffebfe6464a5eba8b66a1b9ece7f28eb5383c8a",
+      "unmatched_page_ids": 0
+    },
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "dropped_pages": 0,
+      "dropped_records": 0,
+      "floor_pressure": {
+        "max": 0.725,
+        "mean": 0.4090625,
+        "min": 0.093125
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 0,
+      "page_opportunities": 0,
+      "pressure": {
+        "max": 0.725,
+        "mean": 0.4090625,
+        "min": 0.093125
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0
+      },
+      "selections": 2,
+      "session_key": "sha256:5bc368edb16142dc",
+      "trace_digest": "7269ff3f41310b842af8c716cebd931fa374d7259b1887c7dd4e001cf228a9c5",
+      "unmatched_page_ids": 0
+    },
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "dropped_pages": 0,
+      "dropped_records": 0,
+      "floor_pressure": {
+        "max": 1.3656666666666666,
+        "mean": 0.8862604166666667,
+        "min": 0.093125
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 0,
+      "page_opportunities": 0,
+      "pressure": {
+        "max": 1.3656666666666666,
+        "mean": 0.8862604166666667,
+        "min": 0.093125
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0
+      },
+      "selections": 4,
+      "session_key": "sha256:e086fae54b5423a3",
+      "trace_digest": "7d9e6d57ffcbb05cdd789e0f02dcef050c99d371a02af294a049bd214803da87",
+      "unmatched_page_ids": 0
+    },
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "dropped_pages": 0,
+      "dropped_records": 0,
+      "floor_pressure": {
+        "max": 1.42525,
+        "mean": 1.0771145833333333,
+        "min": 0.09233333333333334
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 0,
+      "page_opportunities": 0,
+      "pressure": {
+        "max": 1.42525,
+        "mean": 1.0771145833333333,
+        "min": 0.09233333333333334
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0
+      },
+      "selections": 4,
+      "session_key": "sha256:4b5eab8aacb0747a",
+      "trace_digest": "154d1348e2256b98df590ae123aefaf7023539c1a029729df3ee8a4691b9ba75",
+      "unmatched_page_ids": 0
+    },
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "dropped_pages": 0,
+      "dropped_records": 0,
+      "floor_pressure": {
+        "max": 1.67725,
+        "mean": 0.9626874999999999,
+        "min": 0.092375
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 0,
+      "page_opportunities": 0,
+      "pressure": {
+        "max": 1.67725,
+        "mean": 0.9626874999999999,
+        "min": 0.092375
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0
+      },
+      "selections": 4,
+      "session_key": "sha256:41423e57dbe6d211",
+      "trace_digest": "d7b722155c3c5fa41290f74a67f5ecc00b7e191131fa79baca69946366fa6e05",
+      "unmatched_page_ids": 0
+    },
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.4610891390325525,
+        "mean": 0.07684818983875875,
+        "min": 0.0
+      },
+      "dropped_pages": 1,
+      "dropped_records": 1,
+      "floor_pressure": {
+        "max": 1.365125,
+        "mean": 0.9393541666666666,
+        "min": 0.09233333333333334
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 1,
+      "page_opportunities": 1,
+      "pressure": {
+        "max": 1.3695833333333334,
+        "mean": 1.0446875,
+        "min": 0.09233333333333334
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 0.8,
+        "min": 0.0
+      },
+      "selections": 6,
+      "session_key": "sha256:0f6006f8c0fe7a4c",
+      "trace_digest": "c8056d20f6b334788649e020d89ee297f463d6175162d1cf193e829280a82120",
+      "unmatched_page_ids": 0
+    },
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "dropped_pages": 0,
+      "dropped_records": 0,
+      "floor_pressure": {
+        "max": 1.3606666666666667,
+        "mean": 0.8833541666666667,
+        "min": 0.09233333333333334
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 0,
+      "page_opportunities": 0,
+      "pressure": {
+        "max": 1.3606666666666667,
+        "mean": 0.8833541666666667,
+        "min": 0.09233333333333334
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 1.0,
+        "min": 1.0
+      },
+      "selections": 4,
+      "session_key": "sha256:25ecf95c59ea0cf2",
+      "trace_digest": "5db92c49577107607319009288eea971d0b663e43d6134efaeb76886ba4cbd6c",
+      "unmatched_page_ids": 0
+    },
+    {
+      "ambiguous_opportunities": 0,
+      "ambiguous_same_turn_events": 0,
+      "drop_share": {
+        "max": 0.4608227674906504,
+        "mean": 0.13148797388456535,
+        "min": 0.0
+      },
+      "dropped_pages": 2,
+      "dropped_records": 2,
+      "floor_pressure": {
+        "max": 1.3659166666666667,
+        "mean": 0.9112083333333334,
+        "min": 0.093125
+      },
+      "later_identifier_scan_opportunities": 0,
+      "later_tool_recall_opportunities": 0,
+      "never_observed_opportunities": 2,
+      "page_opportunities": 2,
+      "pressure": {
+        "max": 1.3740416666666666,
+        "mean": 1.0924166666666666,
+        "min": 0.093125
+      },
+      "scope_violation": false,
+      "selection_churn": {
+        "max": 1.0,
+        "mean": 0.8333333333333334,
+        "min": 0.0
+      },
+      "selections": 7,
+      "session_key": "sha256:1d2eba80247845b0",
+      "trace_digest": "74119654971c5a14cd822831daff8051c53ad79da9362c62ae81d499d2484d12",
+      "unmatched_page_ids": 0
+    }
+  ],
+  "sessions_seen": 18,
+  "shadow_records": 103,
+  "status": "OK",
+  "valid_sessions": 8
+}

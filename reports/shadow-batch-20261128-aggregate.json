@@ -1,0 +1,858 @@
+{
+  "all_valid_sessions": 7,
+  "attempt_receipts": [
+    {
+      "attempt": 1,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 1,
+        "dropped_records": 1,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 1,
+        "page_opportunities": 1,
+        "selections": 6
+      },
+      "drop_shape": true,
+      "failed_gates": [],
+      "informative": true,
+      "input_shadow_sha256": "dd55d2e04054e1ad77eae6b09a37b96fb04194bee2cc7bb8cbf0307ab964fc00",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "94c1820552bd49437f9acbde98104d3ddcdddeac902f943d912ec6662a24aaea",
+      "rc": 0,
+      "session_key": "sha256:0f6006f8c0fe7a4c",
+      "shape": "read-once-pressure",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 1
+      },
+      "trace_digest": "c8056d20f6b334788649e020d89ee297f463d6175162d1cf193e829280a82120",
+      "valid": true
+    },
+    {
+      "attempt": 2,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 2,
+        "dropped_records": 2,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 2,
+        "page_opportunities": 2,
+        "selections": 7
+      },
+      "drop_shape": true,
+      "failed_gates": [],
+      "informative": false,
+      "input_shadow_sha256": "94c1820552bd49437f9acbde98104d3ddcdddeac902f943d912ec6662a24aaea",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "f113de6f2ee521293a4bf236ab2ac5bda63b32b6c29da12f77baf7032719cac1",
+      "rc": 0,
+      "session_key": "sha256:1d2eba80247845b0",
+      "shape": "deliberate-later-reread",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 2
+      },
+      "trace_digest": "74119654971c5a14cd822831daff8051c53ad79da9362c62ae81d499d2484d12",
+      "valid": true
+    },
+    {
+      "attempt": 3,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 0,
+        "dropped_records": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0,
+        "page_opportunities": 0,
+        "selections": 4
+      },
+      "drop_shape": false,
+      "failed_gates": [],
+      "informative": false,
+      "input_shadow_sha256": "f113de6f2ee521293a4bf236ab2ac5bda63b32b6c29da12f77baf7032719cac1",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "f1e1b1ef22c95832c7db0096b3d36f8468315597ee11c6b65d42cab0812bfe07",
+      "rc": 0,
+      "session_key": "sha256:41423e57dbe6d211",
+      "shape": "dependency-chain",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0
+      },
+      "trace_digest": "d7b722155c3c5fa41290f74a67f5ecc00b7e191131fa79baca69946366fa6e05",
+      "valid": true
+    },
+    {
+      "attempt": 4,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 0,
+        "dropped_records": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0,
+        "page_opportunities": 0,
+        "selections": 4
+      },
+      "drop_shape": false,
+      "failed_gates": [],
+      "informative": false,
+      "input_shadow_sha256": "f1e1b1ef22c95832c7db0096b3d36f8468315597ee11c6b65d42cab0812bfe07",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "8751aeb8938981fdd3bf5e6e4347160a1ecd6d5ba6496c6d486239bdd98179b4",
+      "rc": 0,
+      "session_key": "sha256:25ecf95c59ea0cf2",
+      "shape": "read-once-pressure",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0
+      },
+      "trace_digest": "5db92c49577107607319009288eea971d0b663e43d6134efaeb76886ba4cbd6c",
+      "valid": true
+    },
+    {
+      "attempt": 5,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 1,
+        "dropped_records": 1,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 1,
+        "page_opportunities": 1,
+        "selections": 6
+      },
+      "drop_shape": true,
+      "failed_gates": [
+        "sidecar_failures",
+        "sidecar_selections"
+      ],
+      "informative": false,
+      "input_shadow_sha256": "8751aeb8938981fdd3bf5e6e4347160a1ecd6d5ba6496c6d486239bdd98179b4",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "6e26d2252fe49d151d01cf1a2e644e20c527edf79b1125bd7cb3dee4d0f15ce2",
+      "rc": 0,
+      "session_key": "sha256:96480d9115df2e87",
+      "shape": "deliberate-later-reread",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 1
+      },
+      "trace_digest": "7aa7b7fd53018bb8cbc7545c3f88389122e666ba56ceb2fe9fa4ea08f1617c3a",
+      "valid": false
+    },
+    {
+      "attempt": 6,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 0,
+        "dropped_records": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0,
+        "page_opportunities": 0,
+        "selections": 5
+      },
+      "drop_shape": false,
+      "failed_gates": [
+        "sidecar_failures",
+        "sidecar_selections"
+      ],
+      "informative": false,
+      "input_shadow_sha256": "6e26d2252fe49d151d01cf1a2e644e20c527edf79b1125bd7cb3dee4d0f15ce2",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "d80fe2220e6f81b358f1ce37a81d7859c6ab333fc9d23c632e18acbc50c989e4",
+      "rc": 0,
+      "session_key": "sha256:1793fb7a47355a76",
+      "shape": "dependency-chain",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0
+      },
+      "trace_digest": "2a833aab2ca3c835131ab9908e44f2e7104103a3e9d8c70cddd7b9357bd01200",
+      "valid": false
+    },
+    {
+      "attempt": 7,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 0,
+        "dropped_records": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0,
+        "page_opportunities": 0,
+        "selections": 7
+      },
+      "drop_shape": false,
+      "failed_gates": [
+        "sidecar_failures",
+        "sidecar_selections"
+      ],
+      "informative": false,
+      "input_shadow_sha256": "d80fe2220e6f81b358f1ce37a81d7859c6ab333fc9d23c632e18acbc50c989e4",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "cf0f01cdad7f114d510f2b5e56c32cc62bbfd28211569f559e0a0884dd54d265",
+      "rc": 0,
+      "session_key": "sha256:caacd461f9a93bcb",
+      "shape": "read-once-pressure",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0
+      },
+      "trace_digest": "8d8c47401d73d83031fc0b384a3c8fdaa928f0eede551c0c51e3e452f4dfff3f",
+      "valid": false
+    },
+    {
+      "attempt": 8,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 0,
+        "dropped_records": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0,
+        "page_opportunities": 0,
+        "selections": 2
+      },
+      "drop_shape": false,
+      "failed_gates": [],
+      "informative": false,
+      "input_shadow_sha256": "26329cd767a035aa0b6a51ca0b72ce447b7e606318c3cd96cf8b5eb10397a1cb",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "179217d10436152132f925ab1f4fefd7853d3b29a46bbf93d22e49bc54514d30",
+      "rc": 0,
+      "session_key": "sha256:5bc368edb16142dc",
+      "shape": "deliberate-later-reread",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0
+      },
+      "trace_digest": "7269ff3f41310b842af8c716cebd931fa374d7259b1887c7dd4e001cf228a9c5",
+      "valid": true
+    },
+    {
+      "attempt": 9,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 0,
+        "dropped_records": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0,
+        "page_opportunities": 0,
+        "selections": 9
+      },
+      "drop_shape": false,
+      "failed_gates": [
+        "sidecar_failures",
+        "sidecar_selections"
+      ],
+      "informative": false,
+      "input_shadow_sha256": "179217d10436152132f925ab1f4fefd7853d3b29a46bbf93d22e49bc54514d30",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "8c1feb8d748c1f26634d61320f710a8e949cd0e9e4ba68cbfe3d824f613666ba",
+      "rc": 0,
+      "session_key": "sha256:3f0086e3437da150",
+      "shape": "dependency-chain",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0
+      },
+      "trace_digest": "1d3835285fe47b6e033f066a9a0c5fb0682082ecae47e28e9967fd9e517721a3",
+      "valid": false
+    },
+    {
+      "attempt": 10,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 0,
+        "dropped_records": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0,
+        "page_opportunities": 0,
+        "selections": 4
+      },
+      "drop_shape": false,
+      "failed_gates": [
+        "sidecar_selections"
+      ],
+      "informative": false,
+      "input_shadow_sha256": "8c1feb8d748c1f26634d61320f710a8e949cd0e9e4ba68cbfe3d824f613666ba",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "f79364f6c349f21dcdc59d55df1fe3e7f6dccfebdfab367028731fde86a03415",
+      "rc": 0,
+      "session_key": "sha256:4b5eab8aacb0747a",
+      "shape": "read-once-pressure",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0
+      },
+      "trace_digest": "154d1348e2256b98df590ae123aefaf7023539c1a029729df3ee8a4691b9ba75",
+      "valid": false
+    },
+    {
+      "attempt": 11,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 0,
+        "dropped_records": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0,
+        "page_opportunities": 0,
+        "selections": 4
+      },
+      "drop_shape": false,
+      "failed_gates": [],
+      "informative": false,
+      "input_shadow_sha256": "f79364f6c349f21dcdc59d55df1fe3e7f6dccfebdfab367028731fde86a03415",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "2f52aeeabcd2025ebc6c01c52e9f49e7f812be9a967e618a4dd231879f64ebb4",
+      "rc": 0,
+      "session_key": "sha256:e086fae54b5423a3",
+      "shape": "deliberate-later-reread",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0
+      },
+      "trace_digest": "7d9e6d57ffcbb05cdd789e0f02dcef050c99d371a02af294a049bd214803da87",
+      "valid": true
+    },
+    {
+      "attempt": 12,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 0,
+        "dropped_records": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0,
+        "page_opportunities": 0,
+        "selections": 4
+      },
+      "drop_shape": false,
+      "failed_gates": [
+        "sidecar_failures",
+        "sidecar_selections"
+      ],
+      "informative": false,
+      "input_shadow_sha256": "f517b5988d2bf2f497b01cf7caa1fbada9fa3534e62abb1dba405cd924c39c23",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "9b674550fae447f9e2b1c67a130143760612983e73f6d88005a86eae142e2bd0",
+      "rc": 0,
+      "session_key": "sha256:49295c600b7ac5c8",
+      "shape": "dependency-chain",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0
+      },
+      "trace_digest": "2b499531f55b6736ffcc1585795220fa49666f6bf3bfd14173f2b3d08964c8a2",
+      "valid": false
+    },
+    {
+      "attempt": 13,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 0,
+        "dropped_records": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0,
+        "page_opportunities": 0,
+        "selections": 4
+      },
+      "drop_shape": false,
+      "failed_gates": [
+        "sidecar_failures",
+        "sidecar_selections"
+      ],
+      "informative": false,
+      "input_shadow_sha256": "9b674550fae447f9e2b1c67a130143760612983e73f6d88005a86eae142e2bd0",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "f041b01637a2300d1193476188ddb38387e006e88d12f7800fbcd23d3d3f826b",
+      "rc": 0,
+      "session_key": "sha256:6692b03131dc21a4",
+      "shape": "read-once-pressure",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0
+      },
+      "trace_digest": "5dfe73d6b3d4415d9dbb1c8b7a8a8e0e92d8f66246b7e47c899e4c6fcd883466",
+      "valid": false
+    },
+    {
+      "attempt": 14,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 2,
+        "dropped_records": 2,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 2,
+        "page_opportunities": 2,
+        "selections": 10
+      },
+      "drop_shape": true,
+      "failed_gates": [
+        "sidecar_failures",
+        "sidecar_selections"
+      ],
+      "informative": false,
+      "input_shadow_sha256": "f041b01637a2300d1193476188ddb38387e006e88d12f7800fbcd23d3d3f826b",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "06ad0be3adc8484edf3a4f71333c46703c743b58733d997716ae67fffbd0d669",
+      "rc": 0,
+      "session_key": "sha256:6dfeb2273a2ca13e",
+      "shape": "deliberate-later-reread",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 2
+      },
+      "trace_digest": "3b59bac7f813d99a2a41d512bf68c937ba06035a6ef859d39fe5b45609c71cc3",
+      "valid": false
+    },
+    {
+      "attempt": 15,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 0,
+        "dropped_records": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0,
+        "page_opportunities": 0,
+        "selections": 7
+      },
+      "drop_shape": false,
+      "failed_gates": [
+        "sidecar_failures",
+        "sidecar_selections"
+      ],
+      "informative": false,
+      "input_shadow_sha256": "d3cabe42e55d8f4655a34b554d1cc3c673efe25d2c5df07a5e5cf82f5c27bdb5",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "716feb6412d05c4df3a9c39502cfad810c2609c8f42d75a2bc082c053610a15f",
+      "rc": 0,
+      "session_key": "sha256:8afa2586fa3eb501",
+      "shape": "dependency-chain",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0
+      },
+      "trace_digest": "7be79ab089821e1c14e930efe07b7b35b73353a769c331437ead731c4168d9e0",
+      "valid": false
+    },
+    {
+      "attempt": 16,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 1,
+        "dropped_records": 1,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 1,
+        "page_opportunities": 1,
+        "selections": 9
+      },
+      "drop_shape": true,
+      "failed_gates": [],
+      "informative": true,
+      "input_shadow_sha256": "716feb6412d05c4df3a9c39502cfad810c2609c8f42d75a2bc082c053610a15f",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "1f704ab483d089e23faad0d4ff438cad4850b1a49cf323f3ad27dc67fb131d54",
+      "rc": 0,
+      "session_key": "sha256:676b246139b93e02",
+      "shape": "read-once-pressure",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 1
+      },
+      "trace_digest": "3d3a9c15d86d06e33f4c3e8c5ffebfe6464a5eba8b66a1b9ece7f28eb5383c8a",
+      "valid": true
+    },
+    {
+      "attempt": 17,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 1,
+        "dropped_records": 1,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 1,
+        "page_opportunities": 1,
+        "selections": 6
+      },
+      "drop_shape": true,
+      "failed_gates": [
+        "sidecar_failures",
+        "sidecar_selections"
+      ],
+      "informative": false,
+      "input_shadow_sha256": "1f704ab483d089e23faad0d4ff438cad4850b1a49cf323f3ad27dc67fb131d54",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "1fd3a406a7141bcdee82e64ce6765628baa703a1b8c03457348914875f41b3f2",
+      "rc": 0,
+      "session_key": "sha256:a1ffe142cd1d537a",
+      "shape": "deliberate-later-reread",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 1
+      },
+      "trace_digest": "19c3fb8d40357b7117649808ee11e4ed3fcc2f4f44f771f35fd127e4f63df5ab",
+      "valid": false
+    },
+    {
+      "attempt": 18,
+      "auth_model_failure": false,
+      "counts": {
+        "ambiguous_opportunities": 0,
+        "dropped_pages": 0,
+        "dropped_records": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0,
+        "page_opportunities": 0,
+        "selections": 5
+      },
+      "drop_shape": false,
+      "failed_gates": [
+        "sidecar_failures",
+        "sidecar_selections"
+      ],
+      "informative": false,
+      "input_shadow_sha256": "1fd3a406a7141bcdee82e64ce6765628baa703a1b8c03457348914875f41b3f2",
+      "model_provider_failure": false,
+      "output_shadow_sha256": "bec085a2c59474695947aa64b4c74ff6126520a55c9adf62ff6b98de0b28c425",
+      "rc": 0,
+      "session_key": "sha256:2cb70c72319bba2a",
+      "shape": "dependency-chain",
+      "shape_labels": {
+        "ambiguous_opportunities": 0,
+        "later_identifier_scan_opportunities": 0,
+        "later_tool_recall_opportunities": 0,
+        "never_observed_opportunities": 0
+      },
+      "trace_digest": "1580dfecb7b2a90cdf050763a7e201c2e93a6e85fd645b95bf7b7e1da49f8d03",
+      "valid": false
+    }
+  ],
+  "attempts": 18,
+  "candidate_pins": [],
+  "denominator_views": {
+    "all_valid": {
+      "by_shape": {
+        "deliberate-later-reread": {
+          "candidate_pins": [],
+          "counts": {
+            "ambiguous_opportunities": 0,
+            "ambiguous_same_turn_events": 0,
+            "dropped_pages": 2,
+            "dropped_records": 2,
+            "later_identifier_scan_opportunities": 0,
+            "later_tool_recall_opportunities": 0,
+            "never_observed_opportunities": 2,
+            "page_opportunities": 2,
+            "selections": 13,
+            "unmatched_page_ids": 0
+          },
+          "metrics": {
+            "drop_share": {
+              "max": 0.4608227674906504,
+              "mean": 0.07080121670707365,
+              "min": 0.0
+            },
+            "floor_pressure": {
+              "max": 1.3659166666666667,
+              "mean": 0.8262788461538461,
+              "min": 0.093125
+            },
+            "later_identifier_scan_rate": 0.0,
+            "later_tool_recall_rate": 0.0,
+            "never_observed_rate": 1.0,
+            "pressure": {
+              "max": 1.3740416666666666,
+              "mean": 0.923852564102564,
+              "min": 0.093125
+            },
+            "selection_churn": {
+              "max": 1.0,
+              "mean": 0.9,
+              "min": 0.0
+            },
+            "would_drop_rate": 0.15384615384615385
+          },
+          "session_keys": [
+            "sha256:1d2eba80247845b0",
+            "sha256:5bc368edb16142dc",
+            "sha256:e086fae54b5423a3"
+          ],
+          "sessions": 3
+        },
+        "dependency-chain": {
+          "candidate_pins": [],
+          "counts": {
+            "ambiguous_opportunities": 0,
+            "ambiguous_same_turn_events": 0,
+            "dropped_pages": 0,
+            "dropped_records": 0,
+            "later_identifier_scan_opportunities": 0,
+            "later_tool_recall_opportunities": 0,
+            "never_observed_opportunities": 0,
+            "page_opportunities": 0,
+            "selections": 4,
+            "unmatched_page_ids": 0
+          },
+          "metrics": null,
+          "session_keys": [
+            "sha256:41423e57dbe6d211"
+          ],
+          "sessions": 1
+        },
+        "read-once-pressure": {
+          "candidate_pins": [],
+          "counts": {
+            "ambiguous_opportunities": 0,
+            "ambiguous_same_turn_events": 0,
+            "dropped_pages": 2,
+            "dropped_records": 2,
+            "later_identifier_scan_opportunities": 0,
+            "later_tool_recall_opportunities": 0,
+            "never_observed_opportunities": 2,
+            "page_opportunities": 2,
+            "selections": 19,
+            "unmatched_page_ids": 0
+          },
+          "metrics": {
+            "drop_share": {
+              "max": 0.4610891390325525,
+              "mean": 0.04853569884553184,
+              "min": 0.0
+            },
+            "floor_pressure": {
+              "max": 2.07075,
+              "mean": 1.0712412280701755,
+              "min": 0.09233333333333334
+            },
+            "later_identifier_scan_rate": 0.0,
+            "later_tool_recall_rate": 0.0,
+            "never_observed_rate": 1.0,
+            "pressure": {
+              "max": 2.07075,
+              "mean": 1.137767543859649,
+              "min": 0.09233333333333334
+            },
+            "selection_churn": {
+              "max": 1.0,
+              "mean": 0.8125,
+              "min": 0.0
+            },
+            "would_drop_rate": 0.10526315789473684
+          },
+          "session_keys": [
+            "sha256:0f6006f8c0fe7a4c",
+            "sha256:25ecf95c59ea0cf2",
+            "sha256:676b246139b93e02"
+          ],
+          "sessions": 3
+        }
+      },
+      "pooled": {
+        "candidate_pins": [],
+        "counts": {
+          "ambiguous_opportunities": 0,
+          "ambiguous_same_turn_events": 0,
+          "dropped_pages": 4,
+          "dropped_records": 4,
+          "later_identifier_scan_opportunities": 0,
+          "later_tool_recall_opportunities": 0,
+          "never_observed_opportunities": 4,
+          "page_opportunities": 4,
+          "selections": 36,
+          "unmatched_page_ids": 0
+        },
+        "metrics": {
+          "drop_share": {
+            "max": 0.4610891390325525,
+            "mean": 0.051183169312696175,
+            "min": 0.0
+          },
+          "floor_pressure": {
+            "max": 2.07075,
+            "mean": 0.9707210648148147,
+            "min": 0.09233333333333334
+          },
+          "later_identifier_scan_rate": 0.0,
+          "later_tool_recall_rate": 0.0,
+          "never_observed_rate": 1.0,
+          "pressure": {
+            "max": 2.07075,
+            "mean": 1.0410671296296297,
+            "min": 0.09233333333333334
+          },
+          "selection_churn": {
+            "max": 1.0,
+            "mean": 0.8620689655172413,
+            "min": 0.0
+          },
+          "would_drop_rate": 0.1111111111111111
+        },
+        "session_keys": [
+          "sha256:0f6006f8c0fe7a4c",
+          "sha256:1d2eba80247845b0",
+          "sha256:25ecf95c59ea0cf2",
+          "sha256:41423e57dbe6d211",
+          "sha256:5bc368edb16142dc",
+          "sha256:676b246139b93e02",
+          "sha256:e086fae54b5423a3"
+        ],
+        "sessions": 7
+      }
+    },
+    "informative_only": {
+      "by_shape": {
+        "deliberate-later-reread": {
+          "candidate_pins": [],
+          "counts": {},
+          "metrics": null,
+          "session_keys": [],
+          "sessions": 0
+        },
+        "dependency-chain": {
+          "candidate_pins": [],
+          "counts": {},
+          "metrics": null,
+          "session_keys": [],
+          "sessions": 0
+        },
+        "read-once-pressure": {
+          "candidate_pins": [],
+          "counts": {
+            "ambiguous_opportunities": 0,
+            "ambiguous_same_turn_events": 0,
+            "dropped_pages": 2,
+            "dropped_records": 2,
+            "later_identifier_scan_opportunities": 0,
+            "later_tool_recall_opportunities": 0,
+            "never_observed_opportunities": 2,
+            "page_opportunities": 2,
+            "selections": 15,
+            "unmatched_page_ids": 0
+          },
+          "metrics": null,
+          "session_keys": [
+            "sha256:0f6006f8c0fe7a4c",
+            "sha256:676b246139b93e02"
+          ],
+          "sessions": 2
+        }
+      },
+      "pooled": {
+        "candidate_pins": [],
+        "counts": {
+          "ambiguous_opportunities": 0,
+          "ambiguous_same_turn_events": 0,
+          "dropped_pages": 2,
+          "dropped_records": 2,
+          "later_identifier_scan_opportunities": 0,
+          "later_tool_recall_opportunities": 0,
+          "never_observed_opportunities": 2,
+          "page_opportunities": 2,
+          "selections": 15,
+          "unmatched_page_ids": 0
+        },
+        "metrics": null,
+        "session_keys": [
+          "sha256:0f6006f8c0fe7a4c",
+          "sha256:676b246139b93e02"
+        ],
+        "sessions": 2
+      }
+    }
+  },
+  "informative_sessions": 2,
+  "max_attempts": 18,
+  "max_attempts_per_shape": 6,
+  "schema": "ctxvm-shadow-batch-result/v1",
+  "shapes": {
+    "deliberate-later-reread": {
+      "attempts": 6,
+      "informative": 0,
+      "status": "UNDERPOWERED",
+      "target": 4,
+      "valid": 3
+    },
+    "dependency-chain": {
+      "attempts": 6,
+      "informative": 0,
+      "status": "UNDERPOWERED",
+      "target": 4,
+      "valid": 1
+    },
+    "read-once-pressure": {
+      "attempts": 6,
+      "informative": 2,
+      "status": "UNDERPOWERED",
+      "target": 4,
+      "valid": 3
+    }
+  },
+  "status": "UNDERPOWERED",
+  "target_informative": 12,
+  "valid_without_shape_label": 5
+}
