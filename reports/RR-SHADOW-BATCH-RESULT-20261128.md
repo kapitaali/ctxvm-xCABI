@@ -8,6 +8,11 @@ Authority: `design/experiment-runs/SHADOW-BATCH-COLLECTOR-20261127.md`,
 No profile/gateway/model-config change, restart, paid fallback, silent model/provider switch, candidate-pin
 activation, publish, or push occurred.
 
+**Concurrency addendum:** this run overlapped another authorized collector for 836.003 seconds. Its frozen
+per-attempt snapshots remain admissible for the within-run counts below, but it is not a clean sequential
+replicate and must not be pooled or compared with the overlapping run as model variance. See
+`RR-SHADOW-BATCH-CONCURRENCY-REVIEW-20261128`.
+
 ## 1. Execution
 
 The ratified batch ran on Hermes plugin 0.13.37, profile `w8-shadow`, fresh control mode, budget 24,000,
