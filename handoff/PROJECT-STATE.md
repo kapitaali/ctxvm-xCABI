@@ -1,4 +1,4 @@
-# State (updated 2026-11-27; shadow join landed, D17 held)
+# State (updated 2026-11-28; collector catalog proof blocked, D17 held)
 
 ## Goal
 Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priority: real data > identical traces > falsifiable metrics > packaging.
@@ -18,7 +18,7 @@ Make xCABI an adoptable open trace standard (08.1-UPDATE-PROMPT.md §1). Priorit
 - **dsh lane (W22):** passive + active stub LANDED in ctxvm/open-dsh (`c623936`, `2eb8b4c`); mirror default, active opt-in. Adapter 35 pass + 1 skip; local mock + real Nous receipts clean (`RR-ACTIVESTUB-REVIEW`).
 - Gateway: pid 3930 holds 0.13.37; nine fresh `w8-shadow` sessions passed trace/schema/checker/replay gates.
 ## Next three (ordered, one line each)
-1. Shadow collector acceptance BLOCKED on status parser, relative gateway path, and combined-stop classification (`RR-SHADOW-COLLECTOR-ACCEPTANCE-REVIEW`); fix4 routed. No live batch. Pins offline-only.
+1. Shadow collector BLOCKED: `commands.catalog` discovery warnings/errors are ignored, so `type=exec` lacks non-shadowing proof (`RR-SHADOW-COLLECTOR-CATALOG-REVIEW`); fix5 routed. No live batch; research fixture/prompt freeze also owed. Pins offline-only.
 2. E0 double negative PUBLISHED; E2 FAIL 2/5 CLOSED, HELD $0 — retry = new ruling. W8 parked.
 3. G3 prereg, D17 publication, D19/P11/H19 owner-gated; page.evict/stub wire landed.
 
