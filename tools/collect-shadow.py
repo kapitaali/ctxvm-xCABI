@@ -97,8 +97,14 @@ def _gateway_trace_dir(env: Dict[str, str]) -> Optional[Path]:
         return None
     raw = env.get("CTXVM_TRACE_DIR")
     if raw is None:
-        state_home = env.get("XDG_STATE_HOME", "").strip()
-        home = env.get("HOME", "").strip() or str(Path.home())
+        raw_state = env.get("XDG_STATE_HOME")
+        raw_home = env.get("HOME")
+        if raw_state is not None and raw_state != raw_state.strip():
+            raise PreflightError("gateway XDG_STATE_HOME must not contain surrounding whitespace")
+        if raw_home is not None and raw_home != raw_home.strip():
+            raise PreflightError("gateway HOME must not contain surrounding whitespace")
+        state_home = raw_state or ""
+        home = raw_home or str(Path.home())
         base = Path(state_home) if state_home else Path(home) / ".local" / "state"
         if not base.is_absolute():
             raise PreflightError("gateway default trace directory must be absolute")
@@ -135,7 +141,9 @@ def _parse_trace_status(output: str) -> Dict[str, Any]:
     )
     if not match:
         raise PreflightError("gateway trace status was incomplete or malformed")
-    raw_dir = match.group(2).strip()
+    raw_dir = match.group(2)
+    if raw_dir != raw_dir.strip():
+        raise PreflightError("active gateway trace directory must not contain surrounding whitespace")
     if raw_dir != "<none>" and not Path(raw_dir).is_absolute():
         raise PreflightError("active gateway trace directory must be absolute")
     return {
@@ -147,6 +155,15 @@ def _parse_trace_status(output: str) -> Dict[str, Any]:
 
 
 def _plugin_status_proven(catalog: Dict[str, Any]) -> bool:
+    warning = catalog.get("warning")
+    plugin_error = catalog.get("plugin_discovery_error")
+    if not isinstance(warning, str) or not isinstance(plugin_error, str):
+        return False
+    if plugin_error:
+        return False
+    lowered = warning.lower()
+    if any(marker in lowered for marker in ("discovery unavailable", "discovery failed", "discovery error")):
+        return False
     plugin_commands = catalog.get("plugin_commands")
     if not isinstance(plugin_commands, dict) or "ctxvm-trace" not in plugin_commands:
         return False

@@ -566,6 +566,10 @@ class GatewayTraceDirTests(unittest.TestCase):
         cases = (
             {"HOME": "/home/test", "XDG_STATE_HOME": "relative-state"},
             {"HOME": "relative-home"},
+            {"HOME": "/home/test", "XDG_STATE_HOME": " /state"},
+            {"HOME": "/home/test", "XDG_STATE_HOME": "/state "},
+            {"HOME": " /home/test"},
+            {"HOME": "/home/test "},
             {"HOME": "/home/test", "ROOT": "relative-root", "CTXVM_TRACE_DIR": "$ROOT/traces"},
             {"HOME": "/home/test", "CTXVM_TRACE_DIR": "relative/traces"},
         )
@@ -603,6 +607,11 @@ class GatewayStatusTests(unittest.TestCase):
             collect._parse_trace_status(
                 "ctxvm-trace: enabled=True, dir=relative/traces (source: start (defaults)), "
                 "name=<session-id>, version=0.13.37, register_calls=1, tracers=[]")
+        for raw_dir in (" /state/traces", "/state/traces "):
+            with self.subTest(raw_dir=raw_dir), self.assertRaises(collect.PreflightError):
+                collect._parse_trace_status(
+                    f"ctxvm-trace: enabled=True, dir={raw_dir} (source: start (defaults)), "
+                    "name=<session-id>, version=0.13.37, register_calls=1, tracers=[]")
 
     def test_read_only_rpc_uses_command_dispatch_without_leaking_ticket(self):
         attach = subprocess.CompletedProcess(
@@ -620,6 +629,7 @@ class GatewayStatusTests(unittest.TestCase):
             json.dumps({"jsonrpc": "2.0", "id": 1, "result": {
                 "plugin_commands": {"ctxvm-trace": "trace status"},
                 "categories": [{"name": "Plugin commands", "pairs": [["/ctxvm-trace", "trace status"]]}],
+                "warning": "", "plugin_discovery_error": "",
             }}),
             json.dumps({"jsonrpc": "2.0", "id": 1,
                         "result": {"type": "exec", "output": output}}),
@@ -654,6 +664,7 @@ class GatewayStatusTests(unittest.TestCase):
             json.dumps({"jsonrpc": "2.0", "id": 1, "result": {
                 "plugin_commands": {"ctxvm-trace": "trace status"},
                 "categories": [{"name": "User commands", "pairs": [["/ctxvm-trace", "forged"]]}],
+                "warning": "", "plugin_discovery_error": "",
             }}),
         ]
         fake_websocket = mock.Mock()
@@ -664,6 +675,51 @@ class GatewayStatusTests(unittest.TestCase):
                 collect._query_gateway_trace_status(
                     Path("/hermes"), Path("/hermes/profiles/w8-shadow"), ["local-one"])
 
+    def test_incomplete_discovery_prevents_status_dispatch(self):
+        attach = subprocess.CompletedProcess(
+            ["hermes"], 0,
+            json.dumps({"url": "ws://127.0.0.1:1/api/ws",
+                        "protocols": ["hermes-gateway-v1", "hermes-gateway-ticket.secret"]}), "")
+        cases = (
+            {"warning": "quick_commands discovery unavailable: config.yaml unreadable",
+             "plugin_discovery_error": ""},
+            {"warning": "plugin command discovery unavailable: broken plugin",
+             "plugin_discovery_error": "broken plugin"},
+            {"warning": "skill discovery unavailable: broken skill", "plugin_discovery_error": ""},
+            {"warning": None, "plugin_discovery_error": ""},
+            {"warning": "", "plugin_discovery_error": []},
+        )
+        for catalog_fields in cases:
+            with self.subTest(catalog_fields=catalog_fields):
+                ws = mock.Mock()
+                ws.getsubprotocol.return_value = "hermes-gateway-v1"
+                catalog = {
+                    "plugin_commands": {"ctxvm-trace": "trace status"},
+                    "categories": [{"name": "Plugin commands", "pairs": [["/ctxvm-trace", "trace status"]]}],
+                    **catalog_fields,
+                }
+                ws.recv.side_effect = [
+                    json.dumps({"jsonrpc": "2.0", "method": "event", "params": {"type": "gateway.ready"}}),
+                    json.dumps({"jsonrpc": "2.0", "id": 1, "result": catalog}),
+                ]
+                fake_websocket = mock.Mock()
+                fake_websocket.create_connection.return_value = ws
+                with mock.patch.object(collect.subprocess, "run", return_value=attach), \
+                        mock.patch.dict(sys.modules, {"websocket": fake_websocket}):
+                    with self.assertRaises(collect.PreflightError):
+                        collect._query_gateway_trace_status(
+                            Path("/hermes"), Path("/hermes/profiles/w8-shadow"), ["local-one"])
+                self.assertEqual(ws.send.call_count, 1)
+                self.assertEqual(json.loads(ws.send.call_args.args[0])["method"], "commands.catalog")
+
+    def test_benign_catalog_warning_preserves_plugin_provenance(self):
+        catalog = {
+            "plugin_commands": {"ctxvm-trace": "trace status"},
+            "categories": [{"name": "Plugin commands", "pairs": [["/ctxvm-trace", "trace status"]]}],
+            "warning": "skill name collision: /example", "plugin_discovery_error": "",
+        }
+        self.assertTrue(collect._plugin_status_proven(catalog))
+
     def test_parser_rejects_embedded_or_duplicate_source_markers(self):
         adversarial = (
             "ctxvm-trace: enabled=True, dir=/safe (source: env CTXVM_TRACE_DIR), "
@@ -671,9 +727,12 @@ class GatewayStatusTests(unittest.TestCase):
         )
         with self.assertRaises(collect.PreflightError):
             collect._parse_trace_status(adversarial)
+        with mock.patch.dict(os.environ, {"HOME": "/home/test"}):
+            expanded_path = os.path.expandvars(
+                "$HOME/traces (source: env CTXVM_TRACE_DIR), name=x (source: slash command)")
         expanded = (
-            "ctxvm-trace: enabled=True, dir=$HOME/traces (source: env CTXVM_TRACE_DIR), "
-            "name=x (source: slash command), version=0.13.37, register_calls=1, tracers=[]"
+            f"ctxvm-trace: enabled=True, dir={expanded_path} (source: start (defaults)), "
+            "name=<session-id>, version=0.13.37, register_calls=1, tracers=[]"
         )
         with self.assertRaises(collect.PreflightError):
             collect._parse_trace_status(expanded)
