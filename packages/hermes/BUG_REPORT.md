@@ -178,3 +178,95 @@ Files are written as `<session-id>.jsonl`. Hermes session ids begin with
 - `packages/hermes/live/plugin.yaml` — version 0.2.0
 - `packages/hermes/test/test_plugin.py` — 21 tests including live-shape cases
 - `~/.hermes/plugins/ctxvm-tracer/` — installed copies synced, `__pycache__` cleared
+
+---
+
+# BUG REPORT — shadow record discarded when a selected page has no unique ref
+
+Date: 2026-11-28
+Plugin version: 0.13.37 (live, harness 0.23.4)
+Status: ROOT CAUSE LOCATED IN CODE AND CONFIRMED BY LIVE FAILURES; the exact offending page is not yet
+identified. No fix applied.
+Evidence base: authorized shadow batch `shadow-batch-20261128-ratified-v1` (18 attempts,
+16:45:47–17:03:46 UTC).
+
+## Symptom
+
+The collector excluded 11 of 18 attempts: ten by `sidecar_failures`, one by `sidecar_selections`.
+Per-attempt sidecar counters record 15 shadow write failures; `_swallowed.log` holds 25
+`shadow_record` errors inside the batch window.
+
+```text
+~/.local/state/ctxvm/traces/_swallowed.log
+2026-11-28T18:50:16 shadow_record: ValueError: page entry does not resolve to exactly one logical ref
+...
+2026-11-28T19:03:12 shadow_record: ValueError: page entry does not resolve to exactly one logical ref
+```
+
+25 of the 29 occurrences of this error class fall inside the batch window; the other 4 date from
+2026-11-26. Two other classes exist in the same file: 125
+`ShadowSchemaError: budget_tokens must be a non-negative integer` and 3
+`ValueError: page entry needs an exact contentHash`.
+
+## Root cause
+
+`live/__init__.py:1247` `_write_shadow_record` builds each page entry through `_hashed_pages`:
+
+```python
+refs = tracer.refs_for_identity_tokens([entry["ids"]], content_hash=content_hash)
+if len(refs) != 1:
+    raise ValueError("page entry does not resolve to exactly one logical ref")
+```
+
+The raise lands in the function's single `except Exception` handler, so the **entire record** is
+discarded, not only the unplaceable page. `shadow_counts_by_session` was already incremented before the
+write, so the sidecar reports `shadowSelections > recorded lines` and `shadowWriteFailures > 0`. Both are
+collector gates (`tools/collect-shadow.py:746-760`), so the attempt is excluded.
+
+`refs_for_identity_tokens` (`src/plugin.py:376`) returns `len != 1` in two cases:
+
+- **empty** — the unit's `content_hash` (the engine's hash of the request-time tool-result text,
+  `live/context_engine.py:830`) is not a declared `ref|contentHash` pair for any ref, so `exact` is
+  empty, `candidates` is empty and `matches` is empty;
+- **more than one** — two refs declare the same content hash and both match the identity stems.
+
+## What is proven, and what is not
+
+Proven: the raising branch is exactly the logged error and it discards whole records; 25 live
+occurrences in the batch window; 11 of the authorized 18 attempts were excluded, consuming 61% of the
+attempt budget; the batch ended at 2 informative of 12 (both `read-once-pressure`), `status:
+UNDERPOWERED`; `dependency-chain` lost 5 of its 6 attempts to this defect and could not reach its
+target. Whether an excluded attempt would have been informative is not knowable from the receipts.
+
+Not proven: which page entry raised. The record is not written by design and the payload is not
+logged. An offline replay of the stored session messages (attempts 5 and 6:
+`_classify` → `_update_page_state` → `_credit_demand` → `_hard_keep` → `_plan` → the same resolver)
+resolves every selected page to exactly one ref. The replay reproduces neither the system prompt nor
+the harness-side request formatting, so the live text that produced the hash is not reconstructible
+from `state.db`. The leading hypothesis — the request-time tool-result text and the tracer's declared
+content are not the same string — stays a hypothesis.
+
+## Repro
+
+```bash
+grep 'does not resolve' ~/.local/state/ctxvm/traces/_swallowed.log | wc -l   # 29 total, 25 in window
+
+python3 - <<'PY'
+import json, glob, os
+b = os.path.expanduser('~/.local/state/ctxvm/w8-runs/shadow-batch-20261128-ratified-v1/attempts')
+for p in sorted(glob.glob(b + '/*/receipt.json')):
+    r = json.load(open(p)); c = json.load(open(os.path.join(os.path.dirname(p), 'coverage.json')))
+    print(r['attempt'], r['shape'], r['failed_gates'], (c.get('plugin') or {}).get('shadowWriteFailures'))
+PY
+```
+
+## Fix directions (ruling required)
+
+1. Make one unplaceable page non-fatal for the record: skip it, keep the rest, carry a counted
+   content-free marker so the exclusion stays visible. Needs a schema/freeze decision.
+2. Keep the record fail-closed but log a content-free diagnostic (page kind, hash prefix, ref count) at
+   the raise site, so the next batch can identify the page without guessing.
+3. Close the identity gap: make the engine's unit hash and the tracer's declared hash come from the
+   same string by construction, so the resolver cannot miss.
+
+Do not weaken `_validate_shadow_record` or the collector gates to make a batch pass.
